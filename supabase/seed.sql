@@ -30,3 +30,6 @@ begin
   on conflict do nothing;
 end;
 $$;
+
+revoke all on function public.seed_hackathons_for_current_user() from public;
+grant execute on function public.seed_hackathons_for_current_user() to authenticated;

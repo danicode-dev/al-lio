@@ -23,6 +23,8 @@ create table if not exists public.profiles (
   unique(user_id)
 );
 
+alter table public.profiles enable row level security;
+
 create table if not exists public.sources (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -38,6 +40,8 @@ create table if not exists public.sources (
   updated_at timestamptz not null default now()
 );
 
+alter table public.sources enable row level security;
+
 create table if not exists public.quick_searches (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -51,6 +55,8 @@ create table if not exists public.quick_searches (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.quick_searches enable row level security;
 
 create table if not exists public.opportunities (
   id uuid primary key default uuid_generate_v4(),
@@ -80,6 +86,8 @@ create table if not exists public.opportunities (
   updated_at timestamptz not null default now()
 );
 
+alter table public.opportunities enable row level security;
+
 create table if not exists public.hackathons (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -103,6 +111,8 @@ create table if not exists public.hackathons (
   updated_at timestamptz not null default now()
 );
 
+alter table public.hackathons enable row level security;
+
 create table if not exists public.courses (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -117,6 +127,8 @@ create table if not exists public.courses (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.courses enable row level security;
 
 create table if not exists public.tasks (
   id uuid primary key default uuid_generate_v4(),
@@ -134,6 +146,8 @@ create table if not exists public.tasks (
   updated_at timestamptz not null default now()
 );
 
+alter table public.tasks enable row level security;
+
 create table if not exists public.reminders (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -145,6 +159,8 @@ create table if not exists public.reminders (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.reminders enable row level security;
 
 create table if not exists public.quick_links (
   id uuid primary key default uuid_generate_v4(),
@@ -158,6 +174,8 @@ create table if not exists public.quick_links (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.quick_links enable row level security;
 
 create index if not exists sources_user_id_idx on public.sources(user_id);
 create index if not exists quick_searches_user_id_idx on public.quick_searches(user_id);
@@ -176,7 +194,6 @@ begin
   loop
     execute format('drop trigger if exists set_%I_updated_at on public.%I', table_name, table_name);
     execute format('create trigger set_%I_updated_at before update on public.%I for each row execute function public.set_updated_at()', table_name, table_name);
-    execute format('alter table public.%I enable row level security', table_name);
   end loop;
 end $$;
 
