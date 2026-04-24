@@ -6,3 +6,5 @@ out
 dist
 *.tsbuildinfo
 vercel.json
+.playwright-mcp
+dev-server*.log
