@@ -203,13 +203,13 @@ declare
 begin
   foreach table_name in array array['profiles','sources','quick_searches','opportunities','hackathons','courses','tasks','reminders','quick_links']
   loop
-    execute format('drop policy if exists "Users can select own %I" on public.%I', table_name, table_name);
-    execute format('drop policy if exists "Users can insert own %I" on public.%I', table_name, table_name);
-    execute format('drop policy if exists "Users can update own %I" on public.%I', table_name, table_name);
-    execute format('drop policy if exists "Users can delete own %I" on public.%I', table_name, table_name);
-    execute format('create policy "Users can select own %I" on public.%I for select using (auth.uid() = user_id)', table_name, table_name);
-    execute format('create policy "Users can insert own %I" on public.%I for insert with check (auth.uid() = user_id)', table_name, table_name);
-    execute format('create policy "Users can update own %I" on public.%I for update using (auth.uid() = user_id) with check (auth.uid() = user_id)', table_name, table_name);
-    execute format('create policy "Users can delete own %I" on public.%I for delete using (auth.uid() = user_id)', table_name, table_name);
+    execute format('drop policy if exists %I on public.%I', 'Users can select own ' || table_name, table_name);
+    execute format('drop policy if exists %I on public.%I', 'Users can insert own ' || table_name, table_name);
+    execute format('drop policy if exists %I on public.%I', 'Users can update own ' || table_name, table_name);
+    execute format('drop policy if exists %I on public.%I', 'Users can delete own ' || table_name, table_name);
+    execute format('create policy %I on public.%I for select using (auth.uid() = user_id)', 'Users can select own ' || table_name, table_name);
+    execute format('create policy %I on public.%I for insert with check (auth.uid() = user_id)', 'Users can insert own ' || table_name, table_name);
+    execute format('create policy %I on public.%I for update using (auth.uid() = user_id) with check (auth.uid() = user_id)', 'Users can update own ' || table_name, table_name);
+    execute format('create policy %I on public.%I for delete using (auth.uid() = user_id)', 'Users can delete own ' || table_name, table_name);
   end loop;
 end $$;
