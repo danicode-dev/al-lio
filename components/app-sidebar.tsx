@@ -14,8 +14,11 @@ import {
   ListTodo,
   Settings,
   Waypoints,
+  LogOut,
 } from "lucide-react";
 import { useState } from "react";
+import { signOut } from "@/lib/actions";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -26,8 +29,6 @@ const items = [
   { href: "/hackathons", label: "Hackathons", icon: FolderKanban },
   { href: "/tasks", label: "Tareas", icon: ListTodo },
   { href: "/calendar", label: "Calendario", icon: CalendarDays },
-  { href: "/links", label: "Enlaces", icon: LinkIcon },
-  { href: "/sources", label: "Fuentes", icon: Waypoints },
   { href: "/settings", label: "Ajustes", icon: Settings },
 ];
 
@@ -38,10 +39,13 @@ export function AppSidebar() {
   return (
     <aside className={cn("sticky top-0 hidden h-screen shrink-0 border-r bg-card md:block", collapsed ? "w-16" : "w-60")}>
       <div className="flex h-14 items-center justify-between px-3">
-        {!collapsed && <span className="text-sm font-semibold">TechLife</span>}
-        <Button variant="ghost" size="icon" onClick={() => setCollapsed((value) => !value)} aria-label="Plegar menu">
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </Button>
+        {!collapsed && <div className="flex items-center gap-2"><img src="/al-lio-logo.png" alt="Al-Lio" className="h-6 w-auto" /><span className="text-sm font-semibold">Al-Lio</span></div>}
+        <div className="flex items-center gap-1">
+          {!collapsed && <ThemeToggle />}
+          <Button variant="ghost" size="icon" onClick={() => setCollapsed((value) => !value)} aria-label="Plegar menu">
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
+        </div>
       </div>
       <nav className="space-y-1 px-2">
         {items.map((item) => {
@@ -64,6 +68,21 @@ export function AppSidebar() {
           );
         })}
       </nav>
+      <div className="absolute bottom-4 left-0 w-full px-2">
+        <form action={signOut}>
+          <button
+            type="submit"
+            className={cn(
+              "flex w-full h-10 items-center gap-3 rounded-md px-3 text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive",
+              collapsed && "justify-center px-0",
+            )}
+            title="Cerrar sesión"
+          >
+            <LogOut className="h-4 w-4" />
+            {!collapsed && <span>Cerrar sesión</span>}
+          </button>
+        </form>
+      </div>
     </aside>
   );
 }

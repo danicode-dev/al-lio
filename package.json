@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint app components lib middleware.ts --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "check:project": "node scripts/check-project.mjs",
+    "smoke": "node scripts/smoke-local.mjs",
+    "test": "npm run check:project && npm run typecheck",
+    "ci": "npm run lint && npm run test && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
@@ -22,6 +27,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
