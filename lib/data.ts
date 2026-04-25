@@ -1,11 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 export async function getGlobalStore() {
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
 
   if (!userData?.user) {
-    throw new Error("Unauthorized");
+    redirect("/login");
   }
 
   const [
