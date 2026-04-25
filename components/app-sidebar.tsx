@@ -10,10 +10,8 @@ import {
   FolderKanban,
   GraduationCap,
   Home,
-  LinkIcon,
   ListTodo,
   Settings,
-  Waypoints,
   LogOut,
 } from "lucide-react";
 import { useState } from "react";
