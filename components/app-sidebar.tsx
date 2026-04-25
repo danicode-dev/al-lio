@@ -39,7 +39,7 @@ export function AppSidebar() {
   return (
     <aside className={cn("sticky top-0 hidden h-screen shrink-0 border-r bg-card md:block", collapsed ? "w-16" : "w-60")}>
       <div className="flex h-14 items-center justify-between px-3">
-        {!collapsed && <div className="flex items-center gap-2"><img src="/al-lio-logo.png" alt="Al-Lio" className="h-6 w-auto" /><span className="text-sm font-semibold">Al-Lio</span></div>}
+        {!collapsed && <span className="text-base font-bold tracking-tight">Al-Lio</span>}
         <div className="flex items-center gap-1">
           {!collapsed && <ThemeToggle />}
           <Button variant="ghost" size="icon" onClick={() => setCollapsed((value) => !value)} aria-label="Plegar menu">
