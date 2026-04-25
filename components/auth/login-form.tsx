@@ -29,9 +29,9 @@ export function LoginForm() {
   if (!showTraditional) {
     return (
       <div className="flex flex-col items-center justify-center space-y-12 animate-in fade-in zoom-in-95 duration-500">
-        <div className="flex flex-col items-center gap-4">
-          <img src="/al-lio-logo.png" alt="Al-Lio" className="h-16 w-auto" />
-          <h1 className="text-4xl md:text-5xl font-light text-foreground tracking-tight">¿Quién eres?</h1>
+        <div className="flex flex-col items-center gap-3">
+          <h1 className="text-6xl md:text-7xl font-bold tracking-tight text-foreground">Al-Lio</h1>
+          <p className="text-xl text-muted-foreground font-light">¿Quién eres?</p>
         </div>
 
         {errorMsg && (

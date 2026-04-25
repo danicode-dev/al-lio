@@ -13,7 +13,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <AppSidebar />
         <main className="min-w-0 flex-1 relative pb-20 md:pb-0">
           <div className="flex h-14 items-center justify-between border-b bg-background/80 backdrop-blur-md px-4 md:hidden sticky top-0 z-40">
-            <div className="flex items-center gap-2"><img src="/al-lio-logo.png" alt="Al-Lio" className="h-6 w-auto" /><span className="font-semibold tracking-tight text-lg">Al-Lio</span></div>
+            <span className="text-lg font-bold tracking-tight">Al-Lio</span>
             <ThemeToggle />
           </div>
           <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8">
