@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { MoreVertical } from "lucide-react";
 
 export function FolderCard({
   href,
@@ -17,17 +16,17 @@ export function FolderCard({
   icon: LucideIcon;
 }) {
   return (
-    <Link href={href}>
-      <Card className="folder-tab min-h-36 border-0 bg-[#e4c15f] p-5 text-stone-950 shadow-sm transition-transform hover:-translate-y-0.5">
-        <div className="flex items-start justify-between gap-4 pt-5">
-          <Icon className="h-7 w-7" />
-          <Badge className="border-stone-900/20 bg-stone-950/10 text-stone-950">{count}</Badge>
+    <Link href={href} className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm hover:bg-accent/50 p-3 shadow-sm transition-colors group">
+      <div className="flex items-center gap-3 overflow-hidden">
+        <div className="flex-shrink-0 text-muted-foreground group-hover:text-foreground transition-colors">
+          <Icon className="h-6 w-6" strokeWidth={1.5} />
         </div>
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold">{title}</h2>
-          <p className="mt-1 text-sm text-stone-800">{description}</p>
+        <div className="flex flex-col min-w-0">
+          <span className="truncate text-sm font-medium text-foreground">{title}</span>
+          <span className="truncate text-[11px] text-muted-foreground">{description} • {count}</span>
         </div>
-      </Card>
+      </div>
+      <MoreVertical className="h-4 w-4 flex-shrink-0 text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity" />
     </Link>
   );
 }

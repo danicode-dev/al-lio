@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TechLife Control Panel",
+  title: "Al-Lio",
   description: "Panel personal para trabajo, cursos, hackathons, tareas y enlaces.",
 };
 

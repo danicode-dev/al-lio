@@ -1,20 +1,45 @@
-# TechLife Control Panel
+# D1OS
 
-Panel personal para controlar trabajo, cursos, hackathons, tareas, calendario interno y enlaces rapidos.
+Panel personal para organizar tareas, cursos, hackathons, calendario, empresas y busqueda de empleo tech.
+
+## Estado actual
+
+Este repo esta en fase MVP local-first.
+
+Ahora mismo la app funciona como panel local con persistencia en navegador mediante `localStorage`, usando el perfil:
+
+```text
+techlife.store.D1OS.v2
+```
+
+Esto permite avanzar rapido, pero todavia no es la version permanente entre movil y PC. El siguiente paso de escalabilidad es mover los datos a Supabase con Auth y Row Level Security.
+
+## Funcionalidades principales
+
+- Dashboard inicial en `/dashboard`.
+- Barra lateral de navegacion.
+- Alta rapida con boton flotante `+`.
+- Tareas rapidas sin campo URL.
+- Atajos de fecha para tareas cercanas, incluido `Manana misma hora`.
+- Acciones en tareas: `Hecho`, `Manana misma hora`, `Otro dia` y `Nota`.
+- Registro de notas de avance en `progress_notes`.
+- Calendario mensual con eventos dentro de cada dia.
+- Seccion Trabajo con pestanas `Portales` y `Empresas`.
+- Seed local de empresas en `public/data/empresas_tech_granada.md`.
 
 ## Stack
 
-- Next.js App Router
-- TypeScript
-- shadcn/ui style components
-- Tailwind CSS
-- Supabase PostgreSQL
-- Supabase Auth
-- Server Actions y API Routes
-- Vercel
+- Next.js App Router.
+- React.
+- TypeScript.
+- Tailwind CSS.
+- lucide-react.
+- Supabase preparado para la siguiente fase.
+- Vercel como destino recomendado de despliegue.
 
 ## Rutas
 
+- `/` redirige a `/dashboard`.
 - `/dashboard`
 - `/work`
 - `/courses`
@@ -29,75 +54,98 @@ Panel personal para controlar trabajo, cursos, hackathons, tareas, calendario in
 
 ```bash
 npm install
-cp .env.example .env.local
 npm run dev
 ```
 
-Variables necesarias:
+La app abre normalmente en:
+
+```text
+http://localhost:3000
+```
+
+## Verificacion antes de subir
+
+Ejecutar la bateria principal:
+
+```bash
+npm run ci
+```
+
+Esto ejecuta:
+
+- `npm run lint`
+- `npm run check:project`
+- `npm run typecheck`
+- `npm run build`
+
+Para probar rutas y CSS con el servidor local arrancado:
+
+```bash
+npm run dev
+npm run smoke
+```
+
+Si se usa otro puerto:
+
+```bash
+$env:SMOKE_BASE_URL="http://localhost:3001"; npm run smoke
+```
+
+## Documentacion
+
+La documentacion del proyecto esta organizada en `docs/`.
+
+Documentos importantes:
+
+- [Pasos seguidos el dia 2504](docs/pasos%20seguidos%20el%20dia%202504.md)
+- [Proyecto escalada](docs/proyecto%20escalada.md)
+- [Product spec](docs/01_PRODUCT_SPEC.md)
+- [Arquitectura y stack](docs/03_ARCHITECTURE_AND_STACK.md)
+- [Schema Supabase inicial](docs/04_SUPABASE_SCHEMA.md)
+- [Plan de implementacion](docs/08_IMPLEMENTATION_PLAN.md)
+
+## Siguiente fase
+
+La siguiente fase recomendada es:
+
+1. Mantener el MVP local estable.
+2. Subir el proyecto a GitHub.
+3. Desplegar la app en Vercel.
+4. Crear Supabase.
+5. Crear tablas para tareas, notas, cursos, hackathons, empresas y portales.
+6. Activar Auth y RLS.
+7. Migrar datos desde `localStorage` a Supabase.
+8. Convertir la app en PWA para movil.
+
+## Variables de entorno futuras
+
+Cuando se conecte Supabase:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-INFOJOBS_CLIENT_ID=
-INFOJOBS_CLIENT_SECRET=
-ADZUNA_APP_ID=
-ADZUNA_APP_KEY=
-JOOBLE_API_KEY=
 ```
 
-## Supabase
+No subir `.env.local` a GitHub.
 
-1. Crea un proyecto en Supabase.
-2. Copia `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` en `.env.local`.
-3. Ejecuta el contenido de `supabase/schema.sql` en el SQL Editor.
-4. Ejecuta el contenido de `supabase/seed.sql` en el SQL Editor.
-5. En la app, entra en `/settings` y pulsa `Cargar hackathons`.
+## Deploy futuro
 
-Todas las tablas usan `user_id`, timestamps y RLS. Cada usuario solo puede leer y modificar sus propios datos.
+Destino recomendado:
 
-## Deep links de trabajo
+- Vercel para la app Next.js.
+- Supabase Pro para persistencia permanente.
+- Dominio propio opcional.
 
-La seccion Trabajo abre busquedas precargadas para:
+La opcion recomendada para uso personal serio es empezar con Vercel Hobby y Supabase Pro.
 
-- LinkedIn
-- InfoJobs
-- Indeed
-- Tecnoempleo
-- Adzuna
-- Jooble
-- Remotive
-- JobToday
-- Talent.com
-- Welcome to the Jungle
+## Limpieza local
 
-No hay scraping, Selenium ni automatizacion de LinkedIn.
+Los artefactos generados estan ignorados por Git:
 
-## Integraciones preparadas
+- `.next`
+- `.playwright-mcp`
+- `dev-server*.log`
+- `node_modules`
 
-Collectors en `lib/integrations`:
-
-- `infojobs.ts`
-- `adzuna.ts`
-- `jooble.ts`
-- `remotive.ts`
-- `tecnoempleo-rss.ts`
-
-Si faltan claves, devuelven `[]` y la app no rompe.
-
-## Deploy en Vercel
-
-1. Conecta el repositorio en Vercel.
-2. Configura las variables de entorno.
-3. Ejecuta build con `npm run build`.
-4. Despliega.
-
-## GitHub
-
-GitHub CLI no esta disponible en este entorno. El repo remoto indicado es:
-
-```bash
-git remote add origin https://github.com/danicode-dev/d1os.git
-git branch -M main
-git push -u origin main
-```
+No forman parte del codigo fuente ni deben subirse al repositorio.

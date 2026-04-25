@@ -24,6 +24,42 @@ export async function signIn(formData: FormData) {
   redirect("/dashboard");
 }
 
+export async function loginOrRegisterProfile(formData: FormData) {
+  const email = requiredText.email().parse(formData.get("email"));
+  const password = requiredText.parse(formData.get("password"));
+  const displayName = asString(formData.get("display_name")) ?? "Usuario";
+  const supabase = await createClient();
+
+  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+  
+  if (signInError) {
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { display_name: displayName } },
+    });
+
+    if (signUpError) {
+      if (signUpError.message.includes("already registered") || signUpError.message.toLowerCase().includes("user already exists")) {
+        redirect("/login?error=Contraseña%20incorrecta");
+      }
+      redirect("/login?error=" + encodeURIComponent(signUpError.message));
+    }
+
+    if (data.user) {
+      await supabase.from("profiles").upsert({
+        user_id: data.user.id,
+        display_name: displayName,
+        full_name: displayName,
+        target_role: "Usuario D1OS",
+        main_location: "Granada",
+      });
+    }
+  }
+  
+  redirect("/dashboard");
+}
+
 export async function signUp(formData: FormData) {
   const email = requiredText.email().parse(formData.get("email"));
   const password = z.string().min(6).parse(formData.get("password"));
