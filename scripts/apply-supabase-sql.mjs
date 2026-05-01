@@ -1,5 +1,4 @@
 import { existsSync, readFileSync } from "node:fs";
-import { spawn } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
 import { loadEnvLocal, requireSupabaseAdminEnv } from "./supabase-env.mjs";
 
@@ -18,18 +17,25 @@ if (!existsSync(file)) {
 loadEnvLocal();
 const sql = readFileSync(file, "utf8");
 
-async function tryPsql() {
+async function tryDatabaseUrl() {
   const dbUrl = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
   if (!dbUrl) return false;
 
-  return new Promise((resolve, reject) => {
-    const child = spawn("psql", [dbUrl, "-v", "ON_ERROR_STOP=1", "-f", file], { stdio: "inherit" });
-    child.on("error", () => resolve(false));
-    child.on("exit", (code) => {
-      if (code === 0) resolve(true);
-      else reject(new Error(`psql failed with code ${code}`));
-    });
+  const pg = await import("pg");
+  const Client = pg.Client ?? pg.default?.Client;
+  const client = new Client({
+    connectionString: dbUrl,
+    ssl: dbUrl.includes("localhost") || dbUrl.includes("127.0.0.1") ? undefined : { rejectUnauthorized: false },
   });
+
+  try {
+    await client.connect();
+    await client.query(sql);
+    console.log(`OK: SQL applied with SUPABASE_DB_URL/DATABASE_URL: ${file}`);
+    return true;
+  } finally {
+    await client.end().catch(() => {});
+  }
 }
 
 async function tryRpc() {
@@ -47,10 +53,7 @@ async function tryRpc() {
   return false;
 }
 
-if (await tryPsql()) {
-  console.log(`OK: SQL applied with psql: ${file}`);
-  process.exit(0);
-}
+if (await tryDatabaseUrl()) process.exit(0);
 
 if (await tryRpc()) process.exit(0);
 
