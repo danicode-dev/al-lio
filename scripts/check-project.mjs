@@ -10,6 +10,14 @@ const requiredFiles = [
   "public/data/empresas_tech_granada.md",
   "docs/proyecto escalada.md",
   "docs/pasos seguidos el dia 2504.md",
+  "csv/oportunidades_tech_supabase_combinado.csv",
+  "scripts/import-tech-opportunities.mjs",
+  "scripts/audit-schema-code.mjs",
+  "supabase/migrations/create_tech_opportunities.sql",
+  "AGENTS.md",
+  "CLAUDE.md",
+  "docs/PROJECT_STRUCTURE.md",
+  "docs/context/OPORTUNIDADES_TECH_CSV_PARA_CODEX.md",
   "README.md",
 ];
 
@@ -34,7 +42,7 @@ for (const file of requiredFiles) {
 }
 
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-for (const script of ["lint", "typecheck", "check:project", "smoke", "test", "ci"]) {
+for (const script of ["lint", "typecheck", "check:project", "audit:schema", "smoke", "verify:startup", "verify:cheap", "verify:prod", "test", "ci"]) {
   if (!packageJson.scripts?.[script]) {
     fail(`Falta el script npm: ${script}`);
   }
@@ -55,10 +63,15 @@ for (const text of ["D1OS", "npm run ci", "docs/"]) {
 }
 
 const guestApp = readFileSync(join(root, "components/guest-app.tsx"), "utf8");
-for (const text of ["techlife.store.D1OS.v2", "Manana misma hora", "progress_notes"]) {
+for (const text of ["techlife.bloc.D1OS.v1", "techlife.app.settings.D1OS.v1", "misma hora", "progress_notes", "techOpportunities"]) {
   if (!guestApp.includes(text)) {
     fail(`components/guest-app.tsx deberia contener: ${text}`);
   }
+}
+
+const actions = readFileSync(join(root, "lib/actions.ts"), "utf8");
+if (actions.includes('revalidatePath("/dashboard")')) {
+  fail('lib/actions.ts no debe revalidar "/dashboard"; rompe foco y refresca el layout completo');
 }
 
 const companiesMd = readFileSync(join(root, "public/data/empresas_tech_granada.md"), "utf8");

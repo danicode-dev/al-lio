@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Seed endpoint disabled in production" }, { status: 404 });
+  }
+
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
 

@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ListTodo, Briefcase, FolderKanban, MoreHorizontal } from "lucide-react";
+import { Home, ListTodo, BookOpen, Newspaper, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Inicio", icon: Home },
   { href: "/tasks", label: "Tareas", icon: ListTodo },
-  { href: "/work", label: "Empleo", icon: Briefcase },
-  { href: "/hackathons", label: "Hackathons", icon: FolderKanban },
+  { href: "/bloc", label: "Bloc", icon: BookOpen },
+  { href: "/noticias", label: "Noticias", icon: Newspaper },
   { href: "/links", label: "Más", icon: MoreHorizontal },
 ];
 
@@ -17,7 +17,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-effect border-t border-border/40 pb-safe">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border/40 pb-safe">
       <div className="flex items-center justify-around h-16 px-2">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;

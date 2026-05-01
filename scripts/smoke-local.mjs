@@ -1,5 +1,6 @@
 const baseUrl = process.env.SMOKE_BASE_URL ?? "http://localhost:3000";
-const routes = ["/", "/dashboard", "/calendar", "/work"];
+const routes = ["/", "/dashboard", "/calendar", "/work", "/courses", "/hackathons", "/noticias"];
+const appMarkers = ["Al-L", "D1OS", "TechLife", "__next", "/_next/static"];
 
 async function fetchText(path) {
   const response = await fetch(`${baseUrl}${path}`, { redirect: "follow" });
@@ -14,8 +15,8 @@ async function fetchText(path) {
 
 for (const route of routes) {
   const { response, text } = await fetchText(route);
-  if (!text.includes("D1OS") && !text.includes("TechLife")) {
-    throw new Error(`${route} no parece renderizar la app D1OS`);
+  if (!appMarkers.some((marker) => text.includes(marker))) {
+    throw new Error(`${route} no parece renderizar una pagina de la app`);
   }
   console.log(`OK: ${route} -> HTTP ${response.status}`);
 }

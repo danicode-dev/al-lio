@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BookOpen,
   Briefcase,
   CalendarDays,
   ChevronLeft,
@@ -10,7 +11,9 @@ import {
   FolderKanban,
   GraduationCap,
   Home,
+  LinkIcon,
   ListTodo,
+  Newspaper,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -22,11 +25,14 @@ import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/dashboard", label: "Inicio", icon: Home },
+  { href: "/tasks", label: "Tareas", icon: ListTodo },
+  { href: "/bloc", label: "Bloc", icon: BookOpen },
+  { href: "/noticias", label: "Noticias", icon: Newspaper },
   { href: "/work", label: "Trabajo", icon: Briefcase },
   { href: "/courses", label: "Cursos", icon: GraduationCap },
   { href: "/hackathons", label: "Hackathons", icon: FolderKanban },
-  { href: "/tasks", label: "Tareas", icon: ListTodo },
   { href: "/calendar", label: "Calendario", icon: CalendarDays },
+  { href: "/links", label: "Enlaces", icon: LinkIcon },
   { href: "/settings", label: "Ajustes", icon: Settings },
 ];
 

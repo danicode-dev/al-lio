@@ -1,17 +1,44 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/supabase/env";
+
+const privatePathPrefixes = [
+  "/dashboard",
+  "/work",
+  "/courses",
+  "/hackathons",
+  "/tasks",
+  "/calendar",
+  "/links",
+  "/sources",
+  "/settings",
+  "/bloc",
+  "/noticias",
+];
+
+const authPaths = ["/login", "/register"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
-  const hasSupabaseEnv = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const pathname = request.nextUrl.pathname;
+  const privatePath = privatePathPrefixes.some((path) => pathname.startsWith(path));
+  const authPath = authPaths.includes(pathname);
+
+  if (!privatePath && !authPath) {
+    return response;
+  }
+
+  const supabaseUrl = getSupabaseUrl();
+  const publishableKey = getSupabasePublishableKey();
+  const hasSupabaseEnv = supabaseUrl && publishableKey;
 
   if (!hasSupabaseEnv) {
     return response;
   }
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    publishableKey,
     {
       cookies: {
         getAll() {
@@ -30,25 +57,13 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const privatePath = [
-    "/dashboard",
-    "/work",
-    "/courses",
-    "/hackathons",
-    "/tasks",
-    "/calendar",
-    "/links",
-    "/sources",
-    "/settings",
-  ].some((path) => request.nextUrl.pathname.startsWith(path));
-
   if (!user && privatePath) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && ["/login", "/register"].includes(request.nextUrl.pathname)) {
+  if (user && authPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

@@ -91,16 +91,27 @@ alter table public.opportunities enable row level security;
 create table if not exists public.hackathons (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users(id) on delete cascade,
+  id_slug text,
+  categoria text,
   name text not null,
   organizer text,
   logo_url text,
   province text not null,
   city text,
   type text not null default 'hackathon',
+  modalidad text,
+  localidad text,
   status text not null default 'revisar_futura_edicion' check (status in ('inscripcion_abierta','pendiente','realizado','revisar_futura_edicion','descartado')),
   event_start_date date,
   event_end_date date,
   registration_deadline date,
+  inscripcion_hasta date,
+  certificacion_o_premio text,
+  practicas_empresa boolean,
+  encaje_daw_1_5 integer check (encaje_daw_1_5 between 1 and 5),
+  tags text,
+  incluido_en_readme_original boolean,
+  ultima_revision date,
   detected_at date,
   last_reviewed_at date,
   next_review_at date,
@@ -116,19 +127,73 @@ alter table public.hackathons enable row level security;
 create table if not exists public.courses (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users(id) on delete cascade,
+  id_slug text,
   title text not null,
   platform text,
   url text,
   price numeric,
   category text,
   status text not null default 'pendiente' check (status in ('pendiente','empezado','terminado','pausado','descartado')),
+  start_date date,
   deadline date,
+  entidad text,
+  area text,
+  modalidad text,
+  localidad text,
+  provincia text,
+  formato text,
+  certificacion_tipo text,
+  certificacion_oficial boolean,
+  practicas_empresa boolean,
+  horas_totales integer,
+  horas_practicas integer,
+  fecha_inicio date,
+  fecha_fin date,
+  estado text,
+  coste text,
+  requisitos_resumen text,
+  encaje_daw_1_5 integer check (encaje_daw_1_5 between 1 and 5),
+  prioridad text default 'Media' check (prioridad in ('Alta','Media','Baja')),
+  tags text,
+  fuente_url text,
+  ultima_revision date,
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 alter table public.courses enable row level security;
+
+create table if not exists public.tech_opportunities (
+  id uuid primary key default uuid_generate_v4(),
+  id_slug text unique not null,
+  categoria text,
+  nombre text not null,
+  entidad text,
+  area_o_tipo text,
+  modalidad text,
+  localidad text,
+  provincia text,
+  fecha_inicio date,
+  fecha_fin date,
+  estado text,
+  certificacion_o_premio text,
+  practicas_empresa text,
+  horas_totales integer,
+  horas_practicas integer,
+  coste text,
+  requisitos_resumen text,
+  encaje_daw_1_5 integer check (encaje_daw_1_5 between 1 and 5),
+  prioridad text,
+  tags text,
+  fuente_url text,
+  ultima_revision date,
+  notas text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.tech_opportunities enable row level security;
 
 create table if not exists public.tasks (
   id uuid primary key default uuid_generate_v4(),
@@ -139,6 +204,8 @@ create table if not exists public.tasks (
   status text not null default 'pendiente' check (status in ('pendiente','en_progreso','completada','pospuesta','cancelada')),
   priority text default 'media' check (priority in ('alta','media','baja')),
   due_date date,
+  completed_at timestamptz,
+  progress_notes jsonb not null default '[]',
   reminder_at timestamptz,
   related_type text,
   related_id uuid,
@@ -182,6 +249,16 @@ create index if not exists quick_searches_user_id_idx on public.quick_searches(u
 create index if not exists opportunities_user_status_idx on public.opportunities(user_id, status);
 create index if not exists hackathons_user_filters_idx on public.hackathons(user_id, province, status);
 create index if not exists courses_user_status_idx on public.courses(user_id, status);
+create unique index if not exists courses_user_id_slug_key on public.courses(user_id, id_slug);
+create unique index if not exists hackathons_user_id_slug_key on public.hackathons(user_id, id_slug);
+create index if not exists courses_user_prioridad_idx on public.courses(user_id, prioridad);
+create index if not exists hackathons_user_priority_idx on public.hackathons(user_id, priority);
+create index if not exists idx_tech_opp_id_slug on public.tech_opportunities(id_slug);
+create index if not exists idx_tech_opp_categoria on public.tech_opportunities(categoria);
+create index if not exists idx_tech_opp_prioridad on public.tech_opportunities(prioridad);
+create index if not exists idx_tech_opp_provincia on public.tech_opportunities(provincia);
+create index if not exists idx_tech_opp_fecha_inicio on public.tech_opportunities(fecha_inicio);
+create index if not exists idx_tech_opp_encaje_daw on public.tech_opportunities(encaje_daw_1_5);
 create index if not exists tasks_user_due_idx on public.tasks(user_id, due_date, status);
 create index if not exists reminders_user_remind_idx on public.reminders(user_id, remind_at);
 create index if not exists quick_links_user_favorite_idx on public.quick_links(user_id, is_favorite);
@@ -196,6 +273,11 @@ begin
     execute format('create trigger set_%I_updated_at before update on public.%I for each row execute function public.set_updated_at()', table_name, table_name);
   end loop;
 end $$;
+
+drop trigger if exists tech_opportunities_updated_at on public.tech_opportunities;
+create trigger tech_opportunities_updated_at
+  before update on public.tech_opportunities
+  for each row execute function public.set_updated_at();
 
 do $$
 declare
@@ -213,3 +295,9 @@ begin
     execute format('create policy %I on public.%I for delete using (auth.uid() = user_id)', 'Users can delete own ' || table_name, table_name);
   end loop;
 end $$;
+
+drop policy if exists "tech_opportunities_select" on public.tech_opportunities;
+create policy "tech_opportunities_select"
+  on public.tech_opportunities for select
+  to authenticated
+  using (true);
