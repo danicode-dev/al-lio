@@ -152,6 +152,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 # Tambien soportado para llaves nuevas de Supabase:
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_SECRET_KEY=
 
 PROFILES_SHARED_PASSWORD=
 
@@ -230,6 +231,7 @@ Documentos importantes:
 - [Estructura del proyecto](docs/PROJECT_STRUCTURE.md)
 - [Guia de agentes IA](AGENTS.md)
 - [Contexto CSV oportunidades tech](docs/context/OPORTUNIDADES_TECH_CSV_PARA_CODEX.md)
+- [TODO Supabase persistencia](docs/SUPABASE_TODO.md)
 - [Schema Supabase inicial](docs/04_SUPABASE_SCHEMA.md)
 - [Plan de implementacion](docs/08_IMPLEMENTATION_PLAN.md)
 

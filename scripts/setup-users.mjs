@@ -1,11 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
+import { loadEnvLocal } from "./supabase-env.mjs";
 
-// REQUIRES: SUPABASE_SERVICE_ROLE_KEY to bypass email confirmations
+// REQUIRES: SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY to bypass email confirmations
+loadEnvLocal();
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error("Falta NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en el .env.local");
+  console.error("Falta NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SECRET_KEY en el .env.local");
   process.exit(1);
 }
 

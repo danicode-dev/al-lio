@@ -20,6 +20,8 @@
     "audit:schema": "node scripts/audit-schema-code.mjs",
     "smoke": "node scripts/smoke-local.mjs",
     "sync:news": "node scripts/sync-news.mjs",
+    "supabase:check": "node scripts/check-supabase-remote.mjs",
+    "supabase:apply": "node scripts/apply-supabase-sql.mjs",
     "import:opportunities": "node scripts/import-tech-opportunities.mjs",
     "import:courses": "node scripts/import-courses.mjs",
     "import:hackathons": "node scripts/import-hackathons.mjs",

@@ -13,7 +13,12 @@ const requiredFiles = [
   "csv/oportunidades_tech_supabase_combinado.csv",
   "scripts/import-tech-opportunities.mjs",
   "scripts/audit-schema-code.mjs",
+  "scripts/check-supabase-remote.mjs",
+  "scripts/apply-supabase-sql.mjs",
+  "scripts/supabase-env.mjs",
+  "supabase/migrations/align_tasks_persistence.sql",
   "supabase/migrations/create_tech_opportunities.sql",
+  "supabase/migrations/extend_courses_hackathons.sql",
   "AGENTS.md",
   "CLAUDE.md",
   "docs/PROJECT_STRUCTURE.md",
@@ -42,7 +47,7 @@ for (const file of requiredFiles) {
 }
 
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-for (const script of ["lint", "typecheck", "check:project", "audit:schema", "smoke", "verify:startup", "verify:cheap", "verify:prod", "test", "ci"]) {
+for (const script of ["lint", "typecheck", "check:project", "audit:schema", "supabase:check", "supabase:apply", "smoke", "verify:startup", "verify:cheap", "verify:prod", "test", "ci"]) {
   if (!packageJson.scripts?.[script]) {
     fail(`Falta el script npm: ${script}`);
   }

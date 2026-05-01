@@ -15,43 +15,26 @@ import { createClient } from "@supabase/supabase-js";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { getSupabaseAdminKey, getSupabaseUrl, loadEnvLocal } from "./supabase-env.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const CSV_PATH = join(ROOT, "csv", "oportunidades_tech_supabase_combinado.csv");
 const BATCH_SIZE = 20;
 
-loadEnvLocal();
+loadEnvLocal(ROOT);
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = getSupabaseUrl();
+const SERVICE_KEY = getSupabaseAdminKey();
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
-  console.error("ERROR Missing env vars: NEXT_PUBLIC_SUPABASE_URL/SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
+  console.error("ERROR Missing env vars: NEXT_PUBLIC_SUPABASE_URL/SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SECRET_KEY");
   process.exit(1);
 }
 
 if (!existsSync(CSV_PATH)) {
   console.error(`ERROR CSV not found: ${CSV_PATH}`);
   process.exit(1);
-}
-
-function loadEnvLocal() {
-  const envPath = join(ROOT, ".env.local");
-  if (!existsSync(envPath)) return;
-
-  const lines = readFileSync(envPath, "utf-8").split(/\r?\n/);
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (!line || line.startsWith("#")) continue;
-
-    const eq = line.indexOf("=");
-    if (eq === -1) continue;
-
-    const key = line.slice(0, eq).trim();
-    const value = line.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
 }
 
 function parseCSV(text) {

@@ -2,14 +2,15 @@
  * Seed pending weekly tasks into Supabase for the dashboard.
  *
  * Usage:
- *   node scripts/seed-semanal-tasks.mjs
+ *   npm run seed:tasks
  *
  * Requires in .env.local:
  *   NEXT_PUBLIC_SUPABASE_URL
- *   SUPABASE_SERVICE_ROLE_KEY
+ *   SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY
+ *   TARGET_USER_EMAIL
  *
- * The script finds the user by email, skips tasks already inserted (by title),
- * and inserts only the ones that are missing.
+ * The script finds the user by email, skips tasks already inserted by title,
+ * and inserts only the missing tasks.
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -23,11 +24,14 @@ const ROOT = resolve(__dirname, "..");
 function loadEnvLocal() {
   const envPath = join(ROOT, ".env.local");
   if (!existsSync(envPath)) return;
+
   for (const raw of readFileSync(envPath, "utf-8").split(/\r?\n/)) {
     const line = raw.trim();
     if (!line || line.startsWith("#")) continue;
+
     const eq = line.indexOf("=");
     if (eq === -1) continue;
+
     const key = line.slice(0, eq).trim();
     const val = line.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
     if (!process.env[key]) process.env[key] = val;
@@ -37,109 +41,90 @@ function loadEnvLocal() {
 loadEnvLocal();
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const USER_EMAIL   = "webdaniel2025@gmail.com";
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+const USER_EMAIL = process.env.TARGET_USER_EMAIL;
 
-if (!SUPABASE_URL || !SERVICE_KEY) {
-  console.error("❌  Faltan NEXT_PUBLIC_SUPABASE_URL y/o SUPABASE_SERVICE_ROLE_KEY en .env.local");
+if (!SUPABASE_URL || !SERVICE_KEY || !USER_EMAIL) {
+  console.error("Missing NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SECRET_KEY, or TARGET_USER_EMAIL in .env.local");
   process.exit(1);
 }
 
-// ---------------------------------------------------------------------------
-// Pending tasks for the "semanal" bucket
-// ---------------------------------------------------------------------------
 const TASKS = [
   {
-    title: "Aplicar migración SQL: tech_opportunities",
+    title: "Supabase: aplicar migraciones V1 pendientes",
     description:
-      "Ejecutar en el editor SQL de Supabase el fichero:\n" +
-      "  supabase/migrations/create_tech_opportunities.sql\n\n" +
-      "Crea la tabla tech_opportunities, 5 índices y la política RLS de lectura.\n" +
-      "También activa el trigger updated_at.",
+      "Ejecutar en Supabase SQL Editor, en este orden:\n" +
+      "1. supabase/migrations/align_tasks_persistence.sql\n" +
+      "2. supabase/migrations/extend_courses_hackathons.sql\n" +
+      "3. supabase/migrations/create_tech_opportunities.sql\n\n" +
+      "Estas migraciones alinean tareas, cursos, hackathons y oportunidades tech con el codigo actual.",
     category: "semanal",
     priority: "alta",
     status: "pendiente",
   },
   {
-    title: "Importar CSV de oportunidades tech",
+    title: "Supabase: importar CSV completos",
     description:
-      "Ejecutar: npm run import:opportunities\n\n" +
-      "Requiere SUPABASE_SERVICE_ROLE_KEY en .env.local.\n" +
-      "Verifica los logs: registros leídos, lotes importados y errores.\n" +
-      "Si todo OK, la sección 'Oportunidades tech' del dashboard carga datos desde Supabase.\n" +
-      "Ejecutar N veces es seguro (upsert por id_slug).",
+      "Despues de aplicar las migraciones:\n" +
+      "npm run import:courses\n" +
+      "npm run import:hackathons\n" +
+      "npm run import:opportunities\n\n" +
+      "Los scripts son idempotentes: se pueden ejecutar varias veces sin duplicar registros.",
     category: "semanal",
     priority: "alta",
     status: "pendiente",
   },
   {
-    title: "Verificar sección Oportunidades tech en producción",
+    title: "Supabase: verificar persistencia V1",
     description:
-      "Comprobar en el dashboard:\n" +
-      "- Los filtros (Todos, Cursos, Hackathons, Alta, Granada, Online) funcionan.\n" +
-      "- Botón Info expande el panel con coste, requisitos, horas, tags, notas.\n" +
-      "- Botón Fuente abre la URL en nueva pestaña.\n" +
-      "- Badges de Alta prioridad, DAW 5/5, Certificación y Prácticas visibles.\n" +
-      "- Funciona en móvil (1 columna) y desktop (2 columnas).",
-    category: "semanal",
-    priority: "media",
-    status: "pendiente",
-  },
-  {
-    title: "Revisar métricas Lighthouse tras optimización de rendimiento",
-    description:
-      "Optimizaciones ya aplicadas en esta sesión:\n" +
-      "- Font Inter con display:swap (evita bloqueo de render).\n" +
-      "- useMemo para urgentTasks, weekEvents y upcomingHackathons en DashboardOperationalFeed.\n" +
-      "- React.memo en DashboardTaskMiniCard, DashboardEventMiniCard, DashboardHackathonMiniCard.\n" +
-      "- Cache 5 min en getTechOpportunities (evita refetch en cada render).\n" +
-      "- Menos backdrop-blur en la cabecera móvil.\n\n" +
-      "Pasos: abrir DevTools → Lighthouse → Performance. Anotar puntuación antes/después.\n" +
-      "Si sigue lento: valorar dividir guest-app.tsx en sub-componentes con dynamic import.",
+      "Ejecutar:\n" +
+      "npm run supabase:check\n" +
+      "npm run verify:cheap\n\n" +
+      "Luego abrir la app y crear/editar una tarea. Al cerrar sesion o reiniciar la app, la tarea debe seguir en Supabase.",
     category: "semanal",
     priority: "media",
     status: "pendiente",
   },
 ];
 
-// ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
 async function main() {
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
     auth: { persistSession: false },
   });
 
-  // Find user by email using admin API
   const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
   if (usersError) {
-    console.error("❌  Error listando usuarios:", usersError.message);
+    console.error("Error listing users:", usersError.message);
     process.exit(1);
   }
 
-  const user = usersData.users.find((u) => u.email === USER_EMAIL);
+  const user = usersData.users.find((item) => item.email?.toLowerCase() === USER_EMAIL.toLowerCase());
   if (!user) {
-    console.error(`❌  Usuario ${USER_EMAIL} no encontrado en auth.users`);
+    console.error(`User not found for TARGET_USER_EMAIL=${USER_EMAIL}`);
     process.exit(1);
   }
 
-  console.log(`👤  Usuario: ${user.email} (${user.id})`);
+  console.log(`Target user: ${user.email}`);
 
-  // Get existing task titles to avoid duplicates
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from("tasks")
     .select("title")
     .eq("user_id", user.id);
 
-  const existingTitles = new Set((existing || []).map((t) => t.title));
-  console.log(`📋  Tareas existentes: ${existingTitles.size}`);
+  if (existingError) {
+    console.error("Error reading existing tasks:", existingError.message);
+    process.exit(1);
+  }
+
+  const existingTitles = new Set((existing || []).map((task) => task.title));
+  console.log(`Existing tasks: ${existingTitles.size}`);
 
   let inserted = 0;
   let skipped = 0;
 
   for (const task of TASKS) {
     if (existingTitles.has(task.title)) {
-      console.log(`   ↷ Ya existe: "${task.title}"`);
+      console.log(`Skipped existing: ${task.title}`);
       skipped++;
       continue;
     }
@@ -154,20 +139,20 @@ async function main() {
     });
 
     if (error) {
-      console.error(`   ❌ Error insertando "${task.title}":`, error.message);
+      console.error(`Error inserting "${task.title}": ${error.message}`);
+      process.exitCode = 1;
     } else {
-      console.log(`   ✅ Insertada: "${task.title}"`);
+      console.log(`Inserted: ${task.title}`);
       inserted++;
     }
   }
 
-  console.log("─".repeat(50));
-  console.log(`✅  Insertadas : ${inserted}`);
-  console.log(`↷   Omitidas   : ${skipped}`);
-  console.log("Done.");
+  console.log("-".repeat(50));
+  console.log(`Inserted: ${inserted}`);
+  console.log(`Skipped: ${skipped}`);
 }
 
-main().catch((err) => {
-  console.error("Fatal:", err);
+main().catch((error) => {
+  console.error("Fatal:", error);
   process.exit(1);
 });
