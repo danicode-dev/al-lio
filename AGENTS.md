@@ -46,6 +46,7 @@ Always run at least one relevant verification command before telling the user th
 The CSV importer reads `csv/oportunidades_tech_supabase_combinado.csv` and upserts into `public.tech_opportunities` by `id_slug`.
 
 CSV context docs are archived under `docs/context/`.
+Supabase operational TODOs live in `docs/SUPABASE_TODO.md`.
 
 Before `npm run import:opportunities` can succeed on the remote Supabase project, apply:
 

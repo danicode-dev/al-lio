@@ -3,8 +3,8 @@
  *
  * Requires:
  *   SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL
- *   SUPABASE_SERVICE_ROLE_KEY
- *   TARGET_USER_EMAIL (defaults to webdaniel2025@gmail.com)
+ *   SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY
+ *   TARGET_USER_EMAIL
  *
  * Run the migration first:
  *   supabase/migrations/extend_courses_hackathons.sql
@@ -19,7 +19,6 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const CSV_PATH = join(ROOT, "csv", "eventos_hackathons_supabase_actualizado.csv");
-const DEFAULT_EMAIL = "webdaniel2025@gmail.com";
 const HACKATHON_NAMESPACE = "hackathons-csv-v1";
 const HACKATHON_EXTENDED_SELECT = [
   "id_slug",
@@ -261,11 +260,11 @@ async function main() {
   loadEnvLocal();
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const targetEmail = process.env.TARGET_USER_EMAIL || DEFAULT_EMAIL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+  const targetEmail = process.env.TARGET_USER_EMAIL;
 
-  if (!supabaseUrl || !serviceKey) {
-    console.error("Missing SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.");
+  if (!supabaseUrl || !serviceKey || !targetEmail) {
+    console.error("Missing SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SECRET_KEY, or TARGET_USER_EMAIL.");
     process.exit(1);
   }
   if (!existsSync(CSV_PATH)) {
