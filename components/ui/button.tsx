@@ -22,6 +22,7 @@ export function Button({ className, variant = "default", size = "md", asChild, c
 
   if (asChild && React.isValidElement<{ className?: string }>(children)) {
     return React.cloneElement(children, {
+      ...props,
       className: cn(classes, children.props.className),
     });
   }

@@ -1,0 +1,28 @@
+export type TechOpportunity = {
+  id: string;
+  id_slug: string;
+  categoria: string | null;
+  nombre: string;
+  entidad: string | null;
+  area_o_tipo: string | null;
+  modalidad: string | null;
+  localidad: string | null;
+  provincia: string | null;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  estado: string | null;
+  certificacion_o_premio: string | null;
+  practicas_empresa: string | null;
+  horas_totales: number | null;
+  horas_practicas: number | null;
+  coste: string | null;
+  requisitos_resumen: string | null;
+  encaje_daw_1_5: number | null;
+  prioridad: string | null;
+  tags: string | null;
+  fuente_url: string | null;
+  ultima_revision: string | null;
+  notas: string | null;
+  created_at: string;
+  updated_at: string;
+};

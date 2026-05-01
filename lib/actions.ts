@@ -15,12 +15,45 @@ async function currentUserId() {
   return { supabase, userId: data.user.id };
 }
 
-export async function signIn(formData: FormData) {
+export async function loginProfile(formData: FormData) {
   const email = requiredText.email().parse(formData.get("email"));
-  const password = requiredText.parse(formData.get("password"));
+  const displayName = asString(formData.get("display_name")) ?? "Usuario";
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) redirect("/login?error=Credenciales%20incorrectas");
+
+  // Contraseñas a probar: env var → legacy → default nueva
+  const passwords = [
+    process.env.PROFILES_SHARED_PASSWORD,
+    "muchosmantecados11",
+    "d1os-panel-2026",
+  ].filter(Boolean) as string[];
+
+  // 1. Intentar login con cada contraseña conocida
+  for (const pwd of passwords) {
+    const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
+    if (!error) redirect("/dashboard");
+  }
+
+  // 2. No existe aún → crear cuenta con la contraseña activa
+  const activePassword = process.env.PROFILES_SHARED_PASSWORD ?? "d1os-panel-2026";
+  const { data, error: signUpError } = await supabase.auth.signUp({
+    email,
+    password: activePassword,
+    options: { data: { display_name: displayName } },
+  });
+
+  if (signUpError) {
+    redirect("/login?error=" + encodeURIComponent(signUpError.message));
+  }
+
+  if (data.user) {
+    await supabase.from("profiles").upsert({
+      user_id: data.user.id,
+      display_name: displayName,
+      full_name: displayName,
+      target_role: "Usuario D1OS",
+      main_location: "Granada",
+    });
+  }
   redirect("/dashboard");
 }
 
@@ -103,7 +136,6 @@ export async function createTask(formData: FormData) {
     related_id: asString(formData.get("related_id")),
   });
   revalidatePath("/tasks");
-  revalidatePath("/dashboard");
 }
 
 export async function updateTaskStatus(formData: FormData) {
@@ -114,7 +146,6 @@ export async function updateTaskStatus(formData: FormData) {
     .eq("id", requiredText.parse(formData.get("id")))
     .eq("user_id", userId);
   revalidatePath("/tasks");
-  revalidatePath("/dashboard");
 }
 
 export async function postponeTaskTomorrow(formData: FormData) {
@@ -152,7 +183,6 @@ export async function createOpportunity(formData: FormData) {
     notes: asString(formData.get("notes")),
   });
   revalidatePath("/work");
-  revalidatePath("/dashboard");
 }
 
 export async function updateOpportunityStatus(formData: FormData) {
@@ -180,11 +210,11 @@ export async function createCourse(formData: FormData) {
     url: asString(formData.get("url")),
     category: asString(formData.get("category")),
     status: asString(formData.get("status")) ?? "pendiente",
+    start_date: asString(formData.get("start_date")),
     deadline: asString(formData.get("deadline")),
     notes: asString(formData.get("notes")),
   });
   revalidatePath("/courses");
-  revalidatePath("/dashboard");
 }
 
 export async function updateCourseStatus(formData: FormData) {
@@ -214,7 +244,6 @@ export async function createQuickLink(formData: FormData) {
     is_favorite: formData.get("is_favorite") === "on",
   });
   revalidatePath("/links");
-  revalidatePath("/dashboard");
 }
 
 export async function deleteQuickLink(formData: FormData) {
@@ -239,7 +268,6 @@ export async function createHackathon(formData: FormData) {
     next_review_at: asString(formData.get("next_review_at")),
   });
   revalidatePath("/hackathons");
-  revalidatePath("/dashboard");
 }
 
 export async function markHackathonReviewed(formData: FormData) {
@@ -289,5 +317,4 @@ export async function seedHackathons() {
   const { supabase } = await currentUserId();
   await supabase.rpc("seed_hackathons_for_current_user");
   revalidatePath("/hackathons");
-  revalidatePath("/dashboard");
 }

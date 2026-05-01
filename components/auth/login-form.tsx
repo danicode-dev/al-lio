@@ -1,122 +1,113 @@
-"use client";
-
-import { useState } from "react";
-import { signIn } from "@/lib/actions";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { useSearchParams } from "next/navigation";
-import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { PlusCircle } from "lucide-react";
+import { CalendarDays, ShieldCheck, Sparkles } from "lucide-react";
+import { GoogleLoginButton } from "@/components/auth/google-login-button";
+import { Card } from "@/components/ui/card";
+import alLioVisual from "@/logo/Gemini_Generated_Image_.png";
 
-const PROFILES = [
-  { name: "Dani", email: "dani@d1os.com", color: "bg-blue-600 hover:bg-blue-500", src: "" },
-  { name: "Luli", email: "luli@d1os.com", color: "bg-rose-600 hover:bg-rose-500", src: "/luli.jpg" },
-  { name: "Alberto", email: "alberto@d1os.com", color: "bg-emerald-600 hover:bg-emerald-500", src: "" },
-  { name: "Eric", email: "eric@d1os.com", color: "bg-violet-600 hover:bg-violet-500", src: "" },
-  { name: "Yeray", email: "yeray@d1os.com", color: "bg-amber-600 hover:bg-amber-500", src: "" },
-];
+const errorCopy: Record<string, string> = {
+  missing_code: "Google no devolvió el código de acceso. Inténtalo de nuevo.",
+  invalid_state: "La sesión de Google ha caducado. Vuelve a iniciar el acceso.",
+  connect_error: "No se pudo completar la conexión con Google.",
+  session_error: "Google conectó correctamente, pero no se pudo crear la sesión.",
+  google_missing_code: "Google no devolvió el código de acceso. Inténtalo de nuevo.",
+  google_invalid_state: "La sesión de Google ha caducado. Vuelve a iniciar el acceso.",
+  google_connect_error: "No se pudo completar la conexión con Google.",
+  google_session_error: "Google conectó correctamente, pero no se pudo crear la sesión.",
+};
 
-const SHARED_PASSWORD = "muchosmantecados11";
-
-export function LoginForm() {
-  const searchParams = useSearchParams();
-  const errorMsg = searchParams.get("error");
-  const [showTraditional, setShowTraditional] = useState(false);
-  const [loadingProfile, setLoadingProfile] = useState<string | null>(null);
-
-  if (!showTraditional) {
-    return (
-      <div className="flex flex-col items-center justify-center space-y-12 animate-in fade-in zoom-in-95 duration-500">
-        <div className="flex flex-col items-center gap-3">
-          <h1 className="text-6xl md:text-7xl font-bold tracking-tight text-foreground">Al-Lio</h1>
-          <p className="text-xl text-muted-foreground font-light">¿Quién eres?</p>
-        </div>
-
-        {errorMsg && (
-          <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
-            Error de acceso. Vuelve a intentarlo.
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
-          {PROFILES.map((profile) => (
-            <form action={signIn} key={profile.email} onSubmit={() => setLoadingProfile(profile.name)}>
-              <input type="hidden" name="email" value={profile.email} />
-              <input type="hidden" name="password" value={SHARED_PASSWORD} />
-
-              <button
-                type="submit"
-                disabled={loadingProfile !== null}
-                className="group flex flex-col items-center w-28 md:w-36 focus:outline-none transition-transform active:scale-95"
-              >
-                <div className={cn(
-                  "w-28 h-28 md:w-36 md:h-36 rounded-md shadow-lg flex items-center justify-center transition-all duration-300 ease-in-out border-2 border-transparent group-hover:border-foreground/50",
-                  profile.color,
-                  loadingProfile === profile.name && "opacity-70 animate-pulse pointer-events-none"
-                )}>
-                  {loadingProfile === profile.name ? (
-                    <div className="w-8 h-8 rounded-full border-4 border-white/30 border-t-white animate-spin" />
-                  ) : profile.src ? (
-                    <Image src={profile.src} alt={profile.name} width={144} height={144} className="object-cover w-full h-full rounded-md" />
-                  ) : (
-                    <span className="text-5xl font-semibold text-white drop-shadow-md">
-                      {profile.name.charAt(0)}
-                    </span>
-                  )}
-                </div>
-                <span className="mt-4 text-lg md:text-xl font-medium text-foreground/70 group-hover:text-foreground transition-colors">
-                  {profile.name}
-                </span>
-              </button>
-            </form>
-          ))}
-
-          <button
-            onClick={() => setShowTraditional(true)}
-            className="group flex flex-col items-center w-28 md:w-36 focus:outline-none opacity-80 hover:opacity-100 transition-opacity"
-          >
-            <div className="w-24 h-24 md:w-28 md:h-28 rounded-full flex items-center justify-center transition-all duration-300 border border-muted-foreground/30 bg-muted/20 group-hover:bg-muted/40">
-              <PlusCircle className="w-10 h-10 text-muted-foreground group-hover:text-foreground transition-colors" />
-            </div>
-            <span className="mt-4 text-base font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-              Otra cuenta
-            </span>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Formulario tradicional
+export function LoginForm({ error }: { error?: string | null }) {
   return (
-    <Card className="w-full max-w-sm animate-in slide-in-from-bottom-4 fade-in duration-300 border-none shadow-2xl">
-      <CardHeader>
-        <CardTitle className="text-2xl">Acceso Manual</CardTitle>
-        <CardDescription>Inicia sesión con credenciales directas</CardDescription>
-      </CardHeader>
-      <form action={signIn}>
-        <CardContent className="space-y-4">
-          {errorMsg && (
-            <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">{errorMsg}</div>
-          )}
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">Correo Electrónico</label>
-            <Input id="email" name="email" type="email" placeholder="yo@ejemplo.com" required className="bg-background/50" />
+    <section className="flex min-h-[100svh] items-center justify-center bg-background px-4 py-8 sm:px-6 lg:px-8">
+      <Card className="grid w-full max-w-6xl overflow-hidden shadow-[0_24px_80px_rgba(15,23,42,0.10)] dark:shadow-[0_24px_90px_rgba(0,0,0,0.55)] md:min-h-[620px] md:grid-cols-[0.95fr_1.05fr]">
+        <div className="flex min-h-[560px] flex-col justify-between p-6 sm:p-8 lg:p-10">
+          <header className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-20 items-center justify-center overflow-hidden rounded-md border bg-white p-1 shadow-sm dark:border-white/10">
+                <Image
+                  src={alLioVisual}
+                  alt="Al-Lío"
+                  className="h-full w-full object-contain"
+                  sizes="80px"
+                  priority
+                />
+              </div>
+              <span className="text-sm font-semibold text-foreground">Al-Lío</span>
+            </div>
+            <span className="hidden rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground sm:inline-flex">
+              Google Calendar
+            </span>
+          </header>
+
+          <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-10">
+            <div className="space-y-3">
+              <h1 className="text-3xl font-semibold leading-tight text-foreground sm:text-4xl">
+                Inicia sesión en Al-Lío
+              </h1>
+              <p className="text-base leading-7 text-muted-foreground">
+                Conecta tu calendario y organiza tus eventos en un solo lugar
+              </p>
+            </div>
+
+            {error && (
+              <div className="mt-6 rounded-md border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {errorCopy[error] ?? "No se pudo iniciar sesión. Vuelve a intentarlo."}
+              </div>
+            )}
+
+            <div className="mt-8 space-y-4">
+              <GoogleLoginButton />
+              <p className="text-sm leading-6 text-muted-foreground">
+                Usaremos tu cuenta de Google para sincronizar tus eventos con Google Calendar.
+              </p>
+            </div>
+          </main>
+
+          <footer className="text-xs text-muted-foreground">© Al-Lío</footer>
+        </div>
+
+        <aside className="relative hidden min-h-[620px] overflow-hidden border-l bg-muted/30 md:block">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(37,99,235,0.14),transparent_30%),radial-gradient(circle_at_70%_70%,rgba(16,185,129,0.14),transparent_32%)] dark:bg-[radial-gradient(circle_at_30%_20%,rgba(96,165,250,0.16),transparent_30%),radial-gradient(circle_at_70%_70%,rgba(45,212,191,0.12),transparent_32%)]" />
+          <div className="relative flex h-full flex-col justify-between p-8 lg:p-10">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <CalendarDays className="h-4 w-4" />
+              <span>Calendario sincronizado</span>
+            </div>
+
+            <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
+              <div className="overflow-hidden rounded-lg border bg-white shadow-2xl shadow-slate-950/10 dark:border-white/10">
+                <Image
+                  src={alLioVisual}
+                  alt="Logo de Al-Lío"
+                  className="aspect-[1496/704] h-auto w-full object-cover"
+                  sizes="(min-width: 768px) 45vw, 100vw"
+                  priority
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-6 border-t pt-5">
+                <div className="flex gap-3">
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Acceso seguro</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">Cuenta verificada por Google.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Agenda lista</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">Eventos disponibles tras entrar.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p className="max-w-sm text-sm leading-6 text-muted-foreground">
+              Una entrada limpia para consultar, crear y mantener tus eventos de Google Calendar dentro de Al-Lío.
+            </p>
           </div>
-          <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">Contraseña</label>
-            <Input id="password" name="password" type="password" required className="bg-background/50" />
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <Button className="w-full" type="submit">Entrar al panel</Button>
-          <button type="button" onClick={() => setShowTraditional(false)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Volver a selección de perfiles
-          </button>
-        </CardFooter>
-      </form>
-    </Card>
+        </aside>
+      </Card>
+    </section>
   );
 }

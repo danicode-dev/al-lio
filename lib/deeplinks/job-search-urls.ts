@@ -13,19 +13,32 @@ export const jobPlatforms = [
 
 export type JobPlatform = (typeof jobPlatforms)[number];
 
+function isRemoteSearch(location: string) {
+  const value = location.trim().toLowerCase();
+  return value === "teletrabajo" || value === "remoto" || value === "remote";
+}
+
 export function buildJobSearchUrl(platform: string, keyword: string, location = "") {
-  const q = encodeURIComponent(keyword.trim());
-  const l = encodeURIComponent(location.trim());
+  const remote = isRemoteSearch(location);
+  const cleanKeyword = keyword.trim();
+  const searchKeyword = remote ? `${cleanKeyword} teletrabajo`.trim() : cleanKeyword;
+  const q = encodeURIComponent(searchKeyword);
+  const baseQ = encodeURIComponent(cleanKeyword);
+  const l = encodeURIComponent(remote ? "Espana" : location.trim());
 
   switch (platform.toLowerCase()) {
     case "linkedin":
-      return `https://www.linkedin.com/jobs/search/?keywords=${q}&location=${l}`;
+      return remote
+        ? `https://www.linkedin.com/jobs/search/?keywords=${baseQ}&location=${l}&f_WT=2`
+        : `https://www.linkedin.com/jobs/search/?keywords=${q}&location=${l}`;
     case "infojobs":
       return `https://www.infojobs.net/jobsearch/search-results/list.xhtml?keyword=${q}&provinceIds=&segmentId=&page=1&sortBy=RELEVANCE`;
     case "indeed":
       return `https://es.indeed.com/jobs?q=${q}&l=${l}`;
     case "tecnoempleo":
-      return `https://www.tecnoempleo.com/ofertas-trabajo/?te=${q}&pr=${l}`;
+      return remote
+        ? `https://www.tecnoempleo.com/ofertas-trabajo/?te=${q}&pr=`
+        : `https://www.tecnoempleo.com/ofertas-trabajo/?te=${q}&pr=${l}`;
     case "adzuna":
       return `https://www.adzuna.es/search?q=${q}&w=${l}`;
     case "jooble":
@@ -47,11 +60,11 @@ export const initialQuickSearches = [
   ["Desarrollador Web Junior", "Granada"],
   ["Java Junior", "Granada"],
   ["Backend Junior", "Granada"],
-  ["React Junior", "Malaga"],
   ["Practicas DAW", "Granada"],
-  ["Desarrollador Full Stack Junior", "Remoto"],
-  ["Spring Boot Junior", "Remoto"],
-  ["Programador Junior", "Andalucia"],
-  ["Frontend Junior", "Remoto"],
+  ["React Junior", "Granada"],
+  ["Desarrollador Full Stack Junior", "Granada"],
+  ["Spring Boot Junior", "Granada"],
+  ["Programador Junior", "Granada"],
+  ["Frontend Junior", "Granada"],
   ["SQL Junior", "Granada"],
 ];

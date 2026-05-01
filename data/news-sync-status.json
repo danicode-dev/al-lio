@@ -1,0 +1,120 @@
+{
+  "lastSyncAt": "2026-05-01T02:25:48.096Z",
+  "lastSyncOk": true,
+  "totalItems": 221,
+  "newToday": 38,
+  "sources": [
+    {
+      "sourceId": "devto-api",
+      "lastSyncAt": "2026-05-01T02:25:48.038Z",
+      "ok": true,
+      "itemsAdded": 2,
+      "itemsUpdated": 126
+    },
+    {
+      "sourceId": "hackernews-top",
+      "lastSyncAt": "2026-05-01T02:25:48.038Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "genbeta",
+      "lastSyncAt": "2026-05-01T02:25:48.038Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "microsiervos",
+      "lastSyncAt": "2026-05-01T02:25:48.038Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "nextjs-blog",
+      "lastSyncAt": "2026-05-01T02:25:48.038Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "vercel-blog",
+      "lastSyncAt": "2026-05-01T02:25:48.038Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "stackoverflow-blog",
+      "lastSyncAt": "2026-05-01T02:25:48.038Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "granada-hoy-granada",
+      "lastSyncAt": "2026-05-01T02:25:48.038Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "granada-hoy-tecnologia",
+      "lastSyncAt": "2026-05-01T02:25:48.038Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "ugr-rss",
+      "lastSyncAt": "2026-05-01T02:25:48.038Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "cinco-dias-rss",
+      "lastSyncAt": "2026-05-01T02:25:48.038Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "eleconomista-rss",
+      "lastSyncAt": "2026-05-01T02:25:48.038Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "granada-hoy-economia",
+      "lastSyncAt": "2026-05-01T02:25:48.039Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "tecnoempleo-granada-programador",
+      "lastSyncAt": "2026-05-01T02:25:48.039Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "tecnoempleo-granada-api",
+      "lastSyncAt": "2026-05-01T02:25:48.039Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    },
+    {
+      "sourceId": "tecnoempleo-granada-analista",
+      "lastSyncAt": "2026-05-01T02:25:48.039Z",
+      "ok": true,
+      "itemsAdded": 0,
+      "itemsUpdated": 0
+    }
+  ]
+}
