@@ -1,4 +1,4 @@
-# D1OS
+# al-lio
 
 Panel personal para organizar tareas, calendario, hackathons, cursos, enlaces y busqueda de empleo tech. En la interfaz la app se presenta como **Al-Lio**.
 
