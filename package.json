@@ -33,7 +33,12 @@
     "ci": "npm run lint && npm run test && npm run build",
     "validate:deploy": "node scripts/validate-deploy-readiness.mjs",
     "postgres:setup": "node scripts/setup-postgres-schema.mjs",
-    "validate:postgres-migration": "node scripts/validate-postgres-migration-readiness.mjs"
+    "validate:postgres-migration": "node scripts/validate-postgres-migration-readiness.mjs",
+    "postgres:sandbox:up": "docker compose -f infra/docker-compose.postgres-sandbox.yml up -d",
+    "postgres:sandbox:down": "docker compose -f infra/docker-compose.postgres-sandbox.yml down",
+    "postgres:sandbox:down:volumes": "docker compose -f infra/docker-compose.postgres-sandbox.yml down -v",
+    "postgres:sandbox:logs": "docker compose -f infra/docker-compose.postgres-sandbox.yml logs -f aidraft_postgres_sandbox",
+    "postgres:schema:validate-sandbox": "node scripts/validate-postgres-schema-sandbox.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",

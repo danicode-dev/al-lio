@@ -345,7 +345,7 @@ Los datos en Supabase no se tocan durante la migración (solo se copian), por lo
 ## 10. Tareas futuras sugeridas
 
 1. **[Fase 1]** Añadir `aidraft_postgres` al `docker-compose.prod.yml` y crear schema sin Supabase. ✅ COMPLETADO
-2. **[Fase 2]** Validar schema localmente, migraciones locales, plan de importación dry-run. Sin exportar datos reales, sin tocar Supabase remoto ni VPS.
+2. **[Fase 2]** VPS sandbox PostgreSQL validation — validar schema en sandbox aislado, plan de importación dry-run. Sin exportar datos reales, sin tocar Supabase remoto ni VPS de producción.
 3. **[Fase 3]** Script de exportación/importación de datos desde Supabase a `aidraft_postgres` (solo tras Fase 2).
 4. **[Fase 4]** Reemplazar `lib/supabase/` por `lib/db/pool.ts` con `pg`. ✅ POOL CREADO — pendiente reemplazar lib/supabase/
 5. **[Fase 5]** Actualizar scripts de import a `pg` + `DATABASE_URL`.
@@ -360,7 +360,7 @@ Los datos en Supabase no se tocan durante la migración (solo se copian), por lo
 
 ### Fase 1 — PostgreSQL self-managed foundation (2026-06-10)
 
-**Estado: EN PROGRESO**
+**Estado: COMPLETADO (mergeado en main — PR #2)**
 
 Completado en esta fase:
 
@@ -384,4 +384,33 @@ Completado en esta fase:
 - `app/api/auth/login/route.ts` — login/registro vía Supabase Auth
 - Scripts de importación — usan `@supabase/supabase-js`
 
-**Próxima fase recomendada:** Fase 2 — validación local del schema, migraciones locales y plan de importación dry-run. No se exportan datos reales, no se toca Supabase remoto, no se toca VPS, no se aplica schema real. Solo se valida que el schema funciona en PostgreSQL local y se prepara el plan de importación seguro.
+**Próxima fase recomendada:** Fase 2 — ver sección siguiente.
+
+---
+
+### Fase 2 — VPS sandbox PostgreSQL validation (2026-06-10)
+
+**Estado: EN PROGRESO**
+
+Preparado en esta fase (sin tocar datos reales, Supabase remoto, VPS ni producción):
+
+| Artefacto | Estado |
+|---|---|
+| `infra/docker-compose.postgres-sandbox.yml` — PostgreSQL sandbox aislado en 127.0.0.1:54329 | ✅ |
+| `scripts/validate-postgres-schema-sandbox.mjs` — aplica schema + valida tablas, índices, triggers | ✅ |
+| `infra/postgres/fixtures/minimal-sandbox-seed.sql` — datos mínimos no sensibles | ✅ |
+| `docs/POSTGRES_MIGRATION_PHASE_2.md` — documentación, plan dry-run y checklist Fase 3 | ✅ |
+| `package.json` — scripts `postgres:sandbox:up/down/logs/down:volumes` y `postgres:schema:validate-sandbox` | ✅ |
+| `scripts/validate-postgres-migration-readiness.mjs` — actualizado con checks de Fase 2 | ✅ |
+
+**No se ha hecho en esta fase:**
+- No se exportaron datos reales de Supabase
+- No se tocó Supabase remoto
+- No se tocó VPS ni `docker-compose.prod.yml`
+- No se aplicó schema en producción
+- No se eliminó Supabase de la aplicación
+- No se desplegó nada
+
+**Próxima fase:** Fase 3 — Export/import de datos desde Supabase a `aidraft_postgres`. Solo
+se inicia tras completar el checklist de Fase 2 en `docs/POSTGRES_MIGRATION_PHASE_2.md` y
+obtener confirmación explícita.
