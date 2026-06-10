@@ -5,6 +5,10 @@
  * Uso: node scripts/validate-postgres-schema-local.mjs
  * Requiere: PostgreSQL local levantado (npm run postgres:local:up)
  * Por defecto: postgresql://aidraft:aidraft_local_password@localhost:54329/aidraft
+ *
+ * IMPORTANTE: Este script no carga .env ni usa DATABASE_URL para evitar
+ * conectar accidentalmente a Supabase, VPS o producción.
+ * Override seguro: POSTGRES_LOCAL_DATABASE_URL=postgresql://...@localhost:54329/aidraft
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -14,27 +18,31 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const root = process.cwd();
 
-// ── Cargar .env si existe ─────────────────────────────────────────────────────
-const envPath = join(root, ".env");
-if (existsSync(envPath)) {
-  const lines = readFileSync(envPath, "utf-8").split(/\r?\n/);
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (!line || line.startsWith("#")) continue;
-    const eq = line.indexOf("=");
-    if (eq === -1) continue;
-    const key = line.slice(0, eq).trim();
-    const value = line.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
+// No se carga .env ni se lee DATABASE_URL — solo POSTGRES_LOCAL_DATABASE_URL.
+const LOCAL_DEFAULT = "postgresql://aidraft:aidraft_local_password@localhost:54329/aidraft";
+const connectionString = process.env.POSTGRES_LOCAL_DATABASE_URL ?? LOCAL_DEFAULT;
+
+// Validar que la URL es local antes de conectar
+let parsed;
+try {
+  parsed = new URL(connectionString);
+} catch {
+  console.error("ERROR: POSTGRES_LOCAL_DATABASE_URL no es una URL válida.");
+  process.exit(1);
 }
 
-const LOCAL_DEFAULT = "postgresql://aidraft:aidraft_local_password@localhost:54329/aidraft";
-const connectionString = process.env.DATABASE_URL ?? LOCAL_DEFAULT;
+const ALLOWED_HOSTS = ["localhost", "127.0.0.1"];
+const EXPECTED_PORT = "54329";
+if (!ALLOWED_HOSTS.includes(parsed.hostname) || parsed.port !== EXPECTED_PORT) {
+  console.error(
+    `ERROR: Solo se permite validación local (localhost:${EXPECTED_PORT}).\n` +
+    `Host detectado: ${parsed.hostname}:${parsed.port || "(default)"}\n` +
+    "Usa POSTGRES_LOCAL_DATABASE_URL apuntando a localhost:54329."
+  );
+  process.exit(1);
+}
 
-// No imprimir la URL completa — podría contener password real si se sobreescribe DATABASE_URL
-const safeHost = connectionString.replace(/\/\/[^@]+@/, "//***@");
-console.log(`\nConectando a: ${safeHost}`);
+console.log(`\nConectando a: ${parsed.hostname}:${parsed.port}/${parsed.pathname.slice(1)}`);
 
 // ── Verificar schema.sql ──────────────────────────────────────────────────────
 const schemaPath = join(root, "infra", "postgres", "schema.sql");

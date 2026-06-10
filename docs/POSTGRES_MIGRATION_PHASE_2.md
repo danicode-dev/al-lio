@@ -83,11 +83,23 @@ DATABASE_URL=postgresql://aidraft:aidraft_local_password@localhost:54329/aidraft
   npm run postgres:setup
 ```
 
-O ejecutar directamente la validación completa:
+O ejecutar directamente la validación completa (no requiere ninguna variable de entorno —
+usa `localhost:54329` por defecto):
 
 ```bash
 npm run postgres:schema:validate-local
 ```
+
+Si necesitas apuntar a un host local diferente (nunca a producción):
+
+```bash
+POSTGRES_LOCAL_DATABASE_URL=postgresql://aidraft:aidraft_local_password@127.0.0.1:54329/aidraft \
+  npm run postgres:schema:validate-local
+```
+
+El script rechaza cualquier URL que no apunte a `localhost` o `127.0.0.1` en el puerto
+`54329`, impidiendo conectar accidentalmente a Supabase, VPS o producción. No carga
+`.env` ni lee `DATABASE_URL`.
 
 ---
 
