@@ -10,13 +10,39 @@ services:
       - "3000"
     networks:
       - danicode_web
+      - aidraft_internal
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    depends_on:
+      aidraft_postgres:
+        condition: service_healthy
+
+  aidraft_postgres:
+    image: postgres:17-alpine
+    container_name: aidraft_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aidraft
+      POSTGRES_USER: aidraft
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - aidraft_postgres_data:/var/lib/postgresql/data
+    networks:
+      - aidraft_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aidraft -d aidraft"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   danicode_web:
     external: true
+  aidraft_internal:
+
+volumes:
+  aidraft_postgres_data:
