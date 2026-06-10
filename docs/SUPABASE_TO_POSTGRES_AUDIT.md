@@ -344,14 +344,15 @@ Los datos en Supabase no se tocan durante la migración (solo se copian), por lo
 
 ## 10. Tareas futuras sugeridas
 
-1. **[Fase 1-2]** Añadir `aidraft_postgres` al `docker-compose.prod.yml` y crear schema sin Supabase. ✅ COMPLETADO
-2. **[Fase 3]** Script de exportación/importación de datos desde Supabase a `aidraft_postgres`.
-3. **[Fase 4]** Reemplazar `lib/supabase/` por `lib/db/pool.ts` con `pg`. ✅ POOL CREADO — pendiente reemplazar lib/supabase/
-4. **[Fase 5]** Actualizar scripts de import a `pg` + `DATABASE_URL`.
-5. **[Fase 6]** Implementar auth propio: tabla `users` + bcryptjs + iron-session/JWT.
-6. **[Fase 6]** Adaptar Google Calendar OAuth para no depender de Supabase Auth.
-7. **[Post-migración]** Eliminar dependencias `@supabase/supabase-js` y `@supabase/ssr`.
-8. **[Post-migración]** Añadir backup automático de `aidraft_postgres` (mismo patrón que Project OS).
+1. **[Fase 1]** Añadir `aidraft_postgres` al `docker-compose.prod.yml` y crear schema sin Supabase. ✅ COMPLETADO
+2. **[Fase 2]** Validar schema localmente, migraciones locales, plan de importación dry-run. Sin exportar datos reales, sin tocar Supabase remoto ni VPS.
+3. **[Fase 3]** Script de exportación/importación de datos desde Supabase a `aidraft_postgres` (solo tras Fase 2).
+4. **[Fase 4]** Reemplazar `lib/supabase/` por `lib/db/pool.ts` con `pg`. ✅ POOL CREADO — pendiente reemplazar lib/supabase/
+5. **[Fase 5]** Actualizar scripts de import a `pg` + `DATABASE_URL`.
+6. **[Fase 6]** Implementar auth propio: tabla `users` + bcryptjs + iron-session/JWT.
+7. **[Fase 6]** Adaptar Google Calendar OAuth para no depender de Supabase Auth.
+8. **[Post-migración]** Eliminar dependencias `@supabase/supabase-js` y `@supabase/ssr`.
+9. **[Post-migración]** Añadir backup automático de `aidraft_postgres` (mismo patrón que Project OS).
 
 ---
 
@@ -383,4 +384,4 @@ Completado en esta fase:
 - `app/api/auth/login/route.ts` — login/registro vía Supabase Auth
 - Scripts de importación — usan `@supabase/supabase-js`
 
-**Próxima fase recomendada:** Fase 3 — exportar datos de Supabase e importarlos en `aidraft_postgres`.
+**Próxima fase recomendada:** Fase 2 — validación local del schema, migraciones locales y plan de importación dry-run. No se exportan datos reales, no se toca Supabase remoto, no se toca VPS, no se aplica schema real. Solo se valida que el schema funciona en PostgreSQL local y se prepara el plan de importación seguro.

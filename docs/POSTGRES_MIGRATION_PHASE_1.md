@@ -103,14 +103,30 @@ No hay migración de datos en esta fase, por lo que no hay estado que deshacer e
 
 1. Copiar `.env.production.example` a `.env` y rellenar `POSTGRES_PASSWORD` y `DATABASE_URL`
 2. Arrancar el stack: `docker compose -f infra/docker-compose.prod.yml up -d`
-3. Aplicar schema: `npm run postgres:setup`
-4. Verificar: `npm run validate:postgres-migration`
+3. Aplicar schema — **requiere Node y las dependencias del repo instaladas**. El contenedor
+   runtime (`aidraft_web` standalone) no incluye npm ni los scripts. Dos opciones:
+   - Desde un checkout del repo en una máquina con Node 22 y `npm install` hecho:
+     ```bash
+     DATABASE_URL=postgresql://aidraft:<password>@<host>:5432/aidraft npm run postgres:setup
+     ```
+   - Desde un contenedor temporal con el repo montado:
+     ```bash
+     docker run --rm -v $(pwd):/app -w /app --network <red-donde-esté-postgres> \
+       -e DATABASE_URL=postgresql://aidraft:<password>@aidraft_postgres:5432/aidraft \
+       node:22-alpine sh -c "npm install --ignore-scripts && node scripts/setup-postgres-schema.mjs"
+     ```
+   No instalar Node ni npm directamente en el host VPS solo para este paso.
+4. Verificar: `npm run validate:postgres-migration` (no necesita conexión real)
 
 ---
 
 ## Próximas fases
 
-- **Fase 3** — Exportar datos de Supabase e importarlos en `aidraft_postgres`
+- **Fase 2 (siguiente)** — Validación local del schema, migraciones locales y plan de importación
+  dry-run. No se exportan datos reales, no se toca Supabase remoto, no se toca VPS, no se aplica
+  schema real. Solo se valida que el schema funciona en un PostgreSQL local y se prepara el plan
+  de importación seguro.
+- **Fase 3** — Export/import de datos desde Supabase a `aidraft_postgres` (solo tras Fase 2)
 - **Fase 4** — Reemplazar `lib/supabase/` por queries `lib/db/pool.ts`
 - **Fase 5** — Actualizar scripts de importación a `pg` + `DATABASE_URL`
 - **Fase 6** — Auth propio: `bcryptjs` + `iron-session`/JWT, eliminar Supabase Auth

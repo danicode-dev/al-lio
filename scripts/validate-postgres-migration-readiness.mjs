@@ -82,8 +82,18 @@ check("script validate:postgres-migration existe", Boolean(pkg.scripts?.["valida
 console.log("\n── Seguridad ──");
 const envExample = existsSync(envPath) ? readFileSync(envPath, "utf8") : "";
 check("No hay allowedHosts: true", !envExample.includes("allowedHosts: true"));
-const noSecrets = !envExample.match(/[a-z0-9]{40,}/i) || envExample.includes("REPLACE_ME");
-check("No hay secretos reales obvios en .env.production.example", noSecrets);
+// Check non-comment, non-placeholder lines for long tokens that could be real secrets.
+// Skips lines starting with # and lines whose value contains REPLACE_ME.
+const suspiciousToken = envExample.split(/\r?\n/).some(line => {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith("#")) return false;
+  const eq = trimmed.indexOf("=");
+  if (eq === -1) return false;
+  const value = trimmed.slice(eq + 1).trim();
+  if (!value || value.includes("REPLACE_ME")) return false;
+  return /[a-z0-9]{40,}/i.test(value);
+});
+check("No hay secretos reales obvios en .env.production.example", !suspiciousToken);
 
 console.log("");
 if (errors > 0) {
