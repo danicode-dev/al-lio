@@ -66,10 +66,93 @@ const prodFiles = [
 ];
 for (const f of prodFiles) {
   const content = read(f);
-  // Permitimos "aidraft" en comentarios/docs pero no como nombre funcional de contenedor/red
   const hasAidraftService = /^\s*(aidraft_web|aidraft_postgres|aidraft_internal):/m.test(content);
   check(`${f}: sin nombres funcionales aidraft_* como servicio/red`, !hasAidraftService);
 }
+
+// ── Scripts de import/verify producción ──────────────────────────────────────
+
+console.log("\n── Scripts de migración producción ──");
+const importProd = read("scripts/migration/import-production-data.mjs");
+const verifyProd = read("scripts/migration/verify-production-migration.mjs");
+
+check(
+  "import-production-data.mjs existe",
+  existsSync(join(root, "scripts/migration/import-production-data.mjs"))
+);
+check(
+  "import-production: requiere AL_LIO_ALLOW_PRODUCTION_IMPORT",
+  importProd.includes("AL_LIO_ALLOW_PRODUCTION_IMPORT")
+);
+check(
+  "import-production: requiere AL_LIO_PRODUCTION_IMPORT_CONFIRMATION",
+  importProd.includes("AL_LIO_PRODUCTION_IMPORT_CONFIRMATION")
+);
+check(
+  "import-production: confirmación exacta IMPORT_TO_AL_LIO_PRODUCTION_POSTGRES",
+  importProd.includes("IMPORT_TO_AL_LIO_PRODUCTION_POSTGRES")
+);
+check(
+  "import-production: rechaza sandbox 127.0.0.1:54329",
+  importProd.includes("127.0.0.1") && importProd.includes("54329")
+);
+check(
+  "import-production: valida database al_lio",
+  importProd.includes('"al_lio"')
+);
+check(
+  "import-production: valida user al_lio",
+  importProd.includes('parsed.username !== "al_lio"')
+);
+check(
+  "import-production: no imprime DATABASE_URL completa",
+  !importProd.includes("console.log(connectionString") &&
+  !importProd.includes("console.log(DATABASE_URL")
+);
+check(
+  "import-production: no imprime password",
+  !importProd.includes("parsed.password") &&
+  !importProd.includes("console.log(password")
+);
+check(
+  "import-production: usa transacción BEGIN/COMMIT",
+  importProd.includes("BEGIN") && importProd.includes("COMMIT")
+);
+
+check(
+  "verify-production-migration.mjs existe",
+  existsSync(join(root, "scripts/migration/verify-production-migration.mjs"))
+);
+check(
+  "verify-production: requiere AL_LIO_ALLOW_PRODUCTION_IMPORT",
+  verifyProd.includes("AL_LIO_ALLOW_PRODUCTION_IMPORT")
+);
+check(
+  "verify-production: requiere AL_LIO_PRODUCTION_IMPORT_CONFIRMATION",
+  verifyProd.includes("AL_LIO_PRODUCTION_IMPORT_CONFIRMATION")
+);
+check(
+  "verify-production: rechaza sandbox 127.0.0.1:54329",
+  verifyProd.includes("127.0.0.1") && verifyProd.includes("54329")
+);
+check(
+  "verify-production: valida database al_lio",
+  verifyProd.includes('"al_lio"')
+);
+check(
+  "verify-production: valida user al_lio",
+  verifyProd.includes('parsed.username !== "al_lio"')
+);
+check(
+  "verify-production: no imprime DATABASE_URL completa",
+  !verifyProd.includes("console.log(connectionString") &&
+  !verifyProd.includes("console.log(DATABASE_URL")
+);
+check(
+  "verify-production: no imprime password",
+  !verifyProd.includes("parsed.password") &&
+  !verifyProd.includes("console.log(password")
+);
 
 // ── Git staged — seguridad ────────────────────────────────────────────────────
 
