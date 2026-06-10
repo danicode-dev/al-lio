@@ -417,7 +417,7 @@ Preparado en esta fase (sin tocar datos reales, Supabase remoto, VPS ni producci
 
 ### Fase 3A — Data migration tooling (2026-06-10)
 
-**Estado: EN PROGRESO — herramientas creadas, export/import real pendiente de autorización**
+**Estado: COMPLETADO (mergeado en main — PR #4)**
 
 Preparado en esta fase (no se exportó ni importó nada real):
 
@@ -432,7 +432,7 @@ Preparado en esta fase (no se exportó ni importó nada real):
 | `package.json` — scripts `migration:export:supabase`, `migration:import:sandbox`, `migration:verify:sandbox`, `migration:validate:artifacts` | ✅ |
 | `scripts/validate-postgres-migration-readiness.mjs` — actualizado con checks de Fase 3A | ✅ |
 
-**No se ha hecho en esta fase:**
+**No se hizo en esta fase:**
 - No se exportaron datos reales de Supabase
 - No se tocó Supabase remoto
 - No se tocó VPS de producción ni `docker-compose.prod.yml`
@@ -440,6 +440,41 @@ Preparado en esta fase (no se exportó ni importó nada real):
 - No se eliminó Supabase de la aplicación
 - No se desplegó nada
 
-**Próxima fase:** Fase 3B — ejecutar export real desde Supabase e import al VPS sandbox.
-Solo con autorización explícita de Dani y tras completar el checklist de
-`docs/POSTGRES_MIGRATION_PHASE_3.md`.
+---
+
+### Fase 3B — Sandbox data migration execution (2026-06-11)
+
+**Estado: COMPLETADO — VPS sandbox validado**
+
+Export desde Supabase ejecutado en modo solo lectura. Import al PostgreSQL sandbox
+completado. Verificación de recuentos OK. No se tocó producción.
+
+**Resultado real:**
+
+| Tabla | Filas |
+|---|---|
+| `users` | 1 |
+| `profiles` | 1 |
+| `sources` | 0 |
+| `quick_searches` | 0 |
+| `opportunities` | 0 |
+| `hackathons` | 21 |
+| `courses` | 22 |
+| `tasks` | 15 |
+| `reminders` | 0 |
+| `quick_links` | 0 |
+| `tech_opportunities` | 43 |
+| **Total** | **103** |
+
+- `auth.users` accesible directamente (no se usó fallback de email placeholder)
+- Filas insertadas: 103 — Saltadas: 0
+- `migration:verify:sandbox`: 11 tablas OK, recuentos coinciden con manifest
+- Artifacts generados solo en VPS, no commiteados
+
+**No se hizo en esta fase:**
+- No se tocó producción ni `docker-compose.prod.yml`
+- No se tocó Caddy ni DNS
+- No se modificó auth ni se eliminaron dependencias Supabase
+- No se desplegó nada
+
+**Próxima fase:** Fase 4 — reemplazar `lib/supabase/` con queries directas usando `lib/db/pool.ts`.
