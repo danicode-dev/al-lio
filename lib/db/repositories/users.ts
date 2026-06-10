@@ -18,6 +18,15 @@ export async function getUserByEmail(email: string): Promise<DbUser | null> {
   return res.rows[0] ?? null;
 }
 
+export async function upsertUser(id: string, email: string): Promise<void> {
+  await query(
+    `INSERT INTO public.users (id, email)
+     VALUES ($1, $2)
+     ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email`,
+    [id, email]
+  );
+}
+
 export async function updatePasswordHash(id: string, hash: string): Promise<void> {
   await query(
     `UPDATE public.users SET password_hash = $1 WHERE id = $2`,

@@ -49,6 +49,16 @@ check("getCurrentUserId exportado", cu.includes("export async function getCurren
 check("tryGetCurrentUserId exportado", cu.includes("export async function tryGetCurrentUserId"));
 check("server-only importado", cu.includes("server-only"));
 
+// ── lib/auth/sync-postgres-user.ts ───────────────────────────────────────────
+
+console.log("\n── lib/auth/sync-postgres-user.ts ──");
+const sync = read("lib/auth/sync-postgres-user.ts");
+check("lib/auth/sync-postgres-user.ts existe", existsSync(join(root, "lib/auth/sync-postgres-user.ts")));
+check("ensurePostgresUserForSupabaseUser exportado", sync.includes("export async function ensurePostgresUserForSupabaseUser"));
+check("sync: server-only importado", sync.includes("server-only"));
+check("sync: usa upsertUser", sync.includes("upsertUser"));
+check("sync: usa upsertProfile", sync.includes("upsertProfile"));
+
 // ── lib/data.ts usa PostgreSQL ────────────────────────────────────────────────
 
 console.log("\n── lib/data.ts ──");
@@ -62,6 +72,7 @@ console.log("\n── lib/actions.ts ──");
 const actions = read("lib/actions.ts");
 check("lib/actions.ts importa repositorios", actions.includes("lib/db/repositories/"));
 check("lib/actions.ts importa getCurrentUserId", actions.includes("getCurrentUserId"));
+check("lib/actions.ts importa ensurePostgresUserForSupabaseUser", actions.includes("ensurePostgresUserForSupabaseUser"));
 check("lib/actions.ts no usa .from() de Supabase para datos (tasks/courses/etc)", !actions.includes('.from("tasks")') && !actions.includes('.from("courses")') && !actions.includes('.from("hackathons")'));
 
 // ── lib/db.ts usa PostgreSQL ──────────────────────────────────────────────────

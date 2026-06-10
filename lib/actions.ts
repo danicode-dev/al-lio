@@ -31,6 +31,7 @@ import {
   updateHackathon as pgUpdateHackathon,
 } from "@/lib/db/repositories/hackathons";
 import { createReminder as pgCreateReminder } from "@/lib/db/repositories/reminders";
+import { ensurePostgresUserForSupabaseUser } from "@/lib/auth/sync-postgres-user";
 
 const requiredText = z.string().trim().min(1);
 
@@ -48,8 +49,13 @@ export async function loginProfile(formData: FormData) {
   ].filter(Boolean) as string[];
 
   for (const pwd of passwords) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
-    if (!error) redirect("/dashboard");
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password: pwd });
+    if (!error) {
+      if (signInData.user) {
+        await ensurePostgresUserForSupabaseUser({ id: signInData.user.id, email: signInData.user.email!, displayName });
+      }
+      redirect("/dashboard");
+    }
   }
 
   const activePassword = process.env.PROFILES_SHARED_PASSWORD ?? "d1os-panel-2026";
@@ -63,7 +69,6 @@ export async function loginProfile(formData: FormData) {
     redirect("/login?error=" + encodeURIComponent(signUpError.message));
   }
 
-  // Profile upsert for new Supabase Auth users stays on Supabase until Fase 6.
   if (data.user) {
     await supabase.from("profiles").upsert({
       user_id: data.user.id,
@@ -72,6 +77,7 @@ export async function loginProfile(formData: FormData) {
       target_role: "Usuario D1OS",
       main_location: "Granada",
     });
+    await ensurePostgresUserForSupabaseUser({ id: data.user.id, email: data.user.email!, displayName });
   }
   redirect("/dashboard");
 }
@@ -82,7 +88,7 @@ export async function loginOrRegisterProfile(formData: FormData) {
   const displayName = asString(formData.get("display_name")) ?? "Usuario";
   const supabase = await createClient();
 
-  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
   if (signInError) {
     const { data, error: signUpError } = await supabase.auth.signUp({
@@ -109,7 +115,10 @@ export async function loginOrRegisterProfile(formData: FormData) {
         target_role: "Usuario D1OS",
         main_location: "Granada",
       });
+      await ensurePostgresUserForSupabaseUser({ id: data.user.id, email: data.user.email!, displayName });
     }
+  } else if (signInData.user) {
+    await ensurePostgresUserForSupabaseUser({ id: signInData.user.id, email: signInData.user.email!, displayName });
   }
 
   redirect("/dashboard");
@@ -134,6 +143,7 @@ export async function signUp(formData: FormData) {
       target_role: "Desarrollador Web Junior",
       main_location: "Granada",
     });
+    await ensurePostgresUserForSupabaseUser({ id: data.user.id, email: data.user.email!, displayName });
   }
   redirect("/dashboard");
 }
