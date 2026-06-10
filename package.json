@@ -30,7 +30,8 @@
     "verify:cheap": "npm run verify:startup && npm run lint",
     "verify:prod": "npm run stop:app && npm run build:clean && node scripts/smoke-production.mjs",
     "test": "npm run check:project && npm run typecheck",
-    "ci": "npm run lint && npm run test && npm run build"
+    "ci": "npm run lint && npm run test && npm run build",
+    "validate:deploy": "node scripts/validate-deploy-readiness.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
