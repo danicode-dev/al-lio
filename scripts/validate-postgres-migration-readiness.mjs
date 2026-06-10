@@ -76,34 +76,35 @@ if (existsSync(poolPath)) {
 
 console.log("\n── Archivos Fase 2 ──");
 check(
-  "infra/docker-compose.postgres-local.yml existe",
-  existsSync(join(root, "infra/docker-compose.postgres-local.yml"))
+  "infra/docker-compose.postgres-sandbox.yml existe",
+  existsSync(join(root, "infra/docker-compose.postgres-sandbox.yml"))
 );
 check(
-  "scripts/validate-postgres-schema-local.mjs existe",
-  existsSync(join(root, "scripts/validate-postgres-schema-local.mjs"))
+  "scripts/validate-postgres-schema-sandbox.mjs existe",
+  existsSync(join(root, "scripts/validate-postgres-schema-sandbox.mjs"))
 );
 check(
-  "infra/postgres/fixtures/minimal-local-seed.sql existe",
-  existsSync(join(root, "infra/postgres/fixtures/minimal-local-seed.sql"))
+  "infra/postgres/fixtures/minimal-sandbox-seed.sql existe",
+  existsSync(join(root, "infra/postgres/fixtures/minimal-sandbox-seed.sql"))
 );
 check(
   "docs/POSTGRES_MIGRATION_PHASE_2.md existe",
   existsSync(join(root, "docs/POSTGRES_MIGRATION_PHASE_2.md"))
 );
 
-const localComposePath = join(root, "infra/docker-compose.postgres-local.yml");
-if (existsSync(localComposePath)) {
-  const localCompose = readFileSync(localComposePath, "utf8");
-  check("compose local: aidraft_postgres_local definido", localCompose.includes("aidraft_postgres_local"));
-  check("compose local: postgres:17-alpine imagen", localCompose.includes("postgres:17-alpine"));
-  check("compose local: pg_isready healthcheck", localCompose.includes("pg_isready"));
-  check("compose local: no hay secretos reales (aidraft_local_password o REPLACE_ME)",
-    localCompose.includes("aidraft_local_password") || !localCompose.match(/password:\s*[^\s]{20,}/)
+const sandboxComposePath = join(root, "infra/docker-compose.postgres-sandbox.yml");
+if (existsSync(sandboxComposePath)) {
+  const sandboxCompose = readFileSync(sandboxComposePath, "utf8");
+  check("compose sandbox: aidraft_postgres_sandbox definido", sandboxCompose.includes("aidraft_postgres_sandbox"));
+  check("compose sandbox: postgres:17-alpine imagen", sandboxCompose.includes("postgres:17-alpine"));
+  check("compose sandbox: pg_isready healthcheck", sandboxCompose.includes("pg_isready"));
+  check("compose sandbox: puerto vinculado a 127.0.0.1 (no expuesto)", sandboxCompose.includes("127.0.0.1:54329"));
+  check("compose sandbox: no hay secretos reales (aidraft_sandbox_password)",
+    sandboxCompose.includes("aidraft_sandbox_password") || !sandboxCompose.match(/password:\s*[^\s]{20,}/)
   );
 }
 
-const seedPath = join(root, "infra/postgres/fixtures/minimal-local-seed.sql");
+const seedPath = join(root, "infra/postgres/fixtures/minimal-sandbox-seed.sql");
 if (existsSync(seedPath)) {
   const seed = readFileSync(seedPath, "utf8");
   check("fixtures: usa dominio .example.test (no email real)", seed.includes("example.test"));
@@ -114,8 +115,8 @@ console.log("\n── package.json scripts ──");
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 check("script postgres:setup existe", Boolean(pkg.scripts?.["postgres:setup"]));
 check("script validate:postgres-migration existe", Boolean(pkg.scripts?.["validate:postgres-migration"]));
-check("script postgres:local:up existe", Boolean(pkg.scripts?.["postgres:local:up"]));
-check("script postgres:schema:validate-local existe", Boolean(pkg.scripts?.["postgres:schema:validate-local"]));
+check("script postgres:sandbox:up existe", Boolean(pkg.scripts?.["postgres:sandbox:up"]));
+check("script postgres:schema:validate-sandbox existe", Boolean(pkg.scripts?.["postgres:schema:validate-sandbox"]));
 
 console.log("\n── Seguridad ──");
 const envExample = existsSync(envPath) ? readFileSync(envPath, "utf8") : "";

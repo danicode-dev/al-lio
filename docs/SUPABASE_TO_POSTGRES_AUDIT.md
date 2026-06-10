@@ -396,11 +396,11 @@ Preparado en esta fase (sin tocar datos reales, Supabase remoto, VPS ni producci
 
 | Artefacto | Estado |
 |---|---|
-| `infra/docker-compose.postgres-local.yml` — PostgreSQL local/temporal para pruebas | ✅ |
-| `scripts/validate-postgres-schema-local.mjs` — aplica schema + valida tablas, índices, triggers | ✅ |
-| `infra/postgres/fixtures/minimal-local-seed.sql` — datos mínimos no sensibles | ✅ |
+| `infra/docker-compose.postgres-sandbox.yml` — PostgreSQL sandbox aislado en 127.0.0.1:54329 | ✅ |
+| `scripts/validate-postgres-schema-sandbox.mjs` — aplica schema + valida tablas, índices, triggers | ✅ |
+| `infra/postgres/fixtures/minimal-sandbox-seed.sql` — datos mínimos no sensibles | ✅ |
 | `docs/POSTGRES_MIGRATION_PHASE_2.md` — documentación, plan dry-run y checklist Fase 3 | ✅ |
-| `package.json` — scripts `postgres:local:up/down/logs` y `postgres:schema:validate-local` | ✅ |
+| `package.json` — scripts `postgres:sandbox:up/down/logs/down:volumes` y `postgres:schema:validate-sandbox` | ✅ |
 | `scripts/validate-postgres-migration-readiness.mjs` — actualizado con checks de Fase 2 | ✅ |
 
 **No se ha hecho en esta fase:**

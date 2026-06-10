@@ -1,7 +1,7 @@
 -- ============================================================
--- Aidraft — Fixtures mínimos para validación local
+-- Aidraft — Fixtures mínimos para validación sandbox
 -- ============================================================
--- Solo para PostgreSQL local (docker-compose.postgres-local.yml).
+-- Solo para PostgreSQL sandbox (docker-compose.postgres-sandbox.yml).
 -- No usar en producción. No contiene datos reales.
 -- Emails: *.example.test (dominio reservado, nunca real).
 -- ============================================================
@@ -39,7 +39,7 @@ VALUES (
 INSERT INTO public.tasks (user_id, title, status, priority)
 VALUES (
   '00000000-0000-0000-0000-000000000001',
-  'Revisar oportunidades de prueba',
+  'Revisar oportunidades sandbox',
   'pendiente',
   'media'
 ) ON CONFLICT DO NOTHING;

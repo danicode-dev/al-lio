@@ -1,0 +1,21 @@
+services:
+  aidraft_postgres_sandbox:
+    image: postgres:17-alpine
+    container_name: aidraft_postgres_sandbox
+    environment:
+      POSTGRES_USER: aidraft_sandbox
+      POSTGRES_PASSWORD: aidraft_sandbox_password
+      POSTGRES_DB: aidraft_sandbox
+    ports:
+      - "127.0.0.1:54329:5432"
+    volumes:
+      - aidraft_postgres_sandbox_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aidraft_sandbox -d aidraft_sandbox"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  aidraft_postgres_sandbox_data:
