@@ -111,12 +111,73 @@ if (existsSync(seedPath)) {
   check("fixtures: no contiene emails reales obvios", !seed.match(/@(?!example\.test)[a-z0-9.-]+\.[a-z]{2,}/i));
 }
 
+console.log("\n── Archivos Fase 3A ──");
+check(
+  "scripts/migration/export-supabase-data.mjs existe",
+  existsSync(join(root, "scripts/migration/export-supabase-data.mjs"))
+);
+check(
+  "scripts/migration/import-sandbox-data.mjs existe",
+  existsSync(join(root, "scripts/migration/import-sandbox-data.mjs"))
+);
+check(
+  "scripts/migration/verify-sandbox-migration.mjs existe",
+  existsSync(join(root, "scripts/migration/verify-sandbox-migration.mjs"))
+);
+check(
+  "scripts/migration/validate-migration-artifacts.mjs existe",
+  existsSync(join(root, "scripts/migration/validate-migration-artifacts.mjs"))
+);
+check(
+  "docs/POSTGRES_MIGRATION_PHASE_3.md existe",
+  existsSync(join(root, "docs/POSTGRES_MIGRATION_PHASE_3.md"))
+);
+check(
+  "migration-artifacts/ en .gitignore",
+  existsSync(join(root, ".gitignore")) &&
+  readFileSync(join(root, ".gitignore"), "utf8").includes("migration-artifacts")
+);
+
+const exportScriptPath = join(root, "scripts/migration/export-supabase-data.mjs");
+if (existsSync(exportScriptPath)) {
+  const exportScript = readFileSync(exportScriptPath, "utf8");
+  check(
+    "export script: requiere AIDRAFT_ALLOW_SUPABASE_EXPORT",
+    exportScript.includes("AIDRAFT_ALLOW_SUPABASE_EXPORT")
+  );
+  check(
+    "export script: requiere AIDRAFT_EXPORT_CONFIRMATION",
+    exportScript.includes("AIDRAFT_EXPORT_CONFIRMATION")
+  );
+  check(
+    "export script: no imprime SUPABASE_DB_URL completa",
+    !exportScript.includes("console.log(supabaseUrl") &&
+    !exportScript.includes("console.error(supabaseUrl")
+  );
+}
+
+const importScriptPath = join(root, "scripts/migration/import-sandbox-data.mjs");
+if (existsSync(importScriptPath)) {
+  const importScript = readFileSync(importScriptPath, "utf8");
+  check(
+    "import script: valida host sandbox antes de conectar",
+    importScript.includes("ALLOWED_HOSTS") && importScript.includes("127.0.0.1")
+  );
+  check(
+    "import script: usa transacción (BEGIN/COMMIT)",
+    importScript.includes("BEGIN") && importScript.includes("COMMIT")
+  );
+}
+
 console.log("\n── package.json scripts ──");
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 check("script postgres:setup existe", Boolean(pkg.scripts?.["postgres:setup"]));
 check("script validate:postgres-migration existe", Boolean(pkg.scripts?.["validate:postgres-migration"]));
 check("script postgres:sandbox:up existe", Boolean(pkg.scripts?.["postgres:sandbox:up"]));
 check("script postgres:schema:validate-sandbox existe", Boolean(pkg.scripts?.["postgres:schema:validate-sandbox"]));
+check("script migration:export:supabase existe", Boolean(pkg.scripts?.["migration:export:supabase"]));
+check("script migration:import:sandbox existe", Boolean(pkg.scripts?.["migration:import:sandbox"]));
+check("script migration:validate:artifacts existe", Boolean(pkg.scripts?.["migration:validate:artifacts"]));
 
 console.log("\n── Seguridad ──");
 const envExample = existsSync(envPath) ? readFileSync(envPath, "utf8") : "";
