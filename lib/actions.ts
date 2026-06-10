@@ -70,13 +70,6 @@ export async function loginProfile(formData: FormData) {
   }
 
   if (data.user) {
-    await supabase.from("profiles").upsert({
-      user_id: data.user.id,
-      display_name: displayName,
-      full_name: displayName,
-      target_role: "Usuario D1OS",
-      main_location: "Granada",
-    });
     await ensurePostgresUserForSupabaseUser({ id: data.user.id, email: data.user.email!, displayName });
   }
   redirect("/dashboard");
@@ -108,13 +101,6 @@ export async function loginOrRegisterProfile(formData: FormData) {
     }
 
     if (data.user) {
-      await supabase.from("profiles").upsert({
-        user_id: data.user.id,
-        display_name: displayName,
-        full_name: displayName,
-        target_role: "Usuario D1OS",
-        main_location: "Granada",
-      });
       await ensurePostgresUserForSupabaseUser({ id: data.user.id, email: data.user.email!, displayName });
     }
   } else if (signInData.user) {
@@ -136,13 +122,6 @@ export async function signUp(formData: FormData) {
   });
   if (error) redirect("/register?error=No%20se%20pudo%20crear%20la%20cuenta");
   if (data.user) {
-    await supabase.from("profiles").upsert({
-      user_id: data.user.id,
-      display_name: displayName,
-      full_name: displayName,
-      target_role: "Desarrollador Web Junior",
-      main_location: "Granada",
-    });
     await ensurePostgresUserForSupabaseUser({ id: data.user.id, email: data.user.email!, displayName });
   }
   redirect("/dashboard");

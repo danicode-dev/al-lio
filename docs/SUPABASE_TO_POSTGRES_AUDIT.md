@@ -503,10 +503,10 @@ de negocio migradas a PostgreSQL propio. Auth sigue en Supabase (pendiente Fase 
 | `docs/POSTGRES_APP_INTEGRATION_AUDIT.md` | ✅ |
 | `docs/POSTGRES_MIGRATION_PHASE_4.md` | ✅ |
 
-**Dependencias Supabase restantes (post-Fase 4):**
+**Dependencias Supabase restantes (post-Fase 4 + fix profiles):**
 - Auth: `loginProfile`, `signOut`, `middleware.ts`, `lib/auth/google.ts` → Fase 6
 - Scripts de importación → Fase 5
-- `profile.upsert` en registro de nuevos usuarios → Fase 6
+- `profile.upsert` en Supabase: **eliminado** — sustituido por `ensurePostgresUserForSupabaseUser` (PostgreSQL)
 
 **No se hizo en esta fase:**
 - No se tocó VPS ni producción

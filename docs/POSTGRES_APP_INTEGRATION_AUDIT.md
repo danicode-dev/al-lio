@@ -37,7 +37,7 @@
 | `signUp` | `auth.signUp` | ⏳ Pendiente Fase 6 |
 | `signOut` | `auth.signOut` | ⏳ Pendiente Fase 6 |
 | `seedHackathons` | RPC `seed_hackathons_for_current_user` | ⛔ Deprecated (RPC no existe en PostgreSQL propio) |
-| `profiles.upsert` dentro de auth | Supabase `.from("profiles")` | ⏳ Pendiente Fase 6 — solo para nuevos usuarios |
+| `profiles.upsert` dentro de auth | Supabase `.from("profiles")` | ✅ Eliminado — sustituido por `ensurePostgresUserForSupabaseUser` |
 
 ### lib/db.ts (generic insert/update/delete)
 | Estado |
@@ -57,7 +57,7 @@
 | `courses` | DELETE LIKE + INSERT | ✅ Migrado a repositorios PostgreSQL |
 | `auth.getUser()` | Auth | ⏳ Pendiente Fase 6 |
 
-### Dependencias Supabase restantes (post-Fase 4)
+### Dependencias Supabase restantes (post-Fase 4 + fix profiles)
 
 | Archivo | Uso | Fase de migración |
 |---|---|---|
@@ -74,6 +74,8 @@
 | `scripts/import-tech-opportunities.mjs` | `tech_opportunities.upsert` | Fase 5 |
 | `scripts/import-courses.mjs` | `courses.upsert` | Fase 5 |
 | `scripts/import-hackathons.mjs` | `hackathons.upsert` | Fase 5 |
+
+**Nota:** `profiles.upsert` en Supabase ha sido eliminado de `lib/actions.ts`. Nuevos usuarios tienen `public.users` + `public.profiles` en PostgreSQL propio gracias a `ensurePostgresUserForSupabaseUser` (llamado tras cada sign-in/sign-up exitoso). Supabase Auth (`signInWithPassword`, `signUp`, `signOut`) sigue activo hasta Fase 6.
 
 ---
 

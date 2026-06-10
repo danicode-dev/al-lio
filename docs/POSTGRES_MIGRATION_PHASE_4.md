@@ -48,8 +48,8 @@ Adaptar la aplicación al-lio para leer y escribir datos de negocio desde Postgr
 
 **Nota:** Los UUID de Supabase Auth coinciden con `public.users.id` (preservados en importación Fase 3B), por lo que las queries PostgreSQL funcionan correctamente con el userId de Supabase Auth.
 
-### Profile upserts en flujo de registro
-El `profiles.upsert` dentro de `loginProfile`/`signUp` sigue yendo a Supabase (tabla `profiles` de Supabase). Esto solo afecta a usuarios nuevos, no a los usuarios migrados. Se migra en Fase 6.
+### Sincronización de perfiles en flujo de auth
+`lib/auth/sync-postgres-user.ts` — `ensurePostgresUserForSupabaseUser` hace upsert de `public.users` + `public.profiles` en PostgreSQL propio tras cada sign-in o sign-up exitoso. No quedan `profiles.upsert` en Supabase dentro de `lib/actions.ts`. Nuevos usuarios tendrán filas en PostgreSQL antes de cualquier escritura de datos de negocio.
 
 ### Scripts de importación (pendiente Fase 5)
 - `scripts/import-tech-opportunities.mjs`

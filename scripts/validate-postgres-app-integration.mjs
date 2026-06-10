@@ -74,6 +74,14 @@ check("lib/actions.ts importa repositorios", actions.includes("lib/db/repositori
 check("lib/actions.ts importa getCurrentUserId", actions.includes("getCurrentUserId"));
 check("lib/actions.ts importa ensurePostgresUserForSupabaseUser", actions.includes("ensurePostgresUserForSupabaseUser"));
 check("lib/actions.ts no usa .from() de Supabase para datos (tasks/courses/etc)", !actions.includes('.from("tasks")') && !actions.includes('.from("courses")') && !actions.includes('.from("hackathons")'));
+check(
+  "lib/actions.ts no upsertea profiles en Supabase",
+  !actions.includes('.from("profiles")') &&
+  !actions.includes(".from('profiles')") &&
+  !actions.includes(".from(`profiles`)") &&
+  !actions.includes('profiles").upsert') &&
+  !actions.includes("profiles').upsert")
+);
 
 // ── lib/db.ts usa PostgreSQL ──────────────────────────────────────────────────
 
