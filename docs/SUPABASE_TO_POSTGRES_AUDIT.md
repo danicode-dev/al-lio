@@ -390,7 +390,7 @@ Completado en esta fase:
 
 ### Fase 2 — VPS sandbox PostgreSQL validation (2026-06-10)
 
-**Estado: EN PROGRESO**
+**Estado: COMPLETADO (mergeado en main — PR #3)**
 
 Preparado en esta fase (sin tocar datos reales, Supabase remoto, VPS ni producción):
 
@@ -411,6 +411,35 @@ Preparado en esta fase (sin tocar datos reales, Supabase remoto, VPS ni producci
 - No se eliminó Supabase de la aplicación
 - No se desplegó nada
 
-**Próxima fase:** Fase 3 — Export/import de datos desde Supabase a `aidraft_postgres`. Solo
-se inicia tras completar el checklist de Fase 2 en `docs/POSTGRES_MIGRATION_PHASE_2.md` y
-obtener confirmación explícita.
+**Próxima fase:** Fase 3 — ver sección siguiente.
+
+---
+
+### Fase 3A — Data migration tooling (2026-06-10)
+
+**Estado: EN PROGRESO — herramientas creadas, export/import real pendiente de autorización**
+
+Preparado en esta fase (no se exportó ni importó nada real):
+
+| Artefacto | Estado |
+|---|---|
+| `scripts/migration/export-supabase-data.mjs` — export Supabase → JSON con doble guardia | ✅ |
+| `scripts/migration/import-sandbox-data.mjs` — import JSON → sandbox con transacción | ✅ |
+| `scripts/migration/verify-sandbox-migration.mjs` — verifica recuentos sandbox vs manifest | ✅ |
+| `scripts/migration/validate-migration-artifacts.mjs` — validador estático de seguridad | ✅ |
+| `migration-artifacts/` en `.gitignore` | ✅ |
+| `docs/POSTGRES_MIGRATION_PHASE_3.md` — documentación, variables, checklist Fase 3B | ✅ |
+| `package.json` — scripts `migration:export:supabase`, `migration:import:sandbox`, `migration:verify:sandbox`, `migration:validate:artifacts` | ✅ |
+| `scripts/validate-postgres-migration-readiness.mjs` — actualizado con checks de Fase 3A | ✅ |
+
+**No se ha hecho en esta fase:**
+- No se exportaron datos reales de Supabase
+- No se tocó Supabase remoto
+- No se tocó VPS de producción ni `docker-compose.prod.yml`
+- No se aplicó schema en producción
+- No se eliminó Supabase de la aplicación
+- No se desplegó nada
+
+**Próxima fase:** Fase 3B — ejecutar export real desde Supabase e import al VPS sandbox.
+Solo con autorización explícita de Dani y tras completar el checklist de
+`docs/POSTGRES_MIGRATION_PHASE_3.md`.
