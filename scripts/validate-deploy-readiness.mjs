@@ -94,7 +94,7 @@ console.log("\n── docker-compose.prod.yml ──");
 const composePath = join(root, "infra/docker-compose.prod.yml");
 if (existsSync(composePath)) {
   const compose = readFileSync(composePath, "utf8");
-  check("container_name: aidraft_web", compose.includes("aidraft_web"));
+  check("container_name: al_lio_web", compose.includes("al_lio_web"));
   check("red danicode_web externa", compose.includes("danicode_web"));
   check("restart: unless-stopped", compose.includes("unless-stopped"));
   check("env_file definido", compose.includes("env_file"));

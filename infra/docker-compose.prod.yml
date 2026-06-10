@@ -1,16 +1,16 @@
 services:
-  aidraft_web:
+  al_lio_web:
     build:
       context: ..
       dockerfile: infra/Dockerfile
-    container_name: aidraft_web
+    container_name: al_lio_web
     restart: unless-stopped
     env_file: ../.env
     expose:
       - "3000"
     networks:
       - danicode_web
-      - aidraft_internal
+      - al_lio_internal
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
@@ -18,23 +18,23 @@ services:
       retries: 3
       start_period: 40s
     depends_on:
-      aidraft_postgres:
+      al_lio_postgres:
         condition: service_healthy
 
-  aidraft_postgres:
+  al_lio_postgres:
     image: postgres:17-alpine
-    container_name: aidraft_postgres
+    container_name: al_lio_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: aidraft
-      POSTGRES_USER: aidraft
+      POSTGRES_DB: al_lio
+      POSTGRES_USER: al_lio
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - aidraft_postgres_data:/var/lib/postgresql/data
+      - al_lio_postgres_data:/var/lib/postgresql/data
     networks:
-      - aidraft_internal
+      - al_lio_internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aidraft -d aidraft"]
+      test: ["CMD-SHELL", "pg_isready -U al_lio -d al_lio"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,7 +42,7 @@ services:
 networks:
   danicode_web:
     external: true
-  aidraft_internal:
+  al_lio_internal:
 
 volumes:
-  aidraft_postgres_data:
+  al_lio_postgres_data:
