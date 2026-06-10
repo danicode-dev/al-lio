@@ -57,9 +57,9 @@ Esta fase tiene dos partes:
 ### Para export (solo cuando se autorice)
 
 ```bash
-SUPABASE_DB_URL=postgresql://...   # URL de conexión directa Supabase (no anon key)
-AIDRAFT_ALLOW_SUPABASE_EXPORT=true # Primera confirmación explícita
-AIDRAFT_EXPORT_CONFIRMATION=EXPORT_SUPABASE_TO_LOCAL_JSON  # Segunda confirmación
+SUPABASE_DB_URL=postgresql://...         # URL de conexión directa Supabase (no anon key)
+AL_LIO_ALLOW_SUPABASE_EXPORT=true        # Primera confirmación (debe ser exactamente "true")
+AL_LIO_EXPORT_CONFIRMATION=EXPORT_SUPABASE_TO_LOCAL_JSON  # Segunda confirmación
 ```
 
 ### Para import al sandbox
@@ -69,7 +69,7 @@ AIDRAFT_EXPORT_CONFIRMATION=EXPORT_SUPABASE_TO_LOCAL_JSON  # Segunda confirmaci�
 POSTGRES_SANDBOX_DATABASE_URL=postgresql://aidraft_sandbox:aidraft_sandbox_password@127.0.0.1:54329/aidraft_sandbox
 
 # Opcional — limpiar sandbox antes de importar:
-AIDRAFT_SANDBOX_IMPORT_RESET=true
+AL_LIO_SANDBOX_IMPORT_RESET=true
 ```
 
 ---
@@ -87,8 +87,8 @@ Dos intentos para obtener usuarios:
 ```bash
 # Solo ejecutar cuando Dani lo autorice explícitamente
 SUPABASE_DB_URL="postgresql://..." \
-AIDRAFT_ALLOW_SUPABASE_EXPORT=true \
-AIDRAFT_EXPORT_CONFIRMATION=EXPORT_SUPABASE_TO_LOCAL_JSON \
+AL_LIO_ALLOW_SUPABASE_EXPORT=true \
+AL_LIO_EXPORT_CONFIRMATION=EXPORT_SUPABASE_TO_LOCAL_JSON \
 npm run migration:export:supabase
 ```
 
@@ -126,7 +126,7 @@ DATABASE_URL=postgresql://aidraft_sandbox:aidraft_sandbox_password@127.0.0.1:543
 npm run migration:import:sandbox migration-artifacts/supabase-export-YYYYMMDD-HHMMSS
 
 # 3b. Con reset previo (borra todo el sandbox antes)
-AIDRAFT_SANDBOX_IMPORT_RESET=true \
+AL_LIO_SANDBOX_IMPORT_RESET=true \
 npm run migration:import:sandbox migration-artifacts/supabase-export-YYYYMMDD-HHMMSS
 ```
 
@@ -181,7 +181,7 @@ Comprueba (sin conexión real):
 - [ ] Backup de Supabase realizado y guardado fuera del repo
 - [ ] Dani ha autorizado explícitamente el export
 - [ ] Export ejecutado y `manifest.json` revisado (recuentos razonables)
-- [ ] Import al sandbox ejecutado con `AIDRAFT_SANDBOX_IMPORT_RESET=true`
+- [ ] Import al sandbox ejecutado con `AL_LIO_SANDBOX_IMPORT_RESET=true`
 - [ ] `npm run migration:verify:sandbox` pasa (recuentos coinciden)
 - [ ] Application smoke test en sandbox (si procede)
 - [ ] `npm run lint && npm run typecheck && npm run build` pasan
@@ -199,7 +199,7 @@ git revert HEAD
 Fase 3B (import al sandbox) es reversible con:
 
 ```bash
-AIDRAFT_SANDBOX_IMPORT_RESET=true \
+AL_LIO_SANDBOX_IMPORT_RESET=true \
 npm run migration:import:sandbox <otra-carpeta-o-vacío>
 # o simplemente:
 npm run postgres:sandbox:down:volumes && npm run postgres:sandbox:up

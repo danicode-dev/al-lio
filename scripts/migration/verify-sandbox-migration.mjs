@@ -1,5 +1,5 @@
 /**
- * Verifica que los recuentos del manifest coinciden con el sandbox.
+ * al-lio PostgreSQL migration — verifica recuentos sandbox vs manifest.
  * Solo conecta al sandbox. No toca Supabase ni producción.
  *
  * Uso:
@@ -66,6 +66,13 @@ if (!ALLOWED_HOSTS.includes(parsed.hostname) || parsed.port !== "54329") {
 if (parsed.pathname.slice(1) !== "aidraft_sandbox") {
   console.error(
     `\nERROR: Base de datos esperada "aidraft_sandbox", detectada "${parsed.pathname.slice(1)}".`
+  );
+  process.exit(1);
+}
+
+if (parsed.username !== "aidraft_sandbox") {
+  console.error(
+    `\nERROR: Usuario esperado "aidraft_sandbox", detectado "${parsed.username}".`
   );
   process.exit(1);
 }

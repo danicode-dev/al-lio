@@ -142,12 +142,17 @@ const exportScriptPath = join(root, "scripts/migration/export-supabase-data.mjs"
 if (existsSync(exportScriptPath)) {
   const exportScript = readFileSync(exportScriptPath, "utf8");
   check(
-    "export script: requiere AIDRAFT_ALLOW_SUPABASE_EXPORT",
-    exportScript.includes("AIDRAFT_ALLOW_SUPABASE_EXPORT")
+    "export script: requiere AL_LIO_ALLOW_SUPABASE_EXPORT",
+    exportScript.includes("AL_LIO_ALLOW_SUPABASE_EXPORT")
   );
   check(
-    "export script: requiere AIDRAFT_EXPORT_CONFIRMATION",
-    exportScript.includes("AIDRAFT_EXPORT_CONFIRMATION")
+    "export script: guarda exige exactamente === \"true\"",
+    exportScript.includes('AL_LIO_ALLOW_SUPABASE_EXPORT') &&
+    exportScript.includes('!== "true"')
+  );
+  check(
+    "export script: requiere AL_LIO_EXPORT_CONFIRMATION",
+    exportScript.includes("AL_LIO_EXPORT_CONFIRMATION")
   );
   check(
     "export script: no imprime SUPABASE_DB_URL completa",

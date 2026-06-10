@@ -1,15 +1,15 @@
 /**
- * Importa un export JSON (de export-supabase-data.mjs) al PostgreSQL sandbox.
- * No toca producción, VPS real ni Supabase.
+ * al-lio PostgreSQL migration — import JSON al PostgreSQL sandbox.
+ * No toca producción, VPS de producción ni Supabase.
  *
  * Uso:
  *   node scripts/migration/import-sandbox-data.mjs migration-artifacts/supabase-export-YYYYMMDD-HHMMSS
  *
  * Variables opcionales:
- *   POSTGRES_SANDBOX_DATABASE_URL      — override (debe ser localhost/127.0.0.1:54329)
- *   AIDRAFT_SANDBOX_IMPORT_RESET=true  — limpiar tablas del sandbox antes de importar
+ *   POSTGRES_SANDBOX_DATABASE_URL    — override (debe ser localhost/127.0.0.1:54329)
+ *   AL_LIO_SANDBOX_IMPORT_RESET=true — limpiar tablas del sandbox antes de importar
  *
- * Por defecto NO borra nada del sandbox. Con AIDRAFT_SANDBOX_IMPORT_RESET=true
+ * Por defecto NO borra nada del sandbox. Con AL_LIO_SANDBOX_IMPORT_RESET=true
  * hace TRUNCATE en orden inverso antes de insertar.
  */
 
@@ -122,7 +122,7 @@ for (const table of IMPORT_ORDER) {
 const { Client } = require("pg");
 const client = new Client({ connectionString });
 
-const doReset = process.env.AIDRAFT_SANDBOX_IMPORT_RESET === "true";
+const doReset = process.env.AL_LIO_SANDBOX_IMPORT_RESET === "true";
 
 try {
   await client.connect();
@@ -132,14 +132,14 @@ try {
 
   // ── Reset opcional ──────────────────────────────────────────────────────────
   if (doReset) {
-    console.log("── Reset (AIDRAFT_SANDBOX_IMPORT_RESET=true) ──");
+    console.log("── Reset (AL_LIO_SANDBOX_IMPORT_RESET=true) ──");
     for (const table of TRUNCATE_ORDER) {
       await client.query(`TRUNCATE TABLE public.${table} RESTART IDENTITY CASCADE`);
       console.log(`  OK  TRUNCATE ${table}`);
     }
     console.log("");
   } else {
-    console.log("── Sin reset (usa AIDRAFT_SANDBOX_IMPORT_RESET=true para limpiar antes) ──\n");
+    console.log("── Sin reset (usa AL_LIO_SANDBOX_IMPORT_RESET=true para limpiar antes) ──\n");
   }
 
   // ── Importar tablas ─────────────────────────────────────────────────────────
@@ -149,8 +149,8 @@ try {
   for (const table of IMPORT_ORDER) {
     const rows = tableData[table];
     if (!rows.length) {
-      console.log(`  SKIP  ${table} — 0 filas`);
-      counts[table] = 0;
+      console.log(`  SKIP  ${table} — 0 filas en JSON`);
+      counts[table] = { read: 0, inserted: 0, skipped: 0 };
       continue;
     }
 
@@ -160,23 +160,33 @@ try {
     );
     const values = rows.flatMap(r => columns.map(c => r[c] ?? null));
 
-    await client.query(
+    const res = await client.query(
       `INSERT INTO public.${table} (${columns.map(c => `"${c}"`).join(", ")})
        VALUES ${placeholderRows.join(",\n")}
-       ON CONFLICT DO NOTHING`,
+       ON CONFLICT DO NOTHING
+       RETURNING 1`,
       values
     );
 
-    counts[table] = rows.length;
-    console.log(`  OK  ${table} — ${rows.length} filas`);
+    const inserted = res.rowCount ?? 0;
+    const skipped = rows.length - inserted;
+    counts[table] = { read: rows.length, inserted, skipped };
+    console.log(
+      `  OK  ${table} — leídas: ${rows.length}, insertadas: ${inserted}, saltadas: ${skipped}`
+    );
   }
 
   await client.query("COMMIT");
 
-  console.log("\n── Recuentos importados ──");
+  console.log("\n── Resumen de importación ──");
+  let totalRead = 0, totalInserted = 0, totalSkipped = 0;
   for (const [t, c] of Object.entries(counts)) {
-    console.log(`  ${t}: ${c}`);
+    console.log(`  ${t}: leídas=${c.read}, insertadas=${c.inserted}, saltadas=${c.skipped}`);
+    totalRead += c.read;
+    totalInserted += c.inserted;
+    totalSkipped += c.skipped;
   }
+  console.log(`\n  Total: leídas=${totalRead}, insertadas=${totalInserted}, saltadas=${totalSkipped}`);
 
   console.log("\nRESULTADO: Import al sandbox completado.");
 

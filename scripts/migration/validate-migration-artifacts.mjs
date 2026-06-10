@@ -1,5 +1,5 @@
 /**
- * Validación estática de seguridad para la migración.
+ * al-lio PostgreSQL migration — validación estática de seguridad.
  * No requiere conexión real. Solo comprueba estructura y configuración local.
  *
  * Comprueba que:
@@ -106,17 +106,22 @@ if (existsSync(migrationDir)) {
     }
   }
 
-  // Export script debe tener guardas dobles
+  // Export script debe tener guardas dobles con AL_LIO_ vars
   const exportScript = join(migrationDir, "export-supabase-data.mjs");
   if (existsSync(exportScript)) {
     const exportContent = readFileSync(exportScript, "utf-8");
     check(
-      "export-supabase-data.mjs: requiere AIDRAFT_ALLOW_SUPABASE_EXPORT",
-      exportContent.includes("AIDRAFT_ALLOW_SUPABASE_EXPORT")
+      "export-supabase-data.mjs: requiere AL_LIO_ALLOW_SUPABASE_EXPORT",
+      exportContent.includes("AL_LIO_ALLOW_SUPABASE_EXPORT")
     );
     check(
-      "export-supabase-data.mjs: requiere AIDRAFT_EXPORT_CONFIRMATION",
-      exportContent.includes("AIDRAFT_EXPORT_CONFIRMATION")
+      "export-supabase-data.mjs: guarda exige exactamente === \"true\"",
+      exportContent.includes('AL_LIO_ALLOW_SUPABASE_EXPORT') &&
+      exportContent.includes('!== "true"')
+    );
+    check(
+      "export-supabase-data.mjs: requiere AL_LIO_EXPORT_CONFIRMATION",
+      exportContent.includes("AL_LIO_EXPORT_CONFIRMATION")
     );
     check(
       "export-supabase-data.mjs: no imprime supabaseUrl completa",

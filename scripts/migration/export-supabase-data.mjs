@@ -1,23 +1,23 @@
 /**
- * Exporta datos desde Supabase (conexión PostgreSQL directa) a JSON locales.
+ * al-lio PostgreSQL migration — export desde Supabase a JSON locales.
  * Los archivos se guardan en migration-artifacts/ (ignorada por git).
  *
  * AVISO: Este script conecta a Supabase REMOTO. Nunca lo ejecutes sin
  * revisar las variables de entorno y confirmar que es lo que quieres hacer.
  *
  * Variables obligatorias:
- *   SUPABASE_DB_URL                    — URL de conexión directa a Supabase
- *   AIDRAFT_ALLOW_SUPABASE_EXPORT=true — confirmación explícita de la operación
- *   AIDRAFT_EXPORT_CONFIRMATION=EXPORT_SUPABASE_TO_LOCAL_JSON — segunda confirmación
+ *   SUPABASE_DB_URL                        — URL de conexión directa a Supabase
+ *   AL_LIO_ALLOW_SUPABASE_EXPORT=true      — confirmación explícita (debe ser exactamente "true")
+ *   AL_LIO_EXPORT_CONFIRMATION=EXPORT_SUPABASE_TO_LOCAL_JSON — segunda confirmación
  *
  * Uso:
- *   AIDRAFT_ALLOW_SUPABASE_EXPORT=true \
- *   AIDRAFT_EXPORT_CONFIRMATION=EXPORT_SUPABASE_TO_LOCAL_JSON \
+ *   AL_LIO_ALLOW_SUPABASE_EXPORT=true \
+ *   AL_LIO_EXPORT_CONFIRMATION=EXPORT_SUPABASE_TO_LOCAL_JSON \
  *   SUPABASE_DB_URL=postgresql://... \
  *   node scripts/migration/export-supabase-data.mjs
  *
  * No modifica nada en Supabase. Solo lectura.
- * No toca VPS, sandbox ni producción propia.
+ * No toca VPS de producción, sandbox ni producción propia.
  */
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -28,23 +28,24 @@ const require = createRequire(import.meta.url);
 
 // ── Guardias de seguridad ─────────────────────────────────────────────────────
 
-if (!process.env.AIDRAFT_ALLOW_SUPABASE_EXPORT) {
+if (process.env.AL_LIO_ALLOW_SUPABASE_EXPORT !== "true") {
   console.error(
     "\n⛔  OPERACIÓN BLOQUEADA\n\n" +
     "Este script conecta a Supabase remoto y exporta datos reales.\n" +
     "Para continuar, define las siguientes variables explícitamente:\n\n" +
-    "  AIDRAFT_ALLOW_SUPABASE_EXPORT=true\n" +
-    "  AIDRAFT_EXPORT_CONFIRMATION=EXPORT_SUPABASE_TO_LOCAL_JSON\n\n" +
-    "Asegúrate de que estás en un entorno seguro y has revisado las variables."
+    "  AL_LIO_ALLOW_SUPABASE_EXPORT=true\n" +
+    "  AL_LIO_EXPORT_CONFIRMATION=EXPORT_SUPABASE_TO_LOCAL_JSON\n\n" +
+    "Asegúrate de que estás en un entorno seguro y has revisado las variables.\n" +
+    "AL_LIO_ALLOW_SUPABASE_EXPORT debe ser exactamente la cadena \"true\"."
   );
   process.exit(1);
 }
 
-if (process.env.AIDRAFT_EXPORT_CONFIRMATION !== "EXPORT_SUPABASE_TO_LOCAL_JSON") {
+if (process.env.AL_LIO_EXPORT_CONFIRMATION !== "EXPORT_SUPABASE_TO_LOCAL_JSON") {
   console.error(
     "\n⛔  CONFIRMACIÓN INCORRECTA\n\n" +
     "Define la variable:\n" +
-    "  AIDRAFT_EXPORT_CONFIRMATION=EXPORT_SUPABASE_TO_LOCAL_JSON\n"
+    "  AL_LIO_EXPORT_CONFIRMATION=EXPORT_SUPABASE_TO_LOCAL_JSON\n"
   );
   process.exit(1);
 }
