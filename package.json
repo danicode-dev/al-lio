@@ -38,7 +38,11 @@
     "postgres:sandbox:down": "docker compose -f infra/docker-compose.postgres-sandbox.yml down",
     "postgres:sandbox:down:volumes": "docker compose -f infra/docker-compose.postgres-sandbox.yml down -v",
     "postgres:sandbox:logs": "docker compose -f infra/docker-compose.postgres-sandbox.yml logs -f aidraft_postgres_sandbox",
-    "postgres:schema:validate-sandbox": "node scripts/validate-postgres-schema-sandbox.mjs"
+    "postgres:schema:validate-sandbox": "node scripts/validate-postgres-schema-sandbox.mjs",
+    "migration:export:supabase": "node scripts/migration/export-supabase-data.mjs",
+    "migration:import:sandbox": "node scripts/migration/import-sandbox-data.mjs",
+    "migration:verify:sandbox": "node scripts/migration/verify-sandbox-migration.mjs",
+    "migration:validate:artifacts": "node scripts/migration/validate-migration-artifacts.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
