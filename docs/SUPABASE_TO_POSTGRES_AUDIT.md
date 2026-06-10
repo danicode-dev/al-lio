@@ -344,11 +344,43 @@ Los datos en Supabase no se tocan durante la migración (solo se copian), por lo
 
 ## 10. Tareas futuras sugeridas
 
-1. **[Fase 1-2]** Añadir `aidraft_postgres` al `docker-compose.prod.yml` y crear schema sin Supabase.
+1. **[Fase 1-2]** Añadir `aidraft_postgres` al `docker-compose.prod.yml` y crear schema sin Supabase. ✅ COMPLETADO
 2. **[Fase 3]** Script de exportación/importación de datos desde Supabase a `aidraft_postgres`.
-3. **[Fase 4]** Reemplazar `lib/supabase/` por `lib/db/pool.ts` con `pg`.
+3. **[Fase 4]** Reemplazar `lib/supabase/` por `lib/db/pool.ts` con `pg`. ✅ POOL CREADO — pendiente reemplazar lib/supabase/
 4. **[Fase 5]** Actualizar scripts de import a `pg` + `DATABASE_URL`.
 5. **[Fase 6]** Implementar auth propio: tabla `users` + bcryptjs + iron-session/JWT.
 6. **[Fase 6]** Adaptar Google Calendar OAuth para no depender de Supabase Auth.
 7. **[Post-migración]** Eliminar dependencias `@supabase/supabase-js` y `@supabase/ssr`.
 8. **[Post-migración]** Añadir backup automático de `aidraft_postgres` (mismo patrón que Project OS).
+
+---
+
+## 11. Estado de implementación
+
+### Fase 1 — PostgreSQL self-managed foundation (2026-06-10)
+
+**Estado: EN PROGRESO**
+
+Completado en esta fase:
+
+| Artefacto | Estado |
+|---|---|
+| `infra/docker-compose.prod.yml` — servicio `aidraft_postgres` + red `aidraft_internal` + volumen | ✅ |
+| `infra/postgres/schema.sql` — schema completo sin Supabase Auth, tabla `users` propia, sin RLS | ✅ |
+| `lib/db/pool.ts` — pool `pg` con helper `query`, lee `DATABASE_URL` | ✅ |
+| `scripts/setup-postgres-schema.mjs` — aplica schema contra `DATABASE_URL` | ✅ |
+| `scripts/validate-postgres-migration-readiness.mjs` — validador estático Fase 1 | ✅ |
+| `.env.production.example` — añadidas `DATABASE_URL` y `POSTGRES_PASSWORD` | ✅ |
+| `docs/POSTGRES_MIGRATION_PHASE_1.md` — documentación de la fase | ✅ |
+
+**Lo que sigue usando Supabase (no tocado en esta fase):**
+
+- `lib/supabase/` — clientes Supabase (server, client, admin, middleware, env)
+- `lib/actions.ts` — queries de negocio vía `supabase.from()`
+- `lib/db.ts` — insertDb / updateDb / deleteDb vía Supabase
+- `lib/auth/google.ts` — sesión Google vinculada a Supabase Auth
+- `middleware.ts` — sesiones vía `@supabase/ssr`
+- `app/api/auth/login/route.ts` — login/registro vía Supabase Auth
+- Scripts de importación — usan `@supabase/supabase-js`
+
+**Próxima fase recomendada:** Fase 3 — exportar datos de Supabase e importarlos en `aidraft_postgres`.
