@@ -31,7 +31,9 @@
     "verify:prod": "npm run stop:app && npm run build:clean && node scripts/smoke-production.mjs",
     "test": "npm run check:project && npm run typecheck",
     "ci": "npm run lint && npm run test && npm run build",
-    "validate:deploy": "node scripts/validate-deploy-readiness.mjs"
+    "validate:deploy": "node scripts/validate-deploy-readiness.mjs",
+    "postgres:setup": "node scripts/setup-postgres-schema.mjs",
+    "validate:postgres-migration": "node scripts/validate-postgres-migration-readiness.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
@@ -51,6 +53,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@types/node": "^22.14.0",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
     "eslint": "^9.24.0",
