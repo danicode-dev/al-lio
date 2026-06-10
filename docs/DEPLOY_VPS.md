@@ -15,7 +15,7 @@
 ```bash
 mkdir -p /srv/danicode/projects/aidraft
 cd /srv/danicode/projects/aidraft
-git clone https://github.com/danicode-dev/d1os.git .
+git clone https://github.com/danicode-dev/al-lio.git .
 ```
 
 ## 2. Crear el archivo `.env`

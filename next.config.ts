@@ -6,7 +6,6 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "2mb",
     },
-    optimizePackageImports: ["lucide-react", "@dnd-kit/core", "@dnd-kit/utilities"],
   },
 };
 
