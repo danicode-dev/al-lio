@@ -360,7 +360,7 @@ Los datos en Supabase no se tocan durante la migración (solo se copian), por lo
 
 ### Fase 1 — PostgreSQL self-managed foundation (2026-06-10)
 
-**Estado: EN PROGRESO**
+**Estado: COMPLETADO (mergeado en main — PR #2)**
 
 Completado en esta fase:
 
@@ -384,4 +384,33 @@ Completado en esta fase:
 - `app/api/auth/login/route.ts` — login/registro vía Supabase Auth
 - Scripts de importación — usan `@supabase/supabase-js`
 
-**Próxima fase recomendada:** Fase 2 — validación local del schema, migraciones locales y plan de importación dry-run. No se exportan datos reales, no se toca Supabase remoto, no se toca VPS, no se aplica schema real. Solo se valida que el schema funciona en PostgreSQL local y se prepara el plan de importación seguro.
+**Próxima fase recomendada:** Fase 2 — ver sección siguiente.
+
+---
+
+### Fase 2 — Validación local del schema (2026-06-10)
+
+**Estado: EN PROGRESO**
+
+Preparado en esta fase (sin tocar datos reales, Supabase remoto, VPS ni producción):
+
+| Artefacto | Estado |
+|---|---|
+| `infra/docker-compose.postgres-local.yml` — PostgreSQL local/temporal para pruebas | ✅ |
+| `scripts/validate-postgres-schema-local.mjs` — aplica schema + valida tablas, índices, triggers | ✅ |
+| `infra/postgres/fixtures/minimal-local-seed.sql` — datos mínimos no sensibles | ✅ |
+| `docs/POSTGRES_MIGRATION_PHASE_2.md` — documentación, plan dry-run y checklist Fase 3 | ✅ |
+| `package.json` — scripts `postgres:local:up/down/logs` y `postgres:schema:validate-local` | ✅ |
+| `scripts/validate-postgres-migration-readiness.mjs` — actualizado con checks de Fase 2 | ✅ |
+
+**No se ha hecho en esta fase:**
+- No se exportaron datos reales de Supabase
+- No se tocó Supabase remoto
+- No se tocó VPS ni `docker-compose.prod.yml`
+- No se aplicó schema en producción
+- No se eliminó Supabase de la aplicación
+- No se desplegó nada
+
+**Próxima fase:** Fase 3 — Export/import de datos desde Supabase a `aidraft_postgres`. Solo
+se inicia tras completar el checklist de Fase 2 en `docs/POSTGRES_MIGRATION_PHASE_2.md` y
+obtener confirmación explícita.

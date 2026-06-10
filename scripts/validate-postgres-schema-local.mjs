@@ -1,0 +1,183 @@
+/**
+ * Valida el schema PostgreSQL contra un PostgreSQL local/temporal.
+ * No requiere Supabase. No toca datos reales. No toca VPS.
+ *
+ * Uso: node scripts/validate-postgres-schema-local.mjs
+ * Requiere: PostgreSQL local levantado (npm run postgres:local:up)
+ * Por defecto: postgresql://aidraft:aidraft_local_password@localhost:54329/aidraft
+ */
+
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const root = process.cwd();
+
+// ── Cargar .env si existe ─────────────────────────────────────────────────────
+const envPath = join(root, ".env");
+if (existsSync(envPath)) {
+  const lines = readFileSync(envPath, "utf-8").split(/\r?\n/);
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) continue;
+    const eq = line.indexOf("=");
+    if (eq === -1) continue;
+    const key = line.slice(0, eq).trim();
+    const value = line.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
+    if (!process.env[key]) process.env[key] = value;
+  }
+}
+
+const LOCAL_DEFAULT = "postgresql://aidraft:aidraft_local_password@localhost:54329/aidraft";
+const connectionString = process.env.DATABASE_URL ?? LOCAL_DEFAULT;
+
+// No imprimir la URL completa — podría contener password real si se sobreescribe DATABASE_URL
+const safeHost = connectionString.replace(/\/\/[^@]+@/, "//***@");
+console.log(`\nConectando a: ${safeHost}`);
+
+// ── Verificar schema.sql ──────────────────────────────────────────────────────
+const schemaPath = join(root, "infra", "postgres", "schema.sql");
+if (!existsSync(schemaPath)) {
+  console.error("ERROR: infra/postgres/schema.sql no encontrado.");
+  process.exit(1);
+}
+
+const schema = readFileSync(schemaPath, "utf-8");
+
+const { Client } = require("pg");
+const client = new Client({ connectionString });
+
+const EXPECTED_TABLES = [
+  "users", "profiles", "sources", "quick_searches", "opportunities",
+  "hackathons", "courses", "tech_opportunities", "tasks", "reminders", "quick_links",
+];
+
+const EXPECTED_INDEXES = [
+  "sources_user_id_idx",
+  "opportunities_user_status_idx",
+  "tasks_user_due_idx",
+  "reminders_user_remind_idx",
+];
+
+let passed = 0;
+let failed = 0;
+
+function ok(msg)   { console.log(`  OK  ${msg}`); passed++; }
+function fail(msg) { console.error(`  FAIL  ${msg}`); failed++; }
+
+try {
+  await client.connect();
+  console.log("Conexión establecida.\n");
+
+  // ── Aplicar schema ──────────────────────────────────────────────────────────
+  console.log("── Aplicando schema ──");
+  await client.query(schema);
+  ok("schema.sql aplicado sin errores");
+
+  // ── Verificar tablas ────────────────────────────────────────────────────────
+  console.log("\n── Tablas ──");
+  const tablesRes = await client.query(`
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+  `);
+  const existingTables = new Set(tablesRes.rows.map(r => r.table_name));
+  for (const t of EXPECTED_TABLES) {
+    existingTables.has(t) ? ok(`tabla ${t}`) : fail(`tabla ${t} no existe`);
+  }
+
+  // ── Verificar índices ───────────────────────────────────────────────────────
+  console.log("\n── Índices ──");
+  const idxRes = await client.query(`
+    SELECT indexname FROM pg_indexes WHERE schemaname = 'public'
+  `);
+  const existingIdx = new Set(idxRes.rows.map(r => r.indexname));
+  for (const idx of EXPECTED_INDEXES) {
+    existingIdx.has(idx) ? ok(`índice ${idx}`) : fail(`índice ${idx} no existe`);
+  }
+
+  // ── Verificar función set_updated_at ───────────────────────────────────────
+  console.log("\n── Función y trigger ──");
+  const fnRes = await client.query(`
+    SELECT proname FROM pg_proc
+    WHERE proname = 'set_updated_at' AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+  `);
+  fnRes.rows.length > 0 ? ok("función set_updated_at existe") : fail("función set_updated_at no existe");
+
+  const trgRes = await client.query(`
+    SELECT trigger_name FROM information_schema.triggers
+    WHERE trigger_schema = 'public' AND trigger_name LIKE 'set_%_updated_at'
+  `);
+  trgRes.rows.length >= 10
+    ? ok(`triggers updated_at presentes (${trgRes.rows.length} encontrados)`)
+    : fail(`triggers updated_at insuficientes (${trgRes.rows.length}/10+)`);
+
+  // ── Insertar datos mínimos de prueba ───────────────────────────────────────
+  console.log("\n── Datos de prueba ──");
+  const testEmail = `demo-test-${Date.now()}@example.test`;
+  const userRes = await client.query(`
+    INSERT INTO public.users (email, display_name, role)
+    VALUES ($1, 'Demo User', 'user')
+    RETURNING id, created_at, updated_at
+  `, [testEmail]);
+  const userId = userRes.rows[0].id;
+  ok(`INSERT users (${testEmail})`);
+
+  // Dar un pequeño margen para que el updated_at sea distinto
+  await client.query("SELECT pg_sleep(0.01)");
+
+  const beforeUpdate = userRes.rows[0].updated_at;
+  await client.query(`
+    UPDATE public.users SET display_name = 'Demo User Updated' WHERE id = $1
+  `, [userId]);
+  const afterRes = await client.query(`SELECT updated_at FROM public.users WHERE id = $1`, [userId]);
+  const afterUpdate = afterRes.rows[0].updated_at;
+  afterUpdate > beforeUpdate
+    ? ok("trigger updated_at se actualizó tras UPDATE en users")
+    : fail("trigger updated_at NO se actualizó tras UPDATE en users");
+
+  // Tabla dependiente: tasks
+  await client.query(`
+    INSERT INTO public.tasks (user_id, title, status, priority)
+    VALUES ($1, 'Tarea de prueba local', 'pendiente', 'media')
+  `, [userId]);
+  ok("INSERT tasks (FK user_id OK)");
+
+  // Tabla dependiente: profiles
+  await client.query(`
+    INSERT INTO public.profiles (user_id, full_name)
+    VALUES ($1, 'Demo User')
+  `, [userId]);
+  ok("INSERT profiles (FK user_id OK)");
+
+  // ── Limpiar datos de prueba ────────────────────────────────────────────────
+  console.log("\n── Limpieza ──");
+  // ON DELETE CASCADE en tasks y profiles → basta con borrar el user
+  await client.query(`DELETE FROM public.users WHERE id = $1`, [userId]);
+  ok("datos de prueba eliminados (CASCADE en tablas dependientes)");
+
+} catch (err) {
+  const isConnRefused = err.code === "ECONNREFUSED" || err.message?.includes("ECONNREFUSED");
+  if (isConnRefused) {
+    console.error(
+      "\nERROR: No se puede conectar a PostgreSQL local.\n" +
+      "Levanta el contenedor primero:\n" +
+      "  npm run postgres:local:up\n" +
+      "Espera unos segundos y vuelve a ejecutar este script."
+    );
+  } else {
+    console.error("\nERROR inesperado:", err.message);
+  }
+  process.exit(1);
+} finally {
+  await client.end().catch(() => {});
+}
+
+console.log("");
+if (failed > 0) {
+  console.error(`RESULTADO: ${failed} comprobación(es) fallida(s) de ${passed + failed}.`);
+  process.exit(1);
+} else {
+  console.log(`RESULTADO: Schema local OK — ${passed} comprobaciones pasadas.`);
+}

@@ -33,7 +33,11 @@
     "ci": "npm run lint && npm run test && npm run build",
     "validate:deploy": "node scripts/validate-deploy-readiness.mjs",
     "postgres:setup": "node scripts/setup-postgres-schema.mjs",
-    "validate:postgres-migration": "node scripts/validate-postgres-migration-readiness.mjs"
+    "validate:postgres-migration": "node scripts/validate-postgres-migration-readiness.mjs",
+    "postgres:local:up": "docker compose -f infra/docker-compose.postgres-local.yml up -d",
+    "postgres:local:down": "docker compose -f infra/docker-compose.postgres-local.yml down",
+    "postgres:local:logs": "docker compose -f infra/docker-compose.postgres-local.yml logs -f aidraft_postgres_local",
+    "postgres:schema:validate-local": "node scripts/validate-postgres-schema-local.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
