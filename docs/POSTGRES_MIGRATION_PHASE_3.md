@@ -2,7 +2,7 @@
 
 **Rama:** `feat/aidraft-postgres-phase-3-data-migration-tooling`  
 **Fecha:** 2026-06-10  
-**Estado:** Fase 3A completada (herramientas creadas, pendiente ejecución real)
+**Estado:** Fases 3A y 3B completadas — sandbox validado (2026-06-11)
 
 ---
 
@@ -13,9 +13,9 @@ Esta fase tiene dos partes:
 - **Fase 3A (esta PR):** Crear las herramientas de migración de datos. No se exporta ni
   importa nada real. Solo se preparan scripts, validadores y documentación.
 
-- **Fase 3B (pendiente, requiere autorización explícita):** Ejecutar el export desde
-  Supabase y el import al VPS sandbox. Solo se inicia tras completar el checklist de esta
-  fase y con confirmación explícita de Dani.
+- **Fase 3B (completada — 2026-06-11):** Export desde Supabase ejecutado en modo solo
+  lectura. Import al PostgreSQL sandbox ejecutado correctamente. Verificación de recuentos
+  OK. No se tocó producción, Caddy, DNS ni auth.
 
 ---
 
@@ -74,7 +74,7 @@ AL_LIO_SANDBOX_IMPORT_RESET=true
 
 ---
 
-## Cómo exportar datos de Supabase (Fase 3B — pendiente autorización)
+## Cómo exportar datos de Supabase (Fase 3B — completada)
 
 El script usa conexión PostgreSQL directa (`SUPABASE_DB_URL`), no la API REST de Supabase.
 Es **solo lectura** en Supabase — no modifica nada.
@@ -112,7 +112,7 @@ migration-artifacts/supabase-export-YYYYMMDD-HHMMSS/
 
 ---
 
-## Cómo importar al sandbox (Fase 3B — pendiente autorización)
+## Cómo importar al sandbox (Fase 3B — completada)
 
 ```bash
 # 1. Levantar sandbox
@@ -173,18 +173,46 @@ Comprueba (sin conexión real):
 
 ---
 
-## Checklist antes de ejecutar Fase 3B en VPS sandbox
+## Checklist Fase 3B en VPS sandbox — COMPLETADO (2026-06-11)
 
-- [ ] `npm run postgres:schema:validate-sandbox` pasa sin errores (sandbox levantado)
-- [ ] `npm run migration:validate:artifacts` pasa
-- [ ] `SUPABASE_DB_URL` disponible y comprobada (conexión directa, no anon key)
-- [ ] Backup de Supabase realizado y guardado fuera del repo
-- [ ] Dani ha autorizado explícitamente el export
-- [ ] Export ejecutado y `manifest.json` revisado (recuentos razonables)
-- [ ] Import al sandbox ejecutado con `AL_LIO_SANDBOX_IMPORT_RESET=true`
-- [ ] `npm run migration:verify:sandbox` pasa (recuentos coinciden)
-- [ ] Application smoke test en sandbox (si procede)
-- [ ] `npm run lint && npm run typecheck && npm run build` pasan
+- [x] `npm run postgres:schema:validate-sandbox` pasa sin errores (sandbox levantado)
+- [x] `npm run migration:validate:artifacts` pasa
+- [x] `SUPABASE_DB_URL` disponible y comprobada (conexión directa, no anon key)
+- [x] Backup de Supabase realizado y guardado fuera del repo
+- [x] Dani ha autorizado explícitamente el export
+- [x] Export ejecutado y `manifest.json` revisado (recuentos razonables)
+- [x] Import al sandbox ejecutado correctamente
+- [x] `npm run migration:verify:sandbox` pasa (recuentos coinciden)
+- [x] `npm run lint && npm run typecheck && npm run build` pasan
+
+## Resultado real de Fase 3B (2026-06-11)
+
+Export desde Supabase ejecutado en modo solo lectura. `auth.users` accesible directamente.
+
+| Tabla | Filas exportadas / importadas |
+|---|---|
+| `users` | 1 |
+| `profiles` | 1 |
+| `sources` | 0 |
+| `quick_searches` | 0 |
+| `opportunities` | 0 |
+| `hackathons` | 21 |
+| `courses` | 22 |
+| `tasks` | 15 |
+| `reminders` | 0 |
+| `quick_links` | 0 |
+| `tech_opportunities` | 43 |
+| **Total** | **103** |
+
+- Filas insertadas: 103 — Saltadas: 0
+- `migration:verify:sandbox`: 11 tablas OK, recuentos coinciden con manifest
+
+**Lo que NO se hizo:**
+- No se tocó producción ni `docker-compose.prod.yml`
+- No se tocó Caddy ni DNS
+- No se modificó auth ni se eliminaron dependencias Supabase
+- No se desplegó nada
+- Los artifacts (`migration-artifacts/`) se generaron solo en VPS y no están commiteados
 
 ---
 
@@ -227,10 +255,7 @@ El estado de Supabase y del VPS de producción no cambia en ningún caso.
 
 ## Próxima fase
 
-**Fase 3B** — Ejecutar export real desde Supabase e import al VPS sandbox. Solo con
-autorización explícita de Dani y tras completar el checklist anterior.
-
-**Fase 4** — Reemplazar `lib/supabase/` con queries `lib/db/pool.ts`.
+**Fase 4** — Reemplazar `lib/supabase/` con queries directas usando `lib/db/pool.ts`.
 
 Ver [SUPABASE_TO_POSTGRES_AUDIT.md](./SUPABASE_TO_POSTGRES_AUDIT.md) para el inventario
 completo de dependencias Supabase.
