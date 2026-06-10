@@ -5,35 +5,53 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { asString } from "@/lib/utils";
+import { getCurrentUserId } from "@/lib/auth/current-user";
+import {
+  createTask as pgCreateTask,
+  updateTaskStatus as pgUpdateTaskStatus,
+  updateTask as pgUpdateTask,
+  deleteTask as pgDeleteTask,
+} from "@/lib/db/repositories/tasks";
+import {
+  createOpportunity as pgCreateOpportunity,
+  updateOpportunityStatus as pgUpdateOpportunityStatus,
+  deleteOpportunity as pgDeleteOpportunity,
+} from "@/lib/db/repositories/opportunities";
+import {
+  createCourse as pgCreateCourse,
+  updateCourseStatus as pgUpdateCourseStatus,
+  deleteCourse as pgDeleteCourse,
+} from "@/lib/db/repositories/courses";
+import {
+  createQuickLink as pgCreateQuickLink,
+  deleteQuickLink as pgDeleteQuickLink,
+} from "@/lib/db/repositories/quick_links";
+import {
+  createHackathon as pgCreateHackathon,
+  updateHackathon as pgUpdateHackathon,
+} from "@/lib/db/repositories/hackathons";
+import { createReminder as pgCreateReminder } from "@/lib/db/repositories/reminders";
 
 const requiredText = z.string().trim().min(1);
 
-async function currentUserId() {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) redirect("/login");
-  return { supabase, userId: data.user.id };
-}
+// ── Auth actions — still use Supabase Auth (migrated in Fase 6) ───────────────
 
 export async function loginProfile(formData: FormData) {
   const email = requiredText.email().parse(formData.get("email"));
   const displayName = asString(formData.get("display_name")) ?? "Usuario";
   const supabase = await createClient();
 
-  // Contraseñas a probar: env var → legacy → default nueva
   const passwords = [
     process.env.PROFILES_SHARED_PASSWORD,
     "muchosmantecados11",
     "d1os-panel-2026",
   ].filter(Boolean) as string[];
 
-  // 1. Intentar login con cada contraseña conocida
   for (const pwd of passwords) {
     const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
     if (!error) redirect("/dashboard");
   }
 
-  // 2. No existe aún → crear cuenta con la contraseña activa
   const activePassword = process.env.PROFILES_SHARED_PASSWORD ?? "d1os-panel-2026";
   const { data, error: signUpError } = await supabase.auth.signUp({
     email,
@@ -45,6 +63,7 @@ export async function loginProfile(formData: FormData) {
     redirect("/login?error=" + encodeURIComponent(signUpError.message));
   }
 
+  // Profile upsert for new Supabase Auth users stays on Supabase until Fase 6.
   if (data.user) {
     await supabase.from("profiles").upsert({
       user_id: data.user.id,
@@ -64,7 +83,7 @@ export async function loginOrRegisterProfile(formData: FormData) {
   const supabase = await createClient();
 
   const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-  
+
   if (signInError) {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
@@ -73,7 +92,10 @@ export async function loginOrRegisterProfile(formData: FormData) {
     });
 
     if (signUpError) {
-      if (signUpError.message.includes("already registered") || signUpError.message.toLowerCase().includes("user already exists")) {
+      if (
+        signUpError.message.includes("already registered") ||
+        signUpError.message.toLowerCase().includes("user already exists")
+      ) {
         redirect("/login?error=Contraseña%20incorrecta");
       }
       redirect("/login?error=" + encodeURIComponent(signUpError.message));
@@ -89,7 +111,7 @@ export async function loginOrRegisterProfile(formData: FormData) {
       });
     }
   }
-  
+
   redirect("/dashboard");
 }
 
@@ -122,10 +144,11 @@ export async function signOut() {
   redirect("/login");
 }
 
+// ── Data actions — PostgreSQL via repositories ────────────────────────────────
+
 export async function createTask(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
-  await supabase.from("tasks").insert({
-    user_id: userId,
+  const userId = await getCurrentUserId();
+  await pgCreateTask(userId, {
     title: requiredText.parse(formData.get("title")),
     description: asString(formData.get("description")),
     category: asString(formData.get("category")) ?? "personal",
@@ -139,38 +162,36 @@ export async function createTask(formData: FormData) {
 }
 
 export async function updateTaskStatus(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
-  await supabase
-    .from("tasks")
-    .update({ status: requiredText.parse(formData.get("status")) })
-    .eq("id", requiredText.parse(formData.get("id")))
-    .eq("user_id", userId);
+  const userId = await getCurrentUserId();
+  await pgUpdateTaskStatus(
+    userId,
+    requiredText.parse(formData.get("id")),
+    requiredText.parse(formData.get("status"))
+  );
   revalidatePath("/tasks");
 }
 
 export async function postponeTaskTomorrow(formData: FormData) {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const { supabase, userId } = await currentUserId();
-  await supabase
-    .from("tasks")
-    .update({ status: "pospuesta", due_date: tomorrow.toISOString().slice(0, 10) })
-    .eq("id", requiredText.parse(formData.get("id")))
-    .eq("user_id", userId);
+  const userId = await getCurrentUserId();
+  await pgUpdateTask(userId, requiredText.parse(formData.get("id")), {
+    status: "pospuesta",
+    due_date: tomorrow.toISOString().slice(0, 10),
+  });
   revalidatePath("/tasks");
   revalidatePath("/calendar");
 }
 
 export async function deleteTask(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
-  await supabase.from("tasks").delete().eq("id", requiredText.parse(formData.get("id"))).eq("user_id", userId);
+  const userId = await getCurrentUserId();
+  await pgDeleteTask(userId, requiredText.parse(formData.get("id")));
   revalidatePath("/tasks");
 }
 
 export async function createOpportunity(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
-  await supabase.from("opportunities").insert({
-    user_id: userId,
+  const userId = await getCurrentUserId();
+  await pgCreateOpportunity(userId, {
     source: asString(formData.get("source")) ?? "manual",
     source_type: "manual",
     title: requiredText.parse(formData.get("title")),
@@ -186,25 +207,24 @@ export async function createOpportunity(formData: FormData) {
 }
 
 export async function updateOpportunityStatus(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
-  await supabase
-    .from("opportunities")
-    .update({ status: requiredText.parse(formData.get("status")) })
-    .eq("id", requiredText.parse(formData.get("id")))
-    .eq("user_id", userId);
+  const userId = await getCurrentUserId();
+  await pgUpdateOpportunityStatus(
+    userId,
+    requiredText.parse(formData.get("id")),
+    requiredText.parse(formData.get("status"))
+  );
   revalidatePath("/work");
 }
 
 export async function deleteOpportunity(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
-  await supabase.from("opportunities").delete().eq("id", requiredText.parse(formData.get("id"))).eq("user_id", userId);
+  const userId = await getCurrentUserId();
+  await pgDeleteOpportunity(userId, requiredText.parse(formData.get("id")));
   revalidatePath("/work");
 }
 
 export async function createCourse(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
-  await supabase.from("courses").insert({
-    user_id: userId,
+  const userId = await getCurrentUserId();
+  await pgCreateCourse(userId, {
     title: requiredText.parse(formData.get("title")),
     platform: asString(formData.get("platform")),
     url: asString(formData.get("url")),
@@ -218,25 +238,24 @@ export async function createCourse(formData: FormData) {
 }
 
 export async function updateCourseStatus(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
-  await supabase
-    .from("courses")
-    .update({ status: requiredText.parse(formData.get("status")) })
-    .eq("id", requiredText.parse(formData.get("id")))
-    .eq("user_id", userId);
+  const userId = await getCurrentUserId();
+  await pgUpdateCourseStatus(
+    userId,
+    requiredText.parse(formData.get("id")),
+    requiredText.parse(formData.get("status"))
+  );
   revalidatePath("/courses");
 }
 
 export async function deleteCourse(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
-  await supabase.from("courses").delete().eq("id", requiredText.parse(formData.get("id"))).eq("user_id", userId);
+  const userId = await getCurrentUserId();
+  await pgDeleteCourse(userId, requiredText.parse(formData.get("id")));
   revalidatePath("/courses");
 }
 
 export async function createQuickLink(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
-  await supabase.from("quick_links").insert({
-    user_id: userId,
+  const userId = await getCurrentUserId();
+  await pgCreateQuickLink(userId, {
     name: requiredText.parse(formData.get("name")),
     url: requiredText.url().parse(formData.get("url")),
     category: asString(formData.get("category")),
@@ -247,15 +266,14 @@ export async function createQuickLink(formData: FormData) {
 }
 
 export async function deleteQuickLink(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
-  await supabase.from("quick_links").delete().eq("id", requiredText.parse(formData.get("id"))).eq("user_id", userId);
+  const userId = await getCurrentUserId();
+  await pgDeleteQuickLink(userId, requiredText.parse(formData.get("id")));
   revalidatePath("/links");
 }
 
 export async function createHackathon(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
-  await supabase.from("hackathons").insert({
-    user_id: userId,
+  const userId = await getCurrentUserId();
+  await pgCreateHackathon(userId, {
     name: requiredText.parse(formData.get("name")),
     organizer: asString(formData.get("organizer")),
     province: requiredText.parse(formData.get("province")),
@@ -271,22 +289,20 @@ export async function createHackathon(formData: FormData) {
 }
 
 export async function markHackathonReviewed(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
+  const userId = await getCurrentUserId();
   const next = new Date();
   next.setMonth(next.getMonth() + 1);
-  await supabase
-    .from("hackathons")
-    .update({ last_reviewed_at: new Date().toISOString().slice(0, 10), next_review_at: next.toISOString().slice(0, 10) })
-    .eq("id", requiredText.parse(formData.get("id")))
-    .eq("user_id", userId);
+  await pgUpdateHackathon(userId, requiredText.parse(formData.get("id")), {
+    last_reviewed_at: new Date().toISOString().slice(0, 10),
+    next_review_at: next.toISOString().slice(0, 10),
+  });
   revalidatePath("/hackathons");
 }
 
 export async function createTaskFromHackathon(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
+  const userId = await getCurrentUserId();
   const name = requiredText.parse(formData.get("name"));
-  await supabase.from("tasks").insert({
-    user_id: userId,
+  await pgCreateTask(userId, {
     title: `Revisar ${name}`,
     category: "hackathon",
     priority: asString(formData.get("priority")) ?? "media",
@@ -299,11 +315,11 @@ export async function createTaskFromHackathon(formData: FormData) {
 }
 
 export async function createReminderFromHackathon(formData: FormData) {
-  const { supabase, userId } = await currentUserId();
+  const userId = await getCurrentUserId();
   const name = requiredText.parse(formData.get("name"));
-  const remindAt = asString(formData.get("next_review_at")) ?? new Date().toISOString().slice(0, 10);
-  await supabase.from("reminders").insert({
-    user_id: userId,
+  const remindAt =
+    asString(formData.get("next_review_at")) ?? new Date().toISOString().slice(0, 10);
+  await pgCreateReminder(userId, {
     title: `Recordar ${name}`,
     remind_at: `${remindAt}T09:00:00`,
     related_type: "hackathon",
@@ -313,8 +329,9 @@ export async function createReminderFromHackathon(formData: FormData) {
   revalidatePath("/hackathons");
 }
 
+// Deprecated: used Supabase RPC seed_hackathons_for_current_user (auth.uid()).
+// Not available in PostgreSQL propio. Pending Fase 6.
 export async function seedHackathons() {
-  const { supabase } = await currentUserId();
-  await supabase.rpc("seed_hackathons_for_current_user");
+  console.warn("[seedHackathons] RPC not available in PostgreSQL. Pending Fase 6.");
   revalidatePath("/hackathons");
 }

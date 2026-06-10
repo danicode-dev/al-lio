@@ -477,4 +477,41 @@ completado. Verificación de recuentos OK. No se tocó producción.
 - No se modificó auth ni se eliminaron dependencias Supabase
 - No se desplegó nada
 
-**Próxima fase:** Fase 4 — reemplazar `lib/supabase/` con queries directas usando `lib/db/pool.ts`.
+**Próxima fase:** Fase 5 — migrar scripts de importación a `pg`.
+
+---
+
+### Fase 4 — PostgreSQL application integration (2026-06-11)
+
+**Estado: COMPLETADO — capa repositorio creada, datos migrados a PostgreSQL**
+
+Capa repositorio creada para las 11 tablas. Todas las lecturas y escrituras de datos
+de negocio migradas a PostgreSQL propio. Auth sigue en Supabase (pendiente Fase 6).
+
+| Artefacto | Estado |
+|---|---|
+| `lib/db/repositories/` (11 archivos) | ✅ |
+| `lib/db/types.ts` — tipos PostgreSQL añadidos | ✅ |
+| `lib/auth/current-user.ts` — helper userId temporal | ✅ |
+| `lib/data.ts` — getGlobalStore usa repositorios | ✅ |
+| `lib/actions.ts` — datos via repositorios (auth sigue en Supabase) | ✅ |
+| `lib/db.ts` — insertDb/updateDb/deleteDb via PostgreSQL | ✅ |
+| `lib/tech-opportunities.ts` — fetch via `/api/tech-opportunities` | ✅ |
+| `app/api/seed/route.ts` — usa repositorios PostgreSQL | ✅ |
+| `scripts/postgres/set-user-password.mjs` — tooling Fase 6 | ✅ |
+| `scripts/validate-postgres-app-integration.mjs` | ✅ |
+| `docs/POSTGRES_APP_INTEGRATION_AUDIT.md` | ✅ |
+| `docs/POSTGRES_MIGRATION_PHASE_4.md` | ✅ |
+
+**Dependencias Supabase restantes (post-Fase 4):**
+- Auth: `loginProfile`, `signOut`, `middleware.ts`, `lib/auth/google.ts` → Fase 6
+- Scripts de importación → Fase 5
+- `profile.upsert` en registro de nuevos usuarios → Fase 6
+
+**No se hizo en esta fase:**
+- No se tocó VPS ni producción
+- No se modificó auth
+- No se eliminaron dependencias `@supabase/ssr` ni `@supabase/supabase-js`
+- No se desplegó nada
+
+**Próxima fase:** Fase 5 — migrar scripts de importación a `pg` + `DATABASE_URL`.
