@@ -345,7 +345,7 @@ Los datos en Supabase no se tocan durante la migración (solo se copian), por lo
 ## 10. Tareas futuras sugeridas
 
 1. **[Fase 1]** Añadir `aidraft_postgres` al `docker-compose.prod.yml` y crear schema sin Supabase. ✅ COMPLETADO
-2. **[Fase 2]** Validar schema localmente, migraciones locales, plan de importación dry-run. Sin exportar datos reales, sin tocar Supabase remoto ni VPS.
+2. **[Fase 2]** VPS sandbox PostgreSQL validation — validar schema en sandbox aislado, plan de importación dry-run. Sin exportar datos reales, sin tocar Supabase remoto ni VPS de producción.
 3. **[Fase 3]** Script de exportación/importación de datos desde Supabase a `aidraft_postgres` (solo tras Fase 2).
 4. **[Fase 4]** Reemplazar `lib/supabase/` por `lib/db/pool.ts` con `pg`. ✅ POOL CREADO — pendiente reemplazar lib/supabase/
 5. **[Fase 5]** Actualizar scripts de import a `pg` + `DATABASE_URL`.
@@ -388,7 +388,7 @@ Completado en esta fase:
 
 ---
 
-### Fase 2 — Validación local del schema (2026-06-10)
+### Fase 2 — VPS sandbox PostgreSQL validation (2026-06-10)
 
 **Estado: EN PROGRESO**
 

@@ -9,8 +9,8 @@
 ## Objetivo
 
 Verificar que `infra/postgres/schema.sql` funciona correctamente en un PostgreSQL sandbox
-temporal antes de usarlo en el VPS. Esta fase no toca datos reales, Supabase remoto, VPS ni
-producción.
+temporal antes de usarlo en el VPS. Esta fase no toca datos reales, Supabase remoto, VPS de
+producción ni producción; la validación se ejecutará en VPS sandbox aislado cuando Dani lo autorice.
 
 **Lo que se hace en esta fase:**
 - Levantar un PostgreSQL sandbox con Docker (aislado, puerto vinculado a 127.0.0.1)
@@ -22,7 +22,7 @@ producción.
 **Lo que NO se hace en esta fase:**
 - No se exportan datos reales de Supabase
 - No se toca Supabase remoto
-- No se toca el VPS ni `docker-compose.prod.yml`
+- No se toca el VPS de producción ni `docker-compose.prod.yml`; la validación se ejecutará en VPS sandbox aislado cuando Dani lo autorice
 - No se aplica schema en producción
 - No se elimina Supabase de la aplicación
 - No se despliega nada
@@ -247,7 +247,7 @@ git revert HEAD  # o git reset si no se ha mergeado
 npm run postgres:sandbox:down:volumes  # elimina el sandbox y su volumen
 ```
 
-El estado de Supabase y del VPS no cambia.
+El estado de Supabase y del VPS de producción no cambia.
 
 ---
 
