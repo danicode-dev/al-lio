@@ -42,7 +42,9 @@
     "migration:export:supabase": "node scripts/migration/export-supabase-data.mjs",
     "migration:import:sandbox": "node scripts/migration/import-sandbox-data.mjs",
     "migration:verify:sandbox": "node scripts/migration/verify-sandbox-migration.mjs",
-    "migration:validate:artifacts": "node scripts/migration/validate-migration-artifacts.mjs"
+    "migration:validate:artifacts": "node scripts/migration/validate-migration-artifacts.mjs",
+    "validate:postgres-app-integration": "node scripts/validate-postgres-app-integration.mjs",
+    "postgres:user:set-password": "node scripts/postgres/set-user-password.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",

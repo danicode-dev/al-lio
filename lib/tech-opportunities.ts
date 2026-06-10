@@ -1,10 +1,7 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
 import type { TechOpportunity } from "@/lib/tech-opportunity-types";
 
-// Module-level cache — survives component re-mounts within the same browser session.
-// Stale after 5 minutes so fresh data is fetched if the user leaves and comes back.
 let _cache: { data: TechOpportunity[]; at: number } | null = null;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -35,13 +32,11 @@ export function sortOpportunities(items: TechOpportunity[]): TechOpportunity[] {
 export async function getTechOpportunities(): Promise<TechOpportunity[]> {
   if (_cache && Date.now() - _cache.at < CACHE_TTL_MS) return _cache.data;
 
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("tech_opportunities")
-    .select("*");
+  const res = await fetch("/api/tech-opportunities");
+  if (!res.ok) throw new Error("Failed to fetch tech opportunities");
+  const data: TechOpportunity[] = await res.json();
 
-  if (error) throw error;
-  const sorted = sortOpportunities((data as TechOpportunity[]) ?? []);
+  const sorted = sortOpportunities(data);
   _cache = { data: sorted, at: Date.now() };
   return sorted;
 }
