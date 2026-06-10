@@ -1,0 +1,14 @@
+# Añadir este bloque al Caddyfile real en:
+# /srv/danicode/infra/caddy/Caddyfile
+#
+# El contenedor aidraft_web debe estar en la red Docker danicode_web.
+
+aidraft.danielcode.dev {
+    encode gzip zstd
+    reverse_proxy aidraft_web:3000 {
+        header_up Host aidraft.danielcode.dev
+        header_up X-Forwarded-Host aidraft.danielcode.dev
+        header_up X-Forwarded-Proto https
+        header_up X-Forwarded-Port 443
+    }
+}
