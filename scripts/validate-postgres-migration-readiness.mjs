@@ -25,9 +25,9 @@ console.log("\n── docker-compose.prod.yml ──");
 const composePath = join(root, "infra/docker-compose.prod.yml");
 if (existsSync(composePath)) {
   const compose = readFileSync(composePath, "utf8");
-  check("aidraft_postgres definido", compose.includes("aidraft_postgres"));
-  check("aidraft_postgres_data volumen", compose.includes("aidraft_postgres_data"));
-  check("aidraft_internal red interna", compose.includes("aidraft_internal"));
+  check("al_lio_postgres definido", compose.includes("al_lio_postgres"));
+  check("al_lio_postgres_data volumen", compose.includes("al_lio_postgres_data"));
+  check("al_lio_internal red interna", compose.includes("al_lio_internal"));
   check("postgres:17-alpine imagen", compose.includes("postgres:17-alpine"));
   check("pg_isready healthcheck", compose.includes("pg_isready"));
   check("POSTGRES_PASSWORD variable", compose.includes("POSTGRES_PASSWORD"));
