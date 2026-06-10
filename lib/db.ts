@@ -1,101 +1,94 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { query } from "@/lib/db/pool";
+import { tryGetCurrentUserId } from "@/lib/auth/current-user";
 
-const RETRIABLE_MISSING_COLUMNS = new Set([
-  "reminder_at",
-  "progress_notes",
-  "completed_at",
-  "related_type",
-  "related_id",
-  "start_date",
-  "deadline",
-  "price",
-  "category",
-  "notes",
-  "event_start_date",
-  "event_end_date",
-  "registration_deadline",
-  "type",
-  "icon",
-  "description",
-  "is_favorite",
+const WRITABLE_TABLES = new Set<string>([
+  "tasks",
+  "courses",
+  "hackathons",
+  "opportunities",
+  "quick_links",
+  "reminders",
+  "profiles",
+  "sources",
+  "quick_searches",
 ]);
 
-function getMissingColumn(error: unknown) {
-  const message = typeof error === "object" && error && "message" in error ? String(error.message) : String(error ?? "");
-  return (
-    message.match(/Could not find the '([^']+)' column/)?.[1] ||
-    message.match(/column [a-zA-Z0-9_]+\.([a-zA-Z0-9_]+) does not exist/)?.[1] ||
-    ""
+function assertTable(table: string): void {
+  if (!WRITABLE_TABLES.has(table)) {
+    throw new Error(`Table "${table}" is not in the allowed write list`);
+  }
+}
+
+export async function insertDb(
+  table: string,
+  data: Record<string, unknown>,
+  paths: string[] = []
+) {
+  assertTable(table);
+  const userId = await tryGetCurrentUserId();
+  if (!userId) return null;
+
+  const payload: Record<string, unknown> = { ...data, user_id: userId };
+  const columns = Object.keys(payload);
+  const placeholders = columns.map((_, i) => `$${i + 1}`);
+  const values = columns.map((k) => payload[k] ?? null);
+
+  const res = await query(
+    `INSERT INTO public."${table}" (${columns.map((c) => `"${c}"`).join(", ")})
+     VALUES (${placeholders.join(", ")})
+     RETURNING *`,
+    values
   );
-}
-
-function omitRetriableMissingColumn(payload: Record<string, unknown>, error: unknown) {
-  const column = getMissingColumn(error);
-  if (!column || !RETRIABLE_MISSING_COLUMNS.has(column) || !(column in payload)) return null;
-
-  const next = { ...payload };
-  delete next[column];
-  console.warn(`[db] Retrying write without missing optional column: ${column}`);
-  return next;
-}
-
-export async function insertDb(table: string, data: any, paths: string[] = []) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  let payload = { ...data, user_id: user.id };
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const { data: result, error } = await supabase.from(table).insert(payload).select().single();
-    if (!error) {
-      paths.forEach((p) => revalidatePath(p));
-      return { result, error };
-    }
-
-    const retryPayload = omitRetriableMissingColumn(payload, error);
-    if (!retryPayload) {
-      paths.forEach((p) => revalidatePath(p));
-      return { result, error };
-    }
-    payload = retryPayload;
-  }
-
   paths.forEach((p) => revalidatePath(p));
-  return { result: null, error: new Error("Could not write after removing missing optional columns") };
+  return { result: res.rows[0] ?? null, error: null };
 }
 
-export async function updateDb(table: string, id: string, data: any, paths: string[] = []) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+export async function updateDb(
+  table: string,
+  id: string,
+  data: Record<string, unknown>,
+  paths: string[] = []
+) {
+  assertTable(table);
+  const userId = await tryGetCurrentUserId();
+  if (!userId) return null;
 
-  let payload = { ...data };
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const { data: result, error } = await supabase.from(table).update(payload).eq("id", id).eq("user_id", user.id).select().single();
-    if (!error) {
-      paths.forEach((p) => revalidatePath(p));
-      return { result, error };
-    }
+  const columns = Object.keys(data);
+  const sets = columns.map((col, i) => `"${col}" = $${i + 1}`).join(", ");
+  const values: unknown[] = [
+    ...columns.map((k) => data[k] ?? null),
+    id,
+    userId,
+  ];
+  const idIdx = columns.length + 1;
+  const userIdx = columns.length + 2;
 
-    const retryPayload = omitRetriableMissingColumn(payload, error);
-    if (!retryPayload) {
-      paths.forEach((p) => revalidatePath(p));
-      return { result, error };
-    }
-    payload = retryPayload;
-  }
-
+  const res = await query(
+    `UPDATE public."${table}"
+     SET ${sets}
+     WHERE id = $${idIdx} AND user_id = $${userIdx}
+     RETURNING *`,
+    values
+  );
   paths.forEach((p) => revalidatePath(p));
-  return { result: null, error: new Error("Could not write after removing missing optional columns") };
+  return { result: res.rows[0] ?? null, error: null };
 }
 
-export async function deleteDb(table: string, id: string, paths: string[] = []) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  await supabase.from(table).delete().eq("id", id).eq("user_id", user.id);
+export async function deleteDb(
+  table: string,
+  id: string,
+  paths: string[] = []
+) {
+  assertTable(table);
+  const userId = await tryGetCurrentUserId();
+  if (!userId) return null;
+
+  await query(
+    `DELETE FROM public."${table}" WHERE id = $1 AND user_id = $2`,
+    [id, userId]
+  );
   paths.forEach((p) => revalidatePath(p));
 }
