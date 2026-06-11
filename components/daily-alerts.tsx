@@ -179,12 +179,12 @@ const ALERT_META = {
 
 // ── Persistence helpers ───────────────────────────────────────────────────────
 
-const SESSION_KEY = "al-lio.daily-alerts.shown";
+const SHOWN_DATE_KEY = "al-lio.daily-alerts.shown-date";
 const DISMISSED_KEY = "al-lio.daily-alerts.dismissed-date";
 
 function shouldShow(): boolean {
   if (typeof window === "undefined") return false;
-  if (sessionStorage.getItem(SESSION_KEY)) return false;
+  if (localStorage.getItem(SHOWN_DATE_KEY) === todayDateStr()) return false;
   if (localStorage.getItem(DISMISSED_KEY) === todayDateStr()) return false;
   return true;
 }
@@ -221,7 +221,7 @@ export function DailyAlerts() {
   // Open once per session when there are alerts
   useEffect(() => {
     if (alerts.length > 0 && shouldShow()) {
-      sessionStorage.setItem(SESSION_KEY, "1");
+      localStorage.setItem(SHOWN_DATE_KEY, todayDateStr());
       setOpen(true);
     }
   }, [alerts]);

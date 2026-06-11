@@ -20,8 +20,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div className="flex h-14 items-center justify-between border-b bg-background/90 backdrop-blur-xl px-4 md:hidden sticky top-0 z-40">
             <Image src="/brand/signature.png" alt="Al-Lio" width={96} height={32} className="dark:invert" />
             <div className="flex items-center gap-1">
-              <MobileHeaderActions />
               <ThemeToggle />
+              <MobileHeaderActions />
             </div>
           </div>
           <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8">
