@@ -17,36 +17,48 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border/40 pb-safe">
-      <div className="flex items-center justify-around h-16 px-2">
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href;
-          
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-300",
-                isActive ? "text-primary scale-110" : "text-muted-foreground hover:text-foreground active:scale-95"
-              )}
-            >
-              <div className={cn(
-                "relative flex items-center justify-center p-1 rounded-full transition-all duration-300",
-                isActive && "bg-primary/10 shadow-[0_0_15px_rgba(var(--primary),0.3)]"
-              )}>
-                <Icon className={cn("w-5 h-5", isActive && "fill-primary/20")} strokeWidth={isActive ? 2.5 : 2} />
-              </div>
-              <span className={cn(
-                "text-[10px] font-medium transition-all duration-300",
-                isActive ? "opacity-100" : "opacity-70"
-              )}>
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
+    <nav className="md:hidden fixed bottom-0 inset-x-0 z-50">
+      <div className="bg-background/92 backdrop-blur-2xl border-t border-border/40 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.22)] pb-safe">
+        <div className="flex items-center h-16 px-1">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex flex-col items-center justify-center flex-1 h-full gap-1 select-none",
+                  "transition-all duration-200 active:scale-90",
+                  isActive ? "text-primary" : "text-muted-foreground",
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex items-center justify-center w-11 h-7 rounded-xl transition-all duration-200",
+                    isActive
+                      ? "bg-primary/10 dark:bg-primary/20 scale-110"
+                      : "scale-100",
+                  )}
+                >
+                  <Icon
+                    className="w-[18px] h-[18px]"
+                    strokeWidth={isActive ? 2.5 : 1.8}
+                  />
+                </div>
+                <span
+                  className={cn(
+                    "text-[9.5px] font-semibold leading-none tracking-wide transition-opacity duration-200",
+                    isActive ? "opacity-100" : "opacity-40",
+                  )}
+                >
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );
