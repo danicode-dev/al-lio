@@ -27,7 +27,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { DndContext, useDraggable, useDroppable, MouseSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -564,7 +564,7 @@ function NotificationBell({ store, actions }: { store: Store; actions: ReturnTyp
       const isUrgent = task.priority === "alta" || task.priority === "critica" || task.category === "urgente";
       return Boolean(isOverdue) || Boolean(isDueToday) || isUrgent;
     }).slice(0, 5);
-  }, [store.tasks, today]);
+  }, [store.tasks]);
 
   const allAlerts = useMemo(() => {
     const localAlerts = getCalendarEvents(store).filter((event) => {
@@ -727,7 +727,6 @@ function NotificationBell({ store, actions }: { store: Store; actions: ReturnTyp
 export function GuestApp({ view }: { view: View }) {
   const router = useRouter();
   const { store, actions } = useStore();
-  const { settings: appSettings } = useAppSettings();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   return (
@@ -1043,7 +1042,10 @@ function TodoOverview({ store, actions }: { store: Store; actions: ReturnTypeAct
 function TaskBoard({ store, actions, limit, variant = "full", compact: compactProp }: { store: Store; actions: ReturnTypeActions; limit?: number; variant?: "dashboard" | "full"; compact?: boolean }) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const compact = compactProp ?? (variant === "dashboard");
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
+  );
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -1232,15 +1234,15 @@ function TaskBoardCard({ task, actions, compact, onOpen }: { task: Task; actions
   return (
     <article
       ref={setDragRef}
-      style={{ ...dragStyle, touchAction: "none" }}
-      className={cn("group relative overflow-hidden rounded-md border bg-card shadow-sm transition-colors hover:border-foreground/20 cursor-grab active:cursor-grabbing select-none", isDragging && "opacity-50 shadow-lg")}
+      style={{ ...dragStyle, touchAction: "manipulation" }}
+      className={cn("group relative overflow-hidden rounded-md border bg-card shadow-sm transition-colors hover:border-foreground/20 cursor-grab active:cursor-grabbing select-none", isDragging && "opacity-50 shadow-lg z-50")}
       {...listeners}
     >
       <button type="button" className={cn("block w-full cursor-pointer text-left", compact ? "p-2.5 pr-20" : "p-3 pr-24")} onClick={onOpen}>
         <span className={cn("absolute left-0 top-0 h-full w-1", priorityBarClass(priority))} />
         <div className="flex items-start justify-between gap-3 pl-1">
-          <div className="min-w-0">
-            <h4 className={cn("font-medium leading-snug", compact ? "text-sm" : "text-base", task.status === "completada" && "line-through text-muted-foreground")}>{task.title}</h4>
+          <div className="min-w-0 flex-1">
+            <h4 className={cn("font-medium leading-snug break-words", compact ? "text-sm line-clamp-2" : "text-base", task.status === "completada" && "line-through text-muted-foreground")}>{task.title}</h4>
             {task.description && !compact && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{task.description}</p>}
           </div>
           <Badge className={cn("shrink-0", compact && "px-1.5 text-[10px]", priorityClass(priority))}>{priorityLabel(priority)}</Badge>

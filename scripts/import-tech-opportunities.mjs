@@ -1,40 +1,27 @@
-/**
- * Import tech opportunities from CSV to Supabase.
- *
- * Usage:
- *   node scripts/import-tech-opportunities.mjs
- *
- * Requires env vars (loaded from .env.local automatically if not already set):
- *   NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL
- *   SUPABASE_SERVICE_ROLE_KEY
- *
- * Running it multiple times is safe: records are upserted by id_slug.
- */
-
-import { createClient } from "@supabase/supabase-js";
+import pg from "pg";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getSupabaseAdminKey, getSupabaseUrl, loadEnvLocal } from "./supabase-env.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const CSV_PATH = join(ROOT, "csv", "oportunidades_tech_supabase_combinado.csv");
-const BATCH_SIZE = 20;
 
-loadEnvLocal(ROOT);
-
-const SUPABASE_URL = getSupabaseUrl();
-const SERVICE_KEY = getSupabaseAdminKey();
-
-if (!SUPABASE_URL || !SERVICE_KEY) {
-  console.error("ERROR Missing env vars: NEXT_PUBLIC_SUPABASE_URL/SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SECRET_KEY");
-  process.exit(1);
-}
-
-if (!existsSync(CSV_PATH)) {
-  console.error(`ERROR CSV not found: ${CSV_PATH}`);
-  process.exit(1);
+function loadEnvLocal() {
+  for (const file of [".env.local", ".env"]) {
+    const envPath = join(ROOT, file);
+    if (!existsSync(envPath)) continue;
+    const lines = readFileSync(envPath, "utf-8").split(/\r?\n/);
+    for (const raw of lines) {
+      const line = raw.trim();
+      if (!line || line.startsWith("#")) continue;
+      const eq = line.indexOf("=");
+      if (eq === -1) continue;
+      const key = line.slice(0, eq).trim();
+      const val = line.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
+      if (!process.env[key]) process.env[key] = val;
+    }
+  }
 }
 
 function parseCSV(text) {
@@ -136,66 +123,80 @@ function transformRow(raw) {
   };
 }
 
+const COLUMNS = [
+  "id_slug", "categoria", "nombre", "entidad", "area_o_tipo", "modalidad", "localidad",
+  "provincia", "fecha_inicio", "fecha_fin", "estado", "certificacion_o_premio",
+  "practicas_empresa", "horas_totales", "horas_practicas", "coste", "requisitos_resumen",
+  "encaje_daw_1_5", "prioridad", "tags", "fuente_url", "ultima_revision", "notas",
+];
+
 async function main() {
-  console.log(`Reading CSV: ${CSV_PATH}`);
+  loadEnvLocal();
+
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    console.error("Falta DATABASE_URL.");
+    process.exit(1);
+  }
+  if (!existsSync(CSV_PATH)) {
+    console.error(`CSV no encontrado: ${CSV_PATH}`);
+    process.exit(1);
+  }
+
+  console.log(`Leyendo CSV: ${CSV_PATH}`);
 
   const rows = parseCSV(readFileSync(CSV_PATH, "utf-8"));
   if (rows.length < 2) {
-    console.error("ERROR CSV has no data rows.");
+    console.error("El CSV no tiene filas de datos.");
     process.exit(1);
   }
 
   const [headerRow, ...dataRows] = rows;
-  const headers = headerRow.map((header) => header.trim());
+  const headers = headerRow.map((header) => header.replace(/^﻿/, "").trim());
   const records = dataRows
     .map((fields) => {
-      const raw = {};
-      headers.forEach((header, index) => {
-        raw[header] = fields[index] ?? "";
-      });
+      const raw = Object.fromEntries(headers.map((h, i) => [h, fields[i] ?? ""]));
       return transformRow(raw);
     })
-    .filter((record) => record.id_slug && record.nombre);
+    .filter((row) => row.id_slug && row.nombre);
 
-  console.log(`Columns: ${headers.join(", ")}`);
-  console.log(`Rows read: ${dataRows.length}`);
-  console.log(`Valid records: ${records.length}`);
+  const client = new pg.Client({ connectionString: databaseUrl });
+  await client.connect();
 
-  const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
-    auth: { persistSession: false },
-  });
+  try {
+    let imported = 0;
+    let errors = 0;
 
-  let imported = 0;
-  let errors = 0;
-
-  for (let i = 0; i < records.length; i += BATCH_SIZE) {
-    const batch = records.slice(i, i + BATCH_SIZE);
-    const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-    const { error } = await supabase
-      .from("tech_opportunities")
-      .upsert(batch, { onConflict: "id_slug" });
-
-    if (error) {
-      errors += batch.length;
-      console.error(`ERROR Batch ${batchNumber}: ${error.message}`);
-      if (error.message.includes("tech_opportunities")) {
-        console.error("Hint: apply supabase/migrations/create_tech_opportunities.sql before importing.");
+    for (const record of records) {
+      const values = COLUMNS.map((c) => record[c] ?? null);
+      const placeholders = COLUMNS.map((_, i) => `$${i + 1}`).join(", ");
+      const updates = COLUMNS.filter((c) => c !== "id_slug").map((c) => `"${c}" = excluded."${c}"`).join(", ");
+      try {
+        await client.query(
+          `INSERT INTO public.tech_opportunities (${COLUMNS.map((c) => `"${c}"`).join(", ")})
+           VALUES (${placeholders})
+           ON CONFLICT (id_slug) DO UPDATE SET ${updates}, updated_at = now()`,
+          values,
+        );
+        imported++;
+      } catch (error) {
+        errors++;
+        console.error(`Error en "${record.nombre}": ${error.message}`);
       }
-      continue;
     }
 
-    imported += batch.length;
-    console.log(`Batch ${batchNumber}: ${batch.length} upserted`);
+    console.log("-".repeat(50));
+    console.log(`Filas leídas: ${dataRows.length}`);
+    console.log(`Filas válidas: ${records.length}`);
+    console.log(`Filas importadas: ${imported}`);
+    console.log(`Errores: ${errors}`);
+    if (errors > 0) process.exit(1);
+  } finally {
+    await client.end();
   }
-
-  console.log("-".repeat(50));
-  console.log(`Imported/updated: ${imported}`);
-  console.log(`Errors: ${errors}`);
-
-  if (errors > 0) process.exitCode = 1;
 }
 
 main().catch((error) => {
-  console.error("Fatal:", error);
+  console.error("Fatal:", error.message ?? error);
   process.exit(1);
 });
