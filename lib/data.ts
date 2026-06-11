@@ -41,26 +41,65 @@ export async function getGlobalStore() {
     userName,
     tasks: tasks.map((t) => ({
       ...t,
-      due_at: t.due_date ?? "",
+      due_date: ymd(t.due_date),
+      due_at: ymd(t.due_date),
       category: t.category ?? "diario",
-      reminder_at: t.reminder_at ?? "",
+      reminder_at: iso(t.reminder_at),
       progress_notes: Array.isArray(t.progress_notes) ? t.progress_notes : [],
-      completed_at: t.completed_at ?? "",
+      completed_at: iso(t.completed_at),
+      created_at: iso(t.created_at),
+      updated_at: iso(t.updated_at),
     })),
-    opportunities,
-    techOpportunities: sortTechOpportunities(techOpportunities as unknown as TechOpportunity[]),
+    opportunities: opportunities.map((o) => ({
+      ...o,
+      published_at: iso(o.published_at),
+      detected_at: iso(o.detected_at),
+      created_at: iso(o.created_at),
+      updated_at: iso(o.updated_at),
+    })),
+    techOpportunities: sortTechOpportunities(
+      (techOpportunities as unknown as TechOpportunity[]).map((item) => ({
+        ...item,
+        fecha_inicio: ymd(item.fecha_inicio),
+        fecha_fin: ymd(item.fecha_fin),
+        ultima_revision: ymd(item.ultima_revision),
+        created_at: iso(item.created_at),
+        updated_at: iso(item.updated_at),
+      })),
+    ),
     courses: courses.map((c) => ({
       ...c,
-      deadline_at: c.deadline ?? "",
-      start_at: c.start_date ?? "",
+      start_date: ymd(c.start_date),
+      deadline: ymd(c.deadline),
+      deadline_at: ymd(c.deadline),
+      start_at: ymd(c.start_date),
+      fecha_inicio: ymd(c.fecha_inicio),
+      fecha_fin: ymd(c.fecha_fin),
+      ultima_revision: ymd(c.ultima_revision),
+      created_at: iso(c.created_at),
+      updated_at: iso(c.updated_at),
     })),
     hackathons: hackathons.map((h) => ({
       ...h,
-      start_at: h.event_start_date ?? "",
-      end_at: h.event_end_date ?? "",
-      registration_deadline_at: h.registration_deadline ?? "",
+      event_start_date: ymd(h.event_start_date),
+      event_end_date: ymd(h.event_end_date),
+      registration_deadline: ymd(h.registration_deadline),
+      start_at: ymd(h.event_start_date),
+      end_at: ymd(h.event_end_date),
+      registration_deadline_at: ymd(h.registration_deadline),
+      inscripcion_hasta: ymd(h.inscripcion_hasta),
+      ultima_revision: ymd(h.ultima_revision),
+      detected_at: ymd(h.detected_at),
+      last_reviewed_at: ymd(h.last_reviewed_at),
+      next_review_at: ymd(h.next_review_at),
+      created_at: iso(h.created_at),
+      updated_at: iso(h.updated_at),
     })),
-    links,
+    links: links.map((l) => ({
+      ...l,
+      created_at: iso(l.created_at),
+      updated_at: iso(l.updated_at),
+    })),
     reminders: [],
     companies: opportunities.map((o) => ({
       id: o.id,
@@ -72,9 +111,29 @@ export async function getGlobalStore() {
       link_status: "ok" as const,
       notes: o.notes ? String(o.notes) : undefined,
       category: o.category ? String(o.category) : undefined,
-      created_at: String(o.created_at || ""),
+      created_at: iso(o.created_at),
     })),
   };
+}
+
+function iso(value: unknown): string {
+  if (!value) return "";
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? "" : value.toISOString();
+  }
+  return String(value);
+}
+
+function ymd(value: unknown): string {
+  if (!value) return "";
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return "";
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, "0");
+    const day = String(value.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+  return String(value).slice(0, 10);
 }
 
 export type GlobalStore = Awaited<ReturnType<typeof getGlobalStore>>;
