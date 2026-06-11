@@ -402,6 +402,16 @@ export function useStore() {
   return context;
 }
 
+export function MobileHeaderActions() {
+  const { store, actions } = useStore();
+  return (
+    <div className="flex items-center gap-1">
+      <NotificationBell store={store} actions={actions} />
+      <GoogleCalendarStatusControl />
+    </div>
+  );
+}
+
 export function StoreProvider({ initialStore, children }: { initialStore: Store; children: React.ReactNode }) {
   const [store, setStore] = useState<Store>(initialStore || { ...emptyStore, hackathons: seedHackathons });
   const hasMountedRef = useRef(false);
@@ -719,7 +729,7 @@ export function GuestApp({ view }: { view: View }) {
             </h1>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
           <NotificationBell store={store} actions={actions} />
           <GoogleCalendarStatusControl />
         </div>
@@ -955,7 +965,7 @@ function GoogleCalendarStatusControl() {
         <span className="bg-red-500" />
       </span>
       <span className={cn("h-1.5 w-1.5 rounded-full", statusTone)} />
-      <span className="truncate text-xs font-medium">{label}</span>
+      <span className="hidden sm:inline truncate text-xs font-medium">{label}</span>
     </>
   );
 
