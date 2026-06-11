@@ -9,11 +9,13 @@ import {
   Briefcase,
   Building2,
   CalendarDays,
+  Check,
   CheckCircle2,
   CheckSquare2,
   ChevronLeft,
   ChevronRight,
   Clock,
+  MoreVertical,
   ExternalLink,
   Flame,
   FolderKanban,
@@ -1060,28 +1062,338 @@ function TaskBoard({ store, actions, limit, variant = "full", compact: compactPr
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className={cn(compact ? "" : "overflow-x-auto rounded-lg border bg-card/70 p-3")}>
-        <div className={cn(compact ? "grid grid-cols-1 sm:grid-cols-2 gap-3 md:grid-cols-4" : "grid min-w-[1080px] grid-cols-4 gap-4 xl:min-w-0")}>
-          {taskBuckets.map((bucket) => {
-            const tasks = tasksForBucket(store.tasks, bucket.id);
-            const visibleTasks = limit ? tasks.slice(0, limit) : tasks;
+      <div className={cn(compact ? "grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3" : "grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start")}>
+        {taskBuckets.map((bucket) => {
+          const tasks = tasksForBucket(store.tasks, bucket.id);
+          const visibleTasks = limit ? tasks.slice(0, limit) : tasks;
+          if (!compact) {
             return (
-              <TaskBoardColumn
+              <TaskSectionCard
                 key={bucket.id}
                 bucket={bucket}
                 tasks={visibleTasks}
-                hiddenCount={limit ? Math.max(tasks.length - limit, 0) : 0}
+                completedTasks={recentCompletedTasksForBucket(store.tasks, bucket.id)}
                 actions={actions}
-                compact={compact}
                 onOpenTask={setSelectedTask}
               />
             );
-          })}
-        </div>
+          }
+          return (
+            <TaskBoardColumn
+              key={bucket.id}
+              bucket={bucket}
+              tasks={visibleTasks}
+              hiddenCount={limit ? Math.max(tasks.length - limit, 0) : 0}
+              actions={actions}
+              compact={compact}
+              onOpenTask={setSelectedTask}
+            />
+          );
+        })}
       </div>
       <TaskDetailDialog task={selectedTask} actions={actions} onClose={() => setSelectedTask(null)} />
     </DndContext>
   );
+}
+
+const taskSectionStyles: Record<TaskBucket, {
+  border: string;
+  headerBg: string;
+  iconBg: string;
+  countBadge: string;
+  plusBtn: string;
+  checkbox: string;
+  checkboxDone: string;
+  bar: string;
+  footerBg: string;
+  footerText: string;
+  subtitle: (active: number) => string;
+  footerLabel: (active: number) => string;
+}> = {
+  diario: {
+    border: "border-blue-200/70 dark:border-blue-900/50",
+    headerBg: "bg-blue-50/80 dark:bg-blue-950/30",
+    iconBg: "bg-blue-500",
+    countBadge: "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200",
+    plusBtn: "bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/60 dark:text-blue-300 dark:hover:bg-blue-900",
+    checkbox: "border-blue-300 hover:border-blue-400 dark:border-blue-700",
+    checkboxDone: "border-blue-500 bg-blue-500",
+    bar: "bg-blue-500",
+    footerBg: "bg-blue-50/60 dark:bg-blue-950/20",
+    footerText: "text-blue-700 dark:text-blue-300",
+    subtitle: (active) => `Hoy · ${active} ${active === 1 ? "pendiente" : "pendientes"}`,
+    footerLabel: () => "Progreso diario",
+  },
+  urgente: {
+    border: "border-orange-200/70 dark:border-orange-900/50",
+    headerBg: "bg-orange-50/80 dark:bg-orange-950/30",
+    iconBg: "bg-orange-500",
+    countBadge: "bg-orange-100 text-orange-700 dark:bg-orange-900/60 dark:text-orange-200",
+    plusBtn: "bg-orange-100 text-orange-600 hover:bg-orange-200 dark:bg-orange-900/60 dark:text-orange-300 dark:hover:bg-orange-900",
+    checkbox: "border-orange-300 hover:border-orange-400 dark:border-orange-700",
+    checkboxDone: "border-orange-500 bg-orange-500",
+    bar: "bg-orange-500",
+    footerBg: "bg-orange-50/60 dark:bg-orange-950/20",
+    footerText: "text-orange-700 dark:text-orange-300",
+    subtitle: () => "Tareas por resolver",
+    footerLabel: (active) => `${active} ${active === 1 ? "pendiente" : "pendientes"}`,
+  },
+  semanal: {
+    border: "border-emerald-200/70 dark:border-emerald-900/50",
+    headerBg: "bg-emerald-50/80 dark:bg-emerald-950/30",
+    iconBg: "bg-emerald-500",
+    countBadge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-200",
+    plusBtn: "bg-emerald-100 text-emerald-600 hover:bg-emerald-200 dark:bg-emerald-900/60 dark:text-emerald-300 dark:hover:bg-emerald-900",
+    checkbox: "border-emerald-300 hover:border-emerald-400 dark:border-emerald-700",
+    checkboxDone: "border-emerald-500 bg-emerald-500",
+    bar: "bg-emerald-500",
+    footerBg: "bg-emerald-50/60 dark:bg-emerald-950/20",
+    footerText: "text-emerald-700 dark:text-emerald-300",
+    subtitle: () => "Plan de la semana",
+    footerLabel: () => "Progreso semanal",
+  },
+};
+
+function recentCompletedTasksForBucket(tasks: Task[], bucket: TaskBucket) {
+  const cutoff = Date.now() - 7 * 86400000;
+  return tasks
+    .filter((task) => task.status === "completada" && toTaskBucket(task.category) === bucket)
+    .filter((task) => {
+      const stamp = new Date(task.completed_at || task.created_at).getTime();
+      return Number.isFinite(stamp) && stamp >= cutoff;
+    })
+    .sort((a, b) => String(b.completed_at).localeCompare(String(a.completed_at)))
+    .slice(0, 5);
+}
+
+function TaskSectionCard({
+  bucket,
+  tasks,
+  completedTasks,
+  actions,
+  onOpenTask,
+}: {
+  bucket: (typeof taskBuckets)[number];
+  tasks: Task[];
+  completedTasks: Task[];
+  actions: ReturnTypeActions;
+  onOpenTask: (task: Task) => void;
+}) {
+  const style = taskSectionStyles[bucket.id];
+  const Icon = bucket.Icon;
+  const [addOpen, setAddOpen] = useState(false);
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: bucket.id });
+  const total = tasks.length + completedTasks.length;
+  const progressPct = total ? Math.round((completedTasks.length / total) * 100) : 0;
+
+  return (
+    <section
+      ref={setDropRef}
+      className={cn(
+        "overflow-hidden rounded-2xl border bg-card shadow-sm transition-shadow",
+        style.border,
+        isOver && "ring-2 ring-inset ring-primary/40",
+      )}
+    >
+      <div className={cn("flex items-center gap-3 px-4 py-3.5", style.headerBg)}>
+        <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm", style.iconBg)}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="truncate text-lg font-bold leading-tight">{bucket.title}</h3>
+            <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold", style.countBadge)}>{tasks.length}</span>
+          </div>
+          <p className="text-xs text-muted-foreground">{style.subtitle(tasks.length)}</p>
+        </div>
+        <button
+          type="button"
+          className={cn(
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            style.plusBtn,
+          )}
+          onClick={() => setAddOpen(true)}
+          aria-label={`Añadir tarea a ${bucket.title}`}
+        >
+          <Plus className="h-5 w-5" />
+        </button>
+      </div>
+
+      {addOpen && (
+        <div className="border-t px-3 py-3">
+          <QuickTaskForm bucket={bucket.id} actions={actions} open={addOpen} onOpenChange={setAddOpen} />
+        </div>
+      )}
+
+      <div className="divide-y border-t">
+        {tasks.map((task) => (
+          <TaskItemRow key={task.id} task={task} accent={style} actions={actions} onOpen={() => onOpenTask(task)} />
+        ))}
+        {completedTasks.map((task) => (
+          <TaskItemRow key={task.id} task={task} accent={style} actions={actions} onOpen={() => onOpenTask(task)} />
+        ))}
+        {total === 0 && !addOpen && (
+          <div className="flex items-center justify-between gap-3 px-4 py-5">
+            <p className="text-sm text-muted-foreground">No hay tareas en {bucket.title.toLowerCase()}.</p>
+            <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => setAddOpen(true)}>
+              <Plus className="h-3.5 w-3.5" />
+              Añadir
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className={cn("flex items-center justify-between gap-3 border-t px-4 py-2.5 text-xs", style.footerBg)}>
+        <span className={cn("font-medium", style.footerText)}>{style.footerLabel(tasks.length)}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground">
+            {completedTasks.length ? `${completedTasks.length} de ${total} completadas` : "0 completadas"}
+          </span>
+          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+            <div className={cn("h-full rounded-full transition-all", style.bar)} style={{ width: `${progressPct}%` }} />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TaskItemRow({
+  task,
+  accent,
+  actions,
+  onOpen,
+}: {
+  task: Task;
+  accent: (typeof taskSectionStyles)[TaskBucket];
+  actions: ReturnTypeActions;
+  onOpen: () => void;
+}) {
+  const priority = getTaskPriority(task);
+  const completed = task.status === "completada";
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const { listeners, setNodeRef: setDragRef, transform, isDragging } = useDraggable({ id: task.id, data: { bucket: task.category } });
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handle(e: PointerEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener("pointerdown", handle);
+    return () => document.removeEventListener("pointerdown", handle);
+  }, [menuOpen]);
+
+  const dragStyle = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
+
+  function toggleCompleted(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (completed) actions.updateTask(task.id, { status: "pendiente", completed_at: "" });
+    else actions.updateTask(task.id, { status: "completada", completed_at: nowIso() });
+  }
+
+  return (
+    <article
+      ref={setDragRef}
+      style={{ ...dragStyle, touchAction: "manipulation" }}
+      className={cn("relative flex select-none items-center gap-3 bg-card px-4 py-3", isDragging && "z-50 opacity-60 shadow-lg")}
+      {...listeners}
+    >
+      <button
+        type="button"
+        className={cn(
+          "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          completed ? accent.checkboxDone : accent.checkbox,
+        )}
+        onClick={toggleCompleted}
+        aria-label={completed ? "Marcar como pendiente" : "Completar tarea"}
+      >
+        {completed && <Check className="h-4 w-4 text-white" strokeWidth={3} />}
+      </button>
+
+      <button type="button" className="min-w-0 flex-1 cursor-pointer text-left" onClick={onOpen}>
+        <p className={cn("break-words font-medium leading-snug", completed && "text-muted-foreground line-through")}>{task.title}</p>
+        {!completed && (task.due_at || task.reminder_at || task.status === "en_progreso" || task.status === "pospuesta") && (
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground">
+            {task.due_at && (
+              <span className="inline-flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {formatShortDateTime(task.due_at)}
+              </span>
+            )}
+            {task.status === "en_progreso" && <span className="font-medium text-amber-600 dark:text-amber-400">· En curso</span>}
+            {task.status === "pospuesta" && <span>· Pospuesta</span>}
+            {task.reminder_at && (
+              <span className="inline-flex items-center gap-1">
+                · <AlarmClock className="h-3 w-3" />
+                {formatShortDateTime(task.reminder_at)}
+              </span>
+            )}
+          </p>
+        )}
+        {completed && <p className="mt-0.5 text-xs text-muted-foreground">Completada</p>}
+      </button>
+
+      {completed ? (
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
+          <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+        </span>
+      ) : (
+        <TaskPriorityBadge priority={priority} />
+      )}
+
+      <div ref={menuRef} className="relative shrink-0">
+        <button
+          type="button"
+          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); }}
+          aria-label="Opciones de tarea"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </button>
+        {menuOpen && (
+          <div className="absolute right-0 top-10 z-50 min-w-[150px] rounded-md border bg-background py-1 shadow-md">
+            <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Mover a</div>
+            {taskBuckets.map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                className={cn("flex w-full cursor-pointer items-center px-3 py-1.5 text-left text-xs transition-colors hover:bg-muted", toTaskBucket(task.category) === b.id && "font-semibold")}
+                onClick={(e) => { e.stopPropagation(); actions.updateTask(task.id, { category: b.id }); setMenuOpen(false); }}
+              >
+                {b.title}
+              </button>
+            ))}
+            <div className="my-1 border-t" />
+            <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Prioridad</div>
+            {taskPriorities.map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={cn("flex w-full cursor-pointer items-center px-3 py-1.5 text-left text-xs transition-colors hover:bg-muted", priority === p && "font-semibold")}
+                onClick={(e) => { e.stopPropagation(); actions.updateTask(task.id, { priority: p }); setMenuOpen(false); }}
+              >
+                {priorityLabel(p)}
+              </button>
+            ))}
+            <div className="my-1 border-t" />
+            <button
+              type="button"
+              className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-xs text-destructive transition-colors hover:bg-destructive/10"
+              onClick={(e) => { e.stopPropagation(); actions.deleteTask(task.id); setMenuOpen(false); }}
+            >
+              <Trash2 className="h-3 w-3" />
+              Eliminar
+            </button>
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function TaskPriorityBadge({ priority }: { priority: TaskPriority }) {
+  return <Badge className={cn("shrink-0", priorityClass(priority))}>{priorityLabel(priority)}</Badge>;
 }
 
 function TaskBoardColumn({
@@ -2544,7 +2856,8 @@ function Tasks({ store, actions }: { store: Store; actions: ReturnTypeActions })
   const completed = store.tasks.filter((item) => item.status === "completada").sort((a, b) => String(b.completed_at).localeCompare(String(a.completed_at)));
 
   return (
-    <Section title="Tareas">
+    <div className="space-y-5">
+      <p className="-mt-4 text-sm text-muted-foreground">Organiza tu trabajo y mantén el foco.</p>
       <div className="space-y-6">
         <TaskBoard store={store} actions={actions} variant="full" />
         {completed.length ? (
@@ -2562,7 +2875,7 @@ function Tasks({ store, actions }: { store: Store; actions: ReturnTypeActions })
           </div>
         ) : null}
       </div>
-    </Section>
+    </div>
   );
 }
 
