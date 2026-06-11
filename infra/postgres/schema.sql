@@ -309,3 +309,35 @@ drop trigger if exists tech_opportunities_updated_at on public.tech_opportunitie
 create trigger tech_opportunities_updated_at
   before update on public.tech_opportunities
   for each row execute function public.set_updated_at();
+
+-- ── job_applications ──────────────────────────────────────────────────────────
+create table if not exists public.job_applications (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid references public.users(id) on delete cascade not null,
+  company_name text not null,
+  company_url  text not null,
+  job_title    text not null,
+  job_url      text,
+  source       text not null default 'radar',
+  page_hash    text,
+  status       text not null default 'nueva',
+  detected_at  timestamptz not null default now(),
+  applied_at   timestamptz,
+  notes        jsonb not null default '[]',
+  is_new       boolean not null default true,
+  is_saved     boolean not null default false,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create index if not exists job_applications_user_status
+  on public.job_applications(user_id, status);
+
+create index if not exists job_applications_user_new
+  on public.job_applications(user_id, is_new)
+  where is_new = true;
+
+drop trigger if exists set_job_applications_updated_at on public.job_applications;
+create trigger set_job_applications_updated_at
+  before update on public.job_applications
+  for each row execute function public.set_updated_at();

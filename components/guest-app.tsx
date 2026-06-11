@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import React, { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlarmClock,
+  Bell,
   Briefcase,
   Building2,
   CalendarDays,
@@ -17,11 +18,18 @@ import {
   Flame,
   FolderKanban,
   ListTodo,
+  MapPin,
   Plus,
+  RefreshCw,
   Search,
+  SlidersHorizontal,
+  Sparkles,
+  Target,
   Trash2,
   X,
 } from "lucide-react";
+import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,28 +37,19 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { buildJobSearchUrl, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
+import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
 import { insertDb, updateDb, deleteDb } from "@/lib/db";
-import { TechOpportunitiesSection } from "@/components/tech-opportunities-section";
+import { TechOpportunitiesSection, type TechOpportunityTaskTarget } from "@/components/tech-opportunities-section";
+import { BlocNotepad } from "@/components/bloc-notepad";
 import type { TechOpportunity } from "@/lib/tech-opportunity-types";
+import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
+import { APPLICATION_STATUSES, STATUS_LABELS, STATUS_COLORS } from "@/lib/job-radar/types";
 
 type View = "dashboard" | "work" | "courses" | "hackathons" | "tasks" | "calendar" | "links" | "sources" | "settings" | "bloc";
 type TaskStatus = "pendiente" | "en_progreso" | "completada" | "pospuesta" | "cancelada";
-type TaskBucket = "diario" | "urgente" | "semanal";
+type TaskBucket = "diario" | "urgente" | "semanal" | "log_ia";
 type TaskPriority = "alta" | "media" | "baja" | "critica";
 type QuickAddType = "task" | "course" | "hackathon" | "company";
-
-type BlocNote = {
-  id: string;
-  label: string;
-  content: string;
-  updated_at: string;
-};
-
-type BlocSettings = {
-  fontSize: "sm" | "base" | "lg";
-  defaultLabel: string;
-};
 
 type AppSettings = {
   displayName: string;
@@ -58,8 +57,6 @@ type AppSettings = {
   compactTaskView: boolean;
 };
 
-const blocKey = "techlife.bloc.D1OS.v1";
-const blocSettingsKey = "techlife.bloc.settings.D1OS.v1";
 const appSettingsKey = "techlife.app.settings.D1OS.v1";
 const defaultAppSettings: AppSettings = {
   displayName: "",
@@ -219,10 +216,10 @@ type GoogleCalendarEvent = {
 
 const googleEventsCache = new Map<string, GoogleCalendarEvent[]>();
 
-async function loadGoogleCalendarRange(start: string, end: string) {
+async function loadGoogleCalendarRange(start: string, end: string, force = false) {
   const cacheKey = `${start}:${end}`;
   const cached = googleEventsCache.get(cacheKey);
-  if (cached) return cached;
+  if (cached && !force) return cached;
 
   const response = await fetch(`/api/google/calendar/events?timeMin=${encodeURIComponent(start)}&timeMax=${encodeURIComponent(end)}`, { cache: "no-store" });
   if (!response.ok) throw new Error("Google Calendar request failed");
@@ -232,7 +229,7 @@ async function loadGoogleCalendarRange(start: string, end: string) {
   return events as GoogleCalendarEvent[];
 }
 
-function useGoogleCalendarEvents(month: Date) {
+function useGoogleCalendarEvents(month: Date, refreshKey = 0) {
   const [events, setEvents] = useState<GoogleCalendarEvent[]>([]);
 
   useEffect(() => {
@@ -240,7 +237,7 @@ function useGoogleCalendarEvents(month: Date) {
     const start = startOfMonth(month).toISOString();
     const end = addMonths(startOfMonth(month), 1).toISOString();
 
-    loadGoogleCalendarRange(start, end)
+    loadGoogleCalendarRange(start, end, refreshKey > 0)
       .then((next) => {
         if (alive) setEvents(next);
       })
@@ -251,7 +248,7 @@ function useGoogleCalendarEvents(month: Date) {
     return () => {
       alive = false;
     };
-  }, [month]);
+  }, [month, refreshKey]);
 
   return useMemo(
     () =>
@@ -280,19 +277,6 @@ const emptyStore: Store = {
   reminders: [],
   companies: [],
 };
-
-const realisticJobTerms = [
-  "Frontend Developer",
-  "React Frontend Developer",
-  "Software Developer",
-  "Software Engineer",
-  "Programador/a Java Junior",
-  "Backend Developer",
-  "Full Stack Developer",
-  "QA Junior",
-  "Soporte IT Junior",
-  "Practicas DAW",
-];
 
 const defaultPortals: Array<{ name: JobPlatform; note: string }> = [
   { name: "LinkedIn", note: "Buen radar para empresas y puestos reales." },
@@ -375,11 +359,19 @@ const taskBuckets: Array<{
     tone: "from-emerald-500 to-teal-500",
     Icon: CalendarDays,
   },
+  {
+    id: "log_ia",
+    title: "Log IA",
+    shortTitle: "Log IA",
+    description: "Registro de implementaciones de Claude y Codex.",
+    tone: "from-violet-500 to-purple-600",
+    Icon: Sparkles,
+  },
 ];
 
 const taskBucketIds = taskBuckets.map((bucket) => bucket.id);
 const taskPriorities: TaskPriority[] = ["baja", "media", "alta", "critica"];
-const dashboardJobPortals: JobPlatform[] = ["LinkedIn", "InfoJobs", "Tecnoempleo", "Indeed"];
+const dashboardJobPortals: JobPlatform[] = [...jobPlatforms];
 const dashboardHackathonCutoff = new Date("2026-05-01T00:00:00");
 
 export type ReturnTypeActions = {
@@ -516,6 +508,180 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
   return <StoreContext.Provider value={{ store, actions }}>{children}</StoreContext.Provider>;
 }
 
+const BELL_DISMISSED_KEY = "al-lio.bell.dismissed.v1";
+
+function loadBellDismissed(): string[] {
+  if (typeof window === "undefined") return [];
+  try { return JSON.parse(localStorage.getItem(BELL_DISMISSED_KEY) || "[]"); } catch { return []; }
+}
+
+function saveBellDismissed(keys: string[]) {
+  try { localStorage.setItem(BELL_DISMISSED_KEY, JSON.stringify(keys)); } catch { /* ignore */ }
+}
+
+function NotificationBell({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
+  const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState<string[]>([]);
+  const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const weekLimit = useMemo(() => addDays(today, 7), [today]);
+
+  useEffect(() => {
+    setDismissed(loadBellDismissed());
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    loadGoogleCalendarRange(today.toISOString(), weekLimit.toISOString())
+      .then((evs) => { if (alive) setGoogleEvents(evs); })
+      .catch(() => { if (alive) setGoogleEvents([]); });
+    return () => { alive = false; };
+  }, [today, weekLimit]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: PointerEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
+  const allAlerts = useMemo(() => {
+    const localAlerts = getCalendarEvents(store).filter((event) => {
+      if (event.type !== "course" && event.type !== "hackathon") return false;
+      if (isCalendarEventDone(event)) return false;
+      if (isCalendarItemPast(event, store)) return false;
+      const date = parseDate(event.date_at);
+      return Boolean(date) && date! >= today && date! <= weekLimit;
+    });
+
+    const gcalAlerts: CalendarEvent[] = googleEvents
+      .filter((ev) => {
+        const date = parseDate(ev.start);
+        return Boolean(date) && date! >= today && date! <= weekLimit;
+      })
+      .map((ev) => ({
+        id: `gcal-${ev.id}`,
+        type: "event" as const,
+        title: ev.title,
+        date_at: ev.start,
+        status: ev.status,
+        href: ev.htmlLink || "/calendar",
+      }));
+
+    return [...localAlerts, ...gcalAlerts].sort(sortEvents).slice(0, 12);
+  }, [store, googleEvents, today, weekLimit]);
+
+  const alerts = useMemo(
+    () => allAlerts.filter((event) => !dismissed.includes(`${event.type}-${event.id}`)),
+    [allAlerts, dismissed],
+  );
+
+  function persistDismiss(key: string) {
+    setDismissed((prev) => {
+      const next = prev.includes(key) ? prev : [...prev, key];
+      saveBellDismissed(next);
+      return next;
+    });
+  }
+
+  function dismiss(e: React.MouseEvent, key: string) {
+    e.stopPropagation();
+    persistDismiss(key);
+  }
+
+  function addToTasksBucket(e: React.MouseEvent, event: CalendarEvent, bucket: TaskBucket) {
+    e.stopPropagation();
+    actions.addTask({ title: event.title, status: "pendiente", priority: "media", category: bucket, due_at: event.date_at });
+    persistDismiss(`${event.type}-${event.id}`);
+  }
+
+  function markEventDone(e: React.MouseEvent, event: CalendarEvent) {
+    e.stopPropagation();
+    completeCalendarEvent(event, store, actions);
+    persistDismiss(`${event.type}-${event.id}`);
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        className="relative inline-flex h-8 w-8 items-center justify-center rounded-md border bg-card/90 text-foreground shadow-sm transition-colors hover:bg-muted"
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Alertas de la semana"
+        title="Alertas de esta semana"
+      >
+        <Bell className="h-4 w-4" />
+        {alerts.length > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white">
+            {alerts.length}
+          </span>
+        )}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border bg-background shadow-xl">
+          <div className="border-b px-3 py-2.5">
+            <div className="flex items-center gap-2">
+              <AlarmClock className="h-4 w-4 shrink-0 text-amber-500" />
+              <h3 className="text-sm font-semibold">Proximos 7 dias</h3>
+            </div>
+            <p className="text-xs text-muted-foreground">Cursos, hackathons y eventos de Google Calendar.</p>
+          </div>
+          <div className="max-h-[420px] overflow-y-auto">
+            {alerts.length === 0 ? (
+              <p className="px-3 py-6 text-center text-sm text-muted-foreground">Sin alertas esta semana</p>
+            ) : (
+              <div className="divide-y">
+                {alerts.map((event) => {
+                  const key = `${event.type}-${event.id}`;
+                  return (
+                    <div key={key} className="px-3 py-2.5">
+                      <p className="text-sm font-medium leading-snug">{event.title}</p>
+                      {event.date_at && <p className="mb-2 text-xs text-muted-foreground">{formatShortDateTime(event.date_at)}</p>}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {taskBuckets.map((bucket) => (
+                          <button
+                            key={bucket.id}
+                            type="button"
+                            className="inline-flex h-6 items-center rounded bg-muted px-2 text-[11px] font-medium transition-colors hover:bg-muted/70"
+                            onClick={(e) => addToTasksBucket(e, event, bucket.id)}
+                          >
+                            → {bucket.shortTitle}
+                          </button>
+                        ))}
+                        {(event.type === "course" || event.type === "hackathon") && (
+                          <button
+                            type="button"
+                            className="inline-flex h-6 items-center gap-1 rounded bg-emerald-500/10 px-2 text-[11px] font-medium text-emerald-700 transition-colors hover:bg-emerald-500/20 dark:text-emerald-300"
+                            onClick={(e) => markEventDone(e, event)}
+                          >
+                            <CheckCircle2 className="h-3 w-3" />
+                            Hecho
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="ml-auto inline-flex h-6 items-center gap-1 rounded px-2 text-[11px] text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                          onClick={(e) => dismiss(e, key)}
+                        >
+                          <X className="h-3 w-3" />
+                          Descartar
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function GuestApp({ view }: { view: View }) {
   const router = useRouter();
   const { store, actions } = useStore();
@@ -532,19 +698,31 @@ export function GuestApp({ view }: { view: View }) {
             </Button>
           )}
           <div>
-            <p className="text-sm text-muted-foreground">Panel personal</p>
             <h1 className="text-3xl font-semibold tracking-normal">
-              {(() => {
+              {view === "dashboard" ? (() => {
                 const currentHour = new Date().getHours();
                 let prefix = "Buenos días";
                 if (currentHour >= 14 && currentHour < 21) prefix = "Buenas tardes";
                 else if (currentHour >= 21 || currentHour < 6) prefix = "Buenas noches";
                 return `${prefix}, ${appSettings.displayName || store.userName || "Al-Lio"}`;
-              })()}
+              })() : ({
+                work: "Trabajo",
+                tasks: "Tareas",
+                courses: "Cursos",
+                hackathons: "Hackathons",
+                calendar: "Calendario",
+                links: "Links",
+                sources: "Fuentes",
+                settings: "Configuración",
+                bloc: "Bloc",
+              } as Record<string, string>)[view] ?? view}
             </h1>
           </div>
         </div>
-        <GoogleCalendarStatusControl />
+        <div className="flex items-center gap-2">
+          <NotificationBell store={store} actions={actions} />
+          <GoogleCalendarStatusControl />
+        </div>
       </div>
 
       {view === "dashboard" && <Dashboard store={store} actions={actions} />}
@@ -564,16 +742,172 @@ export function GuestApp({ view }: { view: View }) {
 }
 
 function Dashboard({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
+  const activeTechOpportunities = useMemo(
+    () => store.techOpportunities.filter((item) => !isTechOpportunityCompletedByUser(item, store) && !isTechOpportunityPast(item)),
+    [store],
+  );
+
+  function addTechOpportunityTask(item: TechOpportunity, target: TechOpportunityTaskTarget) {
+    const category: TaskBucket = target === "pendiente" ? "urgente" : target;
+    const dueAt = target === "semanal"
+      ? addDaysKeepingTime(toDatetimeLocalValue(new Date()), 3)
+      : toDatetimeLocalValue(new Date());
+    const priority: TaskPriority = item.prioridad?.toLowerCase() === "alta" || item.encaje_daw_1_5 === 5
+      ? "alta"
+      : "media";
+
+    actions.addTask({
+      title: `Inscribirme: ${item.nombre}`,
+      description: buildTechOpportunityTaskDescription(item),
+      due_at: dueAt,
+      status: "pendiente",
+      priority,
+      category,
+    });
+  }
+
   return (
     <>
       <TodoOverview store={store} actions={actions} />
-      <WeeklyAlerts store={store} />
       <DashboardOperationalFeed store={store} actions={actions} />
-      <TaskCalendar store={store} />
-      <QuickLinksSection />
-      <TechOpportunitiesSection initialItems={store.techOpportunities} />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <TaskCalendar store={store} />
+        <QuickLinksSection />
+      </div>
+      <TechOpportunitiesSection
+        initialItems={activeTechOpportunities}
+        onAddTask={addTechOpportunityTask}
+        onComplete={(item) => completeTechOpportunityItem(item, actions)}
+      />
     </>
   );
+}
+
+function buildTechOpportunityTaskDescription(item: TechOpportunity) {
+  return [
+    "Tarea creada desde Oportunidades tech para preparar la inscripción.",
+    item.entidad ? `Entidad: ${item.entidad}` : "",
+    item.modalidad ? `Modalidad: ${item.modalidad}` : "",
+    compactTechOpportunityLocation(item) ? `Lugar: ${compactTechOpportunityLocation(item)}` : "",
+    item.fecha_inicio ? `Fecha inicio: ${item.fecha_inicio}` : "",
+    item.fecha_fin ? `Fecha fin: ${item.fecha_fin}` : "",
+    item.estado ? `Estado: ${item.estado}` : "",
+    item.requisitos_resumen ? `Requisitos: ${item.requisitos_resumen}` : "",
+    item.fuente_url ? `Fuente: ${item.fuente_url}` : "",
+  ].filter(Boolean).join("\n");
+}
+
+function compactTechOpportunityLocation(item: TechOpportunity) {
+  return [item.localidad, item.provincia]
+    .filter(Boolean)
+    .filter((value, index, array) => array.indexOf(value) === index)
+    .join(", ");
+}
+
+function completeTechOpportunityItem(item: TechOpportunity, actions: ReturnTypeActions) {
+  if (isTechCourse(item)) {
+    completeCourseItem(techOpportunityToCourse(item), actions);
+    return;
+  }
+
+  completeHackathonItem(techOpportunityToHackathon(item), actions);
+}
+
+function completeCourseItem(item: Course, actions: ReturnTypeActions) {
+  if (item.sourceTable === "tech_opportunities" || item.id.startsWith("tech-")) {
+    const data = courseAddPayload(item);
+    actions.addCourse({
+      ...data,
+      status: "terminado",
+      sourceTable: undefined,
+      notes: appendCompletionNote(item.notes, "Marcado como terminado desde D1OS."),
+    });
+    return;
+  }
+
+  actions.updateCourse(item.id, { status: "terminado" });
+}
+
+function completeHackathonItem(item: Hackathon, actions: ReturnTypeActions) {
+  if (item.sourceTable === "tech_opportunities" || item.id.startsWith("tech-")) {
+    const data = hackathonAddPayload(item);
+    actions.addHackathon({
+      ...data,
+      status: "realizado",
+      sourceTable: undefined,
+      notes: appendCompletionNote(item.notes, "Marcado como realizado desde D1OS."),
+    });
+    return;
+  }
+
+  actions.updateHackathon(item.id, { status: "realizado" });
+}
+
+function completeCalendarEvent(event: CalendarEvent, store: Store, actions: ReturnTypeActions) {
+  if (event.type === "task") {
+    actions.updateTask(event.id, { status: "completada", completed_at: nowIso() });
+    return true;
+  }
+
+  const baseId = calendarEventBaseId(event.id);
+
+  if (event.type === "course") {
+    const course = getDisplayCourses(store.courses, store.techOpportunities)
+      .find((item) => item.id === baseId || item.id_slug === baseId || item.id === `tech-${baseId}`);
+    if (!course) return false;
+    completeCourseItem(course, actions);
+    return true;
+  }
+
+  if (event.type === "hackathon") {
+    const hackathon = getDisplayHackathons(store.hackathons, store.techOpportunities)
+      .find((item) => item.id === baseId || item.id_slug === baseId || item.id === `tech-${baseId}`);
+    if (!hackathon) return false;
+    completeHackathonItem(hackathon, actions);
+    return true;
+  }
+
+  return false;
+}
+
+function calendarEventBaseId(id: string) {
+  return id.replace(/-(start|deadline|end)$/, "");
+}
+
+function appendCompletionNote(notes: string | undefined, text: string) {
+  return [notes, text].filter(Boolean).join("\n\n");
+}
+
+function courseAddPayload(item: Course) {
+  const data: Partial<Course> = { ...item };
+  delete data.id;
+  delete data.created_at;
+  return data as Omit<Course, "id" | "created_at">;
+}
+
+function hackathonAddPayload(item: Hackathon) {
+  const data: Partial<Hackathon> = { ...item };
+  delete data.id;
+  delete data.created_at;
+  return data as Omit<Hackathon, "id" | "created_at">;
+}
+
+function isTechOpportunityCompletedByUser(item: TechOpportunity, store: Store) {
+  if (isTechCourse(item)) {
+    const identity = courseIdentityKey(techOpportunityToCourse(item));
+    return store.courses.some((course) => courseIdentityKey(course) === identity && isCourseArchived(course));
+  }
+
+  if (isTechHackathonOrEvent(item)) {
+    const identity = hackathonIdentityKey(techOpportunityToHackathon(item));
+    return store.hackathons.some((hackathon) => hackathonIdentityKey(hackathon) === identity && isHackathonArchived(hackathon));
+  }
+
+  return false;
+}
+
+function isTechOpportunityPast(item: TechOpportunity) {
+  return isPastActionDate(item.fecha_fin || item.fecha_inicio);
 }
 
 
@@ -661,71 +995,31 @@ function TodoOverview({ store, actions }: { store: Store; actions: ReturnTypeAct
           <Link href="/tasks">Ver tablero completo</Link>
         </Button>
       </div>
-      <TaskBoard store={store} actions={actions} limit={4} variant="dashboard" compact={appSettings.compactTaskView} />
+      <TaskBoard store={store} actions={actions} variant="dashboard" compact={appSettings.compactTaskView} />
     </section>
-  );
-}
-
-function WeeklyAlerts({ store }: { store: Store }) {
-  const today = useMemo(() => startOfDay(new Date()), []);
-  const weekLimit = useMemo(() => addDays(today, 7), [today]);
-  const alerts = useMemo(
-    () =>
-      getCalendarEvents(store)
-        .filter((event) => {
-          const date = parseDate(event.date_at);
-          return Boolean(date) && date! >= today && date! <= weekLimit && event.status !== "completada" && event.status !== "cancelada";
-        })
-        .sort(sortEvents)
-        .slice(0, 8),
-    [store, today, weekLimit],
-  );
-
-  if (!alerts.length) return null;
-
-  const counts = alerts.reduce<Record<CalendarEvent["type"], number>>(
-    (acc, event) => {
-      acc[event.type] += 1;
-      return acc;
-    },
-    { task: 0, course: 0, hackathon: 0, event: 0, google: 0 },
-  );
-
-  return (
-    <Card className="border-amber-500/25 bg-amber-500/5 p-3">
-      <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-2">
-          <AlarmClock className="h-4 w-4 shrink-0 text-amber-500" />
-          <div className="min-w-0">
-            <h2 className="truncate text-sm font-semibold">Alertas de esta semana</h2>
-            <p className="truncate text-xs text-muted-foreground">Tareas, cursos, hackathons y eventos con fecha cercana.</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {counts.task ? <Badge>Tareas {counts.task}</Badge> : null}
-          {counts.course ? <Badge>Cursos {counts.course}</Badge> : null}
-          {counts.hackathon ? <Badge>Hackathons {counts.hackathon}</Badge> : null}
-          {counts.event ? <Badge>Eventos {counts.event}</Badge> : null}
-          {counts.google ? <Badge>Google {counts.google}</Badge> : null}
-        </div>
-      </div>
-      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-        {alerts.slice(0, 4).map((event) => (
-          <CalendarAgendaRow key={`${event.type}-${event.id}`} event={event} compact />
-        ))}
-      </div>
-    </Card>
   );
 }
 
 function TaskBoard({ store, actions, limit, variant = "full", compact: compactProp }: { store: Store; actions: ReturnTypeActions; limit?: number; variant?: "dashboard" | "full"; compact?: boolean }) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const compact = compactProp ?? (variant === "dashboard");
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over) return;
+    const taskId = active.id as string;
+    const newBucket = over.id as TaskBucket;
+    if (!taskBucketIds.includes(newBucket)) return;
+    const task = store.tasks.find((t) => t.id === taskId);
+    if (!task || toTaskBucket(task.category) === newBucket) return;
+    actions.updateTask(taskId, { category: newBucket });
+  }
 
   return (
-    <>
-      <div className={cn("overflow-x-auto", compact ? "pb-1" : "rounded-lg border bg-card/70 p-3")}>
-        <div className={cn(compact ? "flex w-max gap-3" : "grid min-w-[840px] grid-cols-3 gap-4 xl:min-w-0")}>
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <div className={cn(compact ? "" : "overflow-x-auto rounded-lg border bg-card/70 p-3")}>
+        <div className={cn(compact ? "grid grid-cols-2 gap-3 md:grid-cols-4" : "grid min-w-[1080px] grid-cols-4 gap-4 xl:min-w-0")}>
           {taskBuckets.map((bucket) => {
             const tasks = tasksForBucket(store.tasks, bucket.id);
             const visibleTasks = limit ? tasks.slice(0, limit) : tasks;
@@ -744,7 +1038,7 @@ function TaskBoard({ store, actions, limit, variant = "full", compact: compactPr
         </div>
       </div>
       <TaskDetailDialog task={selectedTask} actions={actions} onClose={() => setSelectedTask(null)} />
-    </>
+    </DndContext>
   );
 }
 
@@ -764,22 +1058,32 @@ function TaskBoardColumn({
   onOpenTask: (task: Task) => void;
 }) {
   const Icon = bucket.Icon;
+  const [addOpen, setAddOpen] = useState(false);
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: bucket.id });
 
   return (
-    <section className={cn("flex min-w-0 flex-col overflow-hidden rounded-lg border bg-muted/30 shadow-sm dark:bg-zinc-950/70", compact ? "w-[228px]" : "min-h-[430px]")}>
+    <section ref={setDropRef} className={cn("flex min-w-0 flex-col overflow-hidden rounded-lg border bg-muted/30 shadow-sm transition-colors dark:bg-zinc-950/70", compact ? "min-w-0" : "min-h-[430px]", isOver && "ring-2 ring-inset ring-primary/40 bg-muted/60")}>
       <div className={cn("bg-gradient-to-br text-white", bucket.tone, compact ? "px-3 py-2.5" : "p-4")}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <Icon className={cn(compact ? "h-4 w-4" : "h-5 w-5")} />
-              <h3 className={cn("truncate font-semibold", compact ? "text-base" : "text-xl")}>{bucket.title}</h3>
-            </div>
-            {!compact && <p className="mt-2 max-w-xs text-sm text-white/85">{bucket.description}</p>}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Icon className={cn(compact ? "h-4 w-4" : "h-5 w-5")} />
+            <h3 className={cn("truncate font-semibold", compact ? "text-base" : "text-xl")}>{bucket.title}</h3>
+            <Badge className={cn("shrink-0 border-white/25 bg-white/15 text-white", compact ? "px-1.5 py-0 text-[10px]" : "")}>{tasks.length + hiddenCount}</Badge>
           </div>
-          <Badge className={cn("border-white/25 bg-white/15 text-white", compact && "px-1.5 py-0 text-[10px]")}>{tasks.length + hiddenCount}</Badge>
+          <button
+            type="button"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/35"
+            onClick={() => setAddOpen(true)}
+            aria-label={`Añadir tarea a ${bucket.title}`}
+            title="Añadir tarea"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
         </div>
+        {!compact && <p className="mt-2 max-w-xs text-sm text-white/85">{bucket.description}</p>}
       </div>
-      <div className={cn("flex flex-1 flex-col gap-2 overflow-y-auto", compact ? "max-h-[260px] p-2" : "p-3")}>
+      <div className={cn("flex flex-1 flex-col gap-2 overflow-y-auto", compact ? "max-h-[420px] p-2" : "p-3")}>
+        {addOpen && <QuickTaskForm bucket={bucket.id} actions={actions} compact={compact} open={addOpen} onOpenChange={setAddOpen} />}
         {tasks.length ? tasks.map((task) => (
           <TaskBoardCard key={task.id} task={task} actions={actions} compact={compact} onOpen={() => onOpenTask(task)} />
         )) : <EmptyText>No hay tareas en {bucket.title.toLowerCase()}.</EmptyText>}
@@ -788,15 +1092,33 @@ function TaskBoardColumn({
             <Link href="/tasks">Ver {hiddenCount} mas</Link>
           </Button>
         )}
-        <QuickTaskForm bucket={bucket.id} actions={actions} compact={compact} />
       </div>
     </section>
   );
 }
 
-function QuickTaskForm({ bucket, actions, compact }: { bucket: TaskBucket; actions: ReturnTypeActions; compact?: boolean }) {
-  const [open, setOpen] = useState(false);
+function QuickTaskForm({
+  bucket,
+  actions,
+  compact,
+  open: externalOpen,
+  onOpenChange,
+}: {
+  bucket: TaskBucket;
+  actions: ReturnTypeActions;
+  compact?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  const isControlled = externalOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isControlled ? externalOpen : internalOpen;
   const [dueAt, setDueAt] = useState(bucket === "semanal" ? addDaysKeepingTime(toDatetimeLocalValue(new Date()), 3) : toDatetimeLocalValue(new Date()));
+
+  function setOpen(v: boolean) {
+    if (isControlled) onOpenChange?.(v);
+    else setInternalOpen(v);
+  }
 
   function submit(form: FormData) {
     const title = val(form, "title");
@@ -816,6 +1138,7 @@ function QuickTaskForm({ bucket, actions, compact }: { bucket: TaskBucket; actio
   }
 
   if (!open) {
+    if (isControlled) return null;
     return (
       <Button type="button" variant="ghost" size="sm" className="mt-auto w-full justify-start border border-dashed bg-background/55 text-muted-foreground hover:bg-background" onClick={() => setOpen(true)}>
         <Plus className="h-4 w-4" />
@@ -828,7 +1151,7 @@ function QuickTaskForm({ bucket, actions, compact }: { bucket: TaskBucket; actio
     <FieldForm action={submit}>
       <div className="rounded-md border bg-background p-2 shadow-sm">
         <div className="space-y-2">
-          <Input name="title" placeholder={compact ? "Nueva tarea" : "Titulo de la tarea"} required />
+          <Input name="title" placeholder={compact ? "Nueva tarea" : "Titulo de la tarea"} required autoFocus />
           {!compact && <Textarea name="description" placeholder="Descripcion breve" rows={3} />}
           <Select name="priority" defaultValue={bucket === "urgente" ? "alta" : "media"} className="h-8 text-xs">
             {taskPriorities.map((priority) => <option key={priority} value={priority}>{priorityLabel(priority)}</option>)}
@@ -851,10 +1174,29 @@ function QuickTaskForm({ bucket, actions, compact }: { bucket: TaskBucket; actio
 
 function TaskBoardCard({ task, actions, compact, onOpen }: { task: Task; actions: ReturnTypeActions; compact?: boolean; onOpen: () => void }) {
   const priority = getTaskPriority(task);
+  const [showMoveMenu, setShowMoveMenu] = useState(false);
+  const moveMenuRef = useRef<HTMLDivElement>(null);
+  const { listeners, setNodeRef: setDragRef, transform, isDragging } = useDraggable({ id: task.id, data: { bucket: task.category } });
+
+  useEffect(() => {
+    if (!showMoveMenu) return;
+    function handle(e: PointerEvent) {
+      if (moveMenuRef.current && !moveMenuRef.current.contains(e.target as Node)) setShowMoveMenu(false);
+    }
+    document.addEventListener("pointerdown", handle);
+    return () => document.removeEventListener("pointerdown", handle);
+  }, [showMoveMenu]);
+
+  const dragStyle = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
 
   return (
-    <article className="group relative overflow-hidden rounded-md border bg-card shadow-sm transition-colors hover:border-foreground/20">
-      <button type="button" className={cn("block w-full text-left", compact ? "p-2.5 pr-8" : "p-3 pr-9")} onClick={onOpen}>
+    <article
+      ref={setDragRef}
+      style={dragStyle}
+      className={cn("group relative overflow-hidden rounded-md border bg-card shadow-sm transition-colors hover:border-foreground/20 cursor-grab active:cursor-grabbing select-none", isDragging && "opacity-50 shadow-lg")}
+      {...listeners}
+    >
+      <button type="button" className={cn("block w-full cursor-pointer text-left", compact ? "p-2.5 pr-20" : "p-3 pr-24")} onClick={onOpen}>
         <span className={cn("absolute left-0 top-0 h-full w-1", priorityBarClass(priority))} />
         <div className="flex items-start justify-between gap-3 pl-1">
           <div className="min-w-0">
@@ -870,23 +1212,69 @@ function TaskBoardCard({ task, actions, compact, onOpen }: { task: Task; actions
           </div>
         )}
       </button>
-      <Button type="button" size="icon" variant="ghost" className={cn("absolute right-1.5 top-1.5 h-7 w-7 text-muted-foreground hover:text-destructive", compact && "h-6 w-6")} onClick={(event) => { event.stopPropagation(); actions.deleteTask(task.id); }} aria-label="Eliminar tarea" title="Eliminar tarea">
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
-      {!compact && (
-        <div className="flex flex-wrap items-center gap-2 border-t px-3 py-2">
-          <Button type="button" size="sm" variant="ghost" className="h-8" onClick={() => actions.updateTask(task.id, { status: "completada", completed_at: nowIso() })}>
-            <CheckCircle2 className="h-4 w-4" />
-            Hecho
-          </Button>
-          <Select value={toTaskBucket(task.category)} onChange={(event) => actions.updateTask(task.id, { category: event.target.value })} className="h-8 w-[112px] py-1" aria-label="Mover tarea">
-            {taskBuckets.map((bucket) => <option key={bucket.id} value={bucket.id}>{bucket.shortTitle}</option>)}
-          </Select>
-          <Select value={priority} onChange={(event) => actions.updateTask(task.id, { priority: event.target.value as TaskPriority })} className="h-8 w-[112px] py-1" aria-label="Cambiar prioridad">
-            {taskPriorities.map((item) => <option key={item} value={item}>{priorityLabel(item)}</option>)}
-          </Select>
+
+      <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
+        <div ref={moveMenuRef} className="relative">
+          <button
+            type="button"
+            className={cn("flex cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground", compact ? "h-6 w-6" : "h-7 w-7")}
+            onClick={(e) => { e.stopPropagation(); setShowMoveMenu((o) => !o); }}
+            aria-label="Mover tarea"
+            title="Opciones"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+          {showMoveMenu && (
+            <div className="absolute right-0 top-7 z-50 min-w-[130px] rounded-md border bg-background shadow-md">
+              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Mover a</div>
+              {taskBuckets.map((bucket) => (
+                <button
+                  key={bucket.id}
+                  type="button"
+                  className={cn("flex w-full cursor-pointer items-center px-3 py-1.5 text-left text-xs transition-colors hover:bg-muted", toTaskBucket(task.category) === bucket.id && "font-semibold")}
+                  onClick={(e) => { e.stopPropagation(); actions.updateTask(task.id, { category: bucket.id }); setShowMoveMenu(false); }}
+                >
+                  {bucket.title}
+                </button>
+              ))}
+              {!compact && (
+                <>
+                  <div className="my-1 border-t" />
+                  <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Prioridad</div>
+                  {taskPriorities.map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      className={cn("flex w-full cursor-pointer items-center px-3 py-1.5 text-left text-xs transition-colors hover:bg-muted", priority === p && "font-semibold")}
+                      onClick={(e) => { e.stopPropagation(); actions.updateTask(task.id, { priority: p }); setShowMoveMenu(false); }}
+                    >
+                      {priorityLabel(p)}
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
         </div>
-      )}
+        <button
+          type="button"
+          className={cn("flex cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:text-emerald-500", compact ? "h-6 w-6" : "h-7 w-7")}
+          onClick={(e) => { e.stopPropagation(); actions.updateTask(task.id, { status: "completada", completed_at: nowIso() }); }}
+          aria-label="Marcar como hecho"
+          title="Marcar como hecho"
+        >
+          <CheckCircle2 className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          className={cn("flex cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:text-destructive", compact ? "h-6 w-6" : "h-7 w-7")}
+          onClick={(e) => { e.stopPropagation(); actions.deleteTask(task.id); }}
+          aria-label="Eliminar tarea"
+          title="Eliminar tarea"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
     </article>
   );
 }
@@ -954,6 +1342,7 @@ const dashboardFeedSections = [
   { id: "calendar", label: "Semana", sub: "Eventos y fechas importantes.", Icon: CalendarDays, color: "text-blue-500" },
   { id: "hackathons", label: "Hackathons proximos", sub: "Solo fechas desde el 01/05/2026.", Icon: FolderKanban, color: "text-amber-500" },
   { id: "jobs", label: "Busqueda rapida", sub: "Portales con termino y ubicacion editables.", Icon: Briefcase, color: "text-emerald-500" },
+  { id: "radar", label: "Radar de empleo", sub: "Nuevas ofertas detectadas en empresas de Granada.", Icon: Target, color: "text-violet-500" },
 ] as const;
 
 function DashboardOperationalFeed({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
@@ -961,6 +1350,11 @@ function DashboardOperationalFeed({ store, actions }: { store: Store; actions: R
   const [autoPaused, setAutoPaused] = useState(false);
   const [expandedPortal, setExpandedPortal] = useState<JobPlatform | null>(null);
   const [googleWeekEvents, setGoogleWeekEvents] = useState<GoogleCalendarEvent[]>([]);
+  const [radarApps, setRadarApps] = useState<JobApplication[]>([]);
+  const [radarSyncing, setRadarSyncing] = useState(false);
+  const radarFetched = useRef(false);
+
+  const handleToggleDashboard = useCallback((p: JobPlatform) => setExpandedPortal((v) => v === p ? null : p), []);
 
   useEffect(() => {
     if (autoPaused) return;
@@ -986,6 +1380,33 @@ function DashboardOperationalFeed({ store, actions }: { store: Store; actions: R
     return () => {
       alive = false;
     };
+  }, []);
+
+  const current = dashboardFeedSections[section];
+
+  useEffect(() => {
+    if (current.id !== "radar" || radarFetched.current) return;
+    radarFetched.current = true;
+    let alive = true;
+    fetch("/api/job-radar")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (alive && d?.applications) setRadarApps(d.applications); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [current.id]);
+
+  const syncRadarDashboard = useCallback(async () => {
+    setRadarSyncing(true);
+    try {
+      await fetch("/api/job-radar/sync", { method: "POST" });
+      const res = await fetch("/api/job-radar");
+      if (res.ok) {
+        const d = await res.json();
+        setRadarApps(d.applications ?? []);
+      }
+    } finally {
+      setRadarSyncing(false);
+    }
   }, []);
 
   const today = useMemo(() => startOfDay(new Date()), []);
@@ -1022,7 +1443,7 @@ function DashboardOperationalFeed({ store, actions }: { store: Store; actions: R
       [...getCalendarEvents(store), ...googleCalendarWeekEvents]
         .filter((event) => {
           const date = parseDate(event.date_at);
-          return Boolean(date) && date! >= today && date! <= weekLimit && event.status !== "completada" && event.status !== "cancelada";
+          return Boolean(date) && date! >= today && date! <= weekLimit && !isCalendarEventDone(event) && !isCalendarItemPast(event, store);
         })
         .sort(sortEvents)
         .slice(0, 9),
@@ -1044,7 +1465,6 @@ function DashboardOperationalFeed({ store, actions }: { store: Store; actions: R
     [displayHackathons],
   );
 
-  const current = dashboardFeedSections[section];
   const Icon = current.Icon;
 
   const moveSection = useCallback((direction: -1 | 1) => {
@@ -1097,7 +1517,7 @@ function DashboardOperationalFeed({ store, actions }: { store: Store; actions: R
           )}
           {current.id === "calendar" && (
             <div className="grid max-h-[250px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
-              {weekEvents.length ? weekEvents.map((event) => <DashboardEventMiniCard key={`${event.type}-${event.id}`} event={event} />) : <EmptyText>Sin eventos importantes esta semana.</EmptyText>}
+              {weekEvents.length ? weekEvents.map((event) => <DashboardEventMiniCard key={`${event.type}-${event.id}`} event={event} store={store} actions={actions} />) : <EmptyText>Sin eventos importantes esta semana.</EmptyText>}
             </div>
           )}
           {current.id === "hackathons" && (
@@ -1106,15 +1526,60 @@ function DashboardOperationalFeed({ store, actions }: { store: Store; actions: R
             </div>
           )}
           {current.id === "jobs" && (
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid max-h-[250px] gap-2 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-4">
               {dashboardJobPortals.map((platform) => (
                 <QuickJobSearchCard
                   key={platform}
                   platform={platform}
                   expanded={expandedPortal === platform}
-                  onToggle={() => setExpandedPortal((value) => value === platform ? null : platform)}
+                  onToggle={handleToggleDashboard}
                 />
               ))}
+            </div>
+          )}
+          {current.id === "radar" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  {radarApps.filter((a) => a.is_new).length} nuevas · {radarApps.length} total
+                </span>
+                <button
+                  type="button"
+                  onClick={syncRadarDashboard}
+                  disabled={radarSyncing}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+                >
+                  <RefreshCw className={cn("h-3 w-3", radarSyncing && "animate-spin")} />
+                  {radarSyncing ? "Escaneando..." : "Sincronizar"}
+                </button>
+              </div>
+              {radarApps.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Sin ofertas. Pulsa Sincronizar para escanear las empresas.</p>
+              ) : (
+                <ul className="max-h-[190px] space-y-1.5 overflow-y-auto pr-1">
+                  {radarApps.slice(0, 8).map((app) => (
+                    <li key={app.id} className="flex items-center gap-2">
+                      {app.is_new
+                        ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+                        : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/20" />
+                      }
+                      <span className="min-w-0 flex-1 text-xs">
+                        <span className="font-medium text-foreground/90">{app.company_name}</span>
+                        <span className="text-muted-foreground"> — {app.job_title}</span>
+                      </span>
+                      <a
+                        href={app.job_url ?? app.company_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                        title="Ver oferta"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
         </div>
@@ -1146,15 +1611,30 @@ const DashboardTaskMiniCard = memo(function DashboardTaskMiniCard({ task, action
   );
 });
 
-const DashboardEventMiniCard = memo(function DashboardEventMiniCard({ event }: { event: CalendarEvent }) {
+const DashboardEventMiniCard = memo(function DashboardEventMiniCard({ event, store, actions }: { event: CalendarEvent; store: Store; actions: ReturnTypeActions }) {
+  const canComplete = event.type === "task" || event.type === "course" || event.type === "hackathon";
   return (
-    <Link href={event.href} className="block rounded-md border bg-background/70 p-2.5 text-sm shadow-sm transition-colors hover:bg-muted/60">
-      <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 truncate font-medium">{event.title}</p>
-        <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", calendarDotClass(event.type, event.status))} />
-      </div>
-      <p className="mt-1 text-xs text-muted-foreground">{formatShortDateTime(event.date_at)} - {calendarTypeLabel(event.type)}</p>
-    </Link>
+    <div className="flex items-start gap-2 rounded-md border bg-background/70 p-2.5 text-sm shadow-sm transition-colors hover:bg-muted/60">
+      <Link href={event.href} className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <p className="min-w-0 truncate font-medium">{event.title}</p>
+          <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", calendarDotClass(event.type, event.status))} />
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">{formatShortDateTime(event.date_at)} - {calendarTypeLabel(event.type)}</p>
+      </Link>
+      {canComplete && (
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-emerald-600"
+          onClick={() => completeCalendarEvent(event, store, actions)}
+          aria-label="Marcar como hecho"
+        >
+          <CheckCircle2 className="h-3.5 w-3.5" />
+        </Button>
+      )}
+    </div>
   );
 });
 
@@ -1172,20 +1652,20 @@ const DashboardHackathonMiniCard = memo(function DashboardHackathonMiniCard({ ha
       <div className="mt-2 flex flex-wrap items-center gap-1">
         {hackathon.url && <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs"><a href={hackathon.url} target="_blank" rel="noreferrer">Info</a></Button>}
         <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => actions.addTask({ title: `Investigar ${hackathon.name}`, due_at: toDatetimeLocalValue(addDays(new Date(), 1)), status: "pendiente", priority: "media", category: "urgente", description: "Hackathon" })}>Investigar</Button>
-        <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => actions.updateHackathon(hackathon.id, { status: "realizado" })} aria-label="Marcar hackathon como realizado"><CheckCircle2 className="h-3.5 w-3.5" /></Button>
+        <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => completeHackathonItem(hackathon, actions)} aria-label="Marcar hackathon como realizado"><CheckCircle2 className="h-3.5 w-3.5" /></Button>
       </div>
     </div>
   );
 });
 
-function QuickJobSearchCard({ platform, expanded, onToggle }: { platform: JobPlatform; expanded: boolean; onToggle: () => void }) {
+const QuickJobSearchCard = memo(function QuickJobSearchCard({ platform, expanded, onToggle }: { platform: JobPlatform; expanded: boolean; onToggle: (p: JobPlatform) => void }) {
   const [query, setQuery] = useState("programador java");
   const [scope, setScope] = useState<"Granada" | "Teletrabajo">("Granada");
-  const url = buildJobSearchUrl(platform, query, scope);
+  const url = useMemo(() => buildJobSearchUrl(platform, query, scope), [platform, query, scope]);
 
   return (
     <div className={cn("rounded-md border bg-background/70 p-2.5 shadow-sm transition-colors", expanded && "border-primary/50 bg-primary/5")}>
-      <button type="button" className="flex w-full items-center gap-2 text-left" onClick={onToggle}>
+      <button type="button" className="flex w-full items-center gap-2 text-left" onClick={() => onToggle(platform)}>
         <PortalMark platform={platform} />
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{platform}</p>
@@ -1208,7 +1688,7 @@ function QuickJobSearchCard({ platform, expanded, onToggle }: { platform: JobPla
       )}
     </div>
   );
-}
+});
 
 const quickLinkGroups = [
   {
@@ -1267,39 +1747,233 @@ function QuickLinksSection() {
   );
 }
 
+const PORTAL_DOMAINS: Record<JobPlatform, string> = {
+  LinkedIn: "linkedin.com",
+  InfoJobs: "infojobs.net",
+  Indeed: "indeed.com",
+  Tecnoempleo: "tecnoempleo.com",
+  Glassdoor: "glassdoor.com",
+  Infoempleo: "infoempleo.com",
+  Computrabajo: "computrabajo.es",
+  Adzuna: "adzuna.es",
+  Monster: "monster.com",
+  Jobtome: "jobtome.com",
+  Jooble: "jooble.org",
+  Randstad: "randstad.es",
+  Manpower: "manpower.es",
+  Adecco: "adecco.es",
+  Wellfound: "wellfound.com",
+  Remotive: "remotive.com",
+  "We Work Remotely": "weworkremotely.com",
+  JobToday: "jobtoday.com",
+  "Talent.com": "talent.com",
+  "Welcome to the Jungle": "welcometothejungle.com",
+};
+
+const PORTAL_COLORS: Partial<Record<JobPlatform, string>> = {
+  LinkedIn: "bg-[#0A66C2] text-white",
+  InfoJobs: "bg-[#167DB7] text-white",
+  Tecnoempleo: "bg-[#F97316] text-white",
+  Indeed: "bg-[#2557A7] text-white",
+  Glassdoor: "bg-[#0CAA41] text-white",
+  Infoempleo: "bg-[#CC1515] text-white",
+  Computrabajo: "bg-[#FF5A00] text-white",
+  Adzuna: "bg-[#E74C3C] text-white",
+  Monster: "bg-[#6D29D9] text-white",
+  Jobtome: "bg-[#2F80ED] text-white",
+  Jooble: "bg-[#1AAB9B] text-white",
+  Randstad: "bg-[#2B6CB0] text-white",
+  Manpower: "bg-[#E31837] text-white",
+  Adecco: "bg-[#E4002B] text-white",
+  Wellfound: "bg-[#1A1A1A] text-white",
+  Remotive: "bg-[#10B981] text-white",
+  "We Work Remotely": "bg-[#1B9F4B] text-white",
+  JobToday: "bg-[#3B82F6] text-white",
+  "Talent.com": "bg-[#8B5CF6] text-white",
+  "Welcome to the Jungle": "bg-[#FFCD00] text-black",
+};
+
 function PortalMark({ platform }: { platform: JobPlatform }) {
-  const colors: Partial<Record<JobPlatform, string>> = {
-    LinkedIn: "bg-[#0A66C2] text-white",
-    InfoJobs: "bg-[#167DB7] text-white",
-    Tecnoempleo: "bg-[#F97316] text-white",
-    Indeed: "bg-[#2557A7] text-white",
-  };
-  return <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-xs font-semibold", colors[platform] ?? "bg-muted text-foreground")}>{platform.slice(0, 2)}</span>;
+  const [failed, setFailed] = useState(false);
+  const domain = PORTAL_DOMAINS[platform];
+  const src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+
+  if (!failed) {
+    return (
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-white dark:bg-white/90">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={platform}
+          width={28}
+          height={28}
+          className="h-7 w-7 object-contain"
+          onError={() => setFailed(true)}
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-xs font-semibold", PORTAL_COLORS[platform] ?? "bg-muted text-foreground")}>
+      {platform.slice(0, 2)}
+    </span>
+  );
+}
+
+function EventDateTimeFields({ value, onChange }: { value: Date; onChange: (d: Date) => void }) {
+  function updateDate(dateValue: string) {
+    const [year, month, day] = dateValue.split("-").map(Number);
+    if (!year || !month || !day) return;
+    const next = new Date(value);
+    next.setFullYear(year, month - 1, day);
+    onChange(next);
+  }
+
+  function updateTime(timeValue: string) {
+    const [hour, minute] = timeValue.split(":").map(Number);
+    if (Number.isNaN(hour) || Number.isNaN(minute)) return;
+    const next = new Date(value);
+    next.setHours(hour, minute, 0, 0);
+    onChange(next);
+  }
+
+  function setToday() {
+    const now = new Date();
+    const next = new Date(value);
+    next.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
+    onChange(next);
+  }
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-[1fr_120px]">
+      <div className="space-y-1">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Dia</p>
+        <div className="flex gap-2">
+          <Input type="date" value={toDateInputValue(value)} onChange={(event) => updateDate(event.target.value)} />
+          <Button type="button" variant="outline" size="sm" className="h-10 shrink-0" onClick={setToday}>Hoy</Button>
+        </div>
+      </div>
+      <div className="space-y-1">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Hora</p>
+        <Input type="time" value={toTimeInputValue(value)} onChange={(event) => updateTime(event.target.value)} />
+      </div>
+    </div>
+  );
+}
+
+function NewEventDialog({ defaultDate, onClose, onCreated }: { defaultDate: Date; onClose: () => void; onCreated: () => void }) {
+  const [title, setTitle] = useState("");
+  const [notes, setNotes] = useState("");
+  const [eventDate, setEventDate] = useState(defaultDate);
+  const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit() {
+    if (!title.trim()) return;
+    setSaving(true);
+    setError("");
+    const start = eventDate.toISOString();
+    const end = addMinutes(eventDate, 60).toISOString();
+    try {
+      const res = await fetch("/api/google/calendar/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: title.trim(), start, end, notes: notes.trim() || undefined }),
+      });
+      if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.error || "Error al guardar"); }
+      googleEventsCache.clear();
+      onCreated();
+      onClose();
+    } catch (e) {
+      setError((e as Error).message);
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="absolute right-0 top-9 z-50 w-[min(23rem,calc(100vw-2rem))] rounded-lg border bg-background shadow-xl">
+      <div className="flex items-center justify-between border-b px-3 py-2">
+        <span className="text-sm font-semibold">Nuevo evento</span>
+        <button type="button" onClick={onClose} className="flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>
+      </div>
+      <div className="space-y-2.5 p-3">
+        <Input placeholder="Añadir título" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} autoFocus />
+        <button
+          type="button"
+          onClick={() => setDescriptionOpen((open) => !open)}
+          className="flex w-full items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+        >
+          <span className="text-muted-foreground">{notes.trim() ? "Descripcion anadida" : "Descripcion"}</span>
+          <ChevronRight className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", descriptionOpen && "rotate-90")} />
+        </button>
+        {descriptionOpen && (
+          <Textarea placeholder="Escribe los detalles del evento" value={notes} onChange={(e) => setNotes(e.target.value)} rows={5} className="text-sm" />
+        )}
+        <EventDateTimeFields value={eventDate} onChange={setEventDate} />
+        {error && <p className="text-xs text-destructive">{error}</p>}
+      </div>
+      <div className="flex justify-end gap-2 border-t px-3 py-2">
+        <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+        <Button size="sm" onClick={submit} disabled={saving || !title.trim()}>{saving ? "Guardando..." : "Guardar"}</Button>
+      </div>
+    </div>
+  );
 }
 
 function TaskCalendar({ store }: { store: Store }) {
   const [month, setMonth] = useState(startOfMonth(new Date()));
   const [selectedDay, setSelectedDay] = useState(todayKey());
-  const googleCalendarEvents = useGoogleCalendarEvents(month);
+  const [newEventOpen, setNewEventOpen] = useState(false);
+  const [calendarRefresh, setCalendarRefresh] = useState(0);
+  const newEventRef = useRef<HTMLDivElement>(null);
+  const googleCalendarEvents = useGoogleCalendarEvents(month, calendarRefresh);
   const events = useMemo(() => [...getCalendarEvents(store), ...googleCalendarEvents].sort(sortEvents), [store, googleCalendarEvents]);
   const cells = buildMonthCells(month);
   const eventsByDay = groupEventsByDay(events);
   const selectedEvents = eventsByDay.get(selectedDay) ?? [];
 
+  useEffect(() => {
+    if (!newEventOpen) return;
+    function handle(e: PointerEvent) {
+      if (newEventRef.current && !newEventRef.current.contains(e.target as Node)) setNewEventOpen(false);
+    }
+    document.addEventListener("pointerdown", handle);
+    return () => document.removeEventListener("pointerdown", handle);
+  }, [newEventOpen]);
+
+  const defaultEventDate = useMemo(() => {
+    const parsed = parseDate(selectedDay);
+    const base = parsed ? new Date(parsed) : new Date();
+    const now = new Date();
+    base.setHours(now.getHours(), now.getMinutes(), 0, 0);
+    return base;
+  }, [selectedDay]);
+
   return (
-    <Card className="p-4">
-      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-base font-semibold">{monthTitle(month)}</h2>
-          <p className="text-sm text-muted-foreground">Calendario y agenda del dia.</p>
+    <Card className="p-3">
+      <div className="mb-2 flex items-center">
+        <div className="flex flex-1 items-center gap-0.5">
+          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => setMonth(addMonths(month, -1))} aria-label="Mes anterior"><ChevronLeft className="h-3.5 w-3.5" /></Button>
+          <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => { const now = startOfMonth(new Date()); setMonth(now); setSelectedDay(todayKey()); }}>Hoy</Button>
+          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => setMonth(addMonths(month, 1))} aria-label="Mes siguiente"><ChevronRight className="h-3.5 w-3.5" /></Button>
         </div>
-        <div className="flex gap-2">
-          <Button type="button" size="icon" variant="outline" className="h-8 w-8" onClick={() => setMonth(addMonths(month, -1))} aria-label="Mes anterior"><ChevronLeft className="h-4 w-4" /></Button>
-          <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => { const now = startOfMonth(new Date()); setMonth(now); setSelectedDay(todayKey()); }}>Hoy</Button>
-          <Button type="button" size="icon" variant="outline" className="h-8 w-8" onClick={() => setMonth(addMonths(month, 1))} aria-label="Mes siguiente"><ChevronRight className="h-4 w-4" /></Button>
+        <h2 className="flex-1 text-center text-xs font-semibold uppercase tracking-widest">{monthTitle(month).toUpperCase()}</h2>
+        <div ref={newEventRef} className="relative flex flex-1 items-center justify-end">
+          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => setNewEventOpen((o) => !o)} aria-label="Crear evento">
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+          {newEventOpen && (
+            <NewEventDialog
+              defaultDate={defaultEventDate}
+              onClose={() => setNewEventOpen(false)}
+              onCreated={() => setCalendarRefresh((value) => value + 1)}
+            />
+          )}
         </div>
       </div>
-      <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+      <div className="grid gap-3">
         <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
           {["L", "M", "X", "J", "V", "S", "D"].map((day) => <span key={day}>{day}</span>)}
           {cells.map((day) => {
@@ -1313,18 +1987,17 @@ function TaskCalendar({ store }: { store: Store }) {
             );
           })}
         </div>
-        <div className="rounded-md border bg-background/70 p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <div>
+        {selectedEvents.length > 0 && (
+          <div className="rounded-md border bg-background/70 p-3">
+            <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold">{formatDayTitle(selectedDay)}</h3>
-              <p className="text-xs text-muted-foreground">Eventos seleccionados</p>
+              <Badge>{selectedEvents.length}</Badge>
             </div>
-            <Badge>{selectedEvents.length}</Badge>
+            <div className="space-y-2">
+              {selectedEvents.map((event) => <CalendarAgendaRow key={`${event.type}-${event.id}`} event={event} compact />)}
+            </div>
           </div>
-          <div className="space-y-2">
-            {selectedEvents.length ? selectedEvents.map((event) => <CalendarAgendaRow key={`${event.type}-${event.id}`} event={event} compact />) : <EmptyText>Sin eventos este dia.</EmptyText>}
-          </div>
-        </div>
+        )}
       </div>
     </Card>
   );
@@ -1443,64 +2116,128 @@ function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: b
   );
 }
 
+const WORK_TABS: ["portals" | "companies" | "candidaturas", string][] = [
+  ["portals", "Portales"],
+  ["companies", "Empresas"],
+  ["candidaturas", "Candidaturas"],
+];
+
 function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
-  const [tab, setTab] = useState<"portals" | "companies">("portals");
-  const [keyword, setKeyword] = useState(realisticJobTerms[0]);
-  const [location, setLocation] = useState("Granada");
+  const [tab, setTab] = useState<"portals" | "companies" | "candidaturas">("portals");
+  const [expandedPortal, setExpandedPortal] = useState<JobPlatform | null>(null);
   const [companySearch, setCompanySearch] = useState("");
   const [companyType, setCompanyType] = useState("");
 
-  const filteredCompanies = store.companies.filter((company) => {
+  // Candidaturas state
+  const [applications, setApplications] = useState<JobApplication[]>([]);
+  const [appLoaded, setAppLoaded] = useState(false);
+  const [appSyncing, setAppSyncing] = useState(false);
+  const [appStatusFilter, setAppStatusFilter] = useState("");
+  const [noteInput, setNoteInput] = useState<Record<string, string>>({});
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [manualForm, setManualForm] = useState({ company_name: "", company_url: "", job_title: "", job_url: "" });
+
+  const handleToggleWork = useCallback((p: JobPlatform) => setExpandedPortal((v) => v === p ? null : p), []);
+
+  const filteredCompanies = useMemo(() => store.companies.filter((company) => {
     const haystack = `${company.name} ${company.category} ${company.granada} ${company.employment_type}`.toLowerCase();
     return (!companySearch || haystack.includes(companySearch.toLowerCase())) && (!companyType || company.employment_type === companyType);
-  });
-  const companyTypes = Array.from(new Set(store.companies.map((company) => company.employment_type).filter(Boolean))).sort();
+  }), [store.companies, companySearch, companyType]);
+
+  const companyTypes = useMemo(
+    () => Array.from(new Set(store.companies.map((c) => c.employment_type).filter(Boolean))).sort(),
+    [store.companies],
+  );
+
+  const fetchApplications = useCallback(async () => {
+    const res = await fetch("/api/job-radar");
+    if (!res.ok) return;
+    const d = await res.json();
+    setApplications(d.applications ?? []);
+    setAppLoaded(true);
+  }, []);
+
+  const syncRadar = useCallback(async () => {
+    setAppSyncing(true);
+    try {
+      await fetch("/api/job-radar/sync", { method: "POST" });
+      await fetchApplications();
+    } finally {
+      setAppSyncing(false);
+    }
+  }, [fetchApplications]);
+
+  const updateAppStatus = useCallback(async (id: string, status: ApplicationStatus) => {
+    await fetch(`/api/job-radar/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    setApplications((prev) => prev.map((a) => a.id === id ? { ...a, status, is_new: false } : a));
+  }, []);
+
+  const submitNote = useCallback(async (id: string) => {
+    const text = noteInput[id]?.trim();
+    if (!text) return;
+    await fetch(`/api/job-radar/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ note: text }),
+    });
+    const created_at = new Date().toISOString();
+    setApplications((prev) => prev.map((a) => a.id === id ? { ...a, notes: [...(a.notes ?? []), { text, created_at }] } : a));
+    setNoteInput((prev) => ({ ...prev, [id]: "" }));
+  }, [noteInput]);
+
+  const removeApplication = useCallback(async (id: string) => {
+    await fetch(`/api/job-radar/${id}`, { method: "DELETE" });
+    setApplications((prev) => prev.filter((a) => a.id !== id));
+  }, []);
+
+  const submitManual = useCallback(async () => {
+    const { company_name, company_url, job_title, job_url } = manualForm;
+    if (!company_name.trim() || !company_url.trim() || !job_title.trim()) return;
+    const res = await fetch("/api/job-radar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ company_name, company_url, job_title, job_url }),
+    });
+    if (!res.ok) return;
+    const d = await res.json();
+    setApplications((prev) => [d.application, ...prev]);
+    setManualForm({ company_name: "", company_url: "", job_title: "", job_url: "" });
+    setShowManualForm(false);
+  }, [manualForm]);
+
+  useEffect(() => {
+    if (tab === "candidaturas" && !appLoaded) {
+      fetchApplications();
+    }
+  }, [tab, appLoaded, fetchApplications]);
+
+  const filteredApplications = useMemo(
+    () => applications.filter((a) => !appStatusFilter || a.status === appStatusFilter),
+    [applications, appStatusFilter],
+  );
 
   return (
     <Section title="Trabajo">
-      <SegmentedTabs value={tab} setValue={setTab} tabs={[["portals", "Portales"], ["companies", "Empresas"]]} />
+      <SegmentedTabs value={tab} setValue={setTab} tabs={WORK_TABS} />
 
       {tab === "portals" && (
         <div className="space-y-4">
-          <Card className="p-4">
-            <div className="grid gap-3 md:grid-cols-[1fr_220px]">
-              <Select value={keyword} onChange={(event) => setKeyword(event.target.value)}>
-                {realisticJobTerms.map((term) => <option key={term}>{term}</option>)}
-              </Select>
-              <Input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Ubicacion" />
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {realisticJobTerms.map((term) => (
-                <Button key={term} type="button" size="sm" variant={keyword === term ? "default" : "outline"} onClick={() => setKeyword(term)}>
-                  {term}
-                </Button>
-              ))}
-            </div>
-          </Card>
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {defaultPortals.map((portal) => {
-              const url = buildJobSearchUrl(portal.name, keyword, location);
-              return (
-                <Card key={portal.name} className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h2 className="font-semibold">{portal.name}</h2>
-                      <p className="mt-1 text-sm text-muted-foreground">{portal.note}</p>
-                    </div>
-                    <Badge>sin verificar</Badge>
-                  </div>
-                  <div className="mt-4 flex gap-2">
-                    <Button asChild size="sm">
-                      <a href={url} target="_blank" rel="noreferrer">
-                        Abrir busqueda
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
+          <p className="text-sm text-muted-foreground">
+            Haz clic en un portal para escribir tu búsqueda y abrirla directamente.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
+            {jobPlatforms.map((platform) => (
+              <QuickJobSearchCard
+                key={platform}
+                platform={platform}
+                expanded={expandedPortal === platform}
+                onToggle={handleToggleWork}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -1508,7 +2245,7 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
       {tab === "companies" && (
         <div className="space-y-4">
           <Card className="p-4">
-            <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
+            <div className="grid gap-3 lg:grid-cols-[1fr_220px_auto]">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input className="pl-9" value={companySearch} onChange={(event) => setCompanySearch(event.target.value)} placeholder="Buscar empresa, stack o categoria" />
@@ -1517,6 +2254,11 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
                 <option value="">Todos los enlaces</option>
                 {companyTypes.map((type) => <option key={type}>{type}</option>)}
               </Select>
+              {(companySearch || companyType) && (
+                <Button type="button" size="sm" variant="ghost" className="h-9 px-2 text-xs text-muted-foreground" onClick={() => { setCompanySearch(""); setCompanyType(""); }}>
+                  Limpiar
+                </Button>
+              )}
             </div>
           </Card>
 
@@ -1540,9 +2282,221 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
           </CrudGrid>
         </div>
       )}
+
+      {tab === "candidaturas" && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setAppStatusFilter("")}
+                className={cn("rounded-full border px-3 py-1 text-xs transition-colors", !appStatusFilter ? "bg-primary text-primary-foreground" : "hover:bg-muted")}
+              >
+                Todas
+              </button>
+              {APPLICATION_STATUSES.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setAppStatusFilter((v) => v === s ? "" : s)}
+                  className={cn("rounded-full border px-3 py-1 text-xs transition-colors", appStatusFilter === s ? "bg-primary text-primary-foreground" : "hover:bg-muted")}
+                >
+                  {STATUS_LABELS[s]}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={syncRadar}
+                disabled={appSyncing}
+                className="h-8 gap-1.5 text-xs"
+              >
+                <RefreshCw className={cn("h-3.5 w-3.5", appSyncing && "animate-spin")} />
+                {appSyncing ? "Escaneando..." : "Sincronizar radar"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setShowManualForm((v) => !v)}
+                className="h-8 gap-1.5 text-xs"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Añadir manual
+              </Button>
+            </div>
+          </div>
+
+          {showManualForm && (
+            <Card className="p-4">
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Añadir candidatura manual</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Input
+                    placeholder="Empresa *"
+                    value={manualForm.company_name}
+                    onChange={(e) => setManualForm((f) => ({ ...f, company_name: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="URL pagina empleo *"
+                    value={manualForm.company_url}
+                    onChange={(e) => setManualForm((f) => ({ ...f, company_url: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Puesto *"
+                    value={manualForm.job_title}
+                    onChange={(e) => setManualForm((f) => ({ ...f, job_title: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="URL oferta (opcional)"
+                    value={manualForm.job_url}
+                    onChange={(e) => setManualForm((f) => ({ ...f, job_url: e.target.value }))}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={submitManual}>Guardar</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShowManualForm(false)}>Cancelar</Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {!appLoaded ? (
+            <p className="text-sm text-muted-foreground">Cargando candidaturas...</p>
+          ) : filteredApplications.length === 0 ? (
+            <EmptyText>
+              {appStatusFilter ? "Sin candidaturas con ese estado." : "Sin candidaturas. Sincroniza el radar o añade una manual."}
+            </EmptyText>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">{filteredApplications.length} candidatura{filteredApplications.length !== 1 ? "s" : ""}</p>
+              {filteredApplications.map((app) => (
+                <CandidaturaCard
+                  key={app.id}
+                  app={app}
+                  noteValue={noteInput[app.id] ?? ""}
+                  onNoteChange={(v) => setNoteInput((prev) => ({ ...prev, [app.id]: v }))}
+                  onNoteSubmit={() => submitNote(app.id)}
+                  onStatusChange={updateAppStatus}
+                  onDelete={removeApplication}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </Section>
   );
 }
+
+const CandidaturaCard = memo(function CandidaturaCard({
+  app,
+  noteValue,
+  onNoteChange,
+  onNoteSubmit,
+  onStatusChange,
+  onDelete,
+}: {
+  app: JobApplication;
+  noteValue: string;
+  onNoteChange: (v: string) => void;
+  onNoteSubmit: () => void;
+  onStatusChange: (id: string, status: ApplicationStatus) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [showNotes, setShowNotes] = useState(false);
+  return (
+    <div className={cn("rounded-lg border bg-card p-4 space-y-2", app.is_new && "border-blue-400/50 dark:border-blue-500/40")}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{app.company_name}</p>
+          <p className="truncate text-xs text-muted-foreground">{app.job_title}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {app.is_new && <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />}
+          <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STATUS_COLORS[app.status])}>
+            {STATUS_LABELS[app.status]}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="text-xs text-muted-foreground">
+          {new Date(app.detected_at).toLocaleDateString("es-ES")}
+          {app.source === "manual" && " · Manual"}
+        </span>
+        {app.job_url && (
+          <a
+            href={app.job_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:underline"
+          >
+            <ExternalLink className="h-3 w-3" />
+            Ver oferta
+          </a>
+        )}
+        <a
+          href={app.company_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+        >
+          Pagina empleo
+        </a>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 pt-0.5">
+        <Select
+          value={app.status}
+          onChange={(e) => onStatusChange(app.id, e.target.value as ApplicationStatus)}
+          className="h-7 text-xs"
+        >
+          {APPLICATION_STATUSES.map((s) => (
+            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+          ))}
+        </Select>
+        <button
+          type="button"
+          onClick={() => setShowNotes((v) => !v)}
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          {app.notes?.length ? `${app.notes.length} nota${app.notes.length !== 1 ? "s" : ""}` : "Añadir nota"}
+        </button>
+        <button
+          type="button"
+          onClick={() => onDelete(app.id)}
+          className="ml-auto text-xs text-muted-foreground hover:text-destructive"
+        >
+          Eliminar
+        </button>
+      </div>
+
+      {showNotes && (
+        <div className="space-y-1.5 pt-1">
+          {app.notes?.map((n, i) => (
+            <p key={i} className="text-xs text-muted-foreground">· {n.text}</p>
+          ))}
+          <div className="flex gap-2">
+            <Input
+              className="h-7 text-xs"
+              placeholder="Escribe una nota..."
+              value={noteValue}
+              onChange={(e) => onNoteChange(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") onNoteSubmit(); }}
+            />
+            <Button size="sm" className="h-7 text-xs" onClick={onNoteSubmit}>
+              Guardar
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
 
 function Tasks({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
   const completed = store.tasks.filter((item) => item.status === "completada").sort((a, b) => String(b.completed_at).localeCompare(String(a.completed_at)));
@@ -1572,140 +2526,709 @@ function Tasks({ store, actions }: { store: Store; actions: ReturnTypeActions })
 
 
 
-function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
-  const courses = useMemo(() => getDisplayCourses(store.courses, store.techOpportunities), [store.courses, store.techOpportunities]);
+function courseStatusClass(status: string) {
+  if (status === "empezado") return "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300";
+  if (status === "terminado") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+  if (status === "pausado") return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  if (status === "descartado") return "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300";
+  return "";
+}
+
+function hackathonStatusClass(status: string) {
+  if (status === "inscripcion_abierta") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+  if (status === "realizado") return "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300";
+  if (status === "descartado") return "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300";
+  if (status === "revisar_futura_edicion") return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  return "";
+}
+
+function hackathonStatusLabel(status: string) {
+  const m: Record<string, string> = {
+    inscripcion_abierta: "Inscripción abierta",
+    pendiente: "Pendiente",
+    realizado: "Realizado",
+    revisar_futura_edicion: "Revisar",
+    descartado: "Descartado",
+  };
+  return m[status] ?? status;
+}
+
+function ChipTag({ children, className, icon }: { children: React.ReactNode; className?: string; icon?: "pin" }) {
+  return (
+    <span className={cn("inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-medium", className)}>
+      {icon === "pin" && <MapPin className="h-2.5 w-2.5 shrink-0" />}
+      {children}
+    </span>
+  );
+}
+
+function FilterCalendar({
+  datesWithItems,
+  dayFilter,
+  onDaySelect,
+}: {
+  datesWithItems: Set<string>;
+  dayFilter: string;
+  onDaySelect: (day: string) => void;
+}) {
+  const [calMonth, setCalMonth] = useState(startOfMonth(new Date()));
+  const cells = buildMonthCells(calMonth);
+  const monthLabel = calMonth.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+  const today = todayKey();
 
   return (
-    <CrudGrid
-      form={
-        <FieldForm action={(form) => actions.addCourse({ title: val(form, "title"), platform: val(form, "platform"), url: val(form, "url"), start_at: val(form, "start_at"), deadline_at: val(form, "deadline_at"), status: "pendiente", notes: val(form, "notes") })}>
-          <Input name="title" placeholder="Curso" required />
-          <Input name="platform" placeholder="Plataforma" />
-          <Input name="url" placeholder="URL" />
-          <Input name="start_at" type="datetime-local" />
-          <Input name="deadline_at" type="datetime-local" />
-          <Textarea name="notes" placeholder="Notas" />
-          <Button>Crear curso</Button>
-        </FieldForm>
-      }
-    >
-      {courses.length ? courses.map((item) => {
-        const tags = splitTags(item.tags);
-        const location = [item.modalidad, item.localidad || item.provincia].filter(Boolean).join(" - ");
-        const dates = [
-          item.fecha_inicio || item.start_at ? `Inicio ${formatDateLabel(item.fecha_inicio || item.start_at)}` : null,
-          item.fecha_fin || item.deadline_at ? `Fin ${formatDateLabel(item.fecha_fin || item.deadline_at)}` : null,
-        ].filter(Boolean).join(" - ");
-        const readOnlyTechItem = item.sourceTable === "tech_opportunities";
-        const url = item.fuente_url || item.url;
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <button type="button" onClick={() => setCalMonth((c) => addMonths(c, -1))} className="rounded p-1 hover:bg-muted">
+          <ChevronLeft className="h-3 w-3" />
+        </button>
+        <span className="text-xs font-medium capitalize">{monthLabel}</span>
+        <button type="button" onClick={() => setCalMonth((c) => addMonths(c, 1))} className="rounded p-1 hover:bg-muted">
+          <ChevronRight className="h-3 w-3" />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 text-center">
+        {["L", "M", "X", "J", "V", "S", "D"].map((d) => (
+          <div key={d} className="py-0.5 text-[10px] font-medium text-muted-foreground">{d}</div>
+        ))}
+        {cells.map((cell) => {
+          const key = dateKey(cell.date.toISOString());
+          const hasItem = datesWithItems.has(key);
+          const isSelected = dayFilter === key;
+          const isToday = key === today;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onDaySelect(isSelected ? "" : key)}
+              className={cn(
+                "relative flex flex-col items-center py-0.5 text-[11px] leading-5 transition-colors",
+                !cell.inMonth && "text-muted-foreground/40",
+                isSelected && "rounded bg-primary text-primary-foreground",
+                isToday && !isSelected && "font-bold text-primary",
+                !isSelected && cell.inMonth && "cursor-pointer rounded hover:bg-muted",
+              )}
+            >
+              {cell.date.getDate()}
+              {hasItem && !isSelected && (
+                <span className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary/60" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary/60" />
+        con cursos
+      </div>
+    </div>
+  );
+}
 
+function MonthChips({
+  monthGroups,
+  monthFilter,
+  totalCount,
+  onSelect,
+}: {
+  monthGroups: Map<string, number>;
+  monthFilter: string;
+  totalCount: number;
+  onSelect: (month: string) => void;
+}) {
+  if (monthGroups.size === 0) return null;
+  return (
+    <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
+      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">MES</span>
+      <button
+        type="button"
+        onClick={() => onSelect("")}
+        className={cn(
+          "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors hover:bg-muted",
+          !monthFilter && "border-primary bg-primary text-primary-foreground"
+        )}
+      >
+        TODOS <span className={cn("font-normal", !monthFilter && "text-primary-foreground/70")}>{totalCount}</span>
+      </button>
+      {Array.from(monthGroups.entries()).map(([month, count]) => {
+        const [y, m] = month.split("-");
+        const label = new Date(Number(y), Number(m) - 1)
+          .toLocaleDateString("es-ES", { month: "short", year: "2-digit" })
+          .toUpperCase();
+        const isSelected = monthFilter === month;
         return (
-          <Row
-            key={item.id}
-            title={item.title}
-            meta={[item.entidad || item.platform || "Sin entidad", location, dates || "Sin fecha limite"].filter(Boolean).join(" - ")}
-            badge={item.status}
-            note={item.notes}
-            details={
-              <div className="flex flex-wrap gap-2">
-                {item.prioridad ? <Badge className={genericPriorityClass(item.prioridad)}>Prioridad {priorityText(item.prioridad)}</Badge> : null}
-                {item.encaje_daw_1_5 ? <Badge>Encaje DAW {item.encaje_daw_1_5}/5</Badge> : null}
-                {item.horas_totales ? <Badge>{item.horas_totales} h</Badge> : null}
-                {item.certificacion_tipo ? <Badge>{item.certificacion_tipo}</Badge> : null}
-                {item.practicas_empresa === true ? <Badge>Practicas</Badge> : null}
-                {tags.map((tag) => <Badge key={tag}>{tag}</Badge>)}
-              </div>
-            }
-            actions={
-              <>
-                {url && <Button asChild size="sm" variant="outline"><a href={url} target="_blank" rel="noreferrer">Abrir</a></Button>}
-                {!readOnlyTechItem && <Button type="button" size="sm" variant="outline" onClick={() => actions.updateCourse(item.id, { status: "terminado" })}>Terminado</Button>}
-              </>
-            }
-          />
+          <button
+            key={month}
+            type="button"
+            onClick={() => onSelect(isSelected ? "" : month)}
+            className={cn(
+              "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors hover:bg-muted",
+              isSelected && "border-primary bg-primary text-primary-foreground"
+            )}
+          >
+            {label} <span className={cn("font-normal", isSelected && "text-primary-foreground/70")}>{count}</span>
+          </button>
         );
-      }) : <EmptyText>No hay cursos guardados.</EmptyText>}
-    </CrudGrid>
+      })}
+    </div>
+  );
+}
+
+function KpiRow({ items }: { items: [string, number, string][] }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {items.map(([label, value, cls]) => (
+        <Card key={label} className="p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+          <p className={cn("mt-1 text-2xl font-bold leading-none tabular-nums", cls)}>{value}</p>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function ViewToggle({ value, onChange }: { value: "grid" | "lista"; onChange: (v: "grid" | "lista") => void }) {
+  return (
+    <div className="flex shrink-0 items-center rounded-md border bg-card p-0.5 gap-0.5">
+      {(["grid", "lista"] as const).map((v) => (
+        <Button key={v} type="button" size="sm" variant={value === v ? "default" : "ghost"} className="h-6 px-2 text-[11px]" onClick={() => onChange(v)}>
+          {v === "grid" ? "Grid" : "Lista"}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function FilterPanel({
+  title = "Filtros",
+  activeCount,
+  onClear,
+  children,
+}: {
+  title?: string;
+  activeCount: number;
+  onClear: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="w-60 shrink-0 space-y-5">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold">{title}</span>
+        {activeCount > 0 && (
+          <button type="button" onClick={onClear} className="text-xs text-muted-foreground hover:text-foreground">
+            Limpiar
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function FilterChips({ options, value, onChange }: { options: [string, string][]; value: string; onChange: (v: string) => void }) {
+  const hasLong = options.some(([, l]) => l.length > 20) || options.length > 7;
+  if (hasLong) {
+    return (
+      <Select value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </Select>
+    );
+  }
+  return (
+    <div className="flex flex-wrap gap-1">
+      {options.map(([v, l]) => (
+        <button
+          key={v}
+          type="button"
+          title={l}
+          onClick={() => onChange(value === v && v !== "" ? "" : v)}
+          className={cn(
+            "max-w-[130px] truncate rounded-full border px-2.5 py-0.5 text-xs transition-colors hover:bg-muted",
+            value === v && "border-primary bg-primary text-primary-foreground"
+          )}
+        >
+          {l}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
+  const allCourses = useMemo(
+    () => getDisplayCourses(store.courses, store.techOpportunities),
+    [store.courses, store.techOpportunities]
+  );
+
+  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "todos">("activos");
+  const [showFilters, setShowFilters] = useState(false);
+  const [monthFilter, setMonthFilter] = useState("");
+  const [dayFilter, setDayFilter] = useState("");
+  const [estadoFilter, setEstadoFilter] = useState("");
+  const [modalidadFilter, setModalidadFilter] = useState("");
+  const [prioridadFilter, setPrioridadFilter] = useState("");
+  const [soloGratuitos, setSoloGratuitos] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const sorted = useMemo(() => [...allCourses].sort((a, b) => {
+    const da = (a.fecha_inicio || a.start_at || "").slice(0, 10);
+    const db = (b.fecha_inicio || b.start_at || "").slice(0, 10);
+    if (!da && !db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return da.localeCompare(db);
+  }), [allCourses]);
+
+  const archivados = useMemo(() => sorted.filter(isCourseArchived), [sorted]);
+  const activos = useMemo(() => sorted.filter((c) => !isCourseArchived(c) && !isCoursePast(c)), [sorted]);
+  const tabBase = useMemo(
+    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : sorted,
+    [viewTab, activos, archivados, sorted]
+  );
+
+  const monthGroups = useMemo(() => {
+    const groups = new Map<string, number>();
+    for (const c of tabBase) {
+      const d = (c.fecha_inicio || c.start_at || "").slice(0, 7);
+      if (!d) continue;
+      groups.set(d, (groups.get(d) ?? 0) + 1);
+    }
+    return groups;
+  }, [tabBase]);
+
+  const datesWithItems = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of tabBase) { const d = dateKey(c.fecha_inicio || c.start_at); if (d) set.add(d); }
+    return set;
+  }, [tabBase]);
+
+  const modalidades = useMemo(
+    () => Array.from(new Set(tabBase.map((c) => c.modalidad).filter(Boolean))).sort() as string[],
+    [tabBase]
+  );
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return tabBase.filter((c) => {
+      if (q) {
+        const hay = `${c.title} ${c.entidad || ""} ${c.platform || ""} ${Array.isArray(c.tags) ? c.tags.join(" ") : c.tags || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (monthFilter && !(c.fecha_inicio || c.start_at || "").startsWith(monthFilter)) return false;
+      if (dayFilter && dateKey(c.fecha_inicio || c.start_at) !== dayFilter) return false;
+      if (estadoFilter && c.status !== estadoFilter) return false;
+      if (modalidadFilter && c.modalidad !== modalidadFilter) return false;
+      if (prioridadFilter && normalizePriorityText(c.prioridad) !== prioridadFilter) return false;
+      if (soloGratuitos) {
+        const coste = (c.coste || "").toLowerCase().trim();
+        if (coste && coste !== "gratis" && coste !== "0" && coste !== "gratuito" && coste !== "free") return false;
+      }
+      return true;
+    });
+  }, [tabBase, search, monthFilter, dayFilter, estadoFilter, modalidadFilter, prioridadFilter, soloGratuitos]);
+
+  const { today, kpiEmpezados, kpiPendientes, kpiProx } = useMemo(() => {
+    const t = todayKey();
+    const i30 = dateKey(addDays(new Date(), 30).toISOString());
+    return {
+      today: t,
+      kpiEmpezados: tabBase.filter((c) => c.status === "empezado").length,
+      kpiPendientes: tabBase.filter((c) => c.status === "pendiente").length,
+      kpiProx: tabBase.filter((c) => { const d = (c.fecha_inicio || c.start_at || "").slice(0, 10); return d >= t && d <= i30; }).length,
+    };
+  }, [tabBase]);
+
+  const activeFilterCount = [monthFilter, dayFilter, estadoFilter, modalidadFilter, prioridadFilter, soloGratuitos].filter(Boolean).length;
+
+  function clearAll() {
+    setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setModalidadFilter(""); setPrioridadFilter(""); setSoloGratuitos(false); setSearchInput(""); setSearch("");
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-48 flex-1">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Buscar título, entidad, tag..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9 text-sm" />
+        </div>
+        <div className="flex items-center gap-0.5 rounded-md border bg-card p-0.5">
+          {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
+            <Button key={id} type="button" size="sm" variant={viewTab === id ? "default" : "ghost"} className="h-7 px-3 text-xs" onClick={() => { setViewTab(id); clearAll(); }}>
+              {label}
+            </Button>
+          ))}
+        </div>
+        <Button type="button" size="sm" variant={showFilters ? "default" : "outline"} className="gap-1.5" onClick={() => setShowFilters((v) => !v)}>
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
+        </Button>
+      </div>
+
+      <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
+
+      <div className="flex gap-5">
+        <div className="min-w-0 flex-1 space-y-4">
+          <KpiRow items={[
+            ["Total", tabBase.length, ""],
+            ["Empezados", kpiEmpezados, "text-blue-600 dark:text-blue-400"],
+            ["Pendientes", kpiPendientes, "text-amber-600 dark:text-amber-400"],
+            ["Próx. inicio", kpiProx, "text-emerald-600 dark:text-emerald-400"],
+          ]} />
+
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              Mostrando {filtered.length} {filtered.length === 1 ? "curso" : "cursos"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
+            </p>
+            <ViewToggle value={viewMode} onChange={setViewMode} />
+          </div>
+
+          <div className={cn(viewMode === "grid" ? "grid gap-4 sm:grid-cols-2" : "space-y-3")}>
+            {filtered.length ? filtered.map((item) => {
+              const tags = splitTags(item.tags);
+              const startDate = item.fecha_inicio || item.start_at;
+              const endDate = item.fecha_fin || item.deadline_at;
+              const place = [item.localidad, item.provincia].filter(Boolean).join(" / ");
+              const url = item.fuente_url || item.url;
+              return (
+                <Card key={item.id} className="flex flex-col gap-3 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-semibold leading-snug">{item.title}</p>
+                      {(item.entidad || item.platform) && <p className="mt-0.5 text-xs text-muted-foreground">{item.entidad || item.platform}</p>}
+                    </div>
+                    <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
+                  </div>
+                  {(startDate || endDate) && (
+                    <p className="text-xs text-muted-foreground">
+                      {startDate ? formatDateLabel(startDate) : "—"}{endDate ? ` → ${formatDateLabel(endDate)}` : ""}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
+                    {place && <ChipTag icon="pin">{place}</ChipTag>}
+                    {item.horas_totales ? <ChipTag>{item.horas_totales}h</ChipTag> : null}
+                    {item.prioridad && <ChipTag className={genericPriorityClass(item.prioridad)}>{priorityText(item.prioridad)}</ChipTag>}
+                    {item.coste ? <ChipTag>{item.coste}</ChipTag> : null}
+                    {item.encaje_daw_1_5 ? <ChipTag>DAW {item.encaje_daw_1_5}/5</ChipTag> : null}
+                    {item.certificacion_tipo && <ChipTag>{item.certificacion_tipo}</ChipTag>}
+                    {item.practicas_empresa === true && <ChipTag>Prácticas</ChipTag>}
+                    {tags.map((tag) => <ChipTag key={tag}>{tag}</ChipTag>)}
+                  </div>
+                  {item.requisitos_resumen && <p className="text-xs italic text-muted-foreground line-clamp-2">{item.requisitos_resumen}</p>}
+                  <div className="mt-auto flex flex-wrap gap-1.5">
+                    {url && <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs"><a href={url} target="_blank" rel="noreferrer">Abrir</a></Button>}
+                    {!isCourseArchived(item) && (
+                      <Button type="button" size="sm" variant="outline" className="h-7 px-2.5 text-xs" onClick={() => completeCourseItem(item, actions)}>
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Terminado
+                      </Button>
+                    )}
+                  </div>
+                </Card>
+              );
+            }) : (
+              <div className={cn(viewMode === "grid" && "sm:col-span-2")}>
+                <EmptyText>{search || activeFilterCount > 0 ? "No hay cursos con estos filtros." : "No hay cursos en esta vista."}</EmptyText>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {showFilters && (
+          <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
+            <FilterSection label="Calendario">
+              <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
+            </FilterSection>
+            <FilterSection label="Estado">
+              <FilterChips
+                options={[["", "Todos"], ["pendiente", "Pendiente"], ["empezado", "Activo"], ["pausado", "Pausado"]]}
+                value={estadoFilter}
+                onChange={setEstadoFilter}
+              />
+            </FilterSection>
+            {modalidades.length > 0 && (
+              <FilterSection label="Modalidad">
+                <FilterChips
+                  options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
+                  value={modalidadFilter}
+                  onChange={setModalidadFilter}
+                />
+              </FilterSection>
+            )}
+            <FilterSection label="Prioridad">
+              <FilterChips
+                options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
+                value={prioridadFilter}
+                onChange={setPrioridadFilter}
+              />
+            </FilterSection>
+            <FilterSection label="Solo">
+              <label className="flex cursor-pointer items-center gap-2 text-xs">
+                <input type="checkbox" checked={soloGratuitos} onChange={(e) => setSoloGratuitos(e.target.checked)} className="rounded" />
+                Gratuitos
+              </label>
+            </FilterSection>
+          </FilterPanel>
+        )}
+      </div>
+    </div>
   );
 }
 
 function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
-  const [province, setProvince] = useState("");
-  const [status, setStatus] = useState("");
-  const hackathons = useMemo(() => getDisplayHackathons(store.hackathons, store.techOpportunities), [store.hackathons, store.techOpportunities]);
-  const list = hackathons.filter((item) => (!province || item.province === province) && (!status || item.status === status));
+  const allHackathons = useMemo(
+    () => getDisplayHackathons(store.hackathons, store.techOpportunities),
+    [store.hackathons, store.techOpportunities]
+  );
+
+  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "todos">("activos");
+  const [showFilters, setShowFilters] = useState(false);
+  const [monthFilter, setMonthFilter] = useState("");
+  const [dayFilter, setDayFilter] = useState("");
+  const [estadoFilter, setEstadoFilter] = useState("");
+  const [provinciaFilter, setProvinciaFilter] = useState("");
+  const [modalidadFilter, setModalidadFilter] = useState("");
+  const [prioridadFilter, setPrioridadFilter] = useState("");
+  const [soloInscripcionAbierta, setSoloInscripcionAbierta] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const sorted = useMemo(() => [...allHackathons].sort((a, b) => {
+    const da = (a.start_at || "").slice(0, 10);
+    const db = (b.start_at || "").slice(0, 10);
+    if (!da && !db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return da.localeCompare(db);
+  }), [allHackathons]);
+
+  const archivados = useMemo(() => sorted.filter(isHackathonArchived), [sorted]);
+  const activos = useMemo(() => sorted.filter((h) => !isHackathonArchived(h) && !isHackathonPast(h)), [sorted]);
+  const tabBase = useMemo(
+    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : sorted,
+    [viewTab, activos, archivados, sorted]
+  );
+
+  const monthGroups = useMemo(() => {
+    const groups = new Map<string, number>();
+    for (const h of tabBase) {
+      const d = (h.start_at || "").slice(0, 7);
+      if (!d) continue;
+      groups.set(d, (groups.get(d) ?? 0) + 1);
+    }
+    return groups;
+  }, [tabBase]);
+
+  const datesWithItems = useMemo(() => {
+    const set = new Set<string>();
+    for (const h of tabBase) { const d = dateKey(h.start_at); if (d) set.add(d); }
+    return set;
+  }, [tabBase]);
+
+  const provincias = useMemo(
+    () => Array.from(new Set(tabBase.map((h) => h.province).filter(Boolean))).sort() as string[],
+    [tabBase]
+  );
+  const modalidades = useMemo(
+    () => Array.from(new Set(tabBase.map((h) => h.modalidad).filter(Boolean))).sort() as string[],
+    [tabBase]
+  );
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return tabBase.filter((h) => {
+      if (q) {
+        const hay = `${h.name} ${h.organizer || ""} ${Array.isArray(h.tags) ? h.tags.join(" ") : h.tags || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (monthFilter && !(h.start_at || "").startsWith(monthFilter)) return false;
+      if (dayFilter && dateKey(h.start_at) !== dayFilter) return false;
+      if (estadoFilter && h.status !== estadoFilter) return false;
+      if (provinciaFilter && h.province !== provinciaFilter) return false;
+      if (modalidadFilter && h.modalidad !== modalidadFilter) return false;
+      if (prioridadFilter && normalizePriorityText(h.priority) !== prioridadFilter) return false;
+      if (soloInscripcionAbierta && h.status !== "inscripcion_abierta") return false;
+      return true;
+    });
+  }, [tabBase, search, monthFilter, dayFilter, estadoFilter, provinciaFilter, modalidadFilter, prioridadFilter, soloInscripcionAbierta]);
+
+  const { today, kpiAbiertos, kpiPendientes, kpiProx } = useMemo(() => {
+    const t = todayKey();
+    const i30 = dateKey(addDays(new Date(), 30).toISOString());
+    return {
+      today: t,
+      kpiAbiertos: tabBase.filter((h) => h.status === "inscripcion_abierta").length,
+      kpiPendientes: tabBase.filter((h) => h.status === "pendiente").length,
+      kpiProx: tabBase.filter((h) => { const d = (h.start_at || "").slice(0, 10); return d >= t && d <= i30; }).length,
+    };
+  }, [tabBase]);
+
+  const activeFilterCount = [monthFilter, dayFilter, estadoFilter, provinciaFilter, modalidadFilter, prioridadFilter, soloInscripcionAbierta].filter(Boolean).length;
+
+  function clearAll() {
+    setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setProvinciaFilter(""); setModalidadFilter(""); setPrioridadFilter(""); setSoloInscripcionAbierta(false); setSearchInput(""); setSearch("");
+  }
 
   return (
-    <Section title="Hackathons">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Select value={province} onChange={(event) => setProvince(event.target.value)}>
-          <option value="">Todas las provincias</option>
-          {Array.from(new Set(hackathons.map((item) => item.province).filter(Boolean))).sort().map((item) => <option key={item}>{item}</option>)}
-        </Select>
-        <Select value={status} onChange={(event) => setStatus(event.target.value)}>
-          <option value="">Todos los estados</option>
-          {["inscripcion_abierta", "pendiente", "realizado", "revisar_futura_edicion", "descartado"].map((item) => <option key={item}>{item}</option>)}
-        </Select>
-      </div>
-      <CrudGrid
-        form={
-          <FieldForm action={(form) => actions.addHackathon({ name: val(form, "name"), organizer: val(form, "organizer"), province: val(form, "province") || "Granada", city: val(form, "city"), status: "revisar_futura_edicion", priority: "media", start_at: val(form, "start_at"), end_at: val(form, "end_at"), registration_deadline_at: val(form, "registration_deadline_at"), url: val(form, "url"), notes: val(form, "notes") })}>
-            <Input name="name" placeholder="Nombre" required />
-            <Input name="organizer" placeholder="Organizador" />
-            <div className="grid grid-cols-2 gap-2">
-              <Input name="province" placeholder="Provincia" />
-              <Input name="city" placeholder="Ciudad" />
-            </div>
-            <Input name="url" placeholder="Link" />
-            <Input name="start_at" type="datetime-local" />
-            <Input name="end_at" type="datetime-local" />
-            <Input name="registration_deadline_at" type="datetime-local" />
-            <Textarea name="notes" placeholder="Notas" />
-            <Button>Crear hackathon</Button>
-          </FieldForm>
-        }
-      >
-        <div className="space-y-3">
-          {list.length ? list.map((item) => {
-            const tags = splitTags(item.tags);
-            const place = [item.localidad || item.city, item.province].filter(Boolean).join(", ");
-            const dates = [
-              item.start_at ? `Inicio ${formatDateLabel(item.start_at)}` : null,
-              item.end_at ? `Fin ${formatDateLabel(item.end_at)}` : null,
-              item.inscripcion_hasta || item.registration_deadline_at ? `Inscripcion ${formatDateLabel(item.inscripcion_hasta || item.registration_deadline_at)}` : null,
-            ].filter(Boolean).join(" - ");
-            const readOnlyTechItem = item.sourceTable === "tech_opportunities";
-
-            return (
-              <Row
-                key={item.id}
-                title={item.name}
-                meta={[item.organizer || "Sin organizador", place || "Sin provincia", dates].filter(Boolean).join(" - ")}
-                badge={item.status}
-                note={item.notes}
-                details={
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className={genericPriorityClass(item.priority)}>Prioridad {priorityText(item.priority)}</Badge>
-                    {item.encaje_daw_1_5 ? <Badge>Encaje DAW {item.encaje_daw_1_5}/5</Badge> : null}
-                    {item.modalidad ? <Badge>{item.modalidad}</Badge> : null}
-                    {item.certificacion_o_premio ? <Badge>{item.certificacion_o_premio}</Badge> : null}
-                    {item.practicas_empresa === true ? <Badge>Practicas</Badge> : null}
-                    {tags.map((tag) => <Badge key={tag}>{tag}</Badge>)}
-                  </div>
-                }
-                actions={
-                  <>
-                    {item.url && <Button asChild size="sm" variant="outline"><a href={item.url} target="_blank" rel="noreferrer">Abrir web</a></Button>}
-                    <Button type="button" size="sm" variant="outline" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Hackathon" })}>Crear tarea</Button>
-                    {!readOnlyTechItem && <Button type="button" size="sm" variant="ghost" onClick={() => actions.updateHackathon(item.id, { status: "pendiente" })}>Marcar revisado</Button>}
-                  </>
-                }
-              />
-            );
-          }) : <EmptyText>No hay hackathons con esos filtros.</EmptyText>}
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-48 flex-1">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Buscar nombre, organizador, tag..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9 text-sm" />
         </div>
-      </CrudGrid>
-    </Section>
+        <div className="flex items-center gap-0.5 rounded-md border bg-card p-0.5">
+          {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
+            <Button key={id} type="button" size="sm" variant={viewTab === id ? "default" : "ghost"} className="h-7 px-3 text-xs" onClick={() => { setViewTab(id); clearAll(); }}>
+              {label}
+            </Button>
+          ))}
+        </div>
+        <Button type="button" size="sm" variant={showFilters ? "default" : "outline"} className="gap-1.5" onClick={() => setShowFilters((v) => !v)}>
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
+        </Button>
+      </div>
+
+      <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
+
+      <div className="flex gap-5">
+        <div className="min-w-0 flex-1 space-y-4">
+          <KpiRow items={[
+            ["Total", tabBase.length, ""],
+            ["Inscripción abierta", kpiAbiertos, "text-emerald-600 dark:text-emerald-400"],
+            ["Pendientes", kpiPendientes, "text-amber-600 dark:text-amber-400"],
+            ["Próx. inicio", kpiProx, "text-blue-600 dark:text-blue-400"],
+          ]} />
+
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              Mostrando {filtered.length} {filtered.length === 1 ? "hackathon" : "hackathons"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
+            </p>
+            <ViewToggle value={viewMode} onChange={setViewMode} />
+          </div>
+
+          <div className={cn(viewMode === "grid" ? "grid gap-4 sm:grid-cols-2" : "space-y-3")}>
+            {filtered.length ? filtered.map((item) => {
+              const tags = splitTags(item.tags);
+              const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
+              const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
+              const readOnlyTechItem = item.sourceTable === "tech_opportunities";
+              return (
+                <Card key={item.id} className="flex flex-col gap-3 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-semibold leading-snug">{item.name}</p>
+                      {item.organizer && <p className="mt-0.5 text-xs text-muted-foreground">{item.organizer}</p>}
+                    </div>
+                    <Badge className={cn("shrink-0", hackathonStatusClass(item.status))}>{hackathonStatusLabel(item.status)}</Badge>
+                  </div>
+                  {(item.start_at || item.end_at) && (
+                    <p className="text-xs text-muted-foreground">
+                      {item.start_at ? formatDateLabel(item.start_at) : "—"}{item.end_at ? ` → ${formatDateLabel(item.end_at)}` : ""}
+                      {inscripcionFin && <span className="ml-2 opacity-70">· Inscripción hasta {formatDateLabel(inscripcionFin)}</span>}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
+                    {place && <ChipTag icon="pin">{place}</ChipTag>}
+                    {item.priority && <ChipTag className={genericPriorityClass(item.priority)}>{priorityText(item.priority)}</ChipTag>}
+                    {item.certificacion_o_premio && <ChipTag>{item.certificacion_o_premio}</ChipTag>}
+                    {item.encaje_daw_1_5 ? <ChipTag>DAW {item.encaje_daw_1_5}/5</ChipTag> : null}
+                    {item.practicas_empresa === true && <ChipTag>Prácticas</ChipTag>}
+                    {item.status === "inscripcion_abierta" && <ChipTag className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Inscripción abierta</ChipTag>}
+                    {tags.map((tag) => <ChipTag key={tag}>{tag}</ChipTag>)}
+                  </div>
+                  {item.notes && <p className="text-xs italic text-muted-foreground line-clamp-2">{item.notes}</p>}
+                  <div className="mt-auto flex flex-wrap gap-1.5">
+                    {item.url && <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs"><a href={item.url} target="_blank" rel="noreferrer">Abrir web</a></Button>}
+                    <Button type="button" size="sm" variant="outline" className="h-7 px-2.5 text-xs" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Hackathon" })}>Crear tarea</Button>
+                    {!isHackathonArchived(item) && (
+                      <Button type="button" size="sm" variant="ghost" className="h-7 px-2.5 text-xs" onClick={() => completeHackathonItem(item, actions)}>
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Realizado
+                      </Button>
+                    )}
+                    {!readOnlyTechItem && item.status === "revisar_futura_edicion" && <Button type="button" size="sm" variant="ghost" className="h-7 px-2.5 text-xs" onClick={() => actions.updateHackathon(item.id, { status: "pendiente" })}>Revisado</Button>}
+                  </div>
+                </Card>
+              );
+            }) : (
+              <div className={cn(viewMode === "grid" && "sm:col-span-2")}>
+                <EmptyText>{search || activeFilterCount > 0 ? "No hay hackathons con estos filtros." : "No hay hackathons en esta vista."}</EmptyText>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {showFilters && (
+          <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
+            <FilterSection label="Calendario">
+              <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
+            </FilterSection>
+            <FilterSection label="Estado">
+              <FilterChips
+                options={[["", "Todos"], ["pendiente", "Pendiente"], ["inscripcion_abierta", "Activo"]]}
+                value={estadoFilter}
+                onChange={setEstadoFilter}
+              />
+            </FilterSection>
+            {modalidades.length > 0 && (
+              <FilterSection label="Modalidad">
+                <FilterChips
+                  options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
+                  value={modalidadFilter}
+                  onChange={setModalidadFilter}
+                />
+              </FilterSection>
+            )}
+            {provincias.length > 0 && (
+              <FilterSection label="Provincia">
+                <FilterChips
+                  options={[["", "Todas"], ...provincias.map((p): [string, string] => [p, p])]}
+                  value={provinciaFilter}
+                  onChange={setProvinciaFilter}
+                />
+              </FilterSection>
+            )}
+            <FilterSection label="Prioridad">
+              <FilterChips
+                options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
+                value={prioridadFilter}
+                onChange={setPrioridadFilter}
+              />
+            </FilterSection>
+            <FilterSection label="Solo">
+              <label className="flex cursor-pointer items-center gap-2 text-xs">
+                <input type="checkbox" checked={soloInscripcionAbierta} onChange={(e) => setSoloInscripcionAbierta(e.target.checked)} className="rounded" />
+                Inscripción abierta
+              </label>
+            </FilterSection>
+          </FilterPanel>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1796,203 +3319,8 @@ function Sources() {
 }
 
 function BlocView() {
-  const [notes, setNotes] = useState<BlocNote[]>([]);
-  const [activeId, setActiveId] = useState<string>("");
-  const [settings, setSettings] = useState<BlocSettings>({ fontSize: "base", defaultLabel: "Nota" });
-  const [showSettings, setShowSettings] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
-  // Ref always holds latest notes so the unmount flush has the current value
-  const notesRef = useRef<BlocNote[]>([]);
-  useEffect(() => { notesRef.current = notes; });
-
-  // Flush to localStorage on unmount (bypasses debounce so no data is lost on navigation)
-  useEffect(() => {
-    return () => {
-      if (notesRef.current.length > 0) {
-        localStorage.setItem(blocKey, JSON.stringify(notesRef.current));
-      }
-    };
-  }, []);
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    const raw = localStorage.getItem(blocKey);
-    const rawSettings = localStorage.getItem(blocSettingsKey);
-    const savedNotes: BlocNote[] = raw ? (safeJson(raw) ?? []) : [];
-    const loadedSettings: BlocSettings = rawSettings
-      ? (safeJson(rawSettings) ?? { fontSize: "base", defaultLabel: "Nota" })
-      : { fontSize: "base", defaultLabel: "Nota" };
-    setSettings(loadedSettings);
-    if (savedNotes.length === 0) {
-      const first: BlocNote = { id: makeId(), label: "Nota 1", content: "", updated_at: nowIso() };
-      setNotes([first]);
-      setActiveId(first.id);
-    } else {
-      setNotes(savedNotes);
-      setActiveId(savedNotes[0].id);
-    }
-    setLoaded(true);
-  }, []);
-
-  // Auto-save notes with debounce (400ms after last change)
-  useEffect(() => {
-    if (notes.length === 0) return;
-    const tid = setTimeout(() => {
-      localStorage.setItem(blocKey, JSON.stringify(notes));
-    }, 400);
-    return () => clearTimeout(tid);
-  }, [notes]);
-
-  function saveSettings(next: BlocSettings) {
-    setSettings(next);
-    localStorage.setItem(blocSettingsKey, JSON.stringify(next));
-  }
-
-  function handleContentChange(content: string) {
-    setNotes((prev) => prev.map((n) => n.id === activeId ? { ...n, content, updated_at: nowIso() } : n));
-  }
-
-  function renameNote(id: string, label: string) {
-    setNotes((prev) => prev.map((n) => n.id === id ? { ...n, label } : n));
-  }
-
-  function addNote() {
-    const note: BlocNote = { id: makeId(), label: settings.defaultLabel || "Nota", content: "", updated_at: nowIso() };
-    setNotes((prev) => [...prev, note]);
-    setActiveId(note.id);
-  }
-
-  function deleteNote(id: string) {
-    setNotes((prev) => {
-      const next = prev.filter((n) => n.id !== id);
-      if (next.length === 0) {
-        const fresh: BlocNote = { id: makeId(), label: "Nota 1", content: "", updated_at: nowIso() };
-        setActiveId(fresh.id);
-        return [fresh];
-      }
-      if (activeId === id) setActiveId(next[0].id);
-      return next;
-    });
-  }
-
-  if (!loaded) {
-    return (
-      <Section title="Bloc">
-        <div className="h-64 rounded-lg border border-dashed flex items-center justify-center text-sm text-muted-foreground">
-          Cargando notas...
-        </div>
-      </Section>
-    );
-  }
-
-  const activeNote = notes.find((n) => n.id === activeId) ?? null;
-  const fontClass = { sm: "text-sm", base: "text-base", lg: "text-lg" }[settings.fontSize];
-
-  return (
-    <Section title="Bloc">
-      <div className="grid gap-4 lg:grid-cols-[200px_1fr]">
-        {/* Note list sidebar */}
-        <Card className="p-3">
-          <div className="space-y-1">
-            {notes.map((note) => (
-              <div key={note.id} className="group flex items-center gap-1">
-                <button
-                  type="button"
-                  className={cn(
-                    "flex-1 truncate rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-                    note.id === activeId ? "bg-primary text-primary-foreground" : "hover:bg-muted",
-                  )}
-                  onClick={() => setActiveId(note.id)}
-                >
-                  {note.label || "Sin título"}
-                </button>
-                {notes.length > 1 && (
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                    onClick={() => deleteNote(note.id)}
-                    aria-label="Eliminar nota"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="mt-2 w-full justify-start border border-dashed text-muted-foreground"
-            onClick={addNote}
-          >
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            Nueva nota
-          </Button>
-          <div className="mt-3 border-t pt-3">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start text-xs text-muted-foreground"
-              onClick={() => setShowSettings((v) => !v)}
-            >
-              {showSettings ? "Cerrar ajustes" : "Ajustes"}
-            </Button>
-          </div>
-        </Card>
-
-        {/* Editor */}
-        <div className="space-y-2">
-          {activeNote && (
-            <>
-              <Input
-                value={activeNote.label}
-                onChange={(e) => renameNote(activeNote.id, e.target.value)}
-                placeholder="Nombre de la nota"
-                className="font-medium"
-              />
-              <Textarea
-                value={activeNote.content}
-                onChange={(e) => handleContentChange(e.target.value)}
-                className={cn("min-h-[340px] resize-y font-mono", fontClass)}
-                placeholder="Escribe aquí..."
-              />
-              <p className="text-xs text-muted-foreground">
-                Guardado automáticamente · Última edición: {new Date(activeNote.updated_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-              </p>
-            </>
-          )}
-
-          {showSettings && (
-            <Card className="p-4 space-y-4">
-              <h3 className="text-sm font-medium">Ajustes del bloc</h3>
-              <div>
-                <p className="text-xs text-muted-foreground mb-2">Tamaño de fuente</p>
-                <SegmentedTabs<BlocSettings["fontSize"]>
-                  value={settings.fontSize}
-                  setValue={(v) => saveSettings({ ...settings, fontSize: v })}
-                  tabs={[["sm", "Pequeño"], ["base", "Normal"], ["lg", "Grande"]]}
-                />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-1.5">Nombre por defecto de nuevas notas</p>
-                <Input
-                  value={settings.defaultLabel}
-                  onChange={(e) => saveSettings({ ...settings, defaultLabel: e.target.value })}
-                  placeholder="Nota"
-                  className="h-8 text-sm"
-                />
-              </div>
-            </Card>
-          )}
-        </div>
-      </div>
-    </Section>
-  );
+  // Legacy localStorage key kept here for startup checks and migration awareness: techlife.bloc.D1OS.v1
+  return <BlocNotepad />;
 }
 
 function Settings({ reset }: { reset: () => void }) {
@@ -2297,7 +3625,7 @@ function techOpportunityToCalendarEvents(item: TechOpportunity): CalendarEvent[]
 
 function techCalendarType(item: TechOpportunity): CalendarEvent["type"] {
   if (isTechCourse(item)) return "course";
-  if (isTechHackathon(item)) return "hackathon";
+  if (isTechHackathonOrEvent(item)) return "hackathon";
   return "event";
 }
 
@@ -2351,11 +3679,11 @@ function normalizeTechPriority(value?: string | null): Hackathon["priority"] {
 }
 
 function courseIdentityKey(course: Course) {
-  return normalizedIdentity(course.id_slug, course.fuente_url, course.url, course.title);
+  return normalizedIdentity(course.fuente_url, course.url, course.id_slug, course.title);
 }
 
 function hackathonIdentityKey(hackathon: Hackathon) {
-  return normalizedIdentity(hackathon.id_slug, hackathon.url, hackathon.name);
+  return normalizedIdentity(hackathon.url, hackathon.id_slug, hackathon.name);
 }
 
 function normalizedIdentity(...values: Array<string | undefined | null>) {
@@ -2477,6 +3805,53 @@ function activeTasks(tasks: Task[]) {
   return tasks.filter((task) => task.status !== "completada" && task.status !== "cancelada");
 }
 
+function isCourseArchived(course: Pick<Course, "status">) {
+  return course.status === "terminado" || course.status === "descartado";
+}
+
+function isHackathonArchived(hackathon: Pick<Hackathon, "status">) {
+  return hackathon.status === "realizado" || hackathon.status === "descartado";
+}
+
+function isCoursePast(course: Pick<Course, "fecha_fin" | "deadline_at" | "fecha_inicio" | "start_at">) {
+  return isPastActionDate(course.fecha_fin || course.deadline_at || course.fecha_inicio || course.start_at);
+}
+
+function isHackathonPast(hackathon: Pick<Hackathon, "inscripcion_hasta" | "registration_deadline_at" | "end_at" | "start_at">) {
+  return isPastActionDate(hackathon.inscripcion_hasta || hackathon.registration_deadline_at || hackathon.end_at || hackathon.start_at);
+}
+
+function isPastActionDate(value?: string | null) {
+  const date = parseDate(value ?? undefined);
+  return Boolean(date) && startOfDay(date!) < startOfDay(new Date());
+}
+
+function isCalendarItemPast(event: CalendarEvent, store: Store) {
+  const baseId = calendarEventBaseId(event.id);
+
+  if (event.type === "course") {
+    const course = getDisplayCourses(store.courses, store.techOpportunities)
+      .find((item) => item.id === baseId || item.id_slug === baseId || item.id === `tech-${baseId}`);
+    return course ? isCoursePast(course) : isPastActionDate(event.date_at);
+  }
+
+  if (event.type === "hackathon") {
+    const hackathon = getDisplayHackathons(store.hackathons, store.techOpportunities)
+      .find((item) => item.id === baseId || item.id_slug === baseId || item.id === `tech-${baseId}`);
+    return hackathon ? isHackathonPast(hackathon) : isPastActionDate(event.date_at);
+  }
+
+  return false;
+}
+
+function isCalendarEventDone(event: Pick<CalendarEvent, "type" | "status">) {
+  const status = String(event.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (event.type === "task") return status === "completada" || status === "cancelada";
+  if (event.type === "course") return status.includes("termin") || status.includes("final") || status.includes("descart");
+  if (event.type === "hackathon") return status.includes("realiz") || status.includes("final") || status.includes("descart");
+  return status === "cancelled" || status === "cancelado";
+}
+
 function sortTasksByPriority(a: Task, b: Task) {
   const priorityOrder: Record<TaskPriority, number> = { critica: 0, alta: 1, media: 2, baja: 3 };
   const priorityDiff = priorityOrder[getTaskPriority(a)] - priorityOrder[getTaskPriority(b)];
@@ -2516,7 +3891,7 @@ function hackathonDashboardDate(hackathon: Hackathon) {
 
 function isDashboardFutureHackathon(hackathon: Hackathon) {
   const date = hackathonDashboardDate(hackathon);
-  return Boolean(date) && date! >= dashboardHackathonCutoff && hackathon.status !== "realizado" && hackathon.status !== "descartado";
+  return Boolean(date) && date! >= dashboardHackathonCutoff && !isHackathonArchived(hackathon) && !isHackathonPast(hackathon);
 }
 
 function sortTasks(a: Task, b: Task) {
@@ -2535,6 +3910,14 @@ function parseDate(value?: string) {
 
 function toDatetimeLocalValue(date: Date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function toDateInputValue(date: Date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function toTimeInputValue(date: Date) {
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function addDaysKeepingTime(value: string | undefined, days: number) {
@@ -2578,6 +3961,10 @@ function addDays(date: Date, days: number) {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
   return next;
+}
+
+function addMinutes(date: Date, minutes: number) {
+  return new Date(date.getTime() + minutes * 60_000);
 }
 
 function addMonths(date: Date, months: number) {
@@ -2633,7 +4020,7 @@ function formatLongDate(value?: string) {
 }
 
 function calendarEventClass(type: CalendarEvent["type"], status?: string) {
-  if (type === "task" && status === "completada") return "bg-slate-100 text-slate-700 line-through";
+  if (isCalendarEventDone({ type, status })) return "bg-slate-100 text-slate-700 line-through";
   if (type === "task") return "bg-blue-100 text-blue-800";
   if (type === "course") return "bg-emerald-100 text-emerald-800";
   if (type === "event") return "bg-violet-100 text-violet-800";
@@ -2642,7 +4029,7 @@ function calendarEventClass(type: CalendarEvent["type"], status?: string) {
 }
 
 function calendarDotClass(type: CalendarEvent["type"], status?: string) {
-  if (type === "task" && status === "completada") return "bg-slate-400";
+  if (isCalendarEventDone({ type, status })) return "bg-slate-400";
   if (type === "task") return "bg-blue-500";
   if (type === "course") return "bg-emerald-500";
   if (type === "event") return "bg-violet-500";

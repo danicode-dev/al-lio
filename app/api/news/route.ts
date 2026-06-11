@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listItems, readAllItems, readSyncStatus } from "@/lib/news/store";
+import { filterItems, readAllItems, readSyncStatus } from "@/lib/news/store";
 import { syncIfNeeded } from "@/lib/news/sync";
 import type { NewsCategory } from "@/lib/sources/source-registry";
 import type { NewsListFilters, NewsStatus } from "@/lib/news/types";
@@ -8,13 +8,10 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const VALID_CATEGORIES: NewsCategory[] = [
-  "tech",
   "granada",
-  "economy",
-  "programming",
-  "jobs",
-  "companies",
-  "hackathons",
+  "ia",
+  "empresas_granada",
+  "eventos_granada",
 ];
 const VALID_STATUSES: NewsStatus[] = ["new", "read", "saved"];
 
@@ -46,11 +43,11 @@ export async function GET(req: Request) {
     limit: searchParams.get("limit") ? Number(searchParams.get("limit")) : undefined,
   };
 
-  const [items, allItems, status] = await Promise.all([
-    listItems(filters),
+  const [allItems, status] = await Promise.all([
     readAllItems(),
     readSyncStatus(),
   ]);
+  const items = filterItems(allItems, filters);
   const todayKey = new Date().toISOString().slice(0, 10);
   return NextResponse.json({
     items,
