@@ -1,5 +1,24 @@
 // ── PostgreSQL row types (matches infra/postgres/schema.sql) ──────────────────
 
+export interface DbJobApplication {
+  id: string;
+  user_id: string;
+  company_name: string;
+  company_url: string;
+  job_title: string;
+  job_url: string | null;
+  source: string;
+  page_hash: string | null;
+  status: string;
+  detected_at: string;
+  applied_at: string | null;
+  notes: Array<{ text: string; created_at: string }>;
+  is_new: boolean;
+  is_saved: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DbUser {
   id: string;
   email: string;
