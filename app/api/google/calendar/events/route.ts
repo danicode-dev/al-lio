@@ -15,6 +15,17 @@ function unauthorized() {
   return NextResponse.json({ connected: false, events: [] }, { status: 401 });
 }
 
+function friendlyGoogleError(error: unknown): string {
+  const message = (error as Error)?.message ?? String(error);
+  if (message.includes("has not been used in project") || message.includes("is disabled")) {
+    return "La API de Google Calendar no está habilitada en tu proyecto de Google Cloud. Entra en console.cloud.google.com, busca \"Google Calendar API\" y actívala. Tarda unos minutos en propagarse.";
+  }
+  if (message.includes("invalid_grant") || message.includes("Token has been expired")) {
+    return "La conexión con Google ha caducado. Desconecta y vuelve a conectar Google Calendar.";
+  }
+  return message;
+}
+
 export async function GET(req: Request) {
   const calendar = await getGoogleCalendarClient();
   if (!calendar) return unauthorized();
@@ -48,7 +59,7 @@ export async function GET(req: Request) {
       })),
     });
   } catch (error) {
-    return NextResponse.json({ connected: true, events: [], error: (error as Error).message }, { status: 502 });
+    return NextResponse.json({ connected: true, events: [], error: friendlyGoogleError(error) }, { status: 502 });
   }
 }
 
@@ -84,7 +95,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 502 });
+    return NextResponse.json({ error: friendlyGoogleError(error) }, { status: 502 });
   }
 }
 
@@ -100,6 +111,6 @@ export async function DELETE(req: Request) {
     await calendar.events.delete({ calendarId: "primary", eventId: id });
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 502 });
+    return NextResponse.json({ error: friendlyGoogleError(error) }, { status: 502 });
   }
 }
