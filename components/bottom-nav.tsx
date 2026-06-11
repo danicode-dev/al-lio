@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { href: "/tasks", label: "Tareas", icon: ListTodo },
   { href: "/bloc", label: "Bloc", icon: BookOpen },
   { href: "/noticias", label: "Noticias", icon: Newspaper },
-  { href: "/links", label: "Más", icon: MoreHorizontal },
+  { href: "/more", label: "Más", icon: MoreHorizontal },
 ];
 
 export function BottomNav() {
