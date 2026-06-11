@@ -631,7 +631,7 @@ function NotificationBell({ store, actions }: { store: Store; actions: ReturnTyp
         )}
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border bg-background shadow-xl">
+        <div className="absolute right-0 top-full z-50 mt-2 w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-xl sm:w-80">
           <div className="border-b px-3 py-2.5">
             <div className="flex items-center gap-2">
               <AlarmClock className="h-4 w-4 shrink-0 text-amber-500" />
@@ -699,7 +699,7 @@ export function GuestApp({ view }: { view: View }) {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6 pb-20 md:pb-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           {view !== "dashboard" && (
@@ -708,7 +708,7 @@ export function GuestApp({ view }: { view: View }) {
             </Button>
           )}
           <div>
-            <h1 className="text-3xl font-semibold tracking-normal">
+            <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
               {view === "dashboard" ? (() => {
                 const currentHour = new Date().getHours();
                 let prefix = "Buenos días";
@@ -1167,7 +1167,7 @@ function QuickTaskForm({
             {taskPriorities.map((priority) => <option key={priority} value={priority}>{priorityLabel(priority)}</option>)}
           </Select>
           {!compact && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Input name="due_at" type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
               <Input name="reminder_at" type="datetime-local" />
             </div>
@@ -2045,7 +2045,7 @@ function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: b
   return (
     <>
       {open && (
-        <Card className="fixed bottom-24 right-5 z-50 w-[calc(100vw-2.5rem)] max-w-sm p-4 shadow-xl">
+        <Card className="fixed bottom-20 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm p-4 shadow-xl md:bottom-20 md:right-5">
           <div className="mb-3 flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Alta rápida</p>
@@ -2089,7 +2089,7 @@ function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: b
             {type === "hackathon" && (
               <>
                 <Input name="organizer" placeholder="Organizador" />
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <Input name="province" placeholder="Provincia" />
                   <Input name="city" placeholder="Ciudad" />
                 </div>
@@ -2116,7 +2116,7 @@ function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: b
       )}
       <Button
         size="icon"
-        className="fixed bottom-24 md:bottom-5 right-5 z-50 h-14 w-14 rounded-full shadow-xl"
+        className="fixed bottom-20 md:bottom-5 right-4 md:right-5 z-50 h-14 w-14 rounded-full shadow-xl"
         onClick={() => setOpen(!open)}
         aria-label="Añadir rápido"
       >
@@ -2721,7 +2721,7 @@ function FilterPanel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="w-60 shrink-0 space-y-5">
+    <div className="w-full shrink-0 space-y-5 lg:w-60">
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold">{title}</span>
         {activeCount > 0 && (
@@ -2892,7 +2892,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
 
       <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
 
-      <div className="flex gap-5">
+      <div className="flex flex-col gap-5 lg:flex-row">
         <div className="min-w-0 flex-1 space-y-4">
           <KpiRow items={[
             ["Total", tabBase.length, ""],
@@ -3123,7 +3123,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
 
       <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
 
-      <div className="flex gap-5">
+      <div className="flex flex-col gap-5 lg:flex-row">
         <div className="min-w-0 flex-1 space-y-4">
           <KpiRow items={[
             ["Total", tabBase.length, ""],

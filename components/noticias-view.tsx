@@ -204,7 +204,7 @@ export function NoticiasView() {
         </Button>
       </div>
 
-      <div className="flex gap-5">
+      <div className="flex flex-col gap-5 lg:flex-row">
         {/* ── Main content ── */}
         <div className="min-w-0 flex-1 space-y-4">
           {/* KPIs */}
@@ -285,7 +285,7 @@ export function NoticiasView() {
 
         {/* ── Filter panel ── */}
         {showFilters && (
-          <div className="w-56 shrink-0 space-y-5">
+          <div className="w-full shrink-0 space-y-5 lg:w-56">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold">Filtros</span>
               {activeFilterCount > 0 && (
