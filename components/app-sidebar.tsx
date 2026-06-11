@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -7,7 +8,6 @@ import {
   Briefcase,
   CalendarDays,
   ChevronLeft,
-  ChevronRight,
   FolderKanban,
   GraduationCap,
   Home,
@@ -17,11 +17,13 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signOut } from "@/lib/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+const SIDEBAR_KEY = "al-lio.sidebar.collapsed.v1";
 
 const items = [
   { href: "/dashboard", label: "Inicio", icon: Home },
@@ -40,17 +42,54 @@ export function AppSidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
+  useEffect(() => {
+    setCollapsed(localStorage.getItem(SIDEBAR_KEY) === "true");
+  }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((v) => {
+      const next = !v;
+      localStorage.setItem(SIDEBAR_KEY, String(next));
+      return next;
+    });
+  }
+
   return (
     <aside className={cn("sticky top-0 hidden h-screen shrink-0 border-r bg-card md:block", collapsed ? "w-16" : "w-60")}>
-      <div className="flex h-14 items-center justify-between px-3">
-        {!collapsed && <span className="text-base font-bold tracking-tight">Al-Lio</span>}
-        <div className="flex items-center gap-1">
-          {!collapsed && <ThemeToggle />}
-          <Button variant="ghost" size="icon" onClick={() => setCollapsed((value) => !value)} aria-label="Plegar menu">
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </Button>
-        </div>
+      {/* ── Header ── */}
+      <div className="flex h-14 items-center px-2">
+        {collapsed ? (
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="mx-auto flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-muted"
+            aria-label="Expandir menú"
+            title="Expandir menú"
+          >
+            <Image src="/brand/logo-mark.png" alt="Al-Lio" width={28} height={28} className="dark:invert" />
+          </button>
+        ) : (
+          <>
+            <div className="min-w-0 flex-1 pl-1">
+              <Image
+                src="/brand/signature.png"
+                alt="Al-Lío"
+                width={120}
+                height={36}
+                className="object-contain object-left dark:invert"
+                priority
+              />
+            </div>
+            <div className="flex shrink-0 items-center gap-0.5">
+              <ThemeToggle />
+              <Button variant="ghost" size="icon" onClick={toggleCollapsed} aria-label="Plegar menú">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
+        )}
       </div>
+
       <nav className="space-y-1 px-2">
         {items.map((item) => {
           const Icon = item.icon;

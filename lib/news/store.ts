@@ -25,6 +25,11 @@ const STATUS_FILE = path.join(DATA_DIR, "news-sync-status.json");
 
 const MAX_ITEMS = 800;
 
+// Promise-coalescing cache: multiple concurrent callers share one file read
+let _itemsCache: { data: NewsItem[]; ts: number } | null = null;
+let _itemsInFlight: Promise<NewsItem[]> | null = null;
+const CACHE_TTL = 30_000;
+
 async function ensureDir() {
   try {
     await fs.mkdir(DATA_DIR, { recursive: true });
@@ -48,43 +53,39 @@ async function writeJsonFile(file: string, data: unknown): Promise<void> {
 }
 
 export async function readAllItems(): Promise<NewsItem[]> {
-  const all = await readJsonFile<NewsItem[]>(ITEMS_FILE, []);
-  const normalized = all
-    .map(normalizeStoredItem)
-    .filter((item): item is NewsItem => Boolean(item));
+  const now = Date.now();
+  if (_itemsCache && now - _itemsCache.ts < CACHE_TTL) return _itemsCache.data;
+  if (_itemsInFlight) return _itemsInFlight;
 
-  if (normalized.length !== all.length || JSON.stringify(normalized) !== JSON.stringify(all)) {
-    await writeAllItems(normalized).catch(() => {});
-  }
+  _itemsInFlight = (async () => {
+    const all = await readJsonFile<NewsItem[]>(ITEMS_FILE, []);
+    const normalized = all
+      .map(normalizeStoredItem)
+      .filter((item): item is NewsItem => Boolean(item));
 
-  return normalized;
+    if (normalized.length !== all.length) {
+      writeAllItems(normalized).catch(() => {});
+    }
+
+    _itemsCache = { data: normalized, ts: Date.now() };
+    return normalized;
+  })().finally(() => { _itemsInFlight = null; });
+
+  return _itemsInFlight;
 }
 
 export async function readSyncStatus(): Promise<SyncStatus> {
-  const status = await readJsonFile<SyncStatus>(STATUS_FILE, {
+  return readJsonFile<SyncStatus>(STATUS_FILE, {
     lastSyncAt: null,
     lastSyncOk: false,
     totalItems: 0,
     newToday: 0,
     sources: [],
   });
-  const items = await readAllItems();
-  const todayKey = new Date().toISOString().slice(0, 10);
-  const normalized: SyncStatus = {
-    ...status,
-    totalItems: items.length,
-    newToday: items.filter((item) => item.fetchedAt.startsWith(todayKey)).length,
-  };
-
-  if (normalized.totalItems !== status.totalItems || normalized.newToday !== status.newToday) {
-    await writeSyncStatus(normalized).catch(() => {});
-  }
-
-  return normalized;
 }
 
 export async function writeAllItems(items: NewsItem[]): Promise<void> {
-  // Mantener tamaño acotado para no inflar el JSON
+  _itemsCache = null;
   const trimmed = items
     .slice()
     .sort((a, b) => (b.publishedAt || b.fetchedAt).localeCompare(a.publishedAt || a.fetchedAt))
@@ -188,8 +189,7 @@ export async function upsertItems(
   return { added, updated, items: merged };
 }
 
-export async function listItems(filters: NewsListFilters = {}): Promise<NewsItem[]> {
-  const items = await readAllItems();
+export function filterItems(items: NewsItem[], filters: NewsListFilters = {}): NewsItem[] {
   let out = items;
 
   if (filters.category && filters.category !== "all") {
@@ -220,6 +220,10 @@ export async function listItems(filters: NewsListFilters = {}): Promise<NewsItem
 
   if (filters.limit && filters.limit > 0) out = out.slice(0, filters.limit);
   return out;
+}
+
+export async function listItems(filters: NewsListFilters = {}): Promise<NewsItem[]> {
+  return filterItems(await readAllItems(), filters);
 }
 
 export async function setItemStatus(id: string, status: NewsStatus): Promise<NewsItem | null> {
