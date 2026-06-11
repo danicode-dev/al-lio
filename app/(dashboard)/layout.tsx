@@ -3,6 +3,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getGlobalStore } from "@/lib/data";
 import { StoreProvider, MobileHeaderActions } from "@/components/guest-app";
+import { DailyAlerts } from "@/components/daily-alerts";
 import type { Store } from "@/components/guest-app";
 import Image from "next/image";
 
@@ -28,6 +29,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
         </main>
         <BottomNav />
+        <DailyAlerts />
       </div>
     </StoreProvider>
   );
