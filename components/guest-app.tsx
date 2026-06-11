@@ -23,7 +23,6 @@ import {
   RefreshCw,
   Search,
   SlidersHorizontal,
-  Sparkles,
   Target,
   Trash2,
   X,
@@ -47,7 +46,7 @@ import { APPLICATION_STATUSES, STATUS_LABELS, STATUS_COLORS } from "@/lib/job-ra
 
 type View = "dashboard" | "work" | "courses" | "hackathons" | "tasks" | "calendar" | "links" | "sources" | "settings" | "bloc";
 type TaskStatus = "pendiente" | "en_progreso" | "completada" | "pospuesta" | "cancelada";
-type TaskBucket = "diario" | "urgente" | "semanal" | "log_ia";
+type TaskBucket = "diario" | "urgente" | "semanal";
 type TaskPriority = "alta" | "media" | "baja" | "critica";
 type QuickAddType = "task" | "course" | "hackathon" | "company";
 
@@ -359,14 +358,6 @@ const taskBuckets: Array<{
     tone: "from-emerald-500 to-teal-500",
     Icon: CalendarDays,
   },
-  {
-    id: "log_ia",
-    title: "Log IA",
-    shortTitle: "Log IA",
-    description: "Registro de implementaciones de Claude y Codex.",
-    tone: "from-violet-500 to-purple-600",
-    Icon: Sparkles,
-  },
 ];
 
 const taskBucketIds = taskBuckets.map((bucket) => bucket.id);
@@ -424,10 +415,12 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
 
   const actions = {
     addTask: async (data: Omit<Task, "id" | "created_at" | "progress_notes"> & { progress_notes?: ProgressNote[] }) => {
+      const id = makeId();
       const category = toTaskBucket(data.category);
       const priority = normalizeTaskPriority(data.priority);
-      setStore((current) => ({ ...current, tasks: [{ id: makeId(), created_at: nowIso(), progress_notes: [], ...data, category, priority }, ...current.tasks] }));
+      setStore((current) => ({ ...current, tasks: [{ id, created_at: nowIso(), progress_notes: [], ...data, category, priority }, ...current.tasks] }));
       await insertDb("tasks", {
+        id,
         title: data.title,
         description: data.description,
         due_date: data.due_at || null,
@@ -470,8 +463,9 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       await updateDb("tasks", id, { description: newDesc }, ["/tasks"]);
     },
     addCourse: async (data: Omit<Course, "id" | "created_at">) => {
-      setStore((current) => ({ ...current, courses: [{ id: makeId(), created_at: nowIso(), ...data }, ...current.courses] }));
-      await insertDb("courses", { title: data.title, platform: data.platform, url: data.url, start_date: data.start_at, deadline: data.deadline_at, status: data.status, notes: data.notes }, ["/courses"]);
+      const id = makeId();
+      setStore((current) => ({ ...current, courses: [{ id, created_at: nowIso(), ...data }, ...current.courses] }));
+      await insertDb("courses", { id, title: data.title, platform: data.platform, url: data.url, start_date: data.start_at, deadline: data.deadline_at, status: data.status, notes: data.notes }, ["/courses"]);
     },
     updateCourse: async (id: string, data: Partial<Course>) => {
       setStore((current) => ({ ...current, courses: patchById(current.courses, id, data) }));
@@ -482,8 +476,9 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       await updateDb("courses", id, dbData, ["/courses"]);
     },
     addHackathon: async (data: Omit<Hackathon, "id" | "created_at">) => {
-      setStore((current) => ({ ...current, hackathons: [{ id: makeId(), created_at: nowIso(), ...data }, ...current.hackathons] }));
-      await insertDb("hackathons", { name: data.name, organizer: data.organizer, province: data.province, city: data.city, type: "hackathon", status: data.status || "revisar_futura_edicion", event_start_date: data.start_at, event_end_date: data.end_at, registration_deadline: data.registration_deadline_at, url: data.url, notes: data.notes, priority: data.priority }, ["/hackathons"]);
+      const id = makeId();
+      setStore((current) => ({ ...current, hackathons: [{ id, created_at: nowIso(), ...data }, ...current.hackathons] }));
+      await insertDb("hackathons", { id, name: data.name, organizer: data.organizer, province: data.province, city: data.city, type: "hackathon", status: data.status || "revisar_futura_edicion", event_start_date: data.start_at, event_end_date: data.end_at, registration_deadline: data.registration_deadline_at, url: data.url, notes: data.notes, priority: data.priority }, ["/hackathons"]);
     },
     updateHackathon: async (id: string, data: Partial<Hackathon>) => {
       setStore((current) => ({ ...current, hackathons: patchById(current.hackathons, id, data) }));
@@ -509,8 +504,9 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       await updateDb("opportunities", id, dbData, ["/work"]);
     },
     addLink: async (data: Omit<QuickLink, "id" | "created_at">) => {
-      setStore((current) => ({ ...current, links: [{ id: makeId(), created_at: nowIso(), ...data }, ...current.links] }));
-      await insertDb("quick_links", data, ["/links"]);
+      const id = makeId();
+      setStore((current) => ({ ...current, links: [{ id, created_at: nowIso(), ...data }, ...current.links] }));
+      await insertDb("quick_links", { id, ...data }, ["/links"]);
     },
     reset: () => setStore({ ...emptyStore, hackathons: seedHackathons }),
   };
@@ -757,8 +753,8 @@ export function GuestApp({ view }: { view: View }) {
             </h1>
           </div>
           <div className="hidden md:flex items-center gap-2">
-            <NotificationBell store={store} actions={actions} />
             <GoogleCalendarStatusControl />
+            <NotificationBell store={store} actions={actions} />
           </div>
         </div>
       )}
@@ -1236,7 +1232,7 @@ function TaskBoardCard({ task, actions, compact, onOpen }: { task: Task; actions
   return (
     <article
       ref={setDragRef}
-      style={dragStyle}
+      style={{ ...dragStyle, touchAction: "none" }}
       className={cn("group relative overflow-hidden rounded-md border bg-card shadow-sm transition-colors hover:border-foreground/20 cursor-grab active:cursor-grabbing select-none", isDragging && "opacity-50 shadow-lg")}
       {...listeners}
     >
@@ -3862,6 +3858,7 @@ function genericPriorityClass(value?: string) {
 
 
 function toTaskBucket(value?: string): TaskBucket {
+  if (value === "log_ia") return "semanal";
   return taskBucketIds.includes(value as TaskBucket) ? value as TaskBucket : "diario";
 }
 
