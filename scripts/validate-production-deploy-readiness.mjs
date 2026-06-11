@@ -51,7 +51,6 @@ check("BASE_URL es al-lio.danielcode.dev", envEx.includes("BASE_URL=https://al-l
 check("GOOGLE_REDIRECT_URI es al-lio.danielcode.dev", envEx.includes("al-lio.danielcode.dev/api/google/calendar/callback"));
 check("DATABASE_URL apunta a al_lio_postgres", envEx.includes("@al_lio_postgres:5432/al_lio"));
 check("no contiene BASE_URL con aidraft", !envEx.includes("BASE_URL=https://aidraft"));
-// Seguridad: todos los valores sensibles deben ser REPLACE_ME
 check("no contiene secretos reales (supabase key largo)", !(/NEXT_PUBLIC_SUPABASE_ANON_KEY=ey[A-Za-z0-9]/.test(envEx)));
 check("no contiene secretos reales (service role key)", !(/SUPABASE_SERVICE_ROLE_KEY=ey[A-Za-z0-9]/.test(envEx)));
 check("no contiene secretos reales (Google client secret)", !(/GOOGLE_CLIENT_SECRET=[A-Za-z0-9_-]{20,}/.test(envEx)));
@@ -66,10 +65,89 @@ const prodFiles = [
 ];
 for (const f of prodFiles) {
   const content = read(f);
-  // Permitimos "aidraft" en comentarios/docs pero no como nombre funcional de contenedor/red
   const hasAidraftService = /^\s*(aidraft_web|aidraft_postgres|aidraft_internal):/m.test(content);
   check(`${f}: sin nombres funcionales aidraft_* como servicio/red`, !hasAidraftService);
 }
+
+// ── Scripts de import/verify producción — guardias y hardening ────────────────
+
+console.log("\n── Scripts de migración producción ──");
+const importProd = read("scripts/migration/import-production-data.mjs");
+const verifyProd = read("scripts/migration/verify-production-migration.mjs");
+
+check(
+  "import-production-data.mjs existe",
+  existsSync(join(root, "scripts/migration/import-production-data.mjs"))
+);
+check("import-production: requiere AL_LIO_ALLOW_PRODUCTION_IMPORT",
+  importProd.includes("AL_LIO_ALLOW_PRODUCTION_IMPORT"));
+check("import-production: requiere AL_LIO_PRODUCTION_IMPORT_CONFIRMATION",
+  importProd.includes("AL_LIO_PRODUCTION_IMPORT_CONFIRMATION"));
+check("import-production: confirmación exacta IMPORT_TO_AL_LIO_PRODUCTION_POSTGRES",
+  importProd.includes("IMPORT_TO_AL_LIO_PRODUCTION_POSTGRES"));
+check("import-production: rechaza sandbox 127.0.0.1:54329",
+  importProd.includes("127.0.0.1") && importProd.includes("54329"));
+check("import-production: valida database al_lio",
+  importProd.includes('"al_lio"'));
+check("import-production: valida user al_lio",
+  importProd.includes('parsed.username !== "al_lio"'));
+check("import-production: no imprime DATABASE_URL completa",
+  !importProd.includes("console.log(connectionString") &&
+  !importProd.includes("console.log(DATABASE_URL"));
+check("import-production: no imprime password",
+  !importProd.includes("parsed.password") &&
+  !importProd.includes("console.log(password"));
+check("import-production: usa transacción BEGIN/COMMIT",
+  importProd.includes("BEGIN") && importProd.includes("COMMIT"));
+check("import-production: usa ROLLBACK",
+  importProd.includes("ROLLBACK"));
+check("import-production: verifica recuentos antes de COMMIT",
+  // El throw de verificación debe aparecer antes del query COMMIT en el código
+  importProd.indexOf('throw new Error') < importProd.indexOf('query("COMMIT")')
+  && importProd.indexOf('throw new Error') !== -1
+  && importProd.indexOf('query("COMMIT")') !== -1);
+check("import-production: usa whitelist TABLES fija",
+  importProd.includes("const TABLES = ["));
+
+check(
+  "verify-production-migration.mjs existe",
+  existsSync(join(root, "scripts/migration/verify-production-migration.mjs"))
+);
+check("verify-production: requiere AL_LIO_ALLOW_PRODUCTION_IMPORT",
+  verifyProd.includes("AL_LIO_ALLOW_PRODUCTION_IMPORT"));
+check("verify-production: requiere AL_LIO_PRODUCTION_IMPORT_CONFIRMATION",
+  verifyProd.includes("AL_LIO_PRODUCTION_IMPORT_CONFIRMATION"));
+check("verify-production: rechaza sandbox 127.0.0.1:54329",
+  verifyProd.includes("127.0.0.1") && verifyProd.includes("54329"));
+check("verify-production: valida database al_lio",
+  verifyProd.includes('"al_lio"'));
+check("verify-production: valida user al_lio",
+  verifyProd.includes('parsed.username !== "al_lio"'));
+check("verify-production: no imprime DATABASE_URL completa",
+  !verifyProd.includes("console.log(connectionString") &&
+  !verifyProd.includes("console.log(DATABASE_URL"));
+check("verify-production: no imprime password",
+  !verifyProd.includes("parsed.password") &&
+  !verifyProd.includes("console.log(password"));
+check("verify-production: usa whitelist TABLES fija",
+  verifyProd.includes("const TABLES = ["));
+
+// ── Runbook — requisitos de seguridad operacional ─────────────────────────────
+
+console.log("\n── docs/POSTGRES_MIGRATION_PHASE_5B_EXECUTION.md ──");
+const runbook = read("docs/POSTGRES_MIGRATION_PHASE_5B_EXECUTION.md");
+check("runbook existe",
+  existsSync(join(root, "docs/POSTGRES_MIGRATION_PHASE_5B_EXECUTION.md")));
+check("runbook no exige Node.js en host (no 'npm ci --omit=dev' directo en host)",
+  !runbook.includes("npm ci --omit=dev"));
+check("runbook usa node:22-alpine vía docker run para scripts Node",
+  runbook.includes("node:22-alpine"));
+check("runbook no usa 'curl http://localhost:3000' para healthcheck",
+  !runbook.includes("curl http://localhost:3000"));
+check("runbook usa 'docker exec al_lio_web wget' o curlimages para healthcheck",
+  runbook.includes("docker exec al_lio_web wget") || runbook.includes("curlimages/curl"));
+check("runbook menciona ruta real del sandbox (al-lio-phase-3b/migration-artifacts)",
+  runbook.includes("al-lio-phase-3b/migration-artifacts"));
 
 // ── Git staged — seguridad ────────────────────────────────────────────────────
 

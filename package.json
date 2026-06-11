@@ -45,6 +45,8 @@
     "migration:validate:artifacts": "node scripts/migration/validate-migration-artifacts.mjs",
     "validate:postgres-app-integration": "node scripts/validate-postgres-app-integration.mjs",
     "validate:production-deploy": "node scripts/validate-production-deploy-readiness.mjs",
+    "migration:import:production": "node scripts/migration/import-production-data.mjs",
+    "migration:verify:production": "node scripts/migration/verify-production-migration.mjs",
     "postgres:user:set-password": "node scripts/postgres/set-user-password.mjs"
   },
   "dependencies": {
