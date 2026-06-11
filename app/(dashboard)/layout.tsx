@@ -5,6 +5,8 @@ import { getGlobalStore } from "@/lib/data";
 import { StoreProvider } from "@/components/guest-app";
 import type { Store } from "@/components/guest-app";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const store = (await getGlobalStore()) as unknown as Store;
 

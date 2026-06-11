@@ -66,7 +66,9 @@ export function isGranadaCandidateJobText(text: string): boolean {
 }
 
 export function isGranadaCandidateJob(item: NewsItem): boolean {
-  if (item.category !== "jobs") return true;
+  // "jobs" category no longer exists; all items pass through
+  void item;
+  return true;
   return isGranadaCandidateJobText(
     [
       item.title,

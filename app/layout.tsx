@@ -17,8 +17,14 @@ const themeScript = `
 `;
 
 export const metadata: Metadata = {
-  title: "Al-Lío",
+  title: "AL-LÍO",
   description: "Panel personal para trabajo, cursos, hackathons, tareas y enlaces.",
+  icons: {
+    icon: [
+      { url: "/brand/logo-mark.png", type: "image/png" },
+    ],
+    apple: "/brand/logo-mark.png",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
