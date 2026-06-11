@@ -13,15 +13,17 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
+  // Use BASE_URL from env to avoid inheriting the internal Docker bind address (0.0.0.0:3000).
+  const baseUrl = process.env.BASE_URL ?? url.origin;
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
 
   if (!code) {
-    return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("missing_code"), req.url));
+    return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("missing_code"), baseUrl));
   }
 
   if (!(await assertGoogleOAuthState(state))) {
-    return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("invalid_state"), req.url));
+    return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("invalid_state"), baseUrl));
   }
 
   const oauth = createGoogleOAuthClient(await getGoogleRedirectUriFromCookie());
@@ -39,8 +41,8 @@ export async function GET(req: Request) {
     });
 
     await saveGoogleTokens(tokens);
-    return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("connected"), req.url));
+    return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("connected"), baseUrl));
   } catch {
-    return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("connect_error"), req.url));
+    return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("connect_error"), baseUrl));
   }
 }
