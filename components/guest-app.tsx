@@ -406,8 +406,8 @@ export function MobileHeaderActions() {
   const { store, actions } = useStore();
   return (
     <div className="flex items-center gap-1">
-      <NotificationBell store={store} actions={actions} />
       <GoogleCalendarStatusControl />
+      <NotificationBell store={store} actions={actions} />
     </div>
   );
 }
@@ -558,6 +558,18 @@ function NotificationBell({ store, actions }: { store: Store; actions: ReturnTyp
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [open]);
 
+  const todayUrgentTasks = useMemo(() => {
+    const now = new Date();
+    return store.tasks.filter((task) => {
+      if (task.status === "completada" || task.status === "cancelada") return false;
+      const due = task.due_at ? new Date(task.due_at) : null;
+      const isOverdue = due && due < now;
+      const isDueToday = due && isSameDay(due, now);
+      const isUrgent = task.priority === "alta" || task.priority === "critica" || task.category === "urgente";
+      return Boolean(isOverdue) || Boolean(isDueToday) || isUrgent;
+    }).slice(0, 5);
+  }, [store.tasks, today]);
+
   const allAlerts = useMemo(() => {
     const localAlerts = getCalendarEvents(store).filter((event) => {
       if (event.type !== "course" && event.type !== "hackathon") return false;
@@ -632,6 +644,30 @@ function NotificationBell({ store, actions }: { store: Store; actions: ReturnTyp
       </button>
       {open && (
         <div className="absolute right-0 top-full z-50 mt-2 w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-xl sm:w-80">
+          {todayUrgentTasks.length > 0 && (
+            <>
+              <div className="border-b px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <Bell className="h-4 w-4 shrink-0 text-rose-500" />
+                  <h3 className="text-sm font-semibold">Resumen de hoy</h3>
+                </div>
+              </div>
+              <div className="divide-y border-b">
+                {todayUrgentTasks.map((task) => {
+                  const now = new Date();
+                  const due = task.due_at ? new Date(task.due_at) : null;
+                  const isOverdue = due && due < now;
+                  return (
+                    <a key={task.id} href="/tasks" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-3 py-2 hover:bg-muted/60 transition-colors">
+                      <span className={cn("h-2 w-2 shrink-0 rounded-full", isOverdue ? "bg-rose-500" : task.priority === "critica" ? "bg-rose-400" : "bg-amber-400")} />
+                      <span className="flex-1 truncate text-sm">{task.title}</span>
+                      {isOverdue && <span className="shrink-0 text-[10px] font-semibold text-rose-500">Vencida</span>}
+                    </a>
+                  );
+                })}
+              </div>
+            </>
+          )}
           <div className="border-b px-3 py-2.5">
             <div className="flex items-center gap-2">
               <AlarmClock className="h-4 w-4 shrink-0 text-amber-500" />
@@ -700,22 +736,14 @@ export function GuestApp({ view }: { view: View }) {
 
   return (
     <div className="space-y-6 pb-20 md:pb-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
-          {view !== "dashboard" && (
+      {view !== "dashboard" && (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" onClick={() => router.back()} aria-label="Volver atrás" className="h-10 w-10 shrink-0 rounded-full">
               <ChevronLeft className="h-5 w-5" />
             </Button>
-          )}
-          <div>
             <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
-              {view === "dashboard" ? (() => {
-                const currentHour = new Date().getHours();
-                let prefix = "Buenos días";
-                if (currentHour >= 14 && currentHour < 21) prefix = "Buenas tardes";
-                else if (currentHour >= 21 || currentHour < 6) prefix = "Buenas noches";
-                return `${prefix}, ${appSettings.displayName || store.userName || "Al-Lio"}`;
-              })() : ({
+              {({
                 work: "Trabajo",
                 tasks: "Tareas",
                 courses: "Cursos",
@@ -728,12 +756,18 @@ export function GuestApp({ view }: { view: View }) {
               } as Record<string, string>)[view] ?? view}
             </h1>
           </div>
+          <div className="hidden md:flex items-center gap-2">
+            <NotificationBell store={store} actions={actions} />
+            <GoogleCalendarStatusControl />
+          </div>
         </div>
-        <div className="hidden md:flex items-center gap-2">
+      )}
+      {view === "dashboard" && (
+        <div className="hidden md:flex items-center justify-end gap-2">
           <NotificationBell store={store} actions={actions} />
           <GoogleCalendarStatusControl />
         </div>
-      </div>
+      )}
 
       {view === "dashboard" && <Dashboard store={store} actions={actions} />}
       {view === "work" && <Work store={store} actions={actions} />}
@@ -743,7 +777,7 @@ export function GuestApp({ view }: { view: View }) {
       {view === "calendar" && <CalendarView store={store} />}
       {view === "links" && <LinksView store={store} actions={actions} />}
       {view === "sources" && <Sources />}
-      {view === "settings" && <Settings reset={actions.reset} />}
+      {view === "settings" && <Settings reset={actions.reset} addTask={actions.addTask} />}
       {view === "bloc" && <BlocView />}
 
       <QuickAdd open={quickAddOpen} setOpen={setQuickAddOpen} actions={actions} />
@@ -1029,7 +1063,7 @@ function TaskBoard({ store, actions, limit, variant = "full", compact: compactPr
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className={cn(compact ? "" : "overflow-x-auto rounded-lg border bg-card/70 p-3")}>
-        <div className={cn(compact ? "grid grid-cols-2 gap-3 md:grid-cols-4" : "grid min-w-[1080px] grid-cols-4 gap-4 xl:min-w-0")}>
+        <div className={cn(compact ? "grid grid-cols-1 sm:grid-cols-2 gap-3 md:grid-cols-4" : "grid min-w-[1080px] grid-cols-4 gap-4 xl:min-w-0")}>
           {taskBuckets.map((bucket) => {
             const tasks = tasksForBucket(store.tasks, bucket.id);
             const visibleTasks = limit ? tasks.slice(0, limit) : tasks;
@@ -1082,12 +1116,12 @@ function TaskBoardColumn({
           </div>
           <button
             type="button"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/35"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/35 active:bg-white/40"
             onClick={() => setAddOpen(true)}
             aria-label={`Añadir tarea a ${bucket.title}`}
             title="Añadir tarea"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4" />
           </button>
         </div>
         {!compact && <p className="mt-2 max-w-xs text-sm text-white/85">{bucket.description}</p>}
@@ -3333,8 +3367,24 @@ function BlocView() {
   return <BlocNotepad />;
 }
 
-function Settings({ reset }: { reset: () => void }) {
+function Settings({ reset, addTask }: { reset: () => void; addTask: ReturnTypeActions["addTask"] }) {
   const { settings, updateSettings } = useAppSettings();
+  const [seeded, setSeeded] = useState(false);
+
+  function seedDemoData() {
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const today2h = new Date(now);
+    today2h.setHours(now.getHours() + 2);
+
+    addTask({ title: "Revisar correos urgentes", status: "pendiente", priority: "critica", category: "urgente", due_at: toDatetimeLocalValue(yesterday) });
+    addTask({ title: "Preparar presentación del proyecto", status: "pendiente", priority: "alta", category: "diario", due_at: toDatetimeLocalValue(today2h) });
+    addTask({ title: "Llamar al cliente sobre el presupuesto", status: "pendiente", priority: "alta", category: "diario", due_at: toDatetimeLocalValue(now) });
+    addTask({ title: "Subir entrega a la plataforma", status: "pendiente", priority: "alta", category: "semanal", due_at: toDatetimeLocalValue(today2h) });
+    addTask({ title: "Revisar PR del compañero", status: "pendiente", priority: "media", category: "pendiente" });
+    setSeeded(true);
+  }
 
   return (
     <Section title="Configuración">
@@ -3347,7 +3397,7 @@ function Settings({ reset }: { reset: () => void }) {
             placeholder="Tu nombre o alias"
             className="max-w-xs"
           />
-          <p className="text-xs text-muted-foreground">Aparece en el saludo del panel principal.</p>
+          <p className="text-xs text-muted-foreground">Nombre que aparece en tu perfil y ajustes.</p>
         </div>
 
         <div className="space-y-1">
@@ -3386,6 +3436,19 @@ function Settings({ reset }: { reset: () => void }) {
           </div>
           <p className="text-xs text-muted-foreground">Muestra las tareas en formato compacto en el dashboard.</p>
         </div>
+      </Card>
+
+      <Card className="p-5">
+        <p className="text-sm font-medium">Datos de prueba</p>
+        <p className="mt-1 text-xs text-muted-foreground">Crea tareas urgentes de ejemplo para probar el resumen diario y las alertas.</p>
+        <Button
+          className="mt-4"
+          variant="outline"
+          onClick={seedDemoData}
+          disabled={seeded}
+        >
+          {seeded ? "Datos añadidos" : "Añadir datos de prueba"}
+        </Button>
       </Card>
 
       <Card className="p-5 border-destructive/40">
@@ -3961,6 +4024,10 @@ function isSameMonth(value: string | undefined, month: Date) {
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function isSameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
 function startOfMonth(date: Date) {

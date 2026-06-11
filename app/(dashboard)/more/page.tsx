@@ -12,6 +12,7 @@ import {
   Settings,
   Compass,
 } from "lucide-react";
+import { LogoutButton } from "@/components/logout-button";
 
 const SECTIONS = [
   {
@@ -131,6 +132,7 @@ export default function MorePage() {
             </span>
           </Link>
         ))}
+        <LogoutButton />
       </div>
     </div>
   );
