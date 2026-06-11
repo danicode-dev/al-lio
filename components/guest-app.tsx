@@ -4284,7 +4284,7 @@ function sortTasks(a: Task, b: Task) {
 }
 
 function sortEvents(a: CalendarEvent, b: CalendarEvent) {
-  return a.date_at.localeCompare(b.date_at);
+  return String(a.date_at || "").localeCompare(String(b.date_at || ""));
 }
 
 function parseDate(value?: string) {
