@@ -14,8 +14,8 @@
  *   - Rechaza sandbox (127.0.0.1:54329).
  *   - Exige database=al_lio y user=al_lio.
  *   - Imprime host/db/user pero NUNCA password ni URL completa.
- *   - Usa transacción completa (ROLLBACK en cualquier error).
- *   - Verifica recuentos contra manifest al final.
+ *   - Verifica recuentos contra manifest DENTRO de la transacción.
+ *   - Solo hace COMMIT si todos los recuentos coinciden. En cualquier error: ROLLBACK.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -71,13 +71,10 @@ try {
 
 // Rechazar sandbox explícitamente
 const SANDBOX_HOSTS = ["127.0.0.1", "localhost"];
-const isSandboxHost = SANDBOX_HOSTS.includes(parsed.hostname);
-const isSandboxPort = parsed.port === "54329";
-if (isSandboxHost || isSandboxPort) {
+if (SANDBOX_HOSTS.includes(parsed.hostname) || parsed.port === "54329") {
   console.error(
     `\nERROR: DATABASE_URL apunta al sandbox (${parsed.hostname}:${parsed.port || "5432"}).\n` +
-    "El import de producción rechaza conexiones a sandbox.\n" +
-    "Usa el DATABASE_URL del contenedor al_lio_postgres en producción.\n"
+    "El import de producción rechaza conexiones a sandbox.\n"
   );
   process.exit(1);
 }
@@ -131,9 +128,10 @@ console.log(`Artifact: ${artifactArg}`);
 console.log(`Exportado: ${manifest.exported_at}`);
 console.log(`Origen: ${manifest.source} → Destino: producción al_lio\n`);
 
-// ── Orden de importación ──────────────────────────────────────────────────────
+// ── Whitelist fija de tablas ──────────────────────────────────────────────────
+// Solo se importan/verifican estas tablas. No se interpolan nombres externos.
 
-const IMPORT_ORDER = [
+const TABLES = [
   "users",
   "profiles",
   "sources",
@@ -146,6 +144,9 @@ const IMPORT_ORDER = [
   "quick_links",
   "tech_opportunities",
 ];
+
+// Orden inverso para TRUNCATE si se añade reset en el futuro
+const IMPORT_ORDER = TABLES;
 
 // ── Leer archivos JSON ────────────────────────────────────────────────────────
 
@@ -160,9 +161,9 @@ for (const table of IMPORT_ORDER) {
 }
 
 // ── Conectar y ejecutar en transacción ───────────────────────────────────────
+// ORDEN: BEGIN → importar → verificar recuentos → COMMIT (o ROLLBACK si algo falla)
 
 const { Client } = require("pg");
-// Construir connectionString sin exponer password en logs
 const client = new Client({ connectionString });
 
 try {
@@ -170,6 +171,8 @@ try {
   console.log("Conexión a producción establecida.\n");
 
   await client.query("BEGIN");
+
+  // ── 1. Importar tablas ────────────────────────────────────────────────────
 
   console.log("── Importando ──");
   const counts = {};
@@ -204,9 +207,43 @@ try {
     );
   }
 
+  // ── 2. Verificar recuentos contra manifest DENTRO de la transacción ───────
+  // Si alguna tabla no coincide, se lanza error → ROLLBACK automático en catch.
+
+  console.log("\n── Verificando recuentos contra manifest (pre-COMMIT) ──");
+  let verifyFailed = 0;
+
+  for (const table of TABLES) {
+    const expectedCount = manifest.tables[table];
+    if (expectedCount === undefined) {
+      console.error(`  FAIL  ${table}: tabla no encontrada en manifest`);
+      verifyFailed++;
+      continue;
+    }
+    const res = await client.query(
+      `SELECT COUNT(*)::int AS cnt FROM public.${table}`
+    );
+    const actual = res.rows[0].cnt;
+    if (actual === expectedCount) {
+      console.log(`  OK  ${table}: ${actual} / ${expectedCount}`);
+    } else {
+      console.error(`  FAIL  ${table}: producción=${actual} vs manifest=${expectedCount}`);
+      verifyFailed++;
+    }
+  }
+
+  if (verifyFailed > 0) {
+    // Lanzar error para que el catch haga ROLLBACK
+    throw new Error(
+      `Verificación pre-COMMIT falló: ${verifyFailed} discrepancia(s). ROLLBACK ejecutado — ningún dato escrito.`
+    );
+  }
+
+  // ── 3. COMMIT solo si todos los recuentos coinciden ───────────────────────
+
   await client.query("COMMIT");
 
-  // ── Resumen de importación ────────────────────────────────────────────────
+  // ── Resumen final ─────────────────────────────────────────────────────────
 
   console.log("\n── Resumen de importación ──");
   let totalRead = 0, totalInserted = 0, totalSkipped = 0;
@@ -217,35 +254,7 @@ try {
     totalSkipped += c.skipped;
   }
   console.log(`\n  Total: leídas=${totalRead}, insertadas=${totalInserted}, saltadas=${totalSkipped}`);
-
-  // ── Verificación de recuentos contra manifest ─────────────────────────────
-
-  console.log("\n── Verificando recuentos contra manifest ──");
-  let verifyPassed = 0;
-  let verifyFailed = 0;
-
-  for (const [table, expectedCount] of Object.entries(manifest.tables)) {
-    const res2 = await client.query(`SELECT COUNT(*)::int AS cnt FROM public.${table}`);
-    const actual = res2.rows[0].cnt;
-    if (actual === expectedCount) {
-      console.log(`  OK  ${table}: ${actual} / ${expectedCount}`);
-      verifyPassed++;
-    } else {
-      console.error(`  FAIL  ${table}: producción=${actual} vs manifest=${expectedCount}`);
-      verifyFailed++;
-    }
-  }
-
-  console.log("");
-  if (verifyFailed > 0) {
-    console.error(
-      `RESULTADO: Import completado pero ${verifyFailed} discrepancia(s) en recuentos.\n` +
-      "Revisa los FAIL anteriores antes de continuar."
-    );
-    process.exit(1);
-  }
-
-  console.log(`RESULTADO: Import a producción completado — ${verifyPassed} tablas verificadas OK.`);
+  console.log(`\nRESULTADO: Import a producción completado y verificado — datos escritos correctamente.`);
 
 } catch (err) {
   await client.query("ROLLBACK").catch(() => {});
@@ -256,7 +265,7 @@ try {
       "Verifica que al_lio_postgres está levantado y DATABASE_URL es correcta.\n"
     );
   } else {
-    console.error("\nERROR durante el import:", err.message);
+    console.error("\nERROR durante el import (ROLLBACK ejecutado):", err.message);
   }
   process.exit(1);
 } finally {

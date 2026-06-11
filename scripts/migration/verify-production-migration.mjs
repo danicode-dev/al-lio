@@ -14,6 +14,7 @@
  *   - Rechaza sandbox (127.0.0.1:54329).
  *   - Exige database=al_lio y user=al_lio.
  *   - Imprime host/db/user pero NUNCA password ni URL completa.
+ *   - Usa whitelist fija de tablas — no interpola nombres externos en SQL.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -68,9 +69,7 @@ try {
 
 // Rechazar sandbox explícitamente
 const SANDBOX_HOSTS = ["127.0.0.1", "localhost"];
-const isSandboxHost = SANDBOX_HOSTS.includes(parsed.hostname);
-const isSandboxPort = parsed.port === "54329";
-if (isSandboxHost || isSandboxPort) {
+if (SANDBOX_HOSTS.includes(parsed.hostname) || parsed.port === "54329") {
   console.error(
     `\nERROR: DATABASE_URL apunta al sandbox (${parsed.hostname}:${parsed.port || "5432"}).\n` +
     "La verificación de producción rechaza conexiones a sandbox.\n"
@@ -125,6 +124,23 @@ const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
 console.log(`Manifest: ${artifactArg}`);
 console.log(`Exportado: ${manifest.exported_at}\n`);
 
+// ── Whitelist fija de tablas ──────────────────────────────────────────────────
+// Solo se verifican estas tablas. No se interpolan nombres externos en SQL.
+
+const TABLES = [
+  "users",
+  "profiles",
+  "sources",
+  "quick_searches",
+  "opportunities",
+  "hackathons",
+  "courses",
+  "tasks",
+  "reminders",
+  "quick_links",
+  "tech_opportunities",
+];
+
 // ── Verificar recuentos contra manifest ──────────────────────────────────────
 
 const { Client } = require("pg");
@@ -140,8 +156,15 @@ try {
   await client.connect();
   console.log("Conexión a producción establecida.\n── Verificando recuentos ──");
 
-  for (const [table, expectedCount] of Object.entries(manifest.tables)) {
-    const res = await client.query(`SELECT COUNT(*)::int AS cnt FROM public.${table}`);
+  for (const table of TABLES) {
+    const expectedCount = manifest.tables[table];
+    if (expectedCount === undefined) {
+      fail(`${table}: tabla no encontrada en manifest`);
+      continue;
+    }
+    const res = await client.query(
+      `SELECT COUNT(*)::int AS cnt FROM public.${table}`
+    );
     const actualCount = res.rows[0].cnt;
     if (actualCount === expectedCount) {
       ok(`${table}: ${actualCount} / ${expectedCount}`);

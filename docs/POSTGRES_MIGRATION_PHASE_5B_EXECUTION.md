@@ -13,9 +13,11 @@
 
 - [ ] DNS `al-lio.danielcode.dev → IP del VPS` activo y propagado
 - [ ] Red Docker `danicode_web` existe en el VPS (`docker network ls`)
-- [ ] Export de Supabase validado en `migration-artifacts/supabase-export-YYYYMMDD-HHMMSS/`
+- [ ] Export de Supabase validado disponible en VPS (ver Paso 10)
 - [ ] `npm run migration:validate:artifacts` pasa localmente
-- [ ] Node.js disponible en VPS (`node --version` — requiere Node 18+)
+
+> ℹ️ **Node.js NO necesita estar instalado en el host del VPS.**
+> Todos los comandos Node se ejecutan mediante contenedores temporales Docker.
 
 ---
 
@@ -51,10 +53,6 @@ ls -lh al-lio.tar.gz
 ```bash
 # Desde local — sustituir usuario@vps por el acceso real
 scp al-lio.tar.gz usuario@vps:/srv/danicode/projects/
-
-# Subir también los migration-artifacts validados
-scp -r migration-artifacts/supabase-export-YYYYMMDD-HHMMSS \
-    usuario@vps:/srv/danicode/projects/al-lio-artifacts/
 ```
 
 ---
@@ -76,16 +74,7 @@ ls al-lio/  # debe verse infra/, scripts/, docs/, lib/, app/, etc.
 
 ---
 
-## Paso 4 — Instalar dependencias en VPS
-
-```bash
-cd /srv/danicode/projects/al-lio
-npm ci --omit=dev
-```
-
----
-
-## Paso 5 — Crear .env real en VPS
+## Paso 4 — Crear .env real en VPS
 
 > ⚠️ **NUNCA subir el .env real por git, scp sin cifrar, ni email.**
 > Crearlo manualmente en el VPS a partir del ejemplo.
@@ -122,7 +111,7 @@ grep REPLACE_ME .env  # debe devolver vacío
 
 ---
 
-## Paso 6 — Generar contraseña segura para POSTGRES_PASSWORD
+## Paso 5 — Generar contraseña segura para POSTGRES_PASSWORD
 
 ```bash
 # Generar contraseña aleatoria de 32 caracteres (sin caracteres problemáticos en URL)
@@ -132,7 +121,7 @@ openssl rand -base64 24 | tr -d '/+=' | head -c 32
 
 ---
 
-## Paso 7 — Levantar solo PostgreSQL producción
+## Paso 6 — Levantar solo PostgreSQL producción
 
 ```bash
 cd /srv/danicode/projects/al-lio
@@ -145,7 +134,7 @@ docker compose -f infra/docker-compose.prod.yml ps
 
 ---
 
-## Paso 8 — Esperar healthcheck
+## Paso 7 — Esperar healthcheck
 
 ```bash
 # Esperar hasta que al_lio_postgres esté healthy (~30 segundos)
@@ -161,13 +150,26 @@ echo "PostgreSQL producción ready."
 
 ---
 
-## Paso 9 — Aplicar schema
+## Paso 8 — Aplicar schema con contenedor Node temporal
+
+> ℹ️ Node.js no está instalado en el host. Se usa un contenedor temporal.
+> El contenedor accede a al_lio_postgres a través de la red interna Docker.
 
 ```bash
 cd /srv/danicode/projects/al-lio
 
-# El DATABASE_URL está en .env, setup-postgres-schema.mjs lo lee automáticamente
-node scripts/setup-postgres-schema.mjs
+# Ver nombre exacto de la red interna creada por compose (puede tener prefijo de directorio)
+docker network ls | grep al_lio_internal
+# Suele llamarse: al-lio_al_lio_internal
+
+# Aplicar schema con contenedor temporal (sustituir el nombre de red si difiere)
+docker run --rm \
+  --network al-lio_al_lio_internal \
+  --env-file .env \
+  -v "$PWD":/app \
+  -w /app \
+  node:22-alpine \
+  sh -c "npm ci && npm run postgres:setup"
 
 # Verificar tablas creadas
 docker exec al_lio_postgres psql -U al_lio -d al_lio -c "\dt public.*"
@@ -175,43 +177,76 @@ docker exec al_lio_postgres psql -U al_lio -d al_lio -c "\dt public.*"
 
 ---
 
-## Paso 10 — Importar datos a producción
+## Paso 9 — Obtener los migration-artifacts validados
 
-> ⚠️ El script requiere las 3 guardias explícitas.
-> Los artifacts deben estar accesibles desde la ruta indicada.
+Los artifacts de Fase 3B ya están en el VPS sandbox. Copiar desde allí:
 
 ```bash
-cd /srv/danicode/projects/al-lio
+# En VPS — copiar desde el sandbox al directorio del proyecto
+mkdir -p /srv/danicode/projects/al-lio/migration-artifacts
 
-# Copiar artifacts al directorio migration-artifacts/
-mkdir -p migration-artifacts
-cp -r /srv/danicode/projects/al-lio-artifacts/supabase-export-YYYYMMDD-HHMMSS \
-      migration-artifacts/
+cp -r /srv/danicode/sandboxes/al-lio-phase-3b/migration-artifacts/supabase-export-* \
+  /srv/danicode/projects/al-lio/migration-artifacts/
 
-# Ejecutar import con guardias explícitas
-DATABASE_URL="$(grep DATABASE_URL .env | cut -d= -f2-)" \
-AL_LIO_ALLOW_PRODUCTION_IMPORT=true \
-AL_LIO_PRODUCTION_IMPORT_CONFIRMATION=IMPORT_TO_AL_LIO_PRODUCTION_POSTGRES \
-node scripts/migration/import-production-data.mjs \
-  migration-artifacts/supabase-export-YYYYMMDD-HHMMSS
+# Verificar que el manifest está presente
+ls /srv/danicode/projects/al-lio/migration-artifacts/
+# Debe aparecer: supabase-export-YYYYMMDD-HHMMSS/
+
+ls /srv/danicode/projects/al-lio/migration-artifacts/supabase-export-*/manifest.json
+# Debe existir
 ```
 
-> El script verifica automáticamente los recuentos contra el manifest al finalizar.
+> **Alternativa** — si los artifacts no están en el VPS y hay que subirlos desde local:
+> ```bash
+> scp -r migration-artifacts/supabase-export-YYYYMMDD-HHMMSS \
+>     usuario@vps:/srv/danicode/projects/al-lio/migration-artifacts/
+> ```
 
 ---
 
-## Paso 11 — Verificar recuentos (verificación independiente)
+## Paso 10 — Importar datos a producción
+
+> ⚠️ El script requiere las 3 guardias explícitas.
+> La verificación de recuentos ocurre **dentro de la misma transacción**.
+> Si algo no coincide, se ejecuta ROLLBACK automáticamente — ningún dato queda escrito.
 
 ```bash
 cd /srv/danicode/projects/al-lio
 
-DATABASE_URL="$(grep DATABASE_URL .env | cut -d= -f2-)" \
-AL_LIO_ALLOW_PRODUCTION_IMPORT=true \
-AL_LIO_PRODUCTION_IMPORT_CONFIRMATION=IMPORT_TO_AL_LIO_PRODUCTION_POSTGRES \
-node scripts/migration/verify-production-migration.mjs \
-  migration-artifacts/supabase-export-YYYYMMDD-HHMMSS
+# Sustituir supabase-export-YYYYMMDD-HHMMSS por el nombre real del directorio
+docker run --rm \
+  --network al-lio_al_lio_internal \
+  --env-file .env \
+  -e AL_LIO_ALLOW_PRODUCTION_IMPORT=true \
+  -e AL_LIO_PRODUCTION_IMPORT_CONFIRMATION=IMPORT_TO_AL_LIO_PRODUCTION_POSTGRES \
+  -v "$PWD":/app \
+  -w /app \
+  node:22-alpine \
+  sh -c "npm ci && node scripts/migration/import-production-data.mjs migration-artifacts/supabase-export-YYYYMMDD-HHMMSS"
+```
 
-# Resultado esperado: "RESULTADO: Verificación de producción OK — X tablas coinciden con el manifest."
+> El script verifica automáticamente los recuentos **antes de hacer COMMIT**.
+> Si la verificación falla: ROLLBACK y exit 1.
+
+---
+
+## Paso 11 — Verificación independiente de recuentos
+
+```bash
+cd /srv/danicode/projects/al-lio
+
+docker run --rm \
+  --network al-lio_al_lio_internal \
+  --env-file .env \
+  -e AL_LIO_ALLOW_PRODUCTION_IMPORT=true \
+  -e AL_LIO_PRODUCTION_IMPORT_CONFIRMATION=IMPORT_TO_AL_LIO_PRODUCTION_POSTGRES \
+  -v "$PWD":/app \
+  -w /app \
+  node:22-alpine \
+  sh -c "npm ci && node scripts/migration/verify-production-migration.mjs migration-artifacts/supabase-export-YYYYMMDD-HHMMSS"
+
+# Resultado esperado:
+# RESULTADO: Verificación de producción OK — 11 tablas coinciden con el manifest.
 ```
 
 ---
@@ -236,10 +271,17 @@ docker compose -f infra/docker-compose.prod.yml logs al_lio_web --tail=50
 
 ## Paso 13 — Verificar health endpoint interno
 
+> ℹ️ El servicio usa `expose`, no `ports` — no está accesible desde el host directamente.
+> Usar `docker exec` dentro del contenedor o un contenedor temporal en la red Docker.
+
 ```bash
-# En VPS — verificar que la app responde en el puerto interno
-curl -s http://localhost:3000/api/health
-# Debe responder: {"status":"ok"} o similar con HTTP 200
+# Opción A — desde dentro del contenedor al_lio_web
+docker exec al_lio_web wget -qO- http://localhost:3000/api/health
+# Debe responder: {"status":"ok"} o similar
+
+# Opción B — desde contenedor temporal en la red danicode_web
+docker run --rm --network danicode_web curlimages/curl:latest \
+  http://al_lio_web:3000/api/health
 ```
 
 ---
@@ -279,11 +321,13 @@ docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 ## Paso 16 — Verificar HTTPS
 
 ```bash
+# Desde el VPS (a través de Caddy)
+docker run --rm --network danicode_web curlimages/curl:latest \
+  -I http://al_lio_web:3000/api/health
+
+# Desde local (fuera del VPS) — verifica TLS y Caddy
 curl -I https://al-lio.danielcode.dev/api/health
 # HTTP/2 200 esperado
-
-# Desde local (fuera del VPS):
-curl -s https://al-lio.danielcode.dev/api/health
 ```
 
 ---
@@ -317,8 +361,8 @@ docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 
 | Script | Comando | Ejecutar en |
 |---|---|---|
-| Import a producción | `npm run migration:import:production` | VPS, con guardias |
-| Verificar producción | `npm run migration:verify:production` | VPS, con guardias |
+| Import a producción | `npm run migration:import:production` | VPS, con guardias, vía contenedor |
+| Verificar producción | `npm run migration:verify:production` | VPS, con guardias, vía contenedor |
 | Import a sandbox | `npm run migration:import:sandbox` | Local, sandbox solo |
 | Verificar sandbox | `npm run migration:verify:sandbox` | Local, sandbox solo |
 
