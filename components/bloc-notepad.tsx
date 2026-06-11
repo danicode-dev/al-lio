@@ -1,12 +1,16 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlignCenter,
   AlignJustify,
   AlignLeft,
   AlignRight,
   Bold,
+  CalendarDays,
+  CheckCircle2,
+  CheckSquare,
+  Clock,
   Copy,
   Download,
   FilePlus2,
@@ -17,15 +21,20 @@ import {
   Link2,
   List,
   ListOrdered,
+  Minus,
+  MoreVertical,
   Palette,
+  Pencil,
   Plus,
   Redo2,
   Search,
+  SlidersHorizontal,
   Trash2,
   Type,
   Underline,
   Undo2,
   Upload,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -52,6 +61,8 @@ const blocSettingsKey = "d1os:notepad:settings:v1";
 const legacyBlocSettingsKey = "techlife.bloc.settings.D1OS.v1";
 const defaultTitle = "Documento sin titulo";
 
+type MobileSheetId = "format" | "insert" | "export" | "more" | "settings" | null;
+
 export function BlocNotepad() {
   const [notes, setNotes] = useState<BlocNote[]>([]);
   const [activeId, setActiveId] = useState("");
@@ -61,13 +72,50 @@ export function BlocNotepad() {
   const [loaded, setLoaded] = useState(false);
   const [saveState, setSaveState] = useState<"saved" | "saving">("saved");
   const [notice, setNotice] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileSheet, setMobileSheet] = useState<MobileSheetId>(null);
+  const [menuNoteId, setMenuNoteId] = useState<string | null>(null);
+  const [titleEditing, setTitleEditing] = useState(false);
   const notesRef = useRef<BlocNote[]>([]);
+  const activeIdRef = useRef("");
   const editorRef = useRef<HTMLDivElement | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     notesRef.current = notes;
   }, [notes]);
+
+  useEffect(() => {
+    activeIdRef.current = activeId;
+  }, [activeId]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileSheet && !menuNoteId) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMobileSheet(null);
+        setMenuNoteId(null);
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobileSheet, menuNoteId]);
+
+  const attachEditor = useCallback((node: HTMLDivElement | null) => {
+    editorRef.current = node;
+    if (node) {
+      const active = notesRef.current.find((note) => note.id === activeIdRef.current);
+      node.innerHTML = active?.contentHtml ?? "";
+    }
+  }, []);
 
   useEffect(() => {
     const raw = localStorage.getItem(blocKey) ?? localStorage.getItem(legacyBlocKey);
@@ -305,6 +353,281 @@ export function BlocNotepad() {
     );
   }
 
+  if (isMobile) {
+    const menuNote = menuNoteId ? notes.find((note) => note.id === menuNoteId) ?? null : null;
+
+    return (
+      <div className="relative">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Buscar notas..."
+              className="h-11 rounded-xl pl-9"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-11 w-11 shrink-0 rounded-xl"
+            onClick={() => setMobileSheet("settings")}
+            aria-label="Ajustes del bloc"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            className="h-11 w-11 shrink-0 rounded-xl"
+            onClick={createNote}
+            aria-label="Nueva nota"
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="mt-3 flex snap-x gap-3 overflow-x-auto pb-2">
+          {filteredNotes.map((note) => (
+            <MobileNoteCard
+              key={note.id}
+              note={note}
+              active={note.id === activeId}
+              onSelect={() => { setActiveId(note.id); setTitleEditing(false); }}
+              onMenu={() => setMenuNoteId(note.id)}
+            />
+          ))}
+          {filteredNotes.length === 0 && (
+            <div className="w-full rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
+              No hay notas con esa búsqueda.
+            </div>
+          )}
+        </div>
+
+        <section className="mt-3 overflow-hidden rounded-2xl border-2 border-primary/25 bg-card shadow-sm">
+          <div className="flex items-start justify-between gap-2 px-4 pt-4">
+            {titleEditing ? (
+              <Input
+                autoFocus
+                value={activeNote?.title ?? ""}
+                onChange={(event) => renameActiveNote(event.target.value)}
+                onBlur={() => setTitleEditing(false)}
+                onKeyDown={(event) => event.key === "Enter" && setTitleEditing(false)}
+                placeholder={defaultTitle}
+                className="h-10 flex-1 text-lg font-bold"
+              />
+            ) : (
+              <div className="flex min-w-0 items-center gap-1">
+                <h2 className="truncate text-2xl font-bold leading-tight">{activeNote?.title || defaultTitle}</h2>
+                <button
+                  type="button"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={() => setTitleEditing(true)}
+                  aria-label="Editar título"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+            <span className="mt-1 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
+              {saveState === "saving" ? "Guardando..." : (
+                <>
+                  Guardado automáticamente
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                </>
+              )}
+            </span>
+          </div>
+
+          <div
+            ref={attachEditor}
+            role="textbox"
+            aria-label="Editor de nota"
+            aria-multiline="true"
+            contentEditable
+            suppressContentEditableWarning
+            spellCheck
+            data-placeholder="Empieza a escribir..."
+            onInput={recordEditorContent}
+            onBlur={recordEditorContent}
+            onPaste={handlePaste}
+            onKeyDown={handleEditorKeyDown}
+            className={cn(
+              "empty:before:pointer-events-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]",
+              "min-h-[45dvh] max-h-[58dvh] overflow-y-auto px-4 py-4 leading-7 outline-none",
+              "[&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground",
+              "[&_h1]:text-3xl [&_h1]:font-semibold [&_h2]:text-2xl [&_h2]:font-semibold [&_h3]:text-xl [&_h3]:font-semibold",
+              "[&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6",
+              fontClass,
+            )}
+          />
+
+          <div className="flex items-stretch border-t">
+            <MobileToolbarButton label="Formato" onClick={() => setMobileSheet("format")}>
+              <Type className="h-4 w-4" />
+            </MobileToolbarButton>
+            <MobileToolbarButton label="Insertar" onClick={() => setMobileSheet("insert")}>
+              <Plus className="h-4 w-4" />
+            </MobileToolbarButton>
+            <MobileToolbarButton label="Exportar" onClick={() => setMobileSheet("export")}>
+              <Download className="h-4 w-4" />
+            </MobileToolbarButton>
+            <button
+              type="button"
+              className="flex w-14 items-center justify-center border-l text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              onClick={() => setMobileSheet("more")}
+              aria-label="Más opciones"
+            >
+              <MoreVertical className="h-5 w-5" />
+            </button>
+          </div>
+        </section>
+
+        <p className="mt-3 flex flex-wrap items-center justify-center gap-x-2 text-center text-xs text-muted-foreground">
+          <span className="inline-block h-2 w-2 rounded-full bg-primary" />
+          <span>{saveState === "saving" ? "Guardando..." : "Guardado automáticamente"}</span>
+          <span>· Última edición: {activeNote ? formatBlocEditedTime(activeNote.updated_at) : "--:--"}</span>
+          <span>· {wordCount} palabras</span>
+          {notice && <span className="text-primary">· {notice}</span>}
+        </p>
+
+        <input ref={uploadInputRef} type="file" accept=".txt,.md,text/plain,text/markdown" className="hidden" onChange={handleUpload} />
+
+        {mobileSheet === "format" && (
+          <MobileSheet title="Formato" onClose={() => setMobileSheet(null)}>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Estilo de texto</p>
+            <div className="grid grid-cols-3 gap-2">
+              <MobileSheetTile label="Negrita" onClick={() => runEditorCommand("bold")}><Bold className="h-4 w-4" /></MobileSheetTile>
+              <MobileSheetTile label="Cursiva" onClick={() => runEditorCommand("italic")}><Italic className="h-4 w-4" /></MobileSheetTile>
+              <MobileSheetTile label="Subrayado" onClick={() => runEditorCommand("underline")}><Underline className="h-4 w-4" /></MobileSheetTile>
+              <MobileSheetTile label="Lista" onClick={() => runEditorCommand("insertUnorderedList")}><List className="h-4 w-4" /></MobileSheetTile>
+              <MobileSheetTile label="Numerada" onClick={() => runEditorCommand("insertOrderedList")}><ListOrdered className="h-4 w-4" /></MobileSheetTile>
+              <MobileSheetTile label="Enlace" onClick={createLink}><Link2 className="h-4 w-4" /></MobileSheetTile>
+            </div>
+            <p className="mb-2 mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">Estilo de párrafo</p>
+            <div className="grid grid-cols-3 gap-2">
+              <MobileSheetTile label="Normal" onClick={() => setParagraphBlock("P")}><span className="text-sm font-semibold">P</span></MobileSheetTile>
+              <MobileSheetTile label="Título 1" onClick={() => setParagraphBlock("H1")}><span className="text-sm font-semibold">H1</span></MobileSheetTile>
+              <MobileSheetTile label="Título 2" onClick={() => setParagraphBlock("H2")}><span className="text-sm font-semibold">H2</span></MobileSheetTile>
+              <MobileSheetTile label="Título 3" onClick={() => setParagraphBlock("H3")}><span className="text-sm font-semibold">H3</span></MobileSheetTile>
+              <MobileSheetTile label="Cita" onClick={() => setParagraphBlock("BLOCKQUOTE")}><span className="text-sm font-semibold">&ldquo;&rdquo;</span></MobileSheetTile>
+            </div>
+            <p className="mb-2 mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">Alineación</p>
+            <div className="grid grid-cols-4 gap-2">
+              <MobileSheetTile label="Izquierda" onClick={() => runEditorCommand("justifyLeft")}><AlignLeft className="h-4 w-4" /></MobileSheetTile>
+              <MobileSheetTile label="Centro" onClick={() => runEditorCommand("justifyCenter")}><AlignCenter className="h-4 w-4" /></MobileSheetTile>
+              <MobileSheetTile label="Derecha" onClick={() => runEditorCommand("justifyRight")}><AlignRight className="h-4 w-4" /></MobileSheetTile>
+              <MobileSheetTile label="Justificar" onClick={() => runEditorCommand("justifyFull")}><AlignJustify className="h-4 w-4" /></MobileSheetTile>
+            </div>
+            <p className="mb-2 mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">Tamaño del editor</p>
+            <div className="grid grid-cols-3 gap-2">
+              {(["sm", "base", "lg"] as const).map((fontSize) => (
+                <Button
+                  key={fontSize}
+                  type="button"
+                  variant={settings.fontSize === fontSize ? "default" : "outline"}
+                  className="h-11 rounded-xl"
+                  onClick={() => persistSettings({ ...settings, fontSize })}
+                >
+                  {fontSize === "sm" ? "S" : fontSize === "base" ? "M" : "L"}
+                </Button>
+              ))}
+            </div>
+          </MobileSheet>
+        )}
+
+        {mobileSheet === "insert" && (
+          <MobileSheet title="Insertar" onClose={() => setMobileSheet(null)}>
+            <div className="space-y-1">
+              <MobileSheetRow label="Fecha" onClick={() => { insertItem("date"); setMobileSheet(null); }}><CalendarDays className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Hora" onClick={() => { insertItem("time"); setMobileSheet(null); }}><Clock className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Separador" onClick={() => { insertItem("divider"); setMobileSheet(null); }}><Minus className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Checklist" onClick={() => { insertItem("check"); setMobileSheet(null); }}><CheckSquare className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Enlace" onClick={() => { setMobileSheet(null); createLink(); }}><Link2 className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Subir documento (TXT/MD)" onClick={() => { setMobileSheet(null); uploadInputRef.current?.click(); }}><Upload className="h-4 w-4" /></MobileSheetRow>
+            </div>
+          </MobileSheet>
+        )}
+
+        {mobileSheet === "export" && (
+          <MobileSheet title="Exportar" onClose={() => setMobileSheet(null)}>
+            <div className="space-y-1">
+              <MobileSheetRow label="Exportar PDF" onClick={() => { exportActivePdf(); setMobileSheet(null); }}><FileText className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Exportar Word" onClick={() => { exportActiveWord(); setMobileSheet(null); }}><FileText className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Descargar TXT" onClick={() => { downloadActiveNote(); setMobileSheet(null); }}><Download className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Copiar texto" onClick={() => { void copyActiveNote(); setMobileSheet(null); }}><Copy className="h-4 w-4" /></MobileSheetRow>
+            </div>
+          </MobileSheet>
+        )}
+
+        {mobileSheet === "more" && (
+          <MobileSheet title="Más opciones" onClose={() => setMobileSheet(null)}>
+            <div className="space-y-1">
+              <MobileSheetRow label="Renombrar nota" onClick={() => { setMobileSheet(null); setTitleEditing(true); }}><Pencil className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Duplicar nota" onClick={() => { duplicateNote(); setMobileSheet(null); }}><Files className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Copiar texto" onClick={() => { void copyActiveNote(); setMobileSheet(null); }}><Copy className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Exportar PDF" onClick={() => { exportActivePdf(); setMobileSheet(null); }}><FileText className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Exportar Word" onClick={() => { exportActiveWord(); setMobileSheet(null); }}><FileText className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Ajustes" onClick={() => setMobileSheet("settings")}><SlidersHorizontal className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow
+                label="Eliminar nota"
+                destructive
+                onClick={() => { if (activeNote) deleteNote(activeNote.id); setMobileSheet(null); }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </MobileSheetRow>
+            </div>
+          </MobileSheet>
+        )}
+
+        {mobileSheet === "settings" && (
+          <MobileSheet title="Ajustes" onClose={() => setMobileSheet(null)}>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Tamaño del editor</p>
+            <div className="grid grid-cols-3 gap-2">
+              {(["sm", "base", "lg"] as const).map((fontSize) => (
+                <Button
+                  key={fontSize}
+                  type="button"
+                  variant={settings.fontSize === fontSize ? "default" : "outline"}
+                  className="h-11 rounded-xl"
+                  onClick={() => persistSettings({ ...settings, fontSize })}
+                >
+                  {fontSize === "sm" ? "S" : fontSize === "base" ? "M" : "L"}
+                </Button>
+              ))}
+            </div>
+            <p className="mb-1.5 mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">Título por defecto</p>
+            <Input
+              value={settings.defaultTitle}
+              onChange={(event) => persistSettings({ ...settings, defaultTitle: event.target.value })}
+              placeholder={defaultTitle}
+              className="h-11"
+            />
+          </MobileSheet>
+        )}
+
+        {menuNote && (
+          <MobileSheet title={menuNote.title || defaultTitle} onClose={() => setMenuNoteId(null)}>
+            <div className="space-y-1">
+              <MobileSheetRow label="Abrir" onClick={() => { setActiveId(menuNote.id); setTitleEditing(false); setMenuNoteId(null); }}><FileText className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Renombrar" onClick={() => { setActiveId(menuNote.id); setTitleEditing(true); setMenuNoteId(null); }}><Pencil className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Duplicar" onClick={() => { duplicateNote(menuNote); setMenuNoteId(null); }}><Files className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow
+                label="Eliminar"
+                destructive
+                onClick={() => { deleteNote(menuNote.id); setMenuNoteId(null); }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </MobileSheetRow>
+            </div>
+          </MobileSheet>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       <div className="grid gap-4 xl:grid-cols-[270px_minmax(0,1fr)]">
@@ -431,7 +754,7 @@ export function BlocNotepad() {
 
           <div className="bg-background">
             <div
-              ref={editorRef}
+              ref={attachEditor}
               role="textbox"
               aria-label="Editor de nota"
               aria-multiline="true"
@@ -591,6 +914,143 @@ function BlocToolButton({ label, onClick, children }: { label: string; onClick: 
 
 function BlocToolbarGroup({ children }: { children: React.ReactNode }) {
   return <div className="flex flex-wrap items-center gap-1 rounded-md border bg-background/60 p-1">{children}</div>;
+}
+
+function MobileNoteCard({
+  note,
+  active,
+  onSelect,
+  onMenu,
+}: {
+  note: BlocNote;
+  active: boolean;
+  onSelect: () => void;
+  onMenu: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative w-36 shrink-0 snap-start rounded-2xl border p-3 transition-colors",
+        active ? "border-primary bg-primary text-primary-foreground shadow-md" : "border-border bg-card hover:bg-muted/50",
+      )}
+    >
+      <button type="button" className="block w-full text-left" onClick={onSelect}>
+        <FileText className={cn("h-5 w-5", active ? "text-primary-foreground" : "text-muted-foreground")} />
+        <span className="mt-2 block truncate text-sm font-semibold">{note.title || defaultTitle}</span>
+        <span className={cn("mt-0.5 block text-xs", active ? "text-primary-foreground/75" : "text-muted-foreground")}>
+          {countWords(note.contentText)} palabras
+        </span>
+        <span className={cn("block text-xs", active ? "text-primary-foreground/75" : "text-muted-foreground")}>
+          {formatBlocNoteCardDate(note.updated_at)}
+        </span>
+      </button>
+      <button
+        type="button"
+        className={cn(
+          "absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full transition-colors",
+          active ? "text-primary-foreground/80 hover:bg-white/15" : "text-muted-foreground hover:bg-muted",
+        )}
+        onClick={(event) => { event.stopPropagation(); onMenu(); }}
+        aria-label={`Opciones de ${note.title || defaultTitle}`}
+      >
+        <MoreVertical className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+function MobileToolbarButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      className="flex h-12 flex-1 items-center justify-center gap-2 text-sm font-medium text-muted-foreground transition-colors first:border-l-0 hover:bg-muted hover:text-foreground [&+&]:border-l"
+      onClick={onClick}
+      aria-label={label}
+    >
+      {children}
+      {label}
+    </button>
+  );
+}
+
+function MobileSheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <>
+      <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="fixed inset-x-0 bottom-0 z-[71] max-h-[80dvh] overflow-y-auto rounded-t-2xl border-t bg-background pb-safe shadow-2xl"
+      >
+        <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-muted-foreground/20" />
+        <div className="flex items-center justify-between px-5 py-3">
+          <h3 className="truncate text-base font-semibold">{title}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="px-4 pb-6">{children}</div>
+      </div>
+    </>
+  );
+}
+
+function MobileSheetRow({
+  label,
+  onClick,
+  destructive,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  destructive?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition-colors",
+        destructive ? "text-destructive hover:bg-destructive/10" : "hover:bg-muted",
+      )}
+      onClick={onClick}
+    >
+      {children}
+      {label}
+    </button>
+  );
+}
+
+function MobileSheetTile({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      className="flex h-14 flex-col items-center justify-center gap-1 rounded-xl border text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      onClick={onClick}
+      aria-label={label}
+    >
+      {children}
+      {label}
+    </button>
+  );
+}
+
+function formatBlocNoteCardDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--:--";
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfThatDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((startOfToday.getTime() - startOfThatDay.getTime()) / 86400000);
+  if (diffDays === 0) return new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit" }).format(date);
+  if (diffDays === 1) return "Ayer";
+  return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" }).format(date);
 }
 
 function createBlocNote({ title, contentHtml = "", contentText = "" }: { title: string; contentHtml?: string; contentText?: string }): BlocNote {
