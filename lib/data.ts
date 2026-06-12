@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { TechOpportunity } from "@/lib/tech-opportunity-types";
+import { getSession } from "@/lib/auth/session";
 import { getTasksByUser } from "@/lib/db/repositories/tasks";
 import { getCoursesByUser } from "@/lib/db/repositories/courses";
 import { getHackathonsByUser } from "@/lib/db/repositories/hackathons";
@@ -10,12 +10,10 @@ import { getAllTechOpportunities } from "@/lib/db/repositories/tech_opportunitie
 import { getUserById } from "@/lib/db/repositories/users";
 
 export async function getGlobalStore() {
-  // Auth still via Supabase — replaced in Fase 6 (auth propia).
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) redirect("/login");
+  const session = await getSession();
+  if (!session) redirect("/login");
 
-  const userId = userData.user.id;
+  const userId = session.uid;
 
   const [tasks, courses, hackathons, techOpportunities, opportunities, links, pgUser] =
     await Promise.all([
@@ -30,9 +28,8 @@ export async function getGlobalStore() {
 
   const rawName =
     pgUser?.display_name ||
-    userData.user.user_metadata?.display_name ||
-    userData.user.user_metadata?.name ||
-    userData.user.email?.split("@")[0] ||
+    session.name ||
+    session.email.split("@")[0] ||
     "Invitado";
   const userName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
 

@@ -27,6 +27,19 @@ export async function upsertUser(id: string, email: string): Promise<void> {
   );
 }
 
+export async function ensureUserByEmail(email: string, displayName?: string | null): Promise<DbUser> {
+  const res = await query<DbUser>(
+    `INSERT INTO public.users (email, display_name)
+     VALUES ($1, $2)
+     ON CONFLICT (email) DO UPDATE
+     SET display_name = COALESCE(public.users.display_name, EXCLUDED.display_name),
+         updated_at = now()
+     RETURNING *`,
+    [email.toLowerCase(), displayName ?? null]
+  );
+  return res.rows[0];
+}
+
 export async function updatePasswordHash(id: string, hash: string): Promise<void> {
   await query(
     `UPDATE public.users SET password_hash = $1 WHERE id = $2`,
