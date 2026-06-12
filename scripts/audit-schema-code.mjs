@@ -16,14 +16,13 @@ function requireIncludes(file, content, expected) {
   if (!content.includes(expected)) fail(`${file} debe contener: ${expected}`);
 }
 
-const schema = read("supabase/schema.sql");
+const schema = read("infra/postgres/schema.sql");
 const guestApp = read("components/guest-app.tsx");
 const actions = read("lib/actions.ts");
-const supabaseEnv = read("lib/supabase/env.ts");
 
 const requiredTables = ["tasks", "courses", "hackathons", "tech_opportunities", "quick_links", "opportunities"];
 for (const table of requiredTables) {
-  requireIncludes("supabase/schema.sql", schema, `create table if not exists public.${table}`);
+  requireIncludes("infra/postgres/schema.sql", schema, `create table if not exists public.${table}`);
 }
 
 const requiredCourseColumns = [
@@ -68,16 +67,15 @@ const requiredTechOpportunityColumns = [
   "fuente_url",
 ];
 
-for (const column of requiredCourseColumns) requireIncludes("supabase/schema.sql", schema, column);
-for (const column of requiredHackathonColumns) requireIncludes("supabase/schema.sql", schema, column);
-for (const column of requiredTechOpportunityColumns) requireIncludes("supabase/schema.sql", schema, column);
+for (const column of requiredCourseColumns) requireIncludes("infra/postgres/schema.sql", schema, column);
+for (const column of requiredHackathonColumns) requireIncludes("infra/postgres/schema.sql", schema, column);
+for (const column of requiredTechOpportunityColumns) requireIncludes("infra/postgres/schema.sql", schema, column);
 
 requireIncludes("components/guest-app.tsx", guestApp, 'type TaskPriority = "alta" | "media" | "baja" | "critica"');
 requireIncludes("components/guest-app.tsx", guestApp, 'return normalized === "critica" ? "alta" : normalized');
 requireIncludes("components/guest-app.tsx", guestApp, "getDisplayCourses(store.courses, store.techOpportunities)");
 requireIncludes("components/guest-app.tsx", guestApp, "getDisplayHackathons(store.hackathons, store.techOpportunities)");
 requireIncludes("components/guest-app.tsx", guestApp, "...store.techOpportunities.flatMap(techOpportunityToCalendarEvents)");
-requireIncludes("lib/supabase/env.ts", supabaseEnv, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
 
 if (actions.includes('revalidatePath("/dashboard")') || guestApp.includes('revalidatePath("/dashboard")')) {
   fail('No debe existir revalidatePath("/dashboard"); rompe foco y refresca el layout completo');

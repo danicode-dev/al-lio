@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
 import { asString } from "@/lib/utils";
 import { getCurrentUserId } from "@/lib/auth/current-user";
 import {
@@ -31,105 +30,14 @@ import {
   updateHackathon as pgUpdateHackathon,
 } from "@/lib/db/repositories/hackathons";
 import { createReminder as pgCreateReminder } from "@/lib/db/repositories/reminders";
-import { ensurePostgresUserForSupabaseUser } from "@/lib/auth/sync-postgres-user";
+import { clearSession } from "@/lib/auth/session";
 
 const requiredText = z.string().trim().min(1);
 
-// ── Auth actions — still use Supabase Auth (migrated in Fase 6) ───────────────
-
-export async function loginProfile(formData: FormData) {
-  const email = requiredText.email().parse(formData.get("email"));
-  const displayName = asString(formData.get("display_name")) ?? "Usuario";
-  const supabase = await createClient();
-
-  const passwords = [
-    process.env.PROFILES_SHARED_PASSWORD,
-    "muchosmantecados11",
-    "d1os-panel-2026",
-  ].filter(Boolean) as string[];
-
-  for (const pwd of passwords) {
-    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password: pwd });
-    if (!error) {
-      if (signInData.user) {
-        await ensurePostgresUserForSupabaseUser({ id: signInData.user.id, email: signInData.user.email!, displayName });
-      }
-      redirect("/dashboard");
-    }
-  }
-
-  const activePassword = process.env.PROFILES_SHARED_PASSWORD ?? "d1os-panel-2026";
-  const { data, error: signUpError } = await supabase.auth.signUp({
-    email,
-    password: activePassword,
-    options: { data: { display_name: displayName } },
-  });
-
-  if (signUpError) {
-    redirect("/login?error=" + encodeURIComponent(signUpError.message));
-  }
-
-  if (data.user) {
-    await ensurePostgresUserForSupabaseUser({ id: data.user.id, email: data.user.email!, displayName });
-  }
-  redirect("/dashboard");
-}
-
-export async function loginOrRegisterProfile(formData: FormData) {
-  const email = requiredText.email().parse(formData.get("email"));
-  const password = requiredText.parse(formData.get("password"));
-  const displayName = asString(formData.get("display_name")) ?? "Usuario";
-  const supabase = await createClient();
-
-  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (signInError) {
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { display_name: displayName } },
-    });
-
-    if (signUpError) {
-      if (
-        signUpError.message.includes("already registered") ||
-        signUpError.message.toLowerCase().includes("user already exists")
-      ) {
-        redirect("/login?error=Contraseña%20incorrecta");
-      }
-      redirect("/login?error=" + encodeURIComponent(signUpError.message));
-    }
-
-    if (data.user) {
-      await ensurePostgresUserForSupabaseUser({ id: data.user.id, email: data.user.email!, displayName });
-    }
-  } else if (signInData.user) {
-    await ensurePostgresUserForSupabaseUser({ id: signInData.user.id, email: signInData.user.email!, displayName });
-  }
-
-  redirect("/dashboard");
-}
-
-export async function signUp(formData: FormData) {
-  const email = requiredText.email().parse(formData.get("email"));
-  const password = z.string().min(6).parse(formData.get("password"));
-  const displayName = asString(formData.get("display_name")) ?? "Dani";
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { display_name: displayName } },
-  });
-  if (error) redirect("/register?error=No%20se%20pudo%20crear%20la%20cuenta");
-  if (data.user) {
-    await ensurePostgresUserForSupabaseUser({ id: data.user.id, email: data.user.email!, displayName });
-  }
-  redirect("/dashboard");
-}
+// ── Auth actions ──────────────────────────────────────────────────────────────
 
 export async function signOut() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  await clearSession();
   redirect("/login");
 }
 

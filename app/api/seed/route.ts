@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { tryGetCurrentUserId } from "@/lib/auth/current-user";
 import { deleteTasksByUserLike, createTask } from "@/lib/db/repositories/tasks";
 import { deleteHackathonsByUserLike, createHackathon } from "@/lib/db/repositories/hackathons";
 import { deleteCoursesByUserLike, createCourse } from "@/lib/db/repositories/courses";
@@ -9,15 +9,11 @@ export async function GET() {
     return NextResponse.json({ error: "Seed endpoint disabled in production" }, { status: 404 });
   }
 
-  // Auth still via Supabase — replaced in Fase 6.
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
+  const userId = await tryGetCurrentUserId();
 
-  if (!userData?.user) {
+  if (!userId) {
     return NextResponse.json({ error: "No user found" }, { status: 401 });
   }
-
-  const userId = userData.user.id;
 
   await deleteTasksByUserLike(userId, "[Demo]%");
   await deleteHackathonsByUserLike(userId, "[Demo]%");

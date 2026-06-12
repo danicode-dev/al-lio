@@ -1,19 +1,14 @@
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-
-// Temporary dependency on Supabase Auth — replaced in Fase 6 (auth propia).
-// The UUID returned here matches public.users.id (preserved from Fase 3B import).
+import { getSession } from "@/lib/auth/session";
 
 export async function getCurrentUserId(): Promise<string> {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) redirect("/login");
-  return data.user.id;
+  const session = await getSession();
+  if (!session) redirect("/login");
+  return session.uid;
 }
 
 export async function tryGetCurrentUserId(): Promise<string | null> {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
+  const session = await getSession();
+  return session?.uid ?? null;
 }

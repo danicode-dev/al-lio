@@ -6,12 +6,11 @@ const errorCopy: Record<string, string> = {
   missing_code: "Google no devolvio el codigo de acceso. Intentalo de nuevo.",
   invalid_state: "La sesion de Google ha caducado. Vuelve a iniciar el acceso.",
   connect_error: "No se pudo completar la conexion con Google.",
-  session_error: "Google conecto correctamente, pero no se pudo conectar con Supabase.",
-  supabase_unreachable: "No se pudo conectar con Supabase. Revisa la configuracion local.",
+  session_error: "Google conectó correctamente, pero no se pudo crear la sesión.",
   google_missing_code: "Google no devolvio el codigo de acceso. Intentalo de nuevo.",
   google_invalid_state: "La sesion de Google ha caducado. Vuelve a iniciar el acceso.",
   google_connect_error: "No se pudo completar la conexion con Google.",
-  google_session_error: "Google conecto correctamente, pero no se pudo conectar con Supabase.",
+  google_session_error: "Google conectó correctamente, pero no se pudo crear la sesión.",
 };
 
 export function LoginForm({ error }: { error?: string | null }) {

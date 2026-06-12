@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
-import { ensureSupabaseSessionFromGoogle } from "@/lib/auth/google";
+import { createSession } from "@/lib/auth/session";
+import { ensureUserByEmail } from "@/lib/db/repositories/users";
+import { upsertProfile } from "@/lib/db/repositories/profiles";
 import {
   assertGoogleOAuthState,
   createGoogleOAuthClient,
@@ -33,12 +35,20 @@ export async function GET(req: Request) {
     oauth.setCredentials(tokens);
 
     const userInfo = await google.oauth2({ version: "v2", auth: oauth }).userinfo.get();
-    await ensureSupabaseSessionFromGoogle({
-      email: userInfo.data.email,
-      emailVerified: userInfo.data.verified_email,
-      name: userInfo.data.name,
-      picture: userInfo.data.picture,
+    const email = userInfo.data.email;
+    if (!email || userInfo.data.verified_email === false) {
+      return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("connect_error"), baseUrl));
+    }
+
+    const displayName = userInfo.data.name?.trim() || email.split("@")[0];
+    const user = await ensureUserByEmail(email, displayName);
+    await upsertProfile(user.id, {
+      display_name: displayName,
+      full_name: userInfo.data.name ?? displayName,
+      target_role: "Usuario D1OS",
+      main_location: "Granada",
     });
+    await createSession({ id: user.id, email: user.email, name: user.display_name ?? displayName });
 
     await saveGoogleTokens(tokens);
     return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("connected"), baseUrl));
