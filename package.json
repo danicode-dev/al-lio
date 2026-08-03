@@ -1,7 +1,25 @@
 {
-  "name": "techlife-control-panel",
+  "name": "al-lio",
   "version": "0.1.0",
   "private": true,
+  "description": "Plataforma web para organizar tareas, calendario, formacion, oportunidades y seguimiento de progreso.",
+  "license": "MIT",
+  "author": "Daniel Garcia",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danicode-dev/al-lio.git"
+  },
+  "bugs": {
+    "url": "https://github.com/danicode-dev/al-lio/issues"
+  },
+  "homepage": "https://al-lio.danielcode.dev",
+  "keywords": [
+    "productivity",
+    "education",
+    "career",
+    "nextjs",
+    "postgresql"
+  ],
   "scripts": {
     "predev": "npm run verify:startup",
     "dev": "next dev",

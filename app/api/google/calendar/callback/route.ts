@@ -45,7 +45,7 @@ export async function GET(req: Request) {
     await upsertProfile(user.id, {
       display_name: displayName,
       full_name: userInfo.data.name ?? displayName,
-      target_role: "Usuario D1OS",
+      target_role: "Usuario AL-LIO",
       main_location: "Granada",
     });
     await createSession({ id: user.id, email: user.email, name: user.display_name ?? displayName });
