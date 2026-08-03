@@ -1,107 +1,92 @@
-# Despliegue de Aidraft en VPS (aidraft.danielcode.dev)
+# Despliegue VPS
 
-## Pre-requisitos
+Esta guía describe el despliegue actual de AL-LÍO en `https://al-lio.danielcode.dev`.
 
-- VPS con Docker y Docker Compose instalados.
-- Red Docker `danicode_web` creada: `docker network create danicode_web`
-- Caddy corriendo en el contenedor `danicode_caddy` en la red `danicode_web`.
-- DNS `aidraft.danielcode.dev` apuntando a la IP del VPS.
-- Proyecto en Supabase configurado y operativo.
+## Requisitos
 
----
+- VPS con Docker y Docker Compose.
+- Red Docker externa `danicode_web`.
+- Caddy funcionando en la red `danicode_web`.
+- DNS `al-lio.danielcode.dev` apuntando al VPS.
+- Archivo `.env` de producción creado desde `.env.production.example`.
 
-## 1. Preparar el entorno en el VPS
+## Ruta Recomendada
 
 ```bash
-mkdir -p /srv/danicode/projects/aidraft
-cd /srv/danicode/projects/aidraft
+mkdir -p /srv/danicode/projects/al-lio
+cd /srv/danicode/projects/al-lio
 git clone https://github.com/danicode-dev/al-lio.git .
 ```
 
-## 2. Crear el archivo `.env`
+## Variables
 
 ```bash
 cp .env.production.example .env
-# Editar con los valores reales:
 nano .env
 ```
 
-Variables obligatorias a rellenar:
+Variables mínimas:
 
-| Variable | Dónde obtenerla |
+| Variable | Uso |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase → Project Settings → API |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API |
-| `SUPABASE_SECRET_KEY` | Igual que service role key |
-| `SUPABASE_URL` | Igual que NEXT_PUBLIC_SUPABASE_URL |
-| `SUPABASE_DB_URL` | Supabase → Project Settings → Database → Connection string (Direct) |
-| `TARGET_USER_EMAIL` | Email del usuario administrador |
-| `PROFILES_SHARED_PASSWORD` | Contraseña interna para los perfiles |
-| `GOOGLE_CLIENT_ID` | Google Cloud Console → OAuth 2.0 |
-| `GOOGLE_CLIENT_SECRET` | Google Cloud Console → OAuth 2.0 |
-| `GOOGLE_REDIRECT_URI` | `https://aidraft.danielcode.dev/api/google/calendar/callback` |
-| `GOOGLE_TOKEN_ENCRYPTION_KEY` | String aleatorio seguro (32+ chars) |
-| `BASE_URL` | `https://aidraft.danielcode.dev` |
+| `DATABASE_URL` | Conexión interna a `al_lio_postgres` |
+| `POSTGRES_PASSWORD` | Password del contenedor PostgreSQL |
+| `SESSION_SECRET` | Firma de la cookie de sesión |
+| `TARGET_USER_EMAIL` | Usuario objetivo/admin inicial |
+| `GOOGLE_CLIENT_ID` | OAuth Google |
+| `GOOGLE_CLIENT_SECRET` | OAuth Google |
+| `GOOGLE_REDIRECT_URI` | Callback de Google |
+| `GOOGLE_TOKEN_ENCRYPTION_KEY` | Cifrado de tokens Google |
+| `BASE_URL` | URL pública |
+| `PORT` | Puerto interno Next.js |
+| `NODE_ENV` | `production` |
 
-## 3. Validar el deploy readiness
+Callback de Google en producción:
 
-```bash
-node scripts/validate-deploy-readiness.mjs
+```txt
+https://al-lio.danielcode.dev/api/google/calendar/callback
 ```
 
-## 4. Añadir el bloque a Caddyfile
+## Caddy
 
-Copiar el contenido de `infra/Caddyfile.example` al Caddyfile real:
+Añadir al Caddyfile real el bloque de `infra/Caddyfile.example`:
 
 ```bash
 cat infra/Caddyfile.example
-# Añadir el bloque al Caddyfile:
 nano /srv/danicode/infra/caddy/Caddyfile
-```
-
-Recargar Caddy:
-
-```bash
 docker exec danicode_caddy caddy reload --config /etc/caddy/Caddyfile
 ```
 
-## 5. Build y arranque
+## Build y Arranque
 
 ```bash
-cd /srv/danicode/projects/aidraft
 docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
 ```
 
-## 6. Verificar
+## Verificación
 
 ```bash
 docker compose --env-file .env -f infra/docker-compose.prod.yml ps
-docker logs --tail=80 aidraft_web
-curl -I https://aidraft.danielcode.dev/api/health
+docker logs --tail=80 al_lio_web
+docker exec al_lio_web wget -qO- http://127.0.0.1:3000/api/health
+curl -I https://al-lio.danielcode.dev/api/health
 ```
 
-La respuesta esperada de `/api/health`:
+Respuesta esperada de `/api/health`:
 
 ```json
 {"ok":true,"app":"techlife-control-panel"}
 ```
 
----
-
-## Actualizaciones posteriores
+## Actualización
 
 ```bash
-cd /srv/danicode/projects/aidraft
 git pull --ff-only origin main
 docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
 docker compose --env-file .env -f infra/docker-compose.prod.yml ps
-docker logs --tail=50 aidraft_web
-curl -I https://aidraft.danielcode.dev/api/health
+docker logs --tail=50 al_lio_web
+curl -I https://al-lio.danielcode.dev/api/health
 ```
-
----
 
 ## Rollback
 
@@ -111,12 +96,8 @@ git checkout <commit-anterior>
 docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
 ```
 
----
+## Notas
 
-## Variables de entorno en Google Cloud Console
-
-Para que Google Calendar OAuth funcione en producción, añadir a la lista de URIs de redirección autorizados:
-
-```
-https://aidraft.danielcode.dev/api/google/calendar/callback
-```
+- No ejecutar comandos de VPS desde PowerShell local si la ruta empieza por `/srv/...`; esa ruta existe en Linux, no en Windows.
+- En PowerShell antiguo, usar `;` o comandos separados en lugar de `&&`.
+- Si solo aparece un contenedor local como `aidraft_postgres_sandbox`, no significa que producción esté caída; significa que se está mirando Docker local, no el VPS.

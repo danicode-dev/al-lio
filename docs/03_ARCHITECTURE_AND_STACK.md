@@ -1,120 +1,73 @@
 # Architecture and Stack
 
-## Stack principal
+## Runtime Actual
 
-- **Framework:** Next.js App Router
-- **Lenguaje:** TypeScript
-- **UI:** shadcn/ui
-- **Estilos:** Tailwind CSS como base de shadcn/ui
-- **Base de datos:** Supabase PostgreSQL
-- **Auth:** Supabase Auth
-- **Deploy:** Vercel
-- **Integraciones:** API Routes o Server Actions
-- **Validación:** Zod recomendado
-- **Iconos:** lucide-react
-- **Fechas:** date-fns recomendado
+- Framework: Next.js 15 App Router.
+- Lenguaje: TypeScript.
+- UI: componentes React locales con Tailwind CSS.
+- Base de datos: PostgreSQL propio.
+- Acceso a datos: `pg`.
+- Auth actual: sesión propia firmada en cookie `al_lio_session`.
+- Login actual: Google OAuth.
+- Integraciones: Google Calendar, fuentes de noticias, deep links y APIs de oportunidades cuando hay claves.
+- Deploy: VPS con Docker Compose y Caddy.
 
-## Nota sobre shadcn/ui
+Supabase ya no es la base de datos ni el sistema de autenticación en runtime. Los documentos de migración se conservan en `docs/archive/` como contexto histórico.
 
-shadcn/ui no sustituye totalmente a Tailwind. Usa Tailwind por debajo, pero permite trabajar con componentes ya preparados.
-
-Objetivo:
-
-- no escribir clases desde cero todo el rato
-- usar componentes consistentes
-- mantener diseño simple
-- no saturar la UI
-
-## Estructura de carpetas recomendada
+## Capas Principales
 
 ```txt
-techlife-control-panel/
-├── app/
-│   ├── (auth)/
-│   │   ├── login/
-│   │   └── register/
-│   ├── (dashboard)/
-│   │   ├── dashboard/
-│   │   ├── work/
-│   │   ├── courses/
-│   │   ├── hackathons/
-│   │   ├── tasks/
-│   │   ├── calendar/
-│   │   ├── links/
-│   │   ├── sources/
-│   │   └── settings/
-│   ├── api/
-│   │   ├── collect/
-│   │   └── health/
-│   ├── layout.tsx
-│   └── page.tsx
-├── components/
-│   ├── app-sidebar.tsx
-│   ├── folder-card.tsx
-│   ├── dashboard-summary.tsx
-│   ├── platform-card.tsx
-│   ├── hackathon-card.tsx
-│   ├── task-card.tsx
-│   ├── quick-search-card.tsx
-│   └── ui/
-├── lib/
-│   ├── supabase/
-│   │   ├── client.ts
-│   │   ├── server.ts
-│   │   └── middleware.ts
-│   ├── integrations/
-│   │   ├── infojobs.ts
-│   │   ├── adzuna.ts
-│   │   ├── jooble.ts
-│   │   ├── remotive.ts
-│   │   └── tecnoempleo-rss.ts
-│   ├── deeplinks/
-│   │   └── job-search-urls.ts
-│   ├── db/
-│   │   └── types.ts
-│   ├── seed/
-│   │   └── hackathons.ts
-│   └── utils.ts
-├── public/
-│   └── logos/
-├── supabase/
-│   ├── schema.sql
-│   └── seed.sql
-├── .env.example
-├── README.md
-└── package.json
+Browser
+  -> Next.js App Router
+  -> Route handlers / server actions
+  -> lib/auth + lib/db + lib/integrations
+  -> PostgreSQL propio
+  -> Google APIs cuando aplica
 ```
 
-## Rutas
+## Carpetas Clave
 
-### Públicas
+```txt
+app/        rutas, layouts y route handlers
+components/ UI y vistas compartidas
+lib/        auth, datos, integraciones, news, helpers
+infra/      Docker, Caddy y PostgreSQL
+scripts/    checks, importadores, migración y operaciones
+data/       caché versionada de noticias
+csv/        fuentes CSV para importadores
+docs/       documentación activa
+```
+
+## Rutas Públicas
 
 - `/`
 - `/login`
 - `/register`
+- `/api/health`
 
-### Privadas
+## Rutas Privadas
 
 - `/dashboard`
+- `/tasks`
+- `/bloc`
+- `/noticias`
 - `/work`
 - `/courses`
 - `/hackathons`
-- `/tasks`
 - `/calendar`
 - `/links`
 - `/sources`
 - `/settings`
+- `/more`
 
-## Integraciones
+## Producción
 
-Tipos:
+El despliegue esperado usa:
 
-- `api`: InfoJobs, Adzuna, Jooble, Remotive
-- `rss`: Tecnoempleo
-- `deeplink`: LinkedIn, Indeed, JobToday, Talent.com, Welcome to the Jungle
-- `manual`: fuentes añadidas a mano
+- `infra/Dockerfile`
+- `infra/docker-compose.prod.yml`
+- `infra/Caddyfile.example`
+- `.env.production.example`
+- `docs/DEPLOY_VPS.md`
 
-## Deploy inicial
-
-- Vercel para Next.js
-- Supabase para DB/Auth
+El contenedor web (`al_lio_web`) se conecta a PostgreSQL (`al_lio_postgres`) y Caddy publica el dominio `https://al-lio.danielcode.dev`.

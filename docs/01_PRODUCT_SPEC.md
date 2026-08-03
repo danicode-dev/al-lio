@@ -1,118 +1,63 @@
-# Product Spec - TechLife Control Panel
+# Product Spec - AL-LÍO
 
 ## Resumen
 
-**TechLife Control Panel** es una aplicación web personal para centralizar oportunidades y organización diaria relacionada con el mundo tech.
+AL-LÍO es una aplicación web de orientación, planificación y seguimiento. Centraliza tareas, calendario, cursos, hackathons, oportunidades, noticias y enlaces para que el usuario pueda decidir qué hacer cada semana sin repartir su trabajo entre múltiples herramientas.
 
-Controla:
+## Usuario Actual
 
-- trabajo y ofertas
-- búsquedas rápidas
-- cursos
-- hackathons
-- eventos
-- tareas pendientes
-- recordatorios
-- calendario interno
-- enlaces rápidos
+El producto funciona hoy como dashboard privado para un usuario principal con foco en:
 
-## Usuario inicial
-
-Estudiante de **Desarrollo de Aplicaciones Web** que busca:
-
-- trabajo junior
-- prácticas
-- cursos
-- hackathons
-- eventos tech
-- organización personal
+- organización semanal;
+- oportunidades de formación;
+- hackathons y convocatorias;
+- búsqueda de empleo o prácticas;
+- seguimiento de tareas y evidencias.
 
 ## Problema
 
-El flujo actual está disperso:
-
-- LinkedIn
-- InfoJobs
-- Indeed
-- Tecnoempleo
-- Google
-- notas
-- calendario
-- recordatorios
-- webs de hackathons
-
-La app debe evitar abrir 10 pestañas y perderse.
+La información útil está dispersa entre calendarios, portales de empleo, cursos, notas, recordatorios, webs de eventos y enlaces guardados. Esa dispersión hace difícil priorizar y demostrar progreso.
 
 ## Solución
 
-Un panel central con carpetas principales:
+Un panel único con módulos conectados:
 
-- Trabajo
-- Cursos
-- Hackathons
-- Tareas
-- Calendario
-- Enlaces rápidos
+- Dashboard semanal.
+- Tareas.
+- Calendario local y Google Calendar.
+- Cursos.
+- Hackathons.
+- Oportunidades.
+- Noticias.
+- Enlaces y fuentes.
 
-## Principio de diseño
+## Estado Funcional
 
-Debe ser:
+- Dashboard privado operativo.
+- Datos persistidos en PostgreSQL propio.
+- Sesión propia mediante cookie firmada.
+- Acceso real mediante Google OAuth.
+- Google Calendar conectado desde servidor.
+- Importadores CSV para cursos, hackathons y oportunidades.
+- Caché local versionada para noticias.
+- Despliegue VPS con Docker Compose y Caddy.
 
-- simple
-- rápida
-- directa
-- minimalista
-- sin relleno
-- orientada a actuar
+## Fuera De Alcance Actual
 
-## MVP
+Estos puntos no deben presentarse como terminados:
 
-Debe incluir:
+- Login email/password completo.
+- Onboarding final por ciclo formativo.
+- Fixtures demo oficiales para candidatura.
+- Suite BDD/Playwright.
+- Licencia y metadata final de entrega.
 
-- login
-- dashboard
-- sidebar plegable
-- CRUD de tareas
-- CRUD de ofertas guardadas
-- CRUD de cursos
-- CRUD de hackathons
-- CRUD de enlaces rápidos
-- deep links de empleo
-- calendario interno básico
-- seed inicial de hackathons
-- deploy preparado para Vercel
+## Principio De Producto
 
-## Estados
+La app debe ser directa, útil y operativa:
 
-### Ofertas
-
-- guardada
-- pendiente_revision
-- aplicada
-- entrevista
-- rechazada
-- descartada
-
-### Hackathons
-
-- inscripcion_abierta
-- pendiente
-- realizado
-- revisar_futura_edicion
-- descartado
-
-### Tareas
-
-- pendiente
-- en_progreso
-- completada
-- pospuesta
-- cancelada
-
-### Cursos
-
-- pendiente
-- empezado
-- terminado
-- pausado
-- descartado
+- entrar;
+- ver prioridades;
+- abrir oportunidades relevantes;
+- registrar avance;
+- preparar evidencia.

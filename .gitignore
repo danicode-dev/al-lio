@@ -15,6 +15,8 @@ desktop.ini
 vercel.json
 .playwright-mcp
 dev-server*.log
+_dev_out.txt
+_pr_body.md
 
 # migration artifacts — local export/import data, never committed
 migration-artifacts/
