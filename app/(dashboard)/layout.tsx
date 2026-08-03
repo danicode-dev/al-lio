@@ -6,6 +6,7 @@ import { StoreProvider, MobileHeaderActions } from "@/components/guest-app";
 import { DailyAlerts } from "@/components/daily-alerts";
 import type { Store } from "@/components/guest-app";
 import Image from "next/image";
+import { Toaster } from "sonner";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <BottomNav />
         <DailyAlerts />
       </div>
+      <Toaster position="bottom-right" richColors duration={3500} closeButton />
     </StoreProvider>
   );
 }
