@@ -18,7 +18,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <AppSidebar />
         <main className="min-w-0 flex-1 relative pb-20 md:pb-0">
           <div className="flex h-14 items-center justify-between border-b bg-background/90 backdrop-blur-xl px-4 md:hidden sticky top-0 z-40">
-            <Image src="/brand/signature.png" alt="Al-Lio" width={96} height={32} className="dark:invert" />
+            <div className="relative h-8 w-28">
+              <Image
+                src="/assets/al_lio_logo_horizontal_transparent.png"
+                alt="AL-LIO"
+                width={615}
+                height={214}
+                className="block h-auto w-28 object-contain object-left dark:hidden"
+                priority
+              />
+              <Image
+                src="/assets/al_lio_logo_horizontal_white_transparent.png"
+                alt="AL-LIO"
+                width={560}
+                height={115}
+                className="hidden h-auto w-28 object-contain object-left dark:block"
+                priority
+              />
+            </div>
             <div className="flex items-center gap-1">
               <ThemeToggle />
               <MobileHeaderActions />

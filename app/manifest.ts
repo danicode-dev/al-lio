@@ -2,9 +2,9 @@ import { MetadataRoute } from 'next'
  
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Al-Lio',
-    short_name: 'Al-Lio',
-    description: 'Workspace personal premium',
+    name: 'AL-LIO',
+    short_name: 'AL-LIO',
+    description: 'Panel privado para tareas, calendario y oportunidades.',
     start_url: '/dashboard',
     display: 'standalone',
     background_color: '#09090b',
@@ -12,9 +12,9 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: 'portrait',
     icons: [
       {
-        src: '/favicon.ico',
-        sizes: 'any',
-        type: 'image/x-icon',
+        src: '/assets/al_lio_favicon_dark_circle_512.png',
+        sizes: '512x512',
+        type: 'image/png',
       },
     ],
   }

@@ -56,7 +56,6 @@ export function AppSidebar() {
 
   return (
     <aside className={cn("sticky top-0 hidden h-screen shrink-0 border-r bg-card md:block", collapsed ? "w-16" : "w-60")}>
-      {/* ── Header ── */}
       <div className="flex h-14 items-center px-2">
         {collapsed ? (
           <button
@@ -66,17 +65,42 @@ export function AppSidebar() {
             aria-label="Expandir menú"
             title="Expandir menú"
           >
-            <Image src="/brand/logo-mark.png" alt="Al-Lio" width={28} height={28} className="dark:invert" />
+            <Image
+              src="/assets/al_lio_symbol_transparent.png"
+              alt="AL-LIO"
+              width={26}
+              height={26}
+              className="block dark:hidden"
+              priority
+            />
+            <Image
+              src="/assets/al_lio_favicon_dark_circle_512.png"
+              alt="AL-LIO"
+              width={26}
+              height={26}
+              className="hidden rounded-sm dark:block"
+              priority
+            />
           </button>
         ) : (
           <>
             <div className="min-w-0 flex-1 pl-1">
               <Image
-                src="/brand/signature.png"
-                alt="Al-Lío"
-                width={120}
-                height={36}
-                className="object-contain object-left dark:invert"
+                src="/assets/al_lio_logo_horizontal_transparent.png"
+                alt="AL-LIO"
+                width={615}
+                height={214}
+                className="block object-contain object-left dark:hidden"
+                style={{ width: 128, height: "auto" }}
+                priority
+              />
+              <Image
+                src="/assets/al_lio_logo_horizontal_white_transparent.png"
+                alt="AL-LIO"
+                width={560}
+                height={115}
+                className="hidden object-contain object-left dark:block"
+                style={{ width: 128, height: "auto" }}
                 priority
               />
             </div>
