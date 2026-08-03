@@ -166,3 +166,7 @@ Guía operativa:
 - `docs/archive/` - documentación histórica que no debe tomarse como fuente actual.
 
 Alias ASCII usado en algunos scripts y checks: `Al-Lio`.
+
+## Licencia
+
+Distribuido bajo licencia [MIT](LICENSE).

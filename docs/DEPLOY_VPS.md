@@ -75,7 +75,7 @@ curl -I https://al-lio.danielcode.dev/api/health
 Respuesta esperada de `/api/health`:
 
 ```json
-{"ok":true,"app":"techlife-control-panel"}
+{"ok":true,"app":"al-lio"}
 ```
 
 ## Actualización

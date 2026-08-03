@@ -1,6 +1,6 @@
 const baseUrl = process.env.SMOKE_BASE_URL ?? "http://localhost:3000";
 const routes = ["/", "/dashboard", "/calendar", "/work", "/courses", "/hackathons", "/noticias"];
-const appMarkers = ["Al-L", "D1OS", "TechLife", "__next", "/_next/static"];
+const appMarkers = ["AL-L", "AL L", "__next", "/_next/static"];
 
 async function fetchText(path) {
   const response = await fetch(`${baseUrl}${path}`, { redirect: "follow" });
