@@ -40,6 +40,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
 import { insertDb, updateDb, deleteDb } from "@/lib/db";
+import { toast } from "sonner";
 import { TechOpportunitiesSection, type TechOpportunityTaskTarget } from "@/components/tech-opportunities-section";
 import { BlocNotepad } from "@/components/bloc-notepad";
 import type { TechOpportunity } from "@/lib/tech-opportunity-types";
@@ -421,16 +422,21 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       const category = toTaskBucket(data.category);
       const priority = normalizeTaskPriority(data.priority);
       setStore((current) => ({ ...current, tasks: [{ id, created_at: nowIso(), progress_notes: [], ...data, category, priority }, ...current.tasks] }));
-      await insertDb("tasks", {
-        id,
-        title: data.title,
-        description: data.description,
-        due_date: data.due_at || null,
-        reminder_at: data.reminder_at || null,
-        priority: toDbTaskPriority(priority),
-        status: data.status,
-        category,
-      }, ["/tasks", "/calendar"]);
+      try {
+        await insertDb("tasks", {
+          id,
+          title: data.title,
+          description: data.description,
+          due_date: data.due_at || null,
+          reminder_at: data.reminder_at || null,
+          priority: toDbTaskPriority(priority),
+          status: data.status,
+          category,
+        }, ["/tasks", "/calendar"]);
+        toast.success("Tarea creada");
+      } catch {
+        toast.error("Error al crear la tarea");
+      }
     },
     updateTask: async (id: string, data: Partial<Task>) => {
       const normalizedData = {
@@ -451,7 +457,12 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
     },
     deleteTask: async (id: string) => {
       setStore((current) => ({ ...current, tasks: current.tasks.filter((task) => task.id !== id) }));
-      await deleteDb("tasks", id, ["/tasks", "/calendar"]);
+      try {
+        await deleteDb("tasks", id, ["/tasks", "/calendar"]);
+        toast.success("Tarea eliminada");
+      } catch {
+        toast.error("Error al eliminar la tarea");
+      }
     },
     addTaskNote: async (id: string, text: string) => {
       const task = store.tasks.find((t) => t.id === id);
@@ -467,7 +478,12 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
     addCourse: async (data: Omit<Course, "id" | "created_at">) => {
       const id = makeId();
       setStore((current) => ({ ...current, courses: [{ id, created_at: nowIso(), ...data }, ...current.courses] }));
-      await insertDb("courses", { id, title: data.title, platform: data.platform, url: data.url, start_date: data.start_at, deadline: data.deadline_at, status: data.status, notes: data.notes }, ["/courses"]);
+      try {
+        await insertDb("courses", { id, title: data.title, platform: data.platform, url: data.url, start_date: data.start_at, deadline: data.deadline_at, status: data.status, notes: data.notes }, ["/courses"]);
+        toast.success("Curso añadido");
+      } catch {
+        toast.error("Error al añadir el curso");
+      }
     },
     updateCourse: async (id: string, data: Partial<Course>) => {
       setStore((current) => ({ ...current, courses: patchById(current.courses, id, data) }));
@@ -480,7 +496,12 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
     addHackathon: async (data: Omit<Hackathon, "id" | "created_at">) => {
       const id = makeId();
       setStore((current) => ({ ...current, hackathons: [{ id, created_at: nowIso(), ...data }, ...current.hackathons] }));
-      await insertDb("hackathons", { id, name: data.name, organizer: data.organizer, province: data.province, city: data.city, type: "hackathon", status: data.status || "revisar_futura_edicion", event_start_date: data.start_at, event_end_date: data.end_at, registration_deadline: data.registration_deadline_at, url: data.url, notes: data.notes, priority: data.priority }, ["/hackathons"]);
+      try {
+        await insertDb("hackathons", { id, name: data.name, organizer: data.organizer, province: data.province, city: data.city, type: "hackathon", status: data.status || "revisar_futura_edicion", event_start_date: data.start_at, event_end_date: data.end_at, registration_deadline: data.registration_deadline_at, url: data.url, notes: data.notes, priority: data.priority }, ["/hackathons"]);
+        toast.success("Hackathon añadido");
+      } catch {
+        toast.error("Error al añadir el hackathon");
+      }
     },
     updateHackathon: async (id: string, data: Partial<Hackathon>) => {
       setStore((current) => ({ ...current, hackathons: patchById(current.hackathons, id, data) }));
@@ -493,7 +514,12 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
     },
     addCompany: async (data: Omit<Company, "id" | "created_at" | "link_status"> & { link_status?: Company["link_status"] }) => {
       setStore((current) => ({ ...current, companies: [{ id: makeId(), created_at: nowIso(), link_status: "sin_verificar", ...data }, ...current.companies] }));
-      await insertDb("opportunities", { title: data.name, company: data.name, source: data.web || "Manual", url: data.employment_url || data.web || "https://", status: "guardada", notes: data.notes, category: data.category, location: data.granada || "Granada" }, ["/work"]);
+      try {
+        await insertDb("opportunities", { title: data.name, company: data.name, source: data.web || "Manual", url: data.employment_url || data.web || "https://", status: "guardada", notes: data.notes, category: data.category, location: data.granada || "Granada" }, ["/work"]);
+        toast.success("Empresa guardada");
+      } catch {
+        toast.error("Error al guardar la empresa");
+      }
     },
     updateCompany: async (id: string, data: Partial<Company>) => {
       setStore((current) => ({ ...current, companies: patchById(current.companies, id, data) }));
@@ -508,7 +534,12 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
     addLink: async (data: Omit<QuickLink, "id" | "created_at">) => {
       const id = makeId();
       setStore((current) => ({ ...current, links: [{ id, created_at: nowIso(), ...data }, ...current.links] }));
-      await insertDb("quick_links", { id, ...data }, ["/links"]);
+      try {
+        await insertDb("quick_links", { id, ...data }, ["/links"]);
+        toast.success("Enlace guardado");
+      } catch {
+        toast.error("Error al guardar el enlace");
+      }
     },
     reset: () => setStore({ ...emptyStore, hackathons: seedHackathons }),
   };
@@ -978,8 +1009,12 @@ function GoogleCalendarStatusControl() {
   async function disconnect() {
     setBusy(true);
     try {
-      await fetch("/api/google/calendar/status", { method: "DELETE" });
+      const res = await fetch("/api/google/calendar/status", { method: "DELETE" });
+      if (!res.ok) throw new Error("Error al desconectar");
       setConnected(false);
+      toast.success("Google Calendar desconectado");
+    } catch {
+      toast.error("Error al desconectar Google Calendar");
     } finally {
       setBusy(false);
     }
@@ -1757,7 +1792,10 @@ function DashboardOperationalFeed({ store, actions }: { store: Store; actions: R
       if (res.ok) {
         const d = await res.json();
         setRadarApps(d.applications ?? []);
+        toast.success("Job Radar actualizado");
       }
+    } catch {
+      toast.error("Error al sincronizar Job Radar");
     } finally {
       setRadarSyncing(false);
     }
@@ -2238,6 +2276,7 @@ function NewEventDialog({ defaultDate, onClose, onCreated }: { defaultDate: Date
       });
       if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.error || "Error al guardar"); }
       googleEventsCache.clear();
+      toast.success("Evento añadido al calendario");
       onCreated();
       onClose();
     } catch (e) {
@@ -2516,6 +2555,9 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
     try {
       await fetch("/api/job-radar/sync", { method: "POST" });
       await fetchApplications();
+      toast.success("Candidaturas actualizadas");
+    } catch {
+      toast.error("Error al sincronizar candidaturas");
     } finally {
       setAppSyncing(false);
     }
@@ -2544,23 +2586,34 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
   }, [noteInput]);
 
   const removeApplication = useCallback(async (id: string) => {
-    await fetch(`/api/job-radar/${id}`, { method: "DELETE" });
-    setApplications((prev) => prev.filter((a) => a.id !== id));
+    try {
+      const res = await fetch(`/api/job-radar/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Error al eliminar");
+      setApplications((prev) => prev.filter((a) => a.id !== id));
+      toast.success("Candidatura eliminada");
+    } catch {
+      toast.error("Error al eliminar la candidatura");
+    }
   }, []);
 
   const submitManual = useCallback(async () => {
     const { company_name, company_url, job_title, job_url } = manualForm;
     if (!company_name.trim() || !company_url.trim() || !job_title.trim()) return;
-    const res = await fetch("/api/job-radar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ company_name, company_url, job_title, job_url }),
-    });
-    if (!res.ok) return;
-    const d = await res.json();
-    setApplications((prev) => [d.application, ...prev]);
-    setManualForm({ company_name: "", company_url: "", job_title: "", job_url: "" });
-    setShowManualForm(false);
+    try {
+      const res = await fetch("/api/job-radar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ company_name, company_url, job_title, job_url }),
+      });
+      if (!res.ok) throw new Error("Error al añadir");
+      const d = await res.json();
+      setApplications((prev) => [d.application, ...prev]);
+      setManualForm({ company_name: "", company_url: "", job_title: "", job_url: "" });
+      setShowManualForm(false);
+      toast.success("Candidatura añadida");
+    } catch {
+      toast.error("Error al añadir la candidatura");
+    }
   }, [manualForm]);
 
   useEffect(() => {

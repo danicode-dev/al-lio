@@ -19,6 +19,7 @@ import {
   type NewsCategory,
 } from "@/lib/sources/source-registry";
 import type { NewsItem, NewsStatus, SyncStatus } from "@/lib/news/types";
+import { toast } from "sonner";
 
 const ALL_CATEGORIES: Array<{ id: NewsCategory | "all"; label: string }> = [
   { id: "all", label: "Todas" },
@@ -70,6 +71,10 @@ export function NoticiasView() {
       const data = (await r.json()) as { ok: boolean; status?: SyncStatus };
       if (data.ok && data.status) setSyncStatus(data.status);
       await load(false);
+      if (data.ok) toast.success("Noticias actualizadas");
+      else toast.error("Error al sincronizar noticias");
+    } catch {
+      toast.error("Error al conectar con el servidor de noticias");
     } finally {
       setSyncing(false);
     }
