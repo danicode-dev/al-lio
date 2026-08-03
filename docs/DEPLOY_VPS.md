@@ -60,16 +60,16 @@ docker exec danicode_caddy caddy reload --config /etc/caddy/Caddyfile
 ## Build y Arranque
 
 ```bash
-docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
+docker compose -f infra/docker-compose.prod.yml --env-file .env up -d --build
 ```
 
 ## Verificación
 
 ```bash
-docker compose --env-file .env -f infra/docker-compose.prod.yml ps
+docker compose -f infra/docker-compose.prod.yml --env-file .env ps
 docker logs --tail=80 al_lio_web
 docker exec al_lio_web wget -qO- http://127.0.0.1:3000/api/health
-curl -I https://al-lio.danielcode.dev/api/health
+curl -fsS https://al-lio.danielcode.dev/api/health
 ```
 
 Respuesta esperada de `/api/health`:
@@ -82,10 +82,10 @@ Respuesta esperada de `/api/health`:
 
 ```bash
 git pull --ff-only origin main
-docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
-docker compose --env-file .env -f infra/docker-compose.prod.yml ps
+docker compose -f infra/docker-compose.prod.yml --env-file .env up -d --build
+docker compose -f infra/docker-compose.prod.yml --env-file .env ps
 docker logs --tail=50 al_lio_web
-curl -I https://al-lio.danielcode.dev/api/health
+curl -fsS https://al-lio.danielcode.dev/api/health
 ```
 
 ## Rollback
@@ -93,7 +93,7 @@ curl -I https://al-lio.danielcode.dev/api/health
 ```bash
 git log --oneline -5
 git checkout <commit-anterior>
-docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
+docker compose -f infra/docker-compose.prod.yml --env-file .env up -d --build
 ```
 
 ## Notas
