@@ -2,60 +2,52 @@
 
 ## Principio
 
-La app debe combinar:
+AL-LÍO combina:
 
-1. APIs reales cuando existan.
-2. RSS cuando sea suficiente.
-3. Deep links cuando no se pueda integrar legalmente.
-4. Entrada manual cuando haga falta.
+1. APIs reales cuando hay clave y condiciones de uso claras.
+2. RSS cuando basta para obtener información pública.
+3. Deep links cuando no conviene integrar una plataforma.
+4. Entrada manual cuando el usuario necesita guardar una oportunidad concreta.
 
 ## Prohibido
 
-No hacer:
+No automatizar sesiones privadas ni hacer scraping agresivo. En particular:
 
-- scraping
-- Selenium
-- Playwright para extraer datos
-- bots sobre LinkedIn
-- automatizar sesiones privadas
+- no bots sobre LinkedIn;
+- no scraping de portales cerrados;
+- no Playwright/Selenium para extraer datos de terceros;
+- no almacenamiento de credenciales externas del usuario.
 
-## Plataformas de empleo iniciales
+## Plataformas Iniciales
 
-| Plataforma | Tipo | Uso inicial |
+| Plataforma | Tipo | Uso actual |
 |---|---|---|
 | LinkedIn | deeplink | Abrir búsqueda precargada |
-| InfoJobs | api + deeplink | API preparada + búsqueda directa |
+| InfoJobs | API + deeplink | API preparada + búsqueda directa |
 | Indeed | deeplink | Abrir búsqueda precargada |
-| Tecnoempleo | rss + deeplink | RSS preparado + búsqueda directa |
-| Adzuna | api | API preparada |
-| Jooble | api | API preparada |
-| Remotive | api | API preparada para remoto |
-| JobToday | deeplink | Abrir búsqueda precargada |
-| Talent.com | deeplink / futuro partner | Búsqueda directa |
-| Welcome to the Jungle | deeplink / futuro partner | Búsqueda directa |
+| Tecnoempleo | RSS + deeplink | RSS preparado + búsqueda directa |
+| Adzuna | API | API preparada |
+| Jooble | API | API preparada |
+| Remotive | API | API pública para remoto |
 
-## Variables de entorno
+## Variables de Entorno
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-
 INFOJOBS_CLIENT_ID=
 INFOJOBS_CLIENT_SECRET=
-
 ADZUNA_APP_ID=
 ADZUNA_APP_KEY=
-
 JOOBLE_API_KEY=
 ```
 
-## Modelo normalizado
+Las integraciones deben devolver resultados vacíos y no romper la app cuando faltan claves.
+
+## Modelo Normalizado
 
 ```ts
 export type NormalizedOpportunity = {
   source: string
-  source_type: 'api' | 'rss' | 'deeplink' | 'manual'
+  source_type: "api" | "rss" | "deeplink" | "manual"
   title: string
   company?: string
   description?: string
@@ -77,73 +69,18 @@ export type NormalizedOpportunity = {
 }
 ```
 
-## Función de deep links
+## Búsquedas Rápidas
 
-Crear:
+Las búsquedas rápidas deben construirse como URLs explícitas, sin ocultar redirecciones ni scraping:
 
 ```ts
 buildJobSearchUrl(platform: string, keyword: string, location?: string): string
 ```
 
-## Búsquedas rápidas iniciales
+Ejemplos:
 
-- Desarrollador Web Junior en Granada
-- Java Junior en Granada
-- Backend Junior en Granada
-- React Junior en Málaga
-- Prácticas DAW en Granada
-- Desarrollador Full Stack Junior remoto
-- Spring Boot Junior remoto
-- Programador Junior Andalucía
-- Frontend Junior remoto
-- SQL Junior Granada
-
-## Ejemplos conceptuales
-
-### LinkedIn
-
-```txt
-https://www.linkedin.com/jobs/search/?keywords=desarrollador%20web%20junior&location=Granada
-```
-
-### Indeed
-
-```txt
-https://es.indeed.com/jobs?q=desarrollador+web+junior&l=Granada
-```
-
-## Collectors
-
-Crear:
-
-```txt
-lib/integrations/infojobs.ts
-lib/integrations/adzuna.ts
-lib/integrations/jooble.ts
-lib/integrations/remotive.ts
-lib/integrations/tecnoempleo-rss.ts
-```
-
-Cada collector debe:
-
-- exportar `collect()`
-- devolver `NormalizedOpportunity[]`
-- capturar errores
-- si falta API key, devolver array vacío
-- no romper la app
-
-## Scoring básico futuro
-
-| Coincidencia | Puntos |
-|---|---:|
-| Java | +10 |
-| Spring Boot | +8 |
-| SQL | +6 |
-| React | +6 |
-| Junior | +10 |
-| Granada | +8 |
-| Málaga | +5 |
-| Remoto | +5 |
-| Prácticas | +7 |
-| DAW | +8 |
-| Más de 5 años | -15 |
+- Desarrollador Web Junior en Granada.
+- Java Junior en Granada.
+- Prácticas DAW en Granada.
+- Desarrollador Full Stack Junior remoto.
+- Programador Junior Andalucía.

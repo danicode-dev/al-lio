@@ -8,15 +8,22 @@ const requiredFiles = [
   "app/globals.css",
   "components/guest-app.tsx",
   "public/data/empresas_tech_granada.md",
-  "docs/proyecto escalada.md",
-  "docs/pasos seguidos el dia 2504.md",
   "csv/oportunidades_tech_supabase_combinado.csv",
   "scripts/import-tech-opportunities.mjs",
   "scripts/audit-schema-code.mjs",
   "AGENTS.md",
   "CLAUDE.md",
+  "docs/README.md",
+  "docs/01_PRODUCT_SPEC.md",
+  "docs/03_ARCHITECTURE_AND_STACK.md",
+  "docs/06_INTEGRATIONS_AND_DEEPLINKS.md",
+  "docs/07_SEED_HACKATHONS.md",
+  "docs/DEPLOY_VPS.md",
   "docs/PROJECT_STRUCTURE.md",
-  "docs/context/OPORTUNIDADES_TECH_CSV_PARA_CODEX.md",
+  "docs/archive/README.md",
+  "docs/archive/proyecto escalada.md",
+  "docs/archive/pasos seguidos el dia 2504.md",
+  "docs/archive/context/OPORTUNIDADES_TECH_CSV_PARA_CODEX.md",
   "README.md",
 ];
 
@@ -27,6 +34,8 @@ const requiredGitignoreEntries = [
   ".env*.local",
   ".playwright-mcp",
   "dev-server*.log",
+  "_dev_out.txt",
+  "_pr_body.md",
 ];
 
 function fail(message) {
@@ -55,7 +64,7 @@ for (const entry of requiredGitignoreEntries) {
 }
 
 const readme = readFileSync(join(root, "README.md"), "utf8");
-for (const text of ["D1OS", "npm run ci", "docs/"]) {
+for (const text of ["AL-LÍO", "npm run verify:startup", "docs/README.md"]) {
   if (!readme.includes(text)) {
     fail(`README.md deberia mencionar: ${text}`);
   }
