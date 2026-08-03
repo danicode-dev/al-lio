@@ -1,8 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Barlow, Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
+const barlow = Barlow({
+  subsets: ["latin"],
+  weight: ["900"],
+  display: "swap",
+  variable: "--font-barlow",
+});
 
 const themeScript = `
 (() => {
@@ -23,13 +29,17 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "AL-LÍO",
-  description: "Panel personal para trabajo, cursos, hackathons, tareas y enlaces.",
+  metadataBase: new URL("https://al-lio.danielcode.dev"),
+  title: {
+    default: "AL-LIO",
+    template: "%s · AL-LIO",
+  },
+  description: "Panel privado para tareas, calendario, cursos, hackathons, oportunidades y noticias.",
   icons: {
     icon: [
-      { url: "/brand/logo-mark.png", type: "image/png" },
+      { url: "/assets/al_lio_favicon_dark_circle_512.png", type: "image/png" },
     ],
-    apple: "/brand/logo-mark.png",
+    apple: "/assets/al_lio_favicon_dark_circle_512.png",
   },
 };
 
@@ -39,7 +49,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={`${inter.className} ${barlow.variable}`}>{children}</body>
     </html>
   );
 }

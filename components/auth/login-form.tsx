@@ -1,165 +1,452 @@
+"use client";
+
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Image from "next/image";
-import { CalendarDays, Play, ShieldCheck, Sparkles } from "lucide-react";
+import { useState } from "react";
 import { GoogleLoginButton } from "@/components/auth/google-login-button";
+import { LoginBrandPanel } from "@/components/auth/login-brand-panel";
 
 const errorCopy: Record<string, string> = {
-  missing_code: "Google no devolvio el codigo de acceso. Intentalo de nuevo.",
-  invalid_state: "La sesion de Google ha caducado. Vuelve a iniciar el acceso.",
-  connect_error: "No se pudo completar la conexion con Google.",
+  missing_code: "Google no devolvió el código de acceso. Inténtalo de nuevo.",
+  invalid_state: "La sesión de Google ha caducado. Vuelve a iniciar el acceso.",
+  connect_error: "No se pudo completar la conexión con Google.",
   session_error: "Google conectó correctamente, pero no se pudo crear la sesión.",
-  google_missing_code: "Google no devolvio el codigo de acceso. Intentalo de nuevo.",
-  google_invalid_state: "La sesion de Google ha caducado. Vuelve a iniciar el acceso.",
-  google_connect_error: "No se pudo completar la conexion con Google.",
+  google_missing_code: "Google no devolvió el código de acceso. Inténtalo de nuevo.",
+  google_invalid_state: "La sesión de Google ha caducado. Vuelve a iniciar el acceso.",
+  google_connect_error: "No se pudo completar la conexión con Google.",
   google_session_error: "Google conectó correctamente, pero no se pudo crear la sesión.",
 };
 
 export function LoginForm({ error }: { error?: string | null }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    // Email/password is a visual placeholder until credential auth is implemented.
+    setIsSubmitting(true);
+    setTimeout(() => setIsSubmitting(false), 2000);
+  }
+
   return (
-    <section className="grid min-h-[100svh] place-items-center bg-neutral-950 px-4 py-6 text-neutral-950 sm:px-6">
-      <div className="grid w-full max-w-[980px] gap-5 rounded-lg bg-[#f6f5f2] p-3 shadow-[0_28px_90px_rgba(0,0,0,0.42)] md:min-h-[620px] md:grid-cols-[0.98fr_1.02fr] md:p-5">
-        <div className="flex min-h-[560px] flex-col rounded-lg border border-[#ece6d6] bg-[#fbf8f1] px-6 py-7 text-center sm:px-9">
-          <header className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-neutral-950 p-1.5">
-                <Image
-                  src="/brand/logo-mark-white.png"
-                  alt=""
-                  width={36}
-                  height={36}
-                  className="h-full w-full object-contain"
-                  priority
-                />
-              </div>
+    <>
+      <style>{`
+        :root {
+          --alio-terracotta: #E15D2D;
+          --alio-graphite: #111111;
+          --alio-cream: #F5F2EC;
+          --alio-dark: #080B0C;
+        }
+
+        @keyframes al-fadeUp {
+          from { opacity: 0; transform: translateY(18px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-shell {
+          min-height: 100svh;
+          display: grid;
+          grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
+          background: var(--alio-cream);
+          animation: al-fadeUp 0.5s ease both;
+        }
+
+        .login-form-panel {
+          background: var(--alio-cream);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: clamp(40px, 6vw, 80px) clamp(20px, 3vw, 40px);
+          animation: al-fadeUp 0.65s 0.1s ease both;
+        }
+
+        .login-card {
+          width: 100%;
+          max-width: 480px;
+        }
+
+        .login-logo-dark   { display: block; }
+        .login-logo-white  { display: none; }
+        .login-logo-mobile { display: none; }
+
+        .al-logo-wrap { margin-bottom: 32px; }
+
+        /* Input shared */
+        .al-input {
+          width: 100%;
+          height: 56px;
+          border-radius: 12px;
+          border: 1px solid #DDD7CE;
+          background: white;
+          padding: 0 14px 0 42px;
+          font-size: 14px;
+          color: #111111;
+          outline: none;
+          box-sizing: border-box;
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .al-input::placeholder { color: #bbb5a8; }
+        .al-input:focus {
+          border-color: rgba(225,93,45,0.6);
+          box-shadow: 0 0 0 3px rgba(225,93,45,0.12);
+        }
+
+        .al-input-password { padding-right: 44px; }
+
+        .al-input-icon {
+          position: absolute;
+          left: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #9a9589;
+          pointer-events: none;
+        }
+
+        .al-eye-btn {
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #9a9589;
+          padding: 4px;
+          line-height: 0;
+          transition: color 0.15s;
+        }
+        .al-eye-btn:hover { color: #525252; }
+
+        .al-btn-submit {
+          width: 100%;
+          height: 52px;
+          border-radius: 14px;
+          border: none;
+          cursor: pointer;
+          font-size: 15px;
+          font-weight: 600;
+          color: white;
+          background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%);
+          box-shadow: 0 16px 32px rgba(225, 93, 45, 0.24);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: filter 0.15s;
+        }
+        .al-btn-submit:hover:not(:disabled) { filter: brightness(1.08); }
+        .al-btn-submit:active:not(:disabled) { filter: brightness(0.93); }
+        .al-btn-submit:disabled { opacity: 0.6; cursor: not-allowed; background: #7a7570; box-shadow: none; }
+
+        .al-google-btn {
+          width: 100%;
+          height: 44px;
+          border-radius: 8px;
+          border: 1px solid #DDD7CE;
+          background: white;
+          color: #111111;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 500;
+          box-sizing: border-box;
+          transition: background-color 0.15s, border-color 0.15s;
+        }
+        .al-google-btn:hover {
+          background: #f5f0e8;
+        }
+        .al-google-btn svg {
+          width: 16px;
+          height: 16px;
+          flex-shrink: 0;
+        }
+
+        /* Autofill — desktop (cream background) */
+        .al-input:-webkit-autofill,
+        .al-input:-webkit-autofill:hover,
+        .al-input:-webkit-autofill:focus {
+          -webkit-text-fill-color: #111111;
+          -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+          box-shadow: 0 0 0 1000px #ffffff inset;
+          caret-color: #111111;
+          transition: background-color 9999s ease-out 0s;
+        }
+
+        /* ── Mobile ── */
+        @media (max-width: 900px) {
+          html, body {
+            background: #080B0C !important;
+            background-color: #080B0C !important;
+            margin: 0;
+            padding: 0;
+          }
+
+          .login-shell {
+            display: block;
+            background: #080B0C;
+            margin: 0;
+            padding: 0;
+            animation: none;
+          }
+
+          .brand-panel { display: none; }
+
+          /* Fondo oscuro sólido — sin background-image en el panel */
+          .login-form-panel {
+            animation: none;
+            min-height: 100dvh;
+            background: #080B0C;
+            color: white;
+            justify-content: flex-start;
+            align-items: stretch;
+            padding: 0;
+            position: relative;
+            isolation: isolate;
+          }
+
+          /* Decoración cinética: capa inferior independiente via ::after */
+          .login-form-panel::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 120px;
+            background-image: url('/assets/al_lio_kinetic_background_dark.png');
+            background-repeat: no-repeat;
+            background-position: bottom center;
+            background-size: 100% 100%;
+            opacity: 0.65;
+            pointer-events: none;
+            z-index: 0;
+            mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 35%, black 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 35%, black 100%);
+          }
+
+          /* La tarjeta flota sobre la decoración cinética */
+          .login-card {
+            position: relative;
+            z-index: 1;
+            max-width: 100%;
+            width: 100%;
+            padding: calc(80px + env(safe-area-inset-top, 0px)) 28px calc(40px + env(safe-area-inset-bottom, 0px));
+          }
+
+          /* ── Logo ── */
+          .al-logo-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 0 0 36px;
+          }
+          .login-logo-dark   { display: none; }
+          .login-logo-white  { display: none; }
+          .login-logo-mobile {
+            display: block;
+            width: clamp(300px, 82vw, 380px);
+            max-width: 100%;
+            height: auto;
+            margin: 0 auto;
+            object-fit: contain;
+          }
+
+          /* ── Heading / subtítulo centrados ── */
+          .al-card-heading {
+            text-align: center !important;
+            color: white !important;
+            font-size: 1.75rem !important;
+          }
+          .al-card-sub {
+            text-align: center !important;
+            color: #888888 !important;
+          }
+
+          /* ── Labels ── */
+          .al-label { color: #a09890 !important; }
+
+          /* ── Inputs ── */
+          .al-input {
+            background: #111111 !important;
+            border-color: #282828 !important;
+            border-radius: 10px !important;
+            color: white !important;
+            height: 54px !important;
+          }
+          .al-input::placeholder { color: #545050 !important; }
+          .al-input:focus {
+            border-color: rgba(225,93,45,0.65) !important;
+            box-shadow: 0 0 0 3px rgba(225,93,45,0.14) !important;
+          }
+          .al-input-icon { color: #545050; }
+          .al-eye-btn    { color: #545050; }
+          .al-eye-btn:hover { color: #909090; }
+
+          /* Evita el fondo azul del autocompletado del navegador */
+          .al-input:-webkit-autofill,
+          .al-input:-webkit-autofill:hover,
+          .al-input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #ffffff;
+            -webkit-box-shadow: 0 0 0 1000px #111111 inset;
+            box-shadow: 0 0 0 1000px #111111 inset;
+            caret-color: #ffffff;
+            transition: background-color 9999s ease-out 0s;
+          }
+
+          /* ── Botón principal ── */
+          .al-btn-submit {
+            height: 54px !important;
+            border-radius: 10px !important;
+            font-size: 16px !important;
+            font-weight: 700 !important;
+          }
+
+          /* ── Divisor ── */
+          .al-divider-line { background: #222222 !important; }
+          .al-divider-text { color: #545050 !important; font-size: 13px !important; }
+
+          /* Google button */
+          .al-google-btn {
+            height: 52px !important;
+            border-radius: 10px !important;
+            background-color: #111111 !important;
+            border-color: #282828 !important;
+            color: white !important;
+          }
+          .al-google-btn:hover { background-color: #1a1a1a !important; }
+        }
+      `}</style>
+
+      <div className="login-shell">
+
+        {/* ══ LEFT PANEL — brand editorial ══ */}
+        <LoginBrandPanel />
+
+        {/* ══ RIGHT PANEL — cream (desktop) / dark (mobile) ══ */}
+        <main className="login-form-panel">
+          <div className="login-card">
+
+            {/* Logo — dark on cream (desktop), white centered (mobile) */}
+            <div className="al-logo-wrap">
               <Image
-                src="/brand/signature.png"
-                alt="Al-Lio"
-                width={120}
-                height={28}
-                className="h-6 w-auto"
+                className="login-logo-dark"
+                src="/assets/al_lio_logo_horizontal_transparent.png"
+                alt="AL LÍO"
+                width={615}
+                height={214}
+                style={{ width: "clamp(290px, 30vw, 380px)", height: "auto" }}
+                priority
+              />
+              <Image
+                className="login-logo-mobile"
+                src="/assets/al_lio_logo_slogan_transparente_1060x360.png"
+                alt="AL LÍO — Menos planes. Más acción."
+                width={1060}
+                height={360}
+                sizes="(max-width: 430px) 68vw, 300px"
                 priority
               />
             </div>
-            <span className="hidden shrink-0 rounded-full border border-[#ddd5c1] bg-[#fbf8f1] px-3 py-1.5 text-xs font-medium text-neutral-800 sm:inline-flex">
-              Google Calendar
-            </span>
-          </header>
 
-          <main className="mx-auto flex w-full max-w-[360px] flex-1 flex-col items-center justify-center py-10">
-            <div className="mb-5 grid h-[84px] w-[84px] place-items-center rounded-lg bg-neutral-950 p-4 shadow-lg shadow-black/25">
-              <Image
-                src="/brand/logo-mark-white.png"
-                alt=""
-                width={64}
-                height={64}
-                className="h-full w-full object-contain"
-                priority
-              />
-            </div>
-
-            <h1 className="flex flex-col items-center gap-2 text-[26px] font-semibold leading-tight tracking-tight text-neutral-950 sm:text-[28px]">
-              <span className="whitespace-nowrap">Inicia sesion en</span>
-              <Image
-                src="/brand/signature.png"
-                alt="Al-Lio"
-                width={300}
-                height={70}
-                className="h-16 w-auto"
-                priority
-              />
+            <h1 className="al-card-heading" style={{ fontSize: "1.9rem", fontWeight: 700, lineHeight: 1.2, color: "#111111", margin: "0 0 6px 0" }}>
+              Bienvenido de nuevo
             </h1>
-
-            <p className="mt-2 max-w-[38ch] text-sm leading-6 text-[#5d564a]">
-              Conecta tu calendario y organiza tus eventos en un solo lugar.
+            <p className="al-card-sub" style={{ fontSize: 15, color: "#525252", margin: "0 0 28px 0" }}>
+              Enfoca, actúa, logra más.
             </p>
 
             {error && (
-              <div className="mt-5 w-full rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-left text-sm text-red-700">
-                {errorCopy[error] ?? "No se pudo iniciar sesion. Vuelve a intentarlo."}
+              <div style={{ marginBottom: 16, borderRadius: 12, border: "1px solid #fecaca", background: "#fef2f2", padding: "10px 14px", fontSize: 14, color: "#dc2626" }}>
+                {errorCopy[error] ?? "No se pudo iniciar sesión. Vuelve a intentarlo."}
               </div>
             )}
 
-            <div className="mt-6 w-full">
-              <GoogleLoginButton />
-              <p className="mx-auto mt-3.5 max-w-[46ch] text-xs leading-5 text-[#7a7160]">
-                Usaremos tu cuenta de Google para sincronizar tus eventos con Google Calendar.
-              </p>
-            </div>
-          </main>
+            <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-          <footer className="flex items-center justify-center gap-2 text-xs text-[#9a8f7a] sm:justify-start">
-            <Image
-              src="/brand/logo-mark.png"
-              alt=""
-              width={14}
-              height={14}
-              className="opacity-70"
-            />
-            <span>© Al-Lio</span>
-          </footer>
-        </div>
-
-        <aside className="hidden rounded-lg border border-neutral-900 bg-[#0b0b0c] p-7 text-[#fbf8f1] md:flex md:flex-col">
-          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-[#bdb6a4]">
-            <CalendarDays className="h-4 w-4 opacity-80" />
-            <span>Descubre Al-Lio en 60 segundos</span>
-          </div>
-
-          <div className="relative grid flex-1 place-items-center overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900 aspect-[16/10]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_20%,rgba(251,248,241,0.12),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_45%)]" />
-            <div className="relative flex flex-col items-center gap-4 text-[#bdb6a4]">
-              <div className="grid h-16 w-16 place-items-center rounded-full border border-white/20 bg-white/10 text-white shadow-2xl shadow-black/40 backdrop-blur">
-                <Play className="ml-0.5 h-5 w-5 fill-current" />
+              {/* Email */}
+              <div>
+                <label htmlFor="login-email" className="al-label" style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#111111", marginBottom: 6 }}>
+                  Correo electrónico
+                </label>
+                <div style={{ position: "relative" }}>
+                  <Mail className="al-input-icon" aria-hidden="true" style={{ width: 16, height: 16 }} />
+                  <input
+                    id="login-email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="usuario@ejemplo.com"
+                    className="al-input"
+                  />
+                </div>
               </div>
-              <Image
-                src="/brand/signature-white.png"
-                alt="Al-Lio"
-                width={180}
-                height={44}
-                className="h-9 w-auto opacity-90"
-              />
-            </div>
+
+              {/* Password */}
+              <div>
+                <label htmlFor="login-password" className="al-label" style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#111111", marginBottom: 6 }}>
+                  Contraseña
+                </label>
+                <div style={{ position: "relative" }}>
+                  <Lock className="al-input-icon" aria-hidden="true" style={{ width: 16, height: 16 }} />
+                  <input
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="Tu contraseña"
+                    className="al-input al-input-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="al-eye-btn"
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  >
+                    {showPassword ? <EyeOff style={{ width: 16, height: 16 }} /> : <Eye style={{ width: 16, height: 16 }} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Forgot password */}
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button type="button" style={{ fontSize: 14, fontWeight: 500, color: "#E15D2D", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+
+              {/* CTA */}
+              <button type="submit" disabled={isSubmitting} className="al-btn-submit">
+                {isSubmitting ? (
+                  <>
+                    <svg style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeOpacity="0.3" />
+                      <path d="M4 12a8 8 0 018-8" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                    </svg>
+                    Entrando...
+                  </>
+                ) : (
+                  "Entrar"
+                )}
+              </button>
+
+              {/* Divider */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div className="al-divider-line" style={{ flex: 1, height: 1, background: "#DDD7CE" }} />
+                <span className="al-divider-text" style={{ fontSize: 12, color: "#9a9589" }}>o continúa con</span>
+                <div className="al-divider-line" style={{ flex: 1, height: 1, background: "#DDD7CE" }} />
+              </div>
+
+              {/* Google — ancho completo */}
+              <GoogleLoginButton className="al-google-btn" />
+            </form>
+
           </div>
-
-          <p className="mx-auto mt-4 max-w-[40ch] text-center text-[12.5px] leading-relaxed text-[#a8a195]">
-            Mira como conectar tu calendario, crear eventos y mantener tu agenda al dia dentro de Al-Lio.
-          </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-4">
-            <Feature
-              title="Acceso seguro"
-              body="Cuenta verificada por Google."
-              icon={<ShieldCheck className="h-4 w-4" />}
-            />
-            <Feature
-              title="Agenda lista"
-              body="Eventos disponibles tras entrar."
-              icon={<Sparkles className="h-4 w-4" />}
-            />
-          </div>
-        </aside>
+        </main>
       </div>
-    </section>
-  );
-}
 
-function Feature({
-  title,
-  body,
-  icon,
-}: {
-  title: string;
-  body: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-start gap-2.5">
-      <span className="mt-0.5 grid h-[22px] w-[22px] shrink-0 place-items-center text-[#fbf8f1]">
-        {icon}
-      </span>
-      <div className="text-left">
-        <h2 className="text-[13px] font-semibold text-[#fbf8f1]">{title}</h2>
-        <p className="mt-0.5 text-xs leading-relaxed text-[#a8a195]">{body}</p>
-      </div>
-    </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </>
   );
 }
