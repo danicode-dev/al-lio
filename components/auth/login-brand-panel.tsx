@@ -1,18 +1,43 @@
+"use client";
+
 import { BookOpen, Briefcase, Calendar, CheckSquare, Trophy } from "lucide-react";
 import Image from "next/image";
 
-const modules = [
-  { label: "Tareas", Icon: CheckSquare },
-  { label: "Trabajo", Icon: Briefcase },
-  { label: "Cursos", Icon: BookOpen },
-  { label: "Hackathons", Icon: Trophy },
-  { label: "Calendario", Icon: Calendar },
-] as const;
+type Testimonial = {
+  quote: string;
+  name: string;
+  role: string;
+  avatarSrc: string;
+};
 
-const highlights = [
-  "Prioridades semanales",
-  "Calendario conectado",
-  "Oportunidades guardadas",
+// TODO: sustituir por testimonios reales aprobados antes del despliegue público.
+const TESTIMONIALS: Testimonial[] = [
+  {
+    quote: "Coordinar campañas, deadlines y oportunidades desde un único panel ha cambiado cómo organizo mi semana. Nada se escapa.",
+    name: "Eric García Ortega",
+    role: "Técnico de Marketing",
+    avatarSrc: "https://randomuser.me/api/portraits/men/76.jpg",
+  },
+  {
+    quote: "Preparo candidaturas y hackathons sin dispersarme. Tener cursos, oportunidades y calendario en un mismo sitio es clave.",
+    name: "Yeray Valenzuela Ortega",
+    role: "Desarrollador Full Stack",
+    avatarSrc: "https://randomuser.me/api/portraits/men/52.jpg",
+  },
+  {
+    quote: "Organizar mi formación continua y mis metas personales es mucho más sencillo. Entro, veo qué toca y lo ejecuto.",
+    name: "Lourdes Abril",
+    role: "Higienista Bucodental",
+    avatarSrc: "https://randomuser.me/api/portraits/women/44.jpg",
+  },
+];
+
+const MODULES = [
+  { label: "Tareas",     Icon: CheckSquare },
+  { label: "Trabajo",    Icon: Briefcase   },
+  { label: "Cursos",     Icon: BookOpen    },
+  { label: "Hackathons", Icon: Trophy      },
+  { label: "Calendario", Icon: Calendar    },
 ] as const;
 
 export function LoginBrandPanel() {
@@ -21,31 +46,31 @@ export function LoginBrandPanel() {
       <style>{`
         .brand-panel {
           position: relative;
-          display: flex;
-          min-height: 100svh;
           overflow: hidden;
           background: #080d10;
-          color: #f0ede8;
+          display: flex;
+          flex-direction: column;
+          min-height: 100svh;
         }
 
         .brand-kinetic {
           position: absolute;
           inset: 0;
-          z-index: 0;
           object-fit: cover;
-          opacity: 0.4;
+          opacity: 0.38;
           mix-blend-mode: screen;
+          z-index: 0;
           pointer-events: none;
         }
 
-        .brand-shade {
+        .brand-overlay {
           position: absolute;
           inset: 0;
-          z-index: 1;
           background:
             radial-gradient(ellipse 62% 52% at 50% 48%, rgba(8,13,16,0.72) 0%, transparent 70%),
-            radial-gradient(ellipse 70% 55% at 55% 28%, rgba(49,95,79,0.1) 0%, transparent 60%),
-            linear-gradient(170deg, rgba(8,13,16,0.76) 0%, rgba(8,13,16,0.2) 55%, rgba(8,13,16,0.86) 100%);
+            radial-gradient(ellipse 70% 55% at 55% 28%, rgba(49,95,79,0.10) 0%, transparent 60%),
+            linear-gradient(170deg, rgba(8,13,16,0.74) 0%, rgba(8,13,16,0.18) 55%, rgba(8,13,16,0.84) 100%);
+          z-index: 1;
           pointer-events: none;
         }
 
@@ -53,144 +78,232 @@ export function LoginBrandPanel() {
           position: relative;
           z-index: 2;
           display: flex;
-          width: 100%;
           flex-direction: column;
+          flex: 1;
           justify-content: space-between;
-          padding: 52px;
+          padding: clamp(28px, 4.5vw, 56px);
+          min-height: 0;
         }
 
-        .brand-logo {
-          width: 300px;
-          height: auto;
+        /* ── Top: logo + titular compacto ── */
+        .brand-top {
+          display: flex;
+          flex-direction: column;
+          gap: clamp(14px, 2vh, 24px);
+          flex-shrink: 0;
         }
 
-        .brand-title {
-          max-width: 560px;
-          margin: 32px 0 0;
-          font-family: var(--font-barlow), sans-serif;
-          font-size: 44px;
-          font-weight: 900;
-          line-height: 1.08;
-          letter-spacing: 0;
+        .brand-logo-wrap { flex-shrink: 0; }
+
+        .brand-main {
+          display: flex;
+          flex-direction: column;
+          flex-shrink: 0;
         }
 
-        .brand-title span {
-          color: #e85b2a;
+        .brand-h1 {
+          font-size: clamp(1.75rem, 3vw, 2.8rem);
+          font-family: var(--font-barlow, sans-serif);
+          font-weight: 800;
+          color: #f0ede8;
+          line-height: 1.12;
+          letter-spacing: -0.02em;
+          margin: 0 0 12px 0;
         }
 
-        .brand-copy {
-          max-width: 480px;
-          margin: 18px 0 0;
-          color: #a7b0b2;
-          font-size: 15px;
-          line-height: 1.8;
+        .brand-accent { color: #e85b2a; }
+
+        .brand-desc {
+          font-size: clamp(13px, 1vw, 14px);
+          color: #8a9294;
+          line-height: 1.7;
+          max-width: 44ch;
+          margin: 0;
         }
 
-        .brand-highlights {
-          display: grid;
-          max-width: 520px;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+        /* ── Testimonials ── */
+        .brand-testimonials {
+          display: flex;
+          gap: 9px;
+          flex-shrink: 0;
+        }
+
+        .brand-testimonial {
+          flex: 1;
+          background: rgba(255,255,255,0.032);
+          border: 1px solid rgba(255,255,255,0.072);
+          border-radius: 10px;
+          padding: 13px 12px;
+          display: flex;
+          flex-direction: column;
           gap: 10px;
-          margin: 34px 0 0;
+          min-width: 0;
         }
 
-        .brand-highlight {
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 8px;
-          background: rgba(255,255,255,0.04);
-          padding: 12px;
-          color: #d8d0c7;
-          font-size: 12px;
-          line-height: 1.45;
+        /* Avatar circular + nombre/rol */
+        .brand-testimonial-header {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          flex-shrink: 0;
         }
 
+        .brand-testimonial-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          object-fit: cover;
+          flex-shrink: 0;
+          border: 1.5px solid rgba(255,255,255,0.18);
+          display: block;
+          filter: brightness(0.82) saturate(0.75);
+        }
+
+        .brand-testimonial-meta {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          min-width: 0;
+          overflow: hidden;
+        }
+
+        .brand-testimonial-name {
+          display: block;
+          font-size: 10.5px;
+          font-weight: 700;
+          color: #ede9e4;
+          letter-spacing: 0.02em;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .brand-testimonial-role {
+          display: block;
+          font-size: 9.5px;
+          color: #6a7375;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .brand-testimonial-text {
+          font-size: 11px;
+          color: #b4bcc0;
+          line-height: 1.65;
+          margin: 0;
+          flex: 1;
+          font-style: italic;
+        }
+
+        /* Tablet: máx. 2 testimonios */
+        @media (max-width: 1100px) and (min-width: 901px) {
+          .brand-testimonial:nth-child(3) { display: none; }
+        }
+
+        /* ── Módulos — fila editorial borde a borde ── */
         .brand-modules {
           display: flex;
+          flex-wrap: nowrap;
           justify-content: space-between;
-          gap: 14px;
-          border-top: 1px solid rgba(255,255,255,0.1);
-          padding-top: 18px;
+          padding-top: 16px;
+          border-top: 1px solid rgba(255,255,255,0.09);
+          flex-shrink: 0;
         }
 
-        .brand-module {
+        .brand-module-pill {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
-          color: #aab2b4;
-          font-size: 13px;
+          gap: 7px;
+          font-size: 13.5px;
+          font-weight: 500;
+          color: #9ea5a8;
+          letter-spacing: 0.01em;
           white-space: nowrap;
         }
 
-        @media (max-width: 1100px) {
-          .brand-content {
-            padding: 40px;
-          }
-
-          .brand-title {
-            font-size: 36px;
-          }
-
-          .brand-highlights {
-            grid-template-columns: 1fr;
-          }
+        @media (prefers-reduced-motion: reduce) {
+          .brand-kinetic { display: none; }
         }
 
         @media (max-width: 900px) {
-          .brand-panel {
-            display: none;
-          }
+          .brand-panel { display: none; }
         }
       `}</style>
 
-      <aside className="brand-panel" aria-label="Presentacion de AL-LIO">
+      <aside className="brand-panel" aria-label="Presentación de AL LÍO">
         <Image
           className="brand-kinetic"
           src="/assets/al_lio_kinetic_background_dark.png"
           alt=""
-          aria-hidden="true"
+          aria-hidden={true}
           fill
           sizes="55vw"
+          style={{ objectFit: "cover" }}
           priority
         />
-        <div className="brand-shade" aria-hidden="true" />
+        <div className="brand-overlay" aria-hidden="true" />
 
         <div className="brand-content">
-          <div>
-            <Image
-              className="brand-logo"
-              src="/assets/al_lio_logo_slogan_transparente_1060x360.png"
-              alt="AL-LIO - Menos planes. Mas accion."
-              width={1060}
-              height={360}
-              priority
-            />
 
-            <p className="brand-title">
-              Enfoca. Actua.
-              <br />
-              <span>Logra mas.</span>
-            </p>
-            <p className="brand-copy">
-              Un panel privado para decidir la semana, ordenar oportunidades y avanzar con evidencia.
-            </p>
+          {/* ── Top: logo + titular ── */}
+          <div className="brand-top">
+            <div className="brand-logo-wrap">
+              <Image
+                src="/assets/al_lio_logo_slogan_transparente_1060x360.png"
+                alt="AL LÍO — Menos planes. Más acción."
+                width={1060}
+                height={360}
+                style={{ width: "clamp(220px, 26vw, 300px)", height: "auto" }}
+                priority
+              />
+            </div>
 
-            <div className="brand-highlights" aria-label="Resumen del panel">
-              {highlights.map((highlight) => (
-                <span key={highlight} className="brand-highlight">
-                  {highlight}
-                </span>
-              ))}
+            <div className="brand-main">
+              <p className="brand-h1">
+                Enfoca. Actúa.<br />
+                <span className="brand-accent">Logra más.</span>
+              </p>
+              <p className="brand-desc">
+                AL LÍO es tu sistema para organizar el caos,
+                enfocarte en lo importante y avanzar
+                cada día con intención.
+              </p>
             </div>
           </div>
 
-          <nav className="brand-modules" aria-label="Modulos principales">
-            {modules.map(({ label, Icon }) => (
-              <span key={label} className="brand-module">
-                <Icon aria-hidden="true" size={15} />
+          {/* ── Testimonios ── */}
+          <div className="brand-testimonials" role="list">
+            {TESTIMONIALS.map((t, i) => (
+              <div key={i} className="brand-testimonial" role="listitem">
+                <div className="brand-testimonial-header">
+                  <Image
+                    className="brand-testimonial-avatar"
+                    src={t.avatarSrc}
+                    alt={t.name}
+                    width={36}
+                    height={36}
+                  />
+                  <div className="brand-testimonial-meta">
+                    <span className="brand-testimonial-name">{t.name}</span>
+                    <span className="brand-testimonial-role">{t.role}</span>
+                  </div>
+                </div>
+                <p className="brand-testimonial-text">&ldquo;{t.quote}&rdquo;</p>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Módulos ── */}
+          <nav className="brand-modules" aria-label="Módulos de AL LÍO">
+            {MODULES.map(({ label, Icon }) => (
+              <span key={label} className="brand-module-pill">
+                <Icon aria-hidden="true" style={{ width: 15, height: 15, flexShrink: 0 }} />
                 {label}
               </span>
             ))}
           </nav>
+
         </div>
       </aside>
     </>

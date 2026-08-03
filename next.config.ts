@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "2mb",
     },
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "randomuser.me",
+        pathname: "/api/portraits/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

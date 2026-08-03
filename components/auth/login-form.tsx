@@ -1,210 +1,452 @@
+"use client";
+
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Image from "next/image";
+import { useState } from "react";
 import { GoogleLoginButton } from "@/components/auth/google-login-button";
 import { LoginBrandPanel } from "@/components/auth/login-brand-panel";
 
 const errorCopy: Record<string, string> = {
-  missing_code: "Google no devolvio el codigo de acceso. Intentalo de nuevo.",
-  invalid_state: "La sesion de Google ha caducado. Vuelve a iniciar el acceso.",
-  connect_error: "No se pudo completar la conexion con Google.",
-  session_error: "Google conecto correctamente, pero no se pudo crear la sesion.",
-  google_missing_code: "Google no devolvio el codigo de acceso. Intentalo de nuevo.",
-  google_invalid_state: "La sesion de Google ha caducado. Vuelve a iniciar el acceso.",
-  google_connect_error: "No se pudo completar la conexion con Google.",
-  google_session_error: "Google conecto correctamente, pero no se pudo crear la sesion.",
+  missing_code: "Google no devolvió el código de acceso. Inténtalo de nuevo.",
+  invalid_state: "La sesión de Google ha caducado. Vuelve a iniciar el acceso.",
+  connect_error: "No se pudo completar la conexión con Google.",
+  session_error: "Google conectó correctamente, pero no se pudo crear la sesión.",
+  google_missing_code: "Google no devolvió el código de acceso. Inténtalo de nuevo.",
+  google_invalid_state: "La sesión de Google ha caducado. Vuelve a iniciar el acceso.",
+  google_connect_error: "No se pudo completar la conexión con Google.",
+  google_session_error: "Google conectó correctamente, pero no se pudo crear la sesión.",
 };
 
 export function LoginForm({ error }: { error?: string | null }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    // Email/password is a visual placeholder until credential auth is implemented.
+    setIsSubmitting(true);
+    setTimeout(() => setIsSubmitting(false), 2000);
+  }
+
   return (
     <>
       <style>{`
+        :root {
+          --alio-terracotta: #E15D2D;
+          --alio-graphite: #111111;
+          --alio-cream: #F5F2EC;
+          --alio-dark: #080B0C;
+        }
+
+        @keyframes al-fadeUp {
+          from { opacity: 0; transform: translateY(18px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
         .login-shell {
           min-height: 100svh;
           display: grid;
-          grid-template-columns: minmax(0, 1.05fr) minmax(400px, 0.95fr);
-          background: #f5f2ec;
-          color: #111111;
+          grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
+          background: var(--alio-cream);
+          animation: al-fadeUp 0.5s ease both;
         }
 
-        .login-panel {
+        .login-form-panel {
+          background: var(--alio-cream);
           display: flex;
-          min-height: 100svh;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
-          background: #f5f2ec;
-          padding: 48px 28px;
+          padding: clamp(40px, 6vw, 80px) clamp(20px, 3vw, 40px);
+          animation: al-fadeUp 0.65s 0.1s ease both;
         }
 
         .login-card {
           width: 100%;
-          max-width: 420px;
+          max-width: 480px;
         }
 
-        .login-logo-wrap {
-          margin: 0 0 28px;
-        }
+        .login-logo-dark   { display: block; }
+        .login-logo-white  { display: none; }
+        .login-logo-mobile { display: none; }
 
-        .login-logo-dark,
-        .login-logo-mobile {
-          display: block;
-          width: 320px;
-          max-width: 100%;
-          height: auto;
-        }
+        .al-logo-wrap { margin-bottom: 32px; }
 
-        .login-logo-mobile {
-          display: none;
-        }
-
-        .login-title {
-          margin: 0;
-          color: #111111;
-          font-size: 32px;
-          line-height: 1.16;
-          font-weight: 750;
-          letter-spacing: 0;
-        }
-
-        .login-copy {
-          margin: 10px 0 28px;
-          color: #5e584f;
-          font-size: 15px;
-          line-height: 1.7;
-        }
-
-        .login-error {
-          margin-bottom: 18px;
-          border: 1px solid #fecaca;
-          background: #fef2f2;
-          color: #b91c1c;
-          border-radius: 8px;
-          padding: 10px 12px;
+        /* Input shared */
+        .al-input {
+          width: 100%;
+          height: 56px;
+          border-radius: 12px;
+          border: 1px solid #DDD7CE;
+          background: white;
+          padding: 0 14px 0 42px;
           font-size: 14px;
-          line-height: 1.5;
+          color: #111111;
+          outline: none;
+          box-sizing: border-box;
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .al-input::placeholder { color: #bbb5a8; }
+        .al-input:focus {
+          border-color: rgba(225,93,45,0.6);
+          box-shadow: 0 0 0 3px rgba(225,93,45,0.12);
         }
 
-        .login-note {
-          margin: 14px 0 0;
-          color: #7a7168;
-          font-size: 12px;
-          line-height: 1.6;
+        .al-input-password { padding-right: 44px; }
+
+        .al-input-icon {
+          position: absolute;
+          left: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #9a9589;
+          pointer-events: none;
         }
 
+        .al-eye-btn {
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #9a9589;
+          padding: 4px;
+          line-height: 0;
+          transition: color 0.15s;
+        }
+        .al-eye-btn:hover { color: #525252; }
+
+        .al-btn-submit {
+          width: 100%;
+          height: 52px;
+          border-radius: 14px;
+          border: none;
+          cursor: pointer;
+          font-size: 15px;
+          font-weight: 600;
+          color: white;
+          background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%);
+          box-shadow: 0 16px 32px rgba(225, 93, 45, 0.24);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: filter 0.15s;
+        }
+        .al-btn-submit:hover:not(:disabled) { filter: brightness(1.08); }
+        .al-btn-submit:active:not(:disabled) { filter: brightness(0.93); }
+        .al-btn-submit:disabled { opacity: 0.6; cursor: not-allowed; background: #7a7570; box-shadow: none; }
+
+        .al-google-btn {
+          width: 100%;
+          height: 44px;
+          border-radius: 8px;
+          border: 1px solid #DDD7CE;
+          background: white;
+          color: #111111;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 500;
+          box-sizing: border-box;
+          transition: background-color 0.15s, border-color 0.15s;
+        }
+        .al-google-btn:hover {
+          background: #f5f0e8;
+        }
+        .al-google-btn svg {
+          width: 16px;
+          height: 16px;
+          flex-shrink: 0;
+        }
+
+        /* Autofill — desktop (cream background) */
+        .al-input:-webkit-autofill,
+        .al-input:-webkit-autofill:hover,
+        .al-input:-webkit-autofill:focus {
+          -webkit-text-fill-color: #111111;
+          -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+          box-shadow: 0 0 0 1000px #ffffff inset;
+          caret-color: #111111;
+          transition: background-color 9999s ease-out 0s;
+        }
+
+        /* ── Mobile ── */
         @media (max-width: 900px) {
+          html, body {
+            background: #080B0C !important;
+            background-color: #080B0C !important;
+            margin: 0;
+            padding: 0;
+          }
+
           .login-shell {
             display: block;
-            background: #080b0c;
+            background: #080B0C;
+            margin: 0;
+            padding: 0;
+            animation: none;
           }
 
-          .login-panel {
+          .brand-panel { display: none; }
+
+          /* Fondo oscuro sólido — sin background-image en el panel */
+          .login-form-panel {
+            animation: none;
+            min-height: 100dvh;
+            background: #080B0C;
+            color: white;
+            justify-content: flex-start;
+            align-items: stretch;
+            padding: 0;
             position: relative;
             isolation: isolate;
-            min-height: 100dvh;
-            align-items: flex-start;
-            background: #080b0c;
-            color: #f5f2ec;
-            overflow: hidden;
-            padding: 76px 28px 44px;
           }
 
-          .login-panel::after {
+          /* Decoración cinética: capa inferior independiente via ::after */
+          .login-form-panel::after {
             content: "";
             position: absolute;
             left: 0;
             right: 0;
             bottom: 0;
-            z-index: -1;
-            height: 150px;
-            background-image: url("/assets/al_lio_kinetic_background_dark.png");
+            height: 120px;
+            background-image: url('/assets/al_lio_kinetic_background_dark.png');
             background-repeat: no-repeat;
             background-position: bottom center;
             background-size: 100% 100%;
-            opacity: 0.7;
-            mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.55) 34%, black 100%);
-            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.55) 34%, black 100%);
+            opacity: 0.65;
+            pointer-events: none;
+            z-index: 0;
+            mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 35%, black 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 35%, black 100%);
           }
 
+          /* La tarjeta flota sobre la decoración cinética */
           .login-card {
-            max-width: none;
+            position: relative;
+            z-index: 1;
+            max-width: 100%;
+            width: 100%;
+            padding: calc(80px + env(safe-area-inset-top, 0px)) 28px calc(40px + env(safe-area-inset-bottom, 0px));
           }
 
-          .login-logo-wrap {
-            margin: 0 0 38px;
+          /* ── Logo ── */
+          .al-logo-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 0 0 36px;
           }
-
-          .login-logo-dark {
-            display: none;
-          }
-
+          .login-logo-dark   { display: none; }
+          .login-logo-white  { display: none; }
           .login-logo-mobile {
             display: block;
-            width: 330px;
+            width: clamp(300px, 82vw, 380px);
+            max-width: 100%;
+            height: auto;
             margin: 0 auto;
+            object-fit: contain;
           }
 
-          .login-title,
-          .login-copy,
-          .login-note {
-            text-align: center;
+          /* ── Heading / subtítulo centrados ── */
+          .al-card-heading {
+            text-align: center !important;
+            color: white !important;
+            font-size: 1.75rem !important;
+          }
+          .al-card-sub {
+            text-align: center !important;
+            color: #888888 !important;
           }
 
-          .login-title {
-            color: #ffffff;
-            font-size: 28px;
+          /* ── Labels ── */
+          .al-label { color: #a09890 !important; }
+
+          /* ── Inputs ── */
+          .al-input {
+            background: #111111 !important;
+            border-color: #282828 !important;
+            border-radius: 10px !important;
+            color: white !important;
+            height: 54px !important;
+          }
+          .al-input::placeholder { color: #545050 !important; }
+          .al-input:focus {
+            border-color: rgba(225,93,45,0.65) !important;
+            box-shadow: 0 0 0 3px rgba(225,93,45,0.14) !important;
+          }
+          .al-input-icon { color: #545050; }
+          .al-eye-btn    { color: #545050; }
+          .al-eye-btn:hover { color: #909090; }
+
+          /* Evita el fondo azul del autocompletado del navegador */
+          .al-input:-webkit-autofill,
+          .al-input:-webkit-autofill:hover,
+          .al-input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #ffffff;
+            -webkit-box-shadow: 0 0 0 1000px #111111 inset;
+            box-shadow: 0 0 0 1000px #111111 inset;
+            caret-color: #ffffff;
+            transition: background-color 9999s ease-out 0s;
           }
 
-          .login-copy {
-            color: #9b928a;
+          /* ── Botón principal ── */
+          .al-btn-submit {
+            height: 54px !important;
+            border-radius: 10px !important;
+            font-size: 16px !important;
+            font-weight: 700 !important;
           }
 
-          .login-note {
-            color: #766f68;
+          /* ── Divisor ── */
+          .al-divider-line { background: #222222 !important; }
+          .al-divider-text { color: #545050 !important; font-size: 13px !important; }
+
+          /* Google button */
+          .al-google-btn {
+            height: 52px !important;
+            border-radius: 10px !important;
+            background-color: #111111 !important;
+            border-color: #282828 !important;
+            color: white !important;
           }
+          .al-google-btn:hover { background-color: #1a1a1a !important; }
         }
       `}</style>
 
       <div className="login-shell">
+
+        {/* ══ LEFT PANEL — brand editorial ══ */}
         <LoginBrandPanel />
 
-        <main className="login-panel">
+        {/* ══ RIGHT PANEL — cream (desktop) / dark (mobile) ══ */}
+        <main className="login-form-panel">
           <div className="login-card">
-            <div className="login-logo-wrap">
+
+            {/* Logo — dark on cream (desktop), white centered (mobile) */}
+            <div className="al-logo-wrap">
               <Image
                 className="login-logo-dark"
                 src="/assets/al_lio_logo_horizontal_transparent.png"
-                alt="AL-LIO"
+                alt="AL LÍO"
                 width={615}
                 height={214}
+                style={{ width: "clamp(290px, 30vw, 380px)", height: "auto" }}
                 priority
               />
               <Image
                 className="login-logo-mobile"
                 src="/assets/al_lio_logo_slogan_transparente_1060x360.png"
-                alt="AL-LIO - Menos planes. Mas accion."
+                alt="AL LÍO — Menos planes. Más acción."
                 width={1060}
                 height={360}
+                sizes="(max-width: 430px) 68vw, 300px"
                 priority
               />
             </div>
 
-            <h1 className="login-title">Bienvenido de nuevo</h1>
-            <p className="login-copy">
-              Accede con Google para mantener tu calendario y tu panel sincronizados.
+            <h1 className="al-card-heading" style={{ fontSize: "1.9rem", fontWeight: 700, lineHeight: 1.2, color: "#111111", margin: "0 0 6px 0" }}>
+              Bienvenido de nuevo
+            </h1>
+            <p className="al-card-sub" style={{ fontSize: 15, color: "#525252", margin: "0 0 28px 0" }}>
+              Enfoca, actúa, logra más.
             </p>
 
             {error && (
-              <div className="login-error">
-                {errorCopy[error] ?? "No se pudo iniciar sesion. Vuelve a intentarlo."}
+              <div style={{ marginBottom: 16, borderRadius: 12, border: "1px solid #fecaca", background: "#fef2f2", padding: "10px 14px", fontSize: 14, color: "#dc2626" }}>
+                {errorCopy[error] ?? "No se pudo iniciar sesión. Vuelve a intentarlo."}
               </div>
             )}
 
-            <GoogleLoginButton />
+            <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-            <p className="login-note">
-              Por ahora, el acceso activo es Google.
-            </p>
+              {/* Email */}
+              <div>
+                <label htmlFor="login-email" className="al-label" style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#111111", marginBottom: 6 }}>
+                  Correo electrónico
+                </label>
+                <div style={{ position: "relative" }}>
+                  <Mail className="al-input-icon" aria-hidden="true" style={{ width: 16, height: 16 }} />
+                  <input
+                    id="login-email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="usuario@ejemplo.com"
+                    className="al-input"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label htmlFor="login-password" className="al-label" style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#111111", marginBottom: 6 }}>
+                  Contraseña
+                </label>
+                <div style={{ position: "relative" }}>
+                  <Lock className="al-input-icon" aria-hidden="true" style={{ width: 16, height: 16 }} />
+                  <input
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="Tu contraseña"
+                    className="al-input al-input-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="al-eye-btn"
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  >
+                    {showPassword ? <EyeOff style={{ width: 16, height: 16 }} /> : <Eye style={{ width: 16, height: 16 }} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Forgot password */}
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button type="button" style={{ fontSize: 14, fontWeight: 500, color: "#E15D2D", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+
+              {/* CTA */}
+              <button type="submit" disabled={isSubmitting} className="al-btn-submit">
+                {isSubmitting ? (
+                  <>
+                    <svg style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeOpacity="0.3" />
+                      <path d="M4 12a8 8 0 018-8" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                    </svg>
+                    Entrando...
+                  </>
+                ) : (
+                  "Entrar"
+                )}
+              </button>
+
+              {/* Divider */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div className="al-divider-line" style={{ flex: 1, height: 1, background: "#DDD7CE" }} />
+                <span className="al-divider-text" style={{ fontSize: 12, color: "#9a9589" }}>o continúa con</span>
+                <div className="al-divider-line" style={{ flex: 1, height: 1, background: "#DDD7CE" }} />
+              </div>
+
+              {/* Google — ancho completo */}
+              <GoogleLoginButton className="al-google-btn" />
+            </form>
+
           </div>
         </main>
       </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </>
   );
 }
