@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 
 function GoogleIcon() {
   return (
-    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24">
+    <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
       <path
         fill="#4285F4"
         d="M21.6 12.23c0-.78-.07-1.53-.2-2.23H12v4.22h5.37a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.99-4.33 2.99-7.52z"
@@ -23,11 +23,14 @@ function GoogleIcon() {
   );
 }
 
-export function GoogleLoginButton() {
+export function GoogleLoginButton({ className }: { className?: string }) {
   return (
     <Button
       asChild
-      className="h-11 w-full border bg-white text-slate-950 shadow-sm hover:bg-slate-50 dark:bg-white dark:text-slate-950 dark:hover:bg-white/90"
+      className={[
+        "h-12 w-full rounded-md border bg-white text-slate-950 shadow-sm hover:bg-slate-50 dark:bg-white dark:text-slate-950 dark:hover:bg-white/90",
+        className,
+      ].filter(Boolean).join(" ")}
     >
       <a href="/api/google/calendar/auth?next=/dashboard">
         <GoogleIcon />

@@ -1,165 +1,210 @@
 import Image from "next/image";
-import { CalendarDays, Play, ShieldCheck, Sparkles } from "lucide-react";
 import { GoogleLoginButton } from "@/components/auth/google-login-button";
+import { LoginBrandPanel } from "@/components/auth/login-brand-panel";
 
 const errorCopy: Record<string, string> = {
   missing_code: "Google no devolvio el codigo de acceso. Intentalo de nuevo.",
   invalid_state: "La sesion de Google ha caducado. Vuelve a iniciar el acceso.",
   connect_error: "No se pudo completar la conexion con Google.",
-  session_error: "Google conectó correctamente, pero no se pudo crear la sesión.",
+  session_error: "Google conecto correctamente, pero no se pudo crear la sesion.",
   google_missing_code: "Google no devolvio el codigo de acceso. Intentalo de nuevo.",
   google_invalid_state: "La sesion de Google ha caducado. Vuelve a iniciar el acceso.",
   google_connect_error: "No se pudo completar la conexion con Google.",
-  google_session_error: "Google conectó correctamente, pero no se pudo crear la sesión.",
+  google_session_error: "Google conecto correctamente, pero no se pudo crear la sesion.",
 };
 
 export function LoginForm({ error }: { error?: string | null }) {
   return (
-    <section className="grid min-h-[100svh] place-items-center bg-neutral-950 px-4 py-6 text-neutral-950 sm:px-6">
-      <div className="grid w-full max-w-[980px] gap-5 rounded-lg bg-[#f6f5f2] p-3 shadow-[0_28px_90px_rgba(0,0,0,0.42)] md:min-h-[620px] md:grid-cols-[0.98fr_1.02fr] md:p-5">
-        <div className="flex min-h-[560px] flex-col rounded-lg border border-[#ece6d6] bg-[#fbf8f1] px-6 py-7 text-center sm:px-9">
-          <header className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-neutral-950 p-1.5">
-                <Image
-                  src="/brand/logo-mark-white.png"
-                  alt=""
-                  width={36}
-                  height={36}
-                  className="h-full w-full object-contain"
-                  priority
-                />
-              </div>
+    <>
+      <style>{`
+        .login-shell {
+          min-height: 100svh;
+          display: grid;
+          grid-template-columns: minmax(0, 1.05fr) minmax(400px, 0.95fr);
+          background: #f5f2ec;
+          color: #111111;
+        }
+
+        .login-panel {
+          display: flex;
+          min-height: 100svh;
+          align-items: center;
+          justify-content: center;
+          background: #f5f2ec;
+          padding: 48px 28px;
+        }
+
+        .login-card {
+          width: 100%;
+          max-width: 420px;
+        }
+
+        .login-logo-wrap {
+          margin: 0 0 28px;
+        }
+
+        .login-logo-dark,
+        .login-logo-mobile {
+          display: block;
+          width: 320px;
+          max-width: 100%;
+          height: auto;
+        }
+
+        .login-logo-mobile {
+          display: none;
+        }
+
+        .login-title {
+          margin: 0;
+          color: #111111;
+          font-size: 32px;
+          line-height: 1.16;
+          font-weight: 750;
+          letter-spacing: 0;
+        }
+
+        .login-copy {
+          margin: 10px 0 28px;
+          color: #5e584f;
+          font-size: 15px;
+          line-height: 1.7;
+        }
+
+        .login-error {
+          margin-bottom: 18px;
+          border: 1px solid #fecaca;
+          background: #fef2f2;
+          color: #b91c1c;
+          border-radius: 8px;
+          padding: 10px 12px;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
+        .login-note {
+          margin: 14px 0 0;
+          color: #7a7168;
+          font-size: 12px;
+          line-height: 1.6;
+        }
+
+        @media (max-width: 900px) {
+          .login-shell {
+            display: block;
+            background: #080b0c;
+          }
+
+          .login-panel {
+            position: relative;
+            isolation: isolate;
+            min-height: 100dvh;
+            align-items: flex-start;
+            background: #080b0c;
+            color: #f5f2ec;
+            overflow: hidden;
+            padding: 76px 28px 44px;
+          }
+
+          .login-panel::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            height: 150px;
+            background-image: url("/assets/al_lio_kinetic_background_dark.png");
+            background-repeat: no-repeat;
+            background-position: bottom center;
+            background-size: 100% 100%;
+            opacity: 0.7;
+            mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.55) 34%, black 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.55) 34%, black 100%);
+          }
+
+          .login-card {
+            max-width: none;
+          }
+
+          .login-logo-wrap {
+            margin: 0 0 38px;
+          }
+
+          .login-logo-dark {
+            display: none;
+          }
+
+          .login-logo-mobile {
+            display: block;
+            width: 330px;
+            margin: 0 auto;
+          }
+
+          .login-title,
+          .login-copy,
+          .login-note {
+            text-align: center;
+          }
+
+          .login-title {
+            color: #ffffff;
+            font-size: 28px;
+          }
+
+          .login-copy {
+            color: #9b928a;
+          }
+
+          .login-note {
+            color: #766f68;
+          }
+        }
+      `}</style>
+
+      <div className="login-shell">
+        <LoginBrandPanel />
+
+        <main className="login-panel">
+          <div className="login-card">
+            <div className="login-logo-wrap">
               <Image
-                src="/brand/signature.png"
-                alt="Al-Lio"
-                width={120}
-                height={28}
-                className="h-6 w-auto"
+                className="login-logo-dark"
+                src="/assets/al_lio_logo_horizontal_transparent.png"
+                alt="AL-LIO"
+                width={615}
+                height={214}
+                priority
+              />
+              <Image
+                className="login-logo-mobile"
+                src="/assets/al_lio_logo_slogan_transparente_1060x360.png"
+                alt="AL-LIO - Menos planes. Mas accion."
+                width={1060}
+                height={360}
                 priority
               />
             </div>
-            <span className="hidden shrink-0 rounded-full border border-[#ddd5c1] bg-[#fbf8f1] px-3 py-1.5 text-xs font-medium text-neutral-800 sm:inline-flex">
-              Google Calendar
-            </span>
-          </header>
 
-          <main className="mx-auto flex w-full max-w-[360px] flex-1 flex-col items-center justify-center py-10">
-            <div className="mb-5 grid h-[84px] w-[84px] place-items-center rounded-lg bg-neutral-950 p-4 shadow-lg shadow-black/25">
-              <Image
-                src="/brand/logo-mark-white.png"
-                alt=""
-                width={64}
-                height={64}
-                className="h-full w-full object-contain"
-                priority
-              />
-            </div>
-
-            <h1 className="flex flex-col items-center gap-2 text-[26px] font-semibold leading-tight tracking-tight text-neutral-950 sm:text-[28px]">
-              <span className="whitespace-nowrap">Inicia sesion en</span>
-              <Image
-                src="/brand/signature.png"
-                alt="Al-Lio"
-                width={300}
-                height={70}
-                className="h-16 w-auto"
-                priority
-              />
-            </h1>
-
-            <p className="mt-2 max-w-[38ch] text-sm leading-6 text-[#5d564a]">
-              Conecta tu calendario y organiza tus eventos en un solo lugar.
+            <h1 className="login-title">Bienvenido de nuevo</h1>
+            <p className="login-copy">
+              Accede con Google para mantener tu calendario y tu panel sincronizados.
             </p>
 
             {error && (
-              <div className="mt-5 w-full rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-left text-sm text-red-700">
+              <div className="login-error">
                 {errorCopy[error] ?? "No se pudo iniciar sesion. Vuelve a intentarlo."}
               </div>
             )}
 
-            <div className="mt-6 w-full">
-              <GoogleLoginButton />
-              <p className="mx-auto mt-3.5 max-w-[46ch] text-xs leading-5 text-[#7a7160]">
-                Usaremos tu cuenta de Google para sincronizar tus eventos con Google Calendar.
-              </p>
-            </div>
-          </main>
+            <GoogleLoginButton />
 
-          <footer className="flex items-center justify-center gap-2 text-xs text-[#9a8f7a] sm:justify-start">
-            <Image
-              src="/brand/logo-mark.png"
-              alt=""
-              width={14}
-              height={14}
-              className="opacity-70"
-            />
-            <span>© Al-Lio</span>
-          </footer>
-        </div>
-
-        <aside className="hidden rounded-lg border border-neutral-900 bg-[#0b0b0c] p-7 text-[#fbf8f1] md:flex md:flex-col">
-          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-[#bdb6a4]">
-            <CalendarDays className="h-4 w-4 opacity-80" />
-            <span>Descubre Al-Lio en 60 segundos</span>
+            <p className="login-note">
+              Por ahora, el acceso activo es Google.
+            </p>
           </div>
-
-          <div className="relative grid flex-1 place-items-center overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900 aspect-[16/10]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_20%,rgba(251,248,241,0.12),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_45%)]" />
-            <div className="relative flex flex-col items-center gap-4 text-[#bdb6a4]">
-              <div className="grid h-16 w-16 place-items-center rounded-full border border-white/20 bg-white/10 text-white shadow-2xl shadow-black/40 backdrop-blur">
-                <Play className="ml-0.5 h-5 w-5 fill-current" />
-              </div>
-              <Image
-                src="/brand/signature-white.png"
-                alt="Al-Lio"
-                width={180}
-                height={44}
-                className="h-9 w-auto opacity-90"
-              />
-            </div>
-          </div>
-
-          <p className="mx-auto mt-4 max-w-[40ch] text-center text-[12.5px] leading-relaxed text-[#a8a195]">
-            Mira como conectar tu calendario, crear eventos y mantener tu agenda al dia dentro de Al-Lio.
-          </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-4">
-            <Feature
-              title="Acceso seguro"
-              body="Cuenta verificada por Google."
-              icon={<ShieldCheck className="h-4 w-4" />}
-            />
-            <Feature
-              title="Agenda lista"
-              body="Eventos disponibles tras entrar."
-              icon={<Sparkles className="h-4 w-4" />}
-            />
-          </div>
-        </aside>
+        </main>
       </div>
-    </section>
-  );
-}
-
-function Feature({
-  title,
-  body,
-  icon,
-}: {
-  title: string;
-  body: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-start gap-2.5">
-      <span className="mt-0.5 grid h-[22px] w-[22px] shrink-0 place-items-center text-[#fbf8f1]">
-        {icon}
-      </span>
-      <div className="text-left">
-        <h2 className="text-[13px] font-semibold text-[#fbf8f1]">{title}</h2>
-        <p className="mt-0.5 text-xs leading-relaxed text-[#a8a195]">{body}</p>
-      </div>
-    </div>
+    </>
   );
 }
