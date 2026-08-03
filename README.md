@@ -1,104 +1,168 @@
-# Al-Lío Open
+# AL-LÍO
 
-> Organiza tu formación, tus oportunidades y tus próximos pasos profesionales desde un único panel.
+AL-LÍO es una aplicación web para centralizar tareas, calendario, cursos, hackathons, oportunidades, noticias y enlaces de trabajo en un único panel.
 
-[Ver demo](https://al-lio.danielcode.dev) ·
-[Documentación](docs/) ·
-[Arquitectura](docs/03_ARCHITECTURE_AND_STACK.md)
+[Demo pública](https://al-lio.danielcode.dev) · [Documentación](docs/) · [Runbook VPS](docs/DEPLOY_VPS.md)
 
----
+## Estado Actual
 
-## Sobre el proyecto
+- Aplicación Next.js 15 con App Router.
+- Dashboard privado con módulos de tareas, calendario, cursos, hackathons, oportunidades, noticias, enlaces y fuentes.
+- Persistencia en PostgreSQL propio mediante `pg`.
+- Sesión propia firmada en cookie `al_lio_session`.
+- Acceso funcional mediante Google OAuth.
+- Integración con Google Calendar desde servidor.
+- Despliegue preparado para VPS con Docker Compose y Caddy.
+- Demo pública activa en `https://al-lio.danielcode.dev`.
 
-**Al-Lío** es una aplicación web que centraliza tareas, calendario, cursos, hackathons, candidaturas y recursos relacionados con la búsqueda de empleo tecnológico.
+El login por email/password todavía no debe documentarse como funcional. La base de datos ya contempla `password_hash`, pero el flujo de producto se cerrará en una PR posterior.
 
-El proyecto nació como una herramienta personal para resolver un problema concreto: tener entregas, formación, convocatorias y oportunidades repartidas entre demasiadas aplicaciones.
+## Producto
 
-El repositorio contiene actualmente un **MVP operativo**. Su evolución, presentada como **Al-Lío Open** para Aircury Summer of Code 2026, busca convertirlo en una plataforma abierta, multiusuario y accesible para estudiantes y personas que están dando sus primeros pasos profesionales.
+El objetivo del producto es ayudar al usuario a convertir información dispersa en acciones concretas:
 
-## Problema
+- qué requiere atención esta semana;
+- qué oportunidades o convocatorias encajan con su perfil;
+- qué tareas, evidencias o próximos pasos debe registrar.
 
-Durante la transición entre los estudios y el primer empleo es necesario coordinar:
+El proyecto nació como herramienta personal y se está preparando como versión profesional abierta para estudiantes.
 
-- Clases, prácticas y proyectos.
-- Cursos y formación complementaria.
-- Hackathons, becas y convocatorias.
-- Candidaturas y procesos de selección.
-- Fechas límite, requisitos y próximos pasos.
+## Stack
 
-Esta información suele estar distribuida entre calendarios, portales de empleo, notas y gestores de tareas. Al-Lío reúne esos procesos para ayudar al usuario a saber **qué necesita atención ahora y por qué**.
+- Next.js App Router.
+- React 19.
+- TypeScript.
+- Tailwind CSS.
+- PostgreSQL propio.
+- Google APIs para OAuth y Calendar.
+- Zod.
+- date-fns.
+- lucide-react.
+- Docker Compose.
+- Caddy.
 
-## Funcionalidades actuales
+El runtime actual no usa Supabase Auth ni Supabase Database. La documentación histórica de Supabase y migración está archivada en `docs/archive/`.
 
-### Panel principal
+## Instalación Local
 
-El dashboard ofrece una visión rápida de:
+Requisitos recomendados:
 
-- Tareas urgentes o prioritarias.
-- Planificación semanal.
-- Eventos locales y de Google Calendar.
-- Próximos hackathons.
-- Búsquedas de empleo tecnológico.
+- Node.js 22 LTS.
+- npm.
+- Docker Desktop si se usa PostgreSQL sandbox.
 
-### Gestión de tareas
+```bash
+npm ci
+npm run dev
+```
 
-- Tablero Kanban con bloques Diario, Pendiente y Semanal.
-- Prioridades baja, media, alta y crítica.
-- Fechas límite, alarmas y etiquetas.
-- Creación rápida desde el dashboard.
-- Edición y eliminación desde el detalle de cada tarea.
+`npm run dev` ejecuta antes `npm run verify:startup`.
 
-### Calendario
+Si Next queda en un estado inconsistente por mezclar `next dev`, `next build` o `next start`, usar:
 
-- Calendario mensual y vista detallada por día.
-- Integración con Google Calendar.
-- Creación y eliminación de eventos.
-- Consultas puntuales sin sincronización constante innecesaria.
+```bash
+npm run dev:clean
+```
 
-### Formación y oportunidades
+## Variables de Entorno
 
-- Gestión de cursos y hackathons.
-- Notas, enlaces y fuentes de información.
-- Seguimiento de oportunidades.
-- Acceso a información y convocatorias externas.
+Crear `.env.local` a partir de `.env.example`.
 
-### Búsqueda de empleo
+Variables principales:
 
-Una misma búsqueda puede abrirse en:
+```env
+DATABASE_URL=
+SESSION_SECRET=
+TARGET_USER_EMAIL=
 
-- LinkedIn.
-- InfoJobs.
-- Tecnoempleo.
-- Indeed.
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=
+GOOGLE_TOKEN_ENCRYPTION_KEY=
 
-El usuario solo necesita indicar el puesto y la ubicación para consultar los distintos portales.
+INFOJOBS_CLIENT_ID=
+INFOJOBS_CLIENT_SECRET=
+ADZUNA_APP_ID=
+ADZUNA_APP_KEY=
+JOOBLE_API_KEY=
 
-### Autenticación
+BASE_URL=
+```
 
-- Acceso mediante Google OAuth.
-- Sesiones administradas con Supabase.
-- Rutas privadas protegidas.
-- Gestión de credenciales y tokens desde servidor.
-- Interfaz responsive con modo claro y oscuro.
+Para producción, usar `.env.production.example` como plantilla. No subir `.env`, `.env.local`, dumps ni `migration-artifacts/` a GitHub.
 
-## Evolución: Al-Lío Open
+## Base de Datos
 
-La siguiente fase convertirá el MVP personal en una aplicación preparada para usuarios reales.
+Schema principal:
 
-El alcance incluye:
+- `infra/postgres/schema.sql`
 
-- Aplicación multiusuario con datos aislados por cuenta.
-- Ruta profesional con objetivos, competencias y proyectos.
-- Seguimiento de candidaturas y resultados.
-- Oportunidades asociadas a requisitos y próximos pasos.
-- Registro de evidencias de aprendizaje y progreso.
-- Alertas y planificación semanal.
-- Mejora de accesibilidad conforme a WCAG 2.2 AA.
-- Exportación y eliminación de datos.
-- Validación con estudiantes y tutores.
-- Publicación de una demo estable y documentada.
+Sandbox local:
 
-El objetivo no es crear otro gestor de tareas genérico, sino conectar el proceso completo:
+```bash
+npm run postgres:sandbox:up
+npm run postgres:schema:validate-sandbox
+```
 
-```text
-Oportunidad → Requisitos → Próxima acción → Evidencia → Resultado
+Aplicar schema sobre la base configurada en `DATABASE_URL`:
+
+```bash
+npm run postgres:setup
+```
+
+Importadores disponibles:
+
+```bash
+npm run import:opportunities
+npm run import:courses
+npm run import:hackathons
+```
+
+## Verificación
+
+Chequeo mínimo:
+
+```bash
+npm run verify:startup
+```
+
+Chequeo recomendado antes de PR:
+
+```bash
+npm run verify:cheap
+```
+
+Validación específica de producción VPS:
+
+```bash
+npm run validate:production-deploy
+```
+
+Algunos validadores históricos de migración siguen existiendo para contexto y no deben confundirse con el estado final del producto.
+
+## Despliegue
+
+Destino actual:
+
+- VPS propio.
+- Docker Compose.
+- Contenedor `al_lio_web`.
+- Contenedor `al_lio_postgres`.
+- Red externa `danicode_web`.
+- Caddy como reverse proxy.
+- Dominio `https://al-lio.danielcode.dev`.
+
+Guía operativa:
+
+- `docs/DEPLOY_VPS.md`
+
+## Documentación
+
+- `docs/README.md` - índice de documentación actual.
+- `docs/01_PRODUCT_SPEC.md` - especificación de producto vigente.
+- `docs/03_ARCHITECTURE_AND_STACK.md` - arquitectura actual.
+- `docs/DEPLOY_VPS.md` - despliegue VPS.
+- `docs/PROJECT_STRUCTURE.md` - estructura del repositorio.
+- `docs/archive/` - documentación histórica que no debe tomarse como fuente actual.
+
+Alias ASCII usado en algunos scripts y checks: `Al-Lio`.

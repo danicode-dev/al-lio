@@ -1,41 +1,44 @@
 # Project Structure
 
-Root files are kept for app configuration and agent onboarding only.
+## Aplicación
 
-## Runtime App
+- `app/` - rutas App Router, layouts y route handlers.
+- `components/` - componentes React y vistas de producto.
+- `lib/` - autenticación, acceso a datos, integraciones, noticias y utilidades.
+- `middleware.ts` - protección de rutas y sesión.
+- `public/` - assets públicos servidos por Next.js.
 
-- `app/` - Next.js App Router pages, layouts, route handlers, middleware targets.
-- `components/` - Shared React UI and app views.
-- `lib/` - Server/client services, Supabase clients, data loading, integrations, news, auth, helpers.
-- `public/` - Static public assets served by Next.js.
-- `logo/` - Source logo assets imported by the UI.
+## Datos
 
-## Data And Database
+- `infra/postgres/schema.sql` - schema PostgreSQL actual.
+- `csv/` - fuentes CSV para importadores.
+- `data/` - caché versionada de noticias usada por `/api/news`.
 
-- `supabase/schema.sql` - Current full schema snapshot.
-- `supabase/migrations/` - Versioned SQL migrations.
-- `csv/` - Source CSV files for courses, hackathons, and tech opportunities.
-- `data/` - Committed news cache used by `/api/news` on Vercel.
+## Operaciones
 
-## Operations
+- `infra/` - Dockerfile, Docker Compose, Caddy y PostgreSQL.
+- `scripts/` - validaciones, importadores, migraciones y utilidades operativas.
+- `.env.example` - plantilla local.
+- `.env.production.example` - plantilla de producción.
+- `AGENTS.md` - guía operativa para agentes.
+- `CLAUDE.md` - entrada específica para Claude.
+- `README.md` - portada humana del proyecto.
+- `docs/` - documentación activa.
+- `docs/archive/` - documentación histórica.
 
-- `scripts/` - Deterministic Node scripts for startup, smoke tests, imports, seeds, and cleanup.
-- `AGENTS.md` - Primary AI-agent operating guide.
-- `CLAUDE.md` - Claude-specific entrypoint; points to `AGENTS.md`.
-- `README.md` - Human-facing setup and V1 operation guide.
-- `docs/02_AGENT_SKILLS.md` - Compact AI skill/workflow guide.
+## No Committing
 
-## Generated Or Ignored
+No subir:
 
-These should not be committed or kept as source:
-
+- `.env`
+- `.env.local`
 - `.next/`
 - `node_modules/`
-- `.playwright-mcp/`
-- `*.log`
-- `*.tsbuildinfo`
-- `desktop.ini`
+- `migration-artifacts/`
+- dumps de base de datos;
+- logs temporales;
+- prompts o notas privadas dentro de `public/`.
 
-## V1 Rule
+## Regla De Limpieza
 
-For V1 stabilization, prefer deleting generated clutter and documenting stable workflows over risky component reshuffles. Split large UI files only with focused tests and route smoke checks.
+Si un documento describe Supabase, Vercel, Aidraft o TechLife como estado actual, debe moverse a `docs/archive/` o actualizarse antes de aparecer enlazado desde README.

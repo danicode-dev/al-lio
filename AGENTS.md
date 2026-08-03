@@ -1,6 +1,6 @@
-# D1OS Agent Notes
+# AL-LÍO Agent Notes
 
-This repo is a Next.js 15 App Router personal dashboard with Supabase, Google Calendar, local news cache, courses, hackathons, tasks, and tech opportunities.
+This repo is a Next.js 15 App Router dashboard with self-managed PostgreSQL, signed first-party sessions, Google OAuth, Google Calendar, local news cache, courses, hackathons, tasks, links, sources, and opportunities.
 
 ## Startup Rules
 
@@ -41,15 +41,17 @@ Use the cheapest check that proves the change:
 
 Always run at least one relevant verification command before telling the user the app is OK.
 
-## Current Known Database Note
+## Current Database Note
 
-The CSV importer reads `csv/oportunidades_tech_supabase_combinado.csv` and upserts into `public.tech_opportunities` by `id_slug`.
+Runtime data lives in self-managed PostgreSQL.
 
-CSV context docs are archived under `docs/context/`.
-Supabase operational TODOs live in `docs/SUPABASE_TODO.md`.
+- Main schema: `infra/postgres/schema.sql`.
+- Data access: `pg` and local repository/helper modules.
+- Local sandbox: `npm run postgres:sandbox:up`.
+- Schema setup: `npm run postgres:setup`.
 
-Before `npm run import:opportunities` can succeed on the remote Supabase project, apply:
+The CSV importer reads `csv/oportunidades_tech_supabase_combinado.csv` and upserts into `public.tech_opportunities` by `id_slug`. The filename is historical; the current destination is PostgreSQL.
 
-- `supabase/migrations/create_tech_opportunities.sql`
+## Documentation Rule
 
-The app is coded to consume `tech_opportunities` when present.
+Active documentation must not describe Supabase Auth, Supabase Database, Vercel, Aidraft, TechLife, or D1OS as the current product/runtime. Historical notes belong in `docs/archive/`.
