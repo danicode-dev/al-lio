@@ -41,6 +41,8 @@
     "import:opportunities": "node scripts/import-tech-opportunities.mjs",
     "import:fp-content": "node scripts/import-fp-content.mjs",
     "validate:fp-content": "node scripts/validate-fp-content-csv.mjs",
+    "import:fp-competencias": "node scripts/import-fp-competencies.mjs",
+    "validate:fp-competencias": "node scripts/validate-fp-competencias-csv.mjs",
     "import:courses": "node scripts/import-courses.mjs",
     "import:hackathons": "node scripts/import-hackathons.mjs",
     "seed:fp-demo-users": "node scripts/seed-fp-demo-users.mjs",

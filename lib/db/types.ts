@@ -112,6 +112,64 @@ export interface DbFpUserContentState {
   updated_at: string;
 }
 
+export type FpCompetencyEtapa =
+  | "0_antes_de_empezar"
+  | "1_fundamentos"
+  | "2_aplicacion"
+  | "3_empleabilidad"
+  | "4_proyecto";
+
+export type FpItemCompetencyRelation = "requiere" | "desarrolla" | "apoya" | "demuestra";
+
+export interface DbFpCompetency {
+  id: string;
+  cycle_code: FpCycleCode;
+  orden_global: number;
+  etapa: FpCompetencyEtapa;
+  bloque: string | null;
+  modulo_codigo: string | null;
+  modulo_nombre: string | null;
+  titulo: string;
+  descripcion: string | null;
+  nivel_objetivo: number | null;
+  obligatoria_roadmap_base: boolean;
+  basico_antes_de_empezar: boolean;
+  horas_estimadas: number | null;
+  criterios_superacion: string | null;
+  evidencia_minima: string | null;
+  umbral_superacion: string | null;
+  aplicable_a: string | null;
+  fuente_titulo_url: string | null;
+  fuente_curriculo_url: string | null;
+  tipo_criterio: string | null;
+  ultima_revision: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbFpCompetencyRelation {
+  competencia_origen_id: string;
+  competencia_destino_id: string;
+  cycle_code: FpCycleCode;
+  tipo_relacion: string;
+  obligatoria: boolean;
+  motivo: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbFpItemCompetency {
+  content_item_id: string;
+  competencia_id: string;
+  tipo_relacion: FpItemCompetencyRelation;
+  orden_preparacion: number | null;
+  nivel_minimo_recomendado: number | null;
+  obligatoria_para_item: boolean;
+  motivo_relacion: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DbSource {
   id: string;
   user_id: string;
