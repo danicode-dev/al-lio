@@ -16,6 +16,7 @@ import {
   Newspaper,
   Settings,
   LogOut,
+  UserCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { signOut } from "@/lib/actions";
@@ -36,6 +37,7 @@ const items = [
   { href: "/calendar", label: "Calendario", icon: CalendarDays },
   { href: "/links", label: "Enlaces", icon: LinkIcon },
   { href: "/settings", label: "Ajustes", icon: Settings },
+  { href: "/profile", label: "Perfil", icon: UserCircle },
 ];
 
 export function AppSidebar() {

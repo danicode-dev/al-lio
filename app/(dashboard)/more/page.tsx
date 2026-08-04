@@ -11,6 +11,7 @@ import {
   Link as LinkIcon,
   Settings,
   Compass,
+  UserCircle,
 } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
 
@@ -94,6 +95,14 @@ const SECTIONS = [
     cardBg: "bg-slate-100 dark:bg-slate-900/60",
     iconBg: "bg-slate-200 dark:bg-slate-800/60",
     iconColor: "text-slate-500",
+  },
+  {
+    href: "/profile",
+    label: "Perfil",
+    Icon: UserCircle,
+    cardBg: "bg-orange-50 dark:bg-orange-950/40",
+    iconBg: "bg-orange-100 dark:bg-orange-900/50",
+    iconColor: "text-orange-500",
   },
 ] as const;
 

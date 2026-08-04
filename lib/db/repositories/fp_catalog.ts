@@ -81,6 +81,17 @@ export async function getFpContentForProfile(
   return res.rows;
 }
 
+export async function getFpUserContentStateCounts(userId: string): Promise<Record<string, number>> {
+  const res = await query<{ status: DbFpUserContentState["status"]; count: string }>(
+    `SELECT status, count(*) as count
+     FROM public.fp_user_content_state
+     WHERE user_id = $1
+     GROUP BY status`,
+    [userId]
+  );
+  return Object.fromEntries(res.rows.map((row) => [row.status, Number(row.count)]));
+}
+
 export async function upsertFpUserContentState(
   userId: string,
   contentItemId: string,
