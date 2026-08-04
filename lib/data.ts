@@ -9,6 +9,7 @@ import { getQuickLinksByUser } from "@/lib/db/repositories/quick_links";
 import { getAllTechOpportunities } from "@/lib/db/repositories/tech_opportunities";
 import { getUserById } from "@/lib/db/repositories/users";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
+import { getFpContentForProfile } from "@/lib/db/repositories/fp_catalog";
 
 export async function getGlobalStore() {
   const session = await getSession();
@@ -17,9 +18,9 @@ export async function getGlobalStore() {
   const userId = session.uid;
 
   const profile = await getProfileByUser(userId);
-  if (!profile?.onboarding_completed_at) redirect("/onboarding");
+  if (!profile || !profile.onboarding_completed_at) redirect("/onboarding");
 
-  const [tasks, courses, hackathons, techOpportunities, opportunities, links, pgUser] =
+  const [tasks, courses, hackathons, techOpportunities, opportunities, links, pgUser, fpContent] =
     await Promise.all([
       getTasksByUser(userId),
       getCoursesByUser(userId),
@@ -28,6 +29,7 @@ export async function getGlobalStore() {
       getOpportunitiesByUser(userId),
       getQuickLinksByUser(userId),
       getUserById(userId),
+      getFpContentForProfile(userId, profile),
     ]);
 
   const rawName =
@@ -79,6 +81,14 @@ export async function getGlobalStore() {
       ultima_revision: ymd(c.ultima_revision),
       created_at: iso(c.created_at),
       updated_at: iso(c.updated_at),
+    })),
+    fpContent: fpContent.map((item) => ({
+      ...item,
+      start_date: ymd(item.start_date),
+      end_date: ymd(item.end_date),
+      last_reviewed_at: ymd(item.last_reviewed_at),
+      created_at: iso(item.created_at),
+      updated_at: iso(item.updated_at),
     })),
     hackathons: hackathons.map((h) => ({
       ...h,

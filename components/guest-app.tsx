@@ -129,7 +129,31 @@ type Course = {
   fuente_url?: string;
   ultima_revision?: string;
   notes?: string;
-  sourceTable?: "courses" | "tech_opportunities";
+  sourceTable?: "courses" | "tech_opportunities" | "fp_content_items";
+  created_at: string;
+};
+
+type FpCatalogItem = {
+  id: string;
+  id_slug: string;
+  type: string;
+  title: string;
+  description?: string;
+  entity?: string;
+  delivery_mode?: string;
+  location?: string;
+  province?: string;
+  start_date?: string;
+  end_date?: string;
+  status?: string;
+  cost?: string;
+  certification?: string;
+  practices?: string;
+  source_url?: string;
+  tags?: string[];
+  suggested_action?: string;
+  notes?: string;
+  priority: "Alta" | "Media" | "Baja";
   created_at: string;
 };
 
@@ -158,7 +182,7 @@ type Hackathon = {
   ultima_revision?: string;
   url?: string;
   notes?: string;
-  sourceTable?: "hackathons" | "tech_opportunities";
+  sourceTable?: "hackathons" | "tech_opportunities" | "fp_content_items";
   created_at: string;
 };
 
@@ -192,6 +216,7 @@ export type Store = {
   techOpportunities: TechOpportunity[];
   courses: Course[];
   hackathons: Hackathon[];
+  fpContent: FpCatalogItem[];
   links: QuickLink[];
   reminders: unknown[];
   companies: Company[];
@@ -275,6 +300,7 @@ const emptyStore: Store = {
   techOpportunities: [],
   courses: [],
   hackathons: [],
+  fpContent: [],
   links: [],
   reminders: [],
   companies: [],
@@ -886,7 +912,7 @@ function completeTechOpportunityItem(item: TechOpportunity, actions: ReturnTypeA
 }
 
 function completeCourseItem(item: Course, actions: ReturnTypeActions) {
-  if (item.sourceTable === "tech_opportunities" || item.id.startsWith("tech-")) {
+  if (item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items" || item.id.startsWith("tech-") || item.id.startsWith("fp-")) {
     const data = courseAddPayload(item);
     actions.addCourse({
       ...data,
@@ -901,7 +927,7 @@ function completeCourseItem(item: Course, actions: ReturnTypeActions) {
 }
 
 function completeHackathonItem(item: Hackathon, actions: ReturnTypeActions) {
-  if (item.sourceTable === "tech_opportunities" || item.id.startsWith("tech-")) {
+  if (item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items" || item.id.startsWith("tech-") || item.id.startsWith("fp-")) {
     const data = hackathonAddPayload(item);
     actions.addHackathon({
       ...data,
@@ -3173,8 +3199,8 @@ function FilterChips({ options, value, onChange }: { options: [string, string][]
 
 function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
   const allCourses = useMemo(
-    () => getDisplayCourses(store.courses, store.techOpportunities),
-    [store.courses, store.techOpportunities]
+    () => getDisplayCourses(store.courses, store.techOpportunities, store.fpContent),
+    [store.courses, store.techOpportunities, store.fpContent]
   );
 
   const [viewTab, setViewTab] = useState<"activos" | "archivados" | "todos">("activos");
@@ -3401,8 +3427,8 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
 
 function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
   const allHackathons = useMemo(
-    () => getDisplayHackathons(store.hackathons, store.techOpportunities),
-    [store.hackathons, store.techOpportunities]
+    () => getDisplayHackathons(store.hackathons, store.techOpportunities, store.fpContent),
+    [store.hackathons, store.techOpportunities, store.fpContent]
   );
 
   const [viewTab, setViewTab] = useState<"activos" | "archivados" | "todos">("activos");
@@ -3542,7 +3568,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
               const tags = splitTags(item.tags);
               const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
               const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
-              const readOnlyTechItem = item.sourceTable === "tech_opportunities";
+              const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
               return (
                 <Card key={item.id} className="flex flex-col gap-3 p-4">
                   <div className="flex items-start justify-between gap-2">
@@ -3940,24 +3966,36 @@ const techCourseCategories = new Set(["curso", "fp"]);
 const techHackathonCategories = new Set(["hackathon_reto"]);
 const techEventCategories = new Set(["evento_tech", "reto_programacion", "concurso_programacion"]);
 
-function getDisplayCourses(courses: Course[], items: TechOpportunity[]) {
+function getDisplayCourses(courses: Course[], items: TechOpportunity[], fpItems: FpCatalogItem[] = []) {
   const seen = new Set(courses.map(courseIdentityKey));
   const fromTech = items
     .filter(isTechCourse)
     .map(techOpportunityToCourse)
     .filter((course) => !seen.has(courseIdentityKey(course)));
+  fromTech.forEach((course) => seen.add(courseIdentityKey(course)));
 
-  return [...fromTech, ...courses].sort(sortCoursesForDisplay);
+  const fromFp = fpItems
+    .filter(isFpCourseLike)
+    .map(fpItemToCourse)
+    .filter((course) => !seen.has(courseIdentityKey(course)));
+
+  return [...fromTech, ...fromFp, ...courses].sort(sortCoursesForDisplay);
 }
 
-function getDisplayHackathons(hackathons: Hackathon[], items: TechOpportunity[]) {
+function getDisplayHackathons(hackathons: Hackathon[], items: TechOpportunity[], fpItems: FpCatalogItem[] = []) {
   const seen = new Set(hackathons.map(hackathonIdentityKey));
   const fromTech = items
     .filter(isTechHackathonOrEvent)
     .map(techOpportunityToHackathon)
     .filter((hackathon) => !seen.has(hackathonIdentityKey(hackathon)));
+  fromTech.forEach((hackathon) => seen.add(hackathonIdentityKey(hackathon)));
 
-  return [...fromTech, ...hackathons].sort(sortHackathonsForDisplay);
+  const fromFp = fpItems
+    .filter(isFpHackathonLike)
+    .map(fpItemToHackathon)
+    .filter((hackathon) => !seen.has(hackathonIdentityKey(hackathon)));
+
+  return [...fromTech, ...fromFp, ...hackathons].sort(sortHackathonsForDisplay);
 }
 
 function techOpportunityToCourse(item: TechOpportunity): Course {
@@ -4026,6 +4064,97 @@ function techOpportunityToHackathon(item: TechOpportunity): Hackathon {
   };
 }
 
+const fpCourseTypes = new Set(["curso_basico", "curso_complementario", "herramienta", "recurso", "evidencia_recomendada"]);
+const fpHackathonTypes = new Set(["hackathon", "evento", "reto", "convocatoria_practicas"]);
+
+function isFpCourseLike(item: FpCatalogItem) {
+  return fpCourseTypes.has(item.type);
+}
+
+function isFpHackathonLike(item: FpCatalogItem) {
+  return fpHackathonTypes.has(item.type);
+}
+
+function fpItemNotes(item: FpCatalogItem) {
+  return [item.suggested_action, item.notes].filter(Boolean).join("\n\n") || undefined;
+}
+
+function fpItemToCourse(item: FpCatalogItem): Course {
+  return {
+    id: `fp-${item.id_slug}`,
+    id_slug: item.id_slug,
+    title: item.title,
+    platform: item.entity ?? undefined,
+    url: item.source_url ?? undefined,
+    price: item.cost ?? undefined,
+    category: item.type,
+    start_at: item.start_date ?? "",
+    deadline_at: item.end_date ?? "",
+    status: normalizeCourseStatus(item.status),
+    entidad: item.entity ?? undefined,
+    area: item.type,
+    modalidad: item.delivery_mode ?? undefined,
+    localidad: item.location ?? undefined,
+    provincia: item.province ?? undefined,
+    certificacion_tipo: item.certification ?? undefined,
+    practicas_empresa: item.practices === "si",
+    fecha_inicio: item.start_date ?? undefined,
+    fecha_fin: item.end_date ?? undefined,
+    estado: item.status ?? undefined,
+    coste: item.cost ?? undefined,
+    requisitos_resumen: item.description ?? undefined,
+    prioridad: item.priority,
+    tags: item.tags ?? undefined,
+    fuente_url: item.source_url ?? undefined,
+    notes: fpItemNotes(item),
+    sourceTable: "fp_content_items",
+    created_at: item.created_at,
+  };
+}
+
+function fpItemToHackathon(item: FpCatalogItem): Hackathon {
+  return {
+    id: `fp-${item.id_slug}`,
+    id_slug: item.id_slug,
+    categoria: item.type,
+    name: item.title,
+    organizer: item.entity ?? undefined,
+    province: item.province ?? undefined,
+    city: item.location ?? undefined,
+    type: item.type,
+    modalidad: item.delivery_mode ?? undefined,
+    localidad: item.location ?? undefined,
+    status: normalizeHackathonStatus(item.status),
+    priority: (item.priority.toLowerCase() as Hackathon["priority"]),
+    start_at: item.start_date ?? "",
+    end_at: item.end_date ?? "",
+    registration_deadline_at: "",
+    certificacion_o_premio: item.certification ?? undefined,
+    practicas_empresa: item.practices === "si",
+    tags: item.tags ?? undefined,
+    url: item.source_url ?? undefined,
+    notes: fpItemNotes(item),
+    sourceTable: "fp_content_items",
+    created_at: item.created_at,
+  };
+}
+
+function fpItemToCalendarEvents(item: FpCatalogItem): CalendarEvent[] {
+  const type: CalendarEvent["type"] = isFpCourseLike(item) ? "course" : "hackathon";
+  const href = isFpCourseLike(item) ? "/courses" : "/hackathons";
+  const events: CalendarEvent[] = [];
+
+  if (item.start_date) {
+    events.push({ id: `fp-${item.id_slug}-start`, type, title: item.title, date_at: item.start_date, status: item.status, href });
+  }
+
+  if (item.end_date && item.end_date !== item.start_date) {
+    events.push({ id: `fp-${item.id_slug}-end`, type, title: `Fin ${item.title}`, date_at: item.end_date, status: item.status, href });
+  }
+
+  return events;
+}
+
 function getCalendarEvents(store: Store): CalendarEvent[] {
   const events = [
     ...store.tasks.filter((task) => task.due_at).map((task) => ({ id: task.id, type: "task" as const, title: task.status === "completada" ? `OK ${task.title}` : task.title, date_at: task.due_at || "", status: task.status, href: "/tasks" })),
@@ -4038,6 +4167,7 @@ function getCalendarEvents(store: Store): CalendarEvent[] {
       ...(hackathon.registration_deadline_at ? [{ id: `${hackathon.id}-deadline`, type: "hackathon" as const, title: `Inscripcion ${hackathon.name}`, date_at: hackathon.registration_deadline_at, status: hackathon.status, href: "/hackathons" }] : []),
     ]),
     ...store.techOpportunities.flatMap(techOpportunityToCalendarEvents),
+    ...store.fpContent.flatMap(fpItemToCalendarEvents),
   ];
 
   return dedupeCalendarEvents(events).sort(sortEvents);
