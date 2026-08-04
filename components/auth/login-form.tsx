@@ -2,9 +2,10 @@
 
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import { GoogleLoginButton } from "@/components/auth/google-login-button";
 import { LoginBrandPanel } from "@/components/auth/login-brand-panel";
+import { loginWithPasswordAction, type PasswordLoginState } from "@/lib/auth/password-login";
 
 const errorCopy: Record<string, string> = {
   missing_code: "Google no devolvió el código de acceso. Inténtalo de nuevo.",
@@ -15,18 +16,19 @@ const errorCopy: Record<string, string> = {
   google_invalid_state: "La sesión de Google ha caducado. Vuelve a iniciar el acceso.",
   google_connect_error: "No se pudo completar la conexión con Google.",
   google_session_error: "Google conectó correctamente, pero no se pudo crear la sesión.",
+  credentials_invalid: "Correo o clave incorrectos.",
+  credentials_unavailable: "No se pudo validar el acceso. Vuelve a intentarlo.",
 };
+
+const initialPasswordLoginState: PasswordLoginState = { error: null };
 
 export function LoginForm({ error }: { error?: string | null }) {
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    // Email/password is a visual placeholder until credential auth is implemented.
-    setIsSubmitting(true);
-    setTimeout(() => setIsSubmitting(false), 2000);
-  }
+  const [passwordLoginState, passwordLoginAction, isPasswordLoginPending] = useActionState(
+    loginWithPasswordAction,
+    initialPasswordLoginState
+  );
+  const visibleError = passwordLoginState.error ?? error ?? null;
 
   return (
     <>
@@ -359,13 +361,13 @@ export function LoginForm({ error }: { error?: string | null }) {
               Enfoca, actúa, logra más.
             </p>
 
-            {error && (
+            {visibleError && (
               <div style={{ marginBottom: 16, borderRadius: 12, border: "1px solid #fecaca", background: "#fef2f2", padding: "10px 14px", fontSize: 14, color: "#dc2626" }}>
-                {errorCopy[error] ?? "No se pudo iniciar sesión. Vuelve a intentarlo."}
+                {errorCopy[visibleError] ?? "No se pudo iniciar sesión. Vuelve a intentarlo."}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <form action={passwordLoginAction} noValidate style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
               {/* Email */}
               <div>
@@ -376,10 +378,12 @@ export function LoginForm({ error }: { error?: string | null }) {
                   <Mail className="al-input-icon" aria-hidden="true" style={{ width: 16, height: 16 }} />
                   <input
                     id="login-email"
+                    name="email"
                     type="email"
                     autoComplete="email"
                     placeholder="usuario@ejemplo.com"
                     className="al-input"
+                    required
                   />
                 </div>
               </div>
@@ -393,10 +397,12 @@ export function LoginForm({ error }: { error?: string | null }) {
                   <Lock className="al-input-icon" aria-hidden="true" style={{ width: 16, height: 16 }} />
                   <input
                     id="login-password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     placeholder="Tu contraseña"
                     className="al-input al-input-password"
+                    required
                   />
                   <button
                     type="button"
@@ -417,8 +423,8 @@ export function LoginForm({ error }: { error?: string | null }) {
               </div>
 
               {/* CTA */}
-              <button type="submit" disabled={isSubmitting} className="al-btn-submit">
-                {isSubmitting ? (
+              <button type="submit" disabled={isPasswordLoginPending} className="al-btn-submit">
+                {isPasswordLoginPending ? (
                   <>
                     <svg style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeOpacity="0.3" />
