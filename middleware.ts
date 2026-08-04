@@ -16,6 +16,7 @@ const privatePathPrefixes = [
   "/bloc",
   "/noticias",
   "/more",
+  "/ruta",
 ];
 
 const authPaths = ["/login", "/register"];
@@ -62,6 +63,7 @@ export const config = {
     "/bloc/:path*",
     "/noticias/:path*",
     "/more/:path*",
+    "/ruta/:path*",
     "/login",
     "/register",
   ],
