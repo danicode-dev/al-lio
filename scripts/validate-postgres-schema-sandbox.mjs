@@ -82,11 +82,15 @@ const client = new Client({ connectionString });
 const EXPECTED_TABLES = [
   "users", "profiles", "sources", "quick_searches", "opportunities",
   "hackathons", "courses", "tech_opportunities", "tasks", "reminders", "quick_links",
+  "fp_cycles", "fp_content_items", "fp_content_cycle_fit", "fp_user_content_state",
 ];
 
 const EXPECTED_INDEXES = [
   "sources_user_id_idx",
   "opportunities_user_status_idx",
+  "profiles_cycle_filter_idx",
+  "fp_content_cycle_fit_cycle_idx",
+  "fp_user_content_state_user_idx",
   "tasks_user_due_idx",
   "reminders_user_remind_idx",
 ];
@@ -143,9 +147,9 @@ try {
     SELECT trigger_name FROM information_schema.triggers
     WHERE trigger_schema = 'public' AND trigger_name LIKE 'set_%_updated_at'
   `);
-  trgRes.rows.length >= 10
+  trgRes.rows.length >= 14
     ? ok(`triggers updated_at presentes (${trgRes.rows.length} encontrados)`)
-    : fail(`triggers updated_at insuficientes (${trgRes.rows.length}/10+)`);
+    : fail(`triggers updated_at insuficientes (${trgRes.rows.length}/14+)`);
 
   // ── Insertar datos mínimos de prueba ───────────────────────────────────────
   console.log("\n── Datos de prueba ──");

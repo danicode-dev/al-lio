@@ -29,6 +29,10 @@ export interface DbUser {
   updated_at: string;
 }
 
+export type FpCycleCode = "DAW" | "DAM" | "AF" | "TSAF" | "MP";
+export type FpCycleGroup = "DEV" | "AF" | "TSAF" | "MP";
+export type FpAcademicYear = 1 | 2;
+
 export interface DbProfile {
   id: string;
   user_id: string;
@@ -37,6 +41,73 @@ export interface DbProfile {
   target_role: string | null;
   main_location: string | null;
   skills: string[] | null;
+  cycle_code: FpCycleCode | null;
+  cycle_group: FpCycleGroup | null;
+  academic_year: FpAcademicYear | null;
+  interests: string[];
+  onboarding_completed_at: string | null;
+  onboarding_version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbFpCycle {
+  code: FpCycleCode;
+  group_code: FpCycleGroup;
+  name: string;
+  short_name: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbFpContentItem {
+  id: string;
+  id_slug: string;
+  type: string;
+  title: string;
+  description: string;
+  entity: string | null;
+  delivery_mode: string | null;
+  location: string | null;
+  province: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  status: string | null;
+  cost: string | null;
+  certification: string | null;
+  practices: string | null;
+  source_url: string;
+  tags: string[];
+  suggested_action: string | null;
+  last_reviewed_at: string | null;
+  notes: string | null;
+  source_year: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbFpContentCycleFit {
+  content_item_id: string;
+  cycle_code: FpCycleCode;
+  cycle_group: FpCycleGroup;
+  priority: "Alta" | "Media" | "Baja";
+  fit_score: number;
+  audience_year: FpAcademicYear | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbFpUserContentState {
+  user_id: string;
+  content_item_id: string;
+  status: "saved" | "started" | "completed" | "dismissed";
+  is_favorite: boolean;
+  notes: string | null;
+  reminder_at: string | null;
+  completed_at: string | null;
   created_at: string;
   updated_at: string;
 }
