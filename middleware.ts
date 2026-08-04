@@ -4,6 +4,7 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth/session-token";
 const privatePathPrefixes = [
   "/dashboard",
   "/onboarding",
+  "/profile",
   "/work",
   "/courses",
   "/hackathons",
@@ -49,6 +50,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/onboarding/:path*",
+    "/profile/:path*",
     "/work/:path*",
     "/courses/:path*",
     "/hackathons/:path*",
