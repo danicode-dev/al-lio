@@ -15,9 +15,5 @@ export default async function OnboardingPage() {
     getProfileByUser(session.uid),
   ]);
 
-  return (
-    <main className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-10">
-      <OnboardingForm cycles={cycles} profile={profile} />
-    </main>
-  );
+  return <OnboardingForm cycles={cycles} profile={profile} />;
 }
