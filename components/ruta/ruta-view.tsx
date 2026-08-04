@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { getYouTubeVideoId } from "@/lib/utils";
+import { parseYouTubeUrl } from "@/lib/utils";
 import { addResourceNoteAction, markResourceStatusAction } from "@/lib/fp/resource-notes-actions";
 
 type YouTubePlayerInstance = {
@@ -19,7 +19,7 @@ declare global {
       Player: new (
         element: HTMLElement,
         options: {
-          videoId: string;
+          videoId?: string;
           playerVars?: Record<string, number | string>;
           events?: { onReady?: () => void };
         }
@@ -106,7 +106,7 @@ export function RutaView({
   initialStatus: ContentStatus | null;
 }) {
   const router = useRouter();
-  const videoId = getYouTubeVideoId(item.videoUrl);
+  const youtubeRef = parseYouTubeUrl(item.videoUrl);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YouTubePlayerInstance | null>(null);
   const [playerReady, setPlayerReady] = useState(false);
@@ -117,14 +117,17 @@ export function RutaView({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (!videoId || !playerContainerRef.current) return;
+    if (!youtubeRef || !playerContainerRef.current) return;
     let cancelled = false;
+
+    const playerVars: Record<string, number | string> =
+      youtubeRef.type === "playlist" ? { rel: 0, listType: "playlist", list: youtubeRef.id } : { rel: 0 };
 
     loadYouTubeApi().then(() => {
       if (cancelled || !playerContainerRef.current || !window.YT) return;
       playerRef.current = new window.YT.Player(playerContainerRef.current, {
-        videoId,
-        playerVars: { rel: 0 },
+        ...(youtubeRef.type === "video" ? { videoId: youtubeRef.id } : {}),
+        playerVars,
         events: { onReady: () => setPlayerReady(true) },
       });
     });
@@ -134,7 +137,8 @@ export function RutaView({
       playerRef.current?.destroy();
       playerRef.current = null;
     };
-  }, [videoId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [youtubeRef?.type, youtubeRef?.id]);
 
   useEffect(() => {
     if (!playerReady) return;
@@ -403,7 +407,7 @@ export function RutaView({
         <div className="al-ruta-main">
           <div className="al-ruta-video-card">
             <div className="al-ruta-video-wrap">
-              {videoId ? (
+              {youtubeRef ? (
                 <div ref={playerContainerRef} />
               ) : (
                 <p className="al-ruta-video-fallback">Vídeo no disponible.</p>
