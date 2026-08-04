@@ -19,6 +19,7 @@ import {
   ExternalLink,
   Flame,
   FolderKanban,
+  ListChecks,
   ListTodo,
   MapPin,
   Plus,
@@ -133,6 +134,29 @@ type Course = {
   created_at: string;
 };
 
+type RequiredCompetencyLearningItem = {
+  competencia_id: string;
+  id: string;
+  id_slug: string;
+  title: string;
+  type: string;
+  source_url: string;
+  tipo_relacion: string;
+};
+
+type RequiredCompetency = {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  etapa: string;
+  nivel_objetivo?: number;
+  horas_estimadas?: number;
+  evidencia_minima?: string;
+  obligatoria_para_item: boolean;
+  orden_preparacion?: number;
+  learningItems: RequiredCompetencyLearningItem[];
+};
+
 type FpCatalogItem = {
   id: string;
   id_slug: string;
@@ -154,6 +178,7 @@ type FpCatalogItem = {
   suggested_action?: string;
   notes?: string;
   priority: "Alta" | "Media" | "Baja";
+  requiredCompetencies?: RequiredCompetency[];
   created_at: string;
 };
 
@@ -183,6 +208,7 @@ type Hackathon = {
   url?: string;
   notes?: string;
   sourceTable?: "hackathons" | "tech_opportunities" | "fp_content_items";
+  requiredCompetencies?: RequiredCompetency[];
   created_at: string;
 };
 
@@ -3443,6 +3469,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
+  const [requirementsItem, setRequirementsItem] = useState<Hackathon | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
@@ -3594,9 +3621,28 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                     {item.status === "inscripcion_abierta" && <ChipTag className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Inscripción abierta</ChipTag>}
                     {tags.map((tag) => <ChipTag key={tag}>{tag}</ChipTag>)}
                   </div>
+                  {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] font-medium text-muted-foreground">Aptitudes:</span>
+                      {item.requiredCompetencies.filter((c) => c.obligatoria_para_item).slice(0, 3).map((competency) => (
+                        <ChipTag key={competency.id} className="border-primary/25 bg-primary/5 text-primary">
+                          {competency.titulo}
+                        </ChipTag>
+                      ))}
+                      {item.requiredCompetencies.length > 3 && (
+                        <span className="text-[11px] text-muted-foreground">+{item.requiredCompetencies.length - 3} más</span>
+                      )}
+                    </div>
+                  )}
                   {item.notes && <p className="text-xs italic text-muted-foreground line-clamp-2">{item.notes}</p>}
                   <div className="mt-auto flex flex-wrap gap-1.5">
                     {item.url && <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs"><a href={item.url} target="_blank" rel="noreferrer">Abrir web</a></Button>}
+                    {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
+                      <Button type="button" size="sm" variant="outline" className="h-7 px-2.5 text-xs" onClick={() => setRequirementsItem(item)}>
+                        <ListChecks className="h-3.5 w-3.5" />
+                        Ver requisitos
+                      </Button>
+                    )}
                     <Button type="button" size="sm" variant="outline" className="h-7 px-2.5 text-xs" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Hackathon" })}>Crear tarea</Button>
                     {!isHackathonArchived(item) && (
                       <Button type="button" size="sm" variant="ghost" className="h-7 px-2.5 text-xs" onClick={() => completeHackathonItem(item, actions)}>
@@ -3662,6 +3708,71 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
           </FilterPanel>
         )}
       </div>
+
+      <HackathonRequirementsModal item={requirementsItem} onClose={() => setRequirementsItem(null)} />
+    </div>
+  );
+}
+
+function HackathonRequirementsModal({ item, onClose }: { item: Hackathon | null; onClose: () => void }) {
+  if (!item) return null;
+
+  const competencies = item.requiredCompetencies ?? [];
+  const obligatorias = competencies.filter((competency) => competency.obligatoria_para_item);
+  const recomendadas = competencies.filter((competency) => !competency.obligatoria_para_item);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-black/55 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6" role="dialog" aria-modal="true">
+      <div className="max-h-[92svh] w-full overflow-hidden rounded-t-lg border bg-background shadow-2xl sm:max-w-lg sm:rounded-lg">
+        <div className="flex items-center justify-between gap-3 border-b p-4">
+          <div className="min-w-0">
+            <h2 className="truncate text-lg font-semibold">Aptitudes para {item.name}</h2>
+            <p className="text-xs text-muted-foreground">Lo que conviene dominar antes de presentarte.</p>
+          </div>
+          <Button type="button" size="icon" variant="ghost" onClick={onClose} aria-label="Cerrar">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="max-h-[calc(92svh-73px)] space-y-5 overflow-y-auto p-4">
+          {obligatorias.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Imprescindibles</p>
+              {obligatorias.map((competency) => (
+                <CompetencyRequirement key={competency.id} competency={competency} />
+              ))}
+            </div>
+          )}
+          {recomendadas.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recomendadas</p>
+              {recomendadas.map((competency) => (
+                <CompetencyRequirement key={competency.id} competency={competency} />
+              ))}
+            </div>
+          )}
+          {competencies.length === 0 && <EmptyText>No hay aptitudes registradas todavía para este hackathon.</EmptyText>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CompetencyRequirement({ competency }: { competency: RequiredCompetency }) {
+  return (
+    <div className="rounded-md border p-3">
+      <p className="text-sm font-medium">{competency.titulo}</p>
+      {competency.descripcion && <p className="mt-1 text-xs text-muted-foreground">{competency.descripcion}</p>}
+      {competency.learningItems.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {competency.learningItems.map((learningItem) => (
+            <Button key={learningItem.id} asChild size="sm" variant="outline" className="h-6 px-2 text-[11px]">
+              <a href={learningItem.source_url} target="_blank" rel="noreferrer">
+                {learningItem.title}
+              </a>
+            </Button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -4135,6 +4246,7 @@ function fpItemToHackathon(item: FpCatalogItem): Hackathon {
     url: item.source_url ?? undefined,
     notes: fpItemNotes(item),
     sourceTable: "fp_content_items",
+    requiredCompetencies: item.requiredCompetencies,
     created_at: item.created_at,
   };
 }
