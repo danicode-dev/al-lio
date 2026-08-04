@@ -85,6 +85,17 @@ export interface DbFpContentItem {
   last_reviewed_at: string | null;
   notes: string | null;
   source_year: string;
+  video_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbFpResourceNote {
+  id: string;
+  user_id: string;
+  content_item_id: string;
+  timestamp_seconds: number;
+  body: string;
   created_at: string;
   updated_at: string;
 }

@@ -22,6 +22,7 @@ import {
   ListChecks,
   ListTodo,
   MapPin,
+  PlayCircle,
   Plus,
   RefreshCw,
   Search,
@@ -141,6 +142,7 @@ type RequiredCompetencyLearningItem = {
   title: string;
   type: string;
   source_url: string;
+  video_url: string | null;
   tipo_relacion: string;
 };
 
@@ -3764,13 +3766,23 @@ function CompetencyRequirement({ competency }: { competency: RequiredCompetency 
       {competency.descripcion && <p className="mt-1 text-xs text-muted-foreground">{competency.descripcion}</p>}
       {competency.learningItems.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {competency.learningItems.map((learningItem) => (
-            <Button key={learningItem.id} asChild size="sm" variant="outline" className="h-6 px-2 text-[11px]">
-              <a href={learningItem.source_url} target="_blank" rel="noreferrer">
-                {learningItem.title}
-              </a>
-            </Button>
-          ))}
+          {competency.learningItems.map((learningItem) =>
+            learningItem.video_url ? (
+              <Button key={learningItem.id} asChild size="sm" variant="outline" className="h-6 gap-1 px-2 text-[11px]">
+                <Link href={`/ruta/${learningItem.id_slug}`}>
+                  <PlayCircle className="h-3 w-3" />
+                  {learningItem.title}
+                </Link>
+              </Button>
+            ) : (
+              <Button key={learningItem.id} asChild size="sm" variant="outline" className="h-6 gap-1 px-2 text-[11px]">
+                <a href={learningItem.source_url} target="_blank" rel="noreferrer">
+                  <ExternalLink className="h-3 w-3" />
+                  {learningItem.title}
+                </a>
+              </Button>
+            )
+          )}
         </div>
       )}
     </div>
