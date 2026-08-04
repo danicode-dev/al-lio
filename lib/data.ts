@@ -9,7 +9,13 @@ import { getQuickLinksByUser } from "@/lib/db/repositories/quick_links";
 import { getAllTechOpportunities } from "@/lib/db/repositories/tech_opportunities";
 import { getUserById } from "@/lib/db/repositories/users";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
-import { getFpContentForProfile } from "@/lib/db/repositories/fp_catalog";
+import {
+  getFpContentForProfile,
+  getRequiredCompetenciesForItems,
+  getLearningItemsForCompetencies,
+} from "@/lib/db/repositories/fp_catalog";
+
+const FP_APTITUDE_GATED_TYPES = new Set(["hackathon", "evento", "reto", "convocatoria_practicas"]);
 
 export async function getGlobalStore() {
   const session = await getSession();
@@ -31,6 +37,15 @@ export async function getGlobalStore() {
       getUserById(userId),
       getFpContentForProfile(userId, profile),
     ]);
+
+  const aptitudeGatedItemIds = fpContent
+    .filter((item) => FP_APTITUDE_GATED_TYPES.has(item.type))
+    .map((item) => item.id);
+  const requiredCompetenciesByItem = await getRequiredCompetenciesForItems(aptitudeGatedItemIds);
+  const requiredCompetencyIds = [...new Set([...requiredCompetenciesByItem.values()].flat().map((c) => c.id))];
+  const learningItemsByCompetency = profile.cycle_group
+    ? await getLearningItemsForCompetencies(requiredCompetencyIds, profile.cycle_group)
+    : new Map();
 
   const rawName =
     pgUser?.display_name ||
@@ -89,6 +104,13 @@ export async function getGlobalStore() {
       last_reviewed_at: ymd(item.last_reviewed_at),
       created_at: iso(item.created_at),
       updated_at: iso(item.updated_at),
+      requiredCompetencies: (requiredCompetenciesByItem.get(item.id) ?? []).map((competency) => ({
+        ...competency,
+        ultima_revision: ymd(competency.ultima_revision),
+        created_at: iso(competency.created_at),
+        updated_at: iso(competency.updated_at),
+        learningItems: learningItemsByCompetency.get(competency.id) ?? [],
+      })),
     })),
     hackathons: hackathons.map((h) => ({
       ...h,
