@@ -1,5 +1,11 @@
 import { GuestApp } from "@/components/guest-app";
+import { FpRecommendationsSection } from "@/components/fp/fp-recommendations-section";
 
 export default function DashboardPage() {
-  return <GuestApp view="dashboard" />;
+  return (
+    <>
+      <FpRecommendationsSection />
+      <GuestApp view="dashboard" />
+    </>
+  );
 }
