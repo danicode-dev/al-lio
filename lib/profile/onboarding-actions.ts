@@ -4,16 +4,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
 import { upsertProfile } from "@/lib/db/repositories/profiles";
-import type { FpAcademicYear, FpCycleCode, FpCycleGroup } from "@/lib/db/types";
-
-const CYCLE_CODES = ["DAW", "DAM", "AF", "TSAF", "MP"] as const satisfies readonly FpCycleCode[];
-export const ONBOARDING_INTEREST_OPTIONS = [
-  "herramientas",
-  "cursos",
-  "portfolio",
-  "hackathons",
-  "organizacion",
-] as const;
+import { CYCLE_CODES, ONBOARDING_INTEREST_OPTIONS, cycleGroupForCode } from "@/lib/profile/onboarding-options";
+import type { FpAcademicYear } from "@/lib/db/types";
 
 const onboardingSchema = z.object({
   cycleCode: z.enum(CYCLE_CODES),
@@ -24,10 +16,6 @@ const onboardingSchema = z.object({
 export type OnboardingState = {
   error: string | null;
 };
-
-function cycleGroupForCode(cycleCode: FpCycleCode): FpCycleGroup {
-  return cycleCode === "DAW" || cycleCode === "DAM" ? "DEV" : cycleCode;
-}
 
 export async function completeOnboardingAction(
   _previousState: OnboardingState,

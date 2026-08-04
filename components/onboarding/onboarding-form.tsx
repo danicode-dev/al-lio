@@ -5,11 +5,8 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
-import {
-  completeOnboardingAction,
-  ONBOARDING_INTEREST_OPTIONS,
-  type OnboardingState,
-} from "@/lib/profile/onboarding-actions";
+import { completeOnboardingAction, type OnboardingState } from "@/lib/profile/onboarding-actions";
+import { ONBOARDING_INTEREST_OPTIONS } from "@/lib/profile/onboarding-options";
 import type { DbFpCycle, DbProfile } from "@/lib/db/types";
 
 const INTEREST_LABELS: Record<(typeof ONBOARDING_INTEREST_OPTIONS)[number], string> = {
