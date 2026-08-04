@@ -10,16 +10,34 @@ export function asString(value: FormDataEntryValue | null) {
   return text.length ? text : null;
 }
 
-export function getYouTubeVideoId(url: string): string | null {
+export type YouTubeReference = { type: "video"; id: string } | { type: "playlist"; id: string };
+
+export function parseYouTubeUrl(url: string): YouTubeReference | null {
   try {
     const parsed = new URL(url);
+    const isYouTubeHost = parsed.hostname === "youtu.be" || parsed.hostname.endsWith("youtube.com");
+    if (!isYouTubeHost) return null;
+
     if (parsed.hostname === "youtu.be") {
-      return parsed.pathname.slice(1) || null;
+      const id = parsed.pathname.slice(1);
+      return id ? { type: "video", id } : null;
     }
-    if (parsed.hostname.endsWith("youtube.com")) {
-      if (parsed.pathname === "/watch") return parsed.searchParams.get("v");
-      if (parsed.pathname.startsWith("/embed/")) return parsed.pathname.split("/")[2] ?? null;
+
+    if (parsed.pathname === "/watch") {
+      const id = parsed.searchParams.get("v");
+      return id ? { type: "video", id } : null;
     }
+
+    if (parsed.pathname.startsWith("/embed/")) {
+      const id = parsed.pathname.split("/")[2];
+      return id ? { type: "video", id } : null;
+    }
+
+    if (parsed.pathname === "/playlist") {
+      const id = parsed.searchParams.get("list");
+      return id ? { type: "playlist", id } : null;
+    }
+
     return null;
   } catch {
     return null;
