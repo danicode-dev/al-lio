@@ -3,6 +3,7 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth/session-token";
 
 const privatePathPrefixes = [
   "/dashboard",
+  "/onboarding",
   "/work",
   "/courses",
   "/hackathons",
@@ -47,6 +48,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/onboarding/:path*",
     "/work/:path*",
     "/courses/:path*",
     "/hackathons/:path*",
