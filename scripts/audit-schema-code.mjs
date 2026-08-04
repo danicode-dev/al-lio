@@ -20,7 +20,18 @@ const schema = read("infra/postgres/schema.sql");
 const guestApp = read("components/guest-app.tsx");
 const actions = read("lib/actions.ts");
 
-const requiredTables = ["tasks", "courses", "hackathons", "tech_opportunities", "quick_links", "opportunities"];
+const requiredTables = [
+  "tasks",
+  "courses",
+  "hackathons",
+  "tech_opportunities",
+  "quick_links",
+  "opportunities",
+  "fp_cycles",
+  "fp_content_items",
+  "fp_content_cycle_fit",
+  "fp_user_content_state",
+];
 for (const table of requiredTables) {
   requireIncludes("infra/postgres/schema.sql", schema, `create table if not exists public.${table}`);
 }
@@ -70,6 +81,10 @@ const requiredTechOpportunityColumns = [
 for (const column of requiredCourseColumns) requireIncludes("infra/postgres/schema.sql", schema, column);
 for (const column of requiredHackathonColumns) requireIncludes("infra/postgres/schema.sql", schema, column);
 for (const column of requiredTechOpportunityColumns) requireIncludes("infra/postgres/schema.sql", schema, column);
+
+for (const column of ["cycle_code", "cycle_group", "academic_year", "interests", "onboarding_completed_at"]) {
+  requireIncludes("infra/postgres/schema.sql", schema, column);
+}
 
 requireIncludes("components/guest-app.tsx", guestApp, 'type TaskPriority = "alta" | "media" | "baja" | "critica"');
 requireIncludes("components/guest-app.tsx", guestApp, 'return normalized === "critica" ? "alta" : normalized');
