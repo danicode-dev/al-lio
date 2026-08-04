@@ -363,9 +363,12 @@ create table if not exists public.fp_content_items (
   last_reviewed_at date,
   notes            text,
   source_year      text not null default '2026-2027',
+  video_url        text,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
 );
+
+alter table if exists public.fp_content_items add column if not exists video_url text;
 
 create table if not exists public.fp_content_cycle_fit (
   content_item_id uuid not null references public.fp_content_items(id) on delete cascade,
@@ -451,6 +454,18 @@ create table if not exists public.fp_item_competencies (
   primary key (content_item_id, competencia_id, tipo_relacion)
 );
 
+-- Timestamped notes a user takes while watching a resource's video inside
+-- AL-LIO. Separate from the localStorage-only Bloc notepad.
+create table if not exists public.fp_resource_notes (
+  id                uuid primary key default gen_random_uuid(),
+  user_id           uuid not null references public.users(id) on delete cascade,
+  content_item_id   uuid not null references public.fp_content_items(id) on delete cascade,
+  timestamp_seconds integer not null default 0 check (timestamp_seconds >= 0),
+  body              text not null,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now()
+);
+
 -- Tasks.
 create table if not exists public.tasks (
   id             uuid        primary key default gen_random_uuid(),
@@ -524,6 +539,7 @@ create index if not exists fp_user_content_state_user_idx   on public.fp_user_co
 create index if not exists fp_competencies_cycle_idx        on public.fp_competencies(cycle_code, etapa, orden_global);
 create index if not exists fp_competency_relations_dest_idx on public.fp_competency_relations(competencia_destino_id);
 create index if not exists fp_item_competencies_comp_idx    on public.fp_item_competencies(competencia_id, tipo_relacion);
+create index if not exists fp_resource_notes_user_item_idx  on public.fp_resource_notes(user_id, content_item_id, timestamp_seconds);
 create index if not exists tasks_user_due_idx               on public.tasks(user_id, due_date, status);
 create index if not exists reminders_user_remind_idx        on public.reminders(user_id, remind_at);
 create index if not exists quick_links_user_favorite_idx    on public.quick_links(user_id, is_favorite);
@@ -537,7 +553,7 @@ begin
     'users','profiles','sources','quick_searches','opportunities',
     'hackathons','courses','tasks','reminders','quick_links',
     'fp_cycles','fp_content_items','fp_content_cycle_fit','fp_user_content_state',
-    'fp_competencies','fp_competency_relations','fp_item_competencies'
+    'fp_competencies','fp_competency_relations','fp_item_competencies','fp_resource_notes'
   ]
   loop
     execute format(
