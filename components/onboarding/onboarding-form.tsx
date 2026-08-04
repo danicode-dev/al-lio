@@ -250,8 +250,6 @@ export function OnboardingForm({
         }
 
         .onboarding-step-badge-icon { width: 13px; height: 13px; }
-        .onboarding-step-dot { color: #c7c0b3; font-size: 12px; }
-        .onboarding-step-caption { color: #8a8577; font-size: 12.5px; font-weight: 500; }
 
         .onboarding-heading {
           font-size: clamp(1.7rem, 2.6vw, 2.1rem);
@@ -461,10 +459,6 @@ export function OnboardingForm({
                 <Info className="onboarding-step-badge-icon" aria-hidden="true" />
                 Paso 1 de 1
               </span>
-              <span className="onboarding-step-dot" aria-hidden="true">
-                •
-              </span>
-              <span className="onboarding-step-caption">Personalización inicial</span>
             </div>
 
             <h1 className="onboarding-heading">Cuéntanos qué estudias</h1>
