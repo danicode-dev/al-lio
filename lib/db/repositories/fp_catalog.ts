@@ -24,6 +24,14 @@ export type FpCatalogContentRow = DbFpContentItem & {
   user_completed_at: string | null;
 };
 
+export async function getFpContentItemBySlug(idSlug: string): Promise<DbFpContentItem | null> {
+  const res = await query<DbFpContentItem>(
+    `SELECT * FROM public.fp_content_items WHERE id_slug = $1 LIMIT 1`,
+    [idSlug]
+  );
+  return res.rows[0] ?? null;
+}
+
 export async function getActiveFpCycles(): Promise<DbFpCycle[]> {
   const res = await query<DbFpCycle>(
     `SELECT *
@@ -118,6 +126,7 @@ export type CompetencyLearningItem = {
   title: string;
   type: string;
   source_url: string;
+  video_url: string | null;
   tipo_relacion: FpItemCompetencyRelation;
 };
 
@@ -130,7 +139,7 @@ export async function getLearningItemsForCompetencies(
   if (competencyIds.length === 0) return map;
 
   const res = await query<CompetencyLearningItem>(
-    `SELECT DISTINCT link.competencia_id, item.id, item.id_slug, item.title, item.type, item.source_url, link.tipo_relacion
+    `SELECT DISTINCT link.competencia_id, item.id, item.id_slug, item.title, item.type, item.source_url, item.video_url, link.tipo_relacion
      FROM public.fp_item_competencies link
      INNER JOIN public.fp_content_items item ON item.id = link.content_item_id
      INNER JOIN public.fp_content_cycle_fit fit ON fit.content_item_id = item.id
@@ -148,6 +157,17 @@ export async function getLearningItemsForCompetencies(
   }
 
   return map;
+}
+
+export async function getUserContentState(
+  userId: string,
+  contentItemId: string
+): Promise<DbFpUserContentState | null> {
+  const res = await query<DbFpUserContentState>(
+    `SELECT * FROM public.fp_user_content_state WHERE user_id = $1 AND content_item_id = $2 LIMIT 1`,
+    [userId, contentItemId]
+  );
+  return res.rows[0] ?? null;
 }
 
 export async function getFpUserContentStateCounts(userId: string): Promise<Record<string, number>> {

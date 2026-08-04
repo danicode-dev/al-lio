@@ -1,0 +1,57 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth/session";
+import { getFpContentItemBySlug, upsertFpUserContentState } from "@/lib/db/repositories/fp_catalog";
+import { addResourceNote } from "@/lib/db/repositories/fp_resource_notes";
+import type { DbFpResourceNote, DbFpUserContentState } from "@/lib/db/types";
+
+export async function addResourceNoteAction(
+  idSlug: string,
+  timestampSeconds: number,
+  body: string
+): Promise<{ error: string | null; note: DbFpResourceNote | null }> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const trimmedBody = body.trim();
+  const safeTimestamp = Math.floor(timestampSeconds);
+
+  if (!trimmedBody || !Number.isFinite(safeTimestamp) || safeTimestamp < 0) {
+    return { error: "note_invalid", note: null };
+  }
+
+  const item = await getFpContentItemBySlug(idSlug);
+  if (!item) return { error: "resource_not_found", note: null };
+
+  try {
+    const note = await addResourceNote(session.uid, item.id, safeTimestamp, trimmedBody);
+    revalidatePath(`/ruta/${idSlug}`);
+    return { error: null, note };
+  } catch {
+    return { error: "note_save_failed", note: null };
+  }
+}
+
+export async function markResourceStatusAction(
+  idSlug: string,
+  status: DbFpUserContentState["status"]
+): Promise<{ error: string | null; status: DbFpUserContentState["status"] | null }> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const item = await getFpContentItemBySlug(idSlug);
+  if (!item) return { error: "resource_not_found", status: null };
+
+  try {
+    const state = await upsertFpUserContentState(session.uid, item.id, {
+      status,
+      completed_at: status === "completed" ? new Date().toISOString() : null,
+    });
+    revalidatePath(`/ruta/${idSlug}`);
+    return { error: null, status: state.status };
+  } catch {
+    return { error: "status_save_failed", status: null };
+  }
+}
