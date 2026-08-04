@@ -8,12 +8,16 @@ import { getOpportunitiesByUser } from "@/lib/db/repositories/opportunities";
 import { getQuickLinksByUser } from "@/lib/db/repositories/quick_links";
 import { getAllTechOpportunities } from "@/lib/db/repositories/tech_opportunities";
 import { getUserById } from "@/lib/db/repositories/users";
+import { getProfileByUser } from "@/lib/db/repositories/profiles";
 
 export async function getGlobalStore() {
   const session = await getSession();
   if (!session) redirect("/login");
 
   const userId = session.uid;
+
+  const profile = await getProfileByUser(userId);
+  if (!profile?.onboarding_completed_at) redirect("/onboarding");
 
   const [tasks, courses, hackathons, techOpportunities, opportunities, links, pgUser] =
     await Promise.all([
