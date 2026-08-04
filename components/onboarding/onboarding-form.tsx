@@ -1,25 +1,13 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
-import {
-  ArrowRight,
-  BookOpen,
-  Calendar,
-  Check,
-  ChevronDown,
-  Folder,
-  GraduationCap,
-  Info,
-  Lock,
-  Trophy,
-  Wrench,
-  type LucideIcon,
-} from "lucide-react";
+import { useActionState, useState } from "react";
+import { ArrowRight, BookOpen, Calendar, Folder, GraduationCap, Info, Lock, Trophy, Wrench, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { completeOnboardingAction, type OnboardingState } from "@/lib/profile/onboarding-actions";
 import { ONBOARDING_INTEREST_OPTIONS } from "@/lib/profile/onboarding-options";
 import type { DbFpCycle, DbProfile } from "@/lib/db/types";
 import { OnboardingBrandPanel } from "@/components/onboarding/onboarding-brand-panel";
+import { FieldListbox, type FieldListboxOption } from "@/components/ui/field-listbox";
 
 const INTEREST_META: Record<
   (typeof ONBOARDING_INTEREST_OPTIONS)[number],
@@ -39,117 +27,6 @@ const errorCopy: Record<string, string> = {
 
 const initialState: OnboardingState = { error: null };
 
-type ListboxOption = { value: string; label: string };
-
-function FieldListbox({
-  id,
-  name,
-  label,
-  icon: Icon,
-  iconTone,
-  placeholder,
-  options,
-  value,
-  onChange,
-}: {
-  id: string;
-  name: string;
-  label: string;
-  icon: LucideIcon;
-  iconTone: "terracotta" | "sage";
-  placeholder: string;
-  options: ListboxOption[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const selected = options.find((option) => option.value === value);
-
-  useEffect(() => {
-    if (!open) return;
-
-    function handlePointerDown(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-      }
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open]);
-
-  return (
-    <div className="onboarding-field">
-      <label htmlFor={id} className="onboarding-field-label">
-        {label}
-      </label>
-      <div className="onboarding-listbox" ref={containerRef}>
-        <input type="hidden" name={name} value={value} />
-        <button
-          ref={triggerRef}
-          type="button"
-          id={id}
-          className="onboarding-listbox-trigger"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          onClick={() => setOpen((current) => !current)}
-        >
-          <Icon
-            className={cn(
-              "onboarding-listbox-icon-svg",
-              iconTone === "terracotta" ? "onboarding-listbox-icon-terracotta" : "onboarding-listbox-icon-sage"
-            )}
-            aria-hidden="true"
-          />
-          <span className={cn("onboarding-listbox-value", !selected && "onboarding-listbox-placeholder")}>
-            {selected ? selected.label : placeholder}
-          </span>
-          <ChevronDown className="onboarding-listbox-chevron" aria-hidden="true" />
-        </button>
-
-        {open && (
-          <ul className="onboarding-listbox-panel" role="listbox" aria-labelledby={id}>
-            {options.map((option) => {
-              const isSelected = option.value === value;
-              return (
-                <li key={option.value}>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    className={cn("onboarding-listbox-option", isSelected && "onboarding-listbox-option-selected")}
-                    onClick={() => {
-                      onChange(option.value);
-                      setOpen(false);
-                      triggerRef.current?.focus();
-                    }}
-                  >
-                    {isSelected && <Check className="onboarding-listbox-check" aria-hidden="true" />}
-                    {option.label}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export function OnboardingForm({
   cycles,
   profile,
@@ -166,8 +43,8 @@ export function OnboardingForm({
     setInterests((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
   }
 
-  const cycleOptions: ListboxOption[] = cycles.map((cycle) => ({ value: cycle.code, label: cycle.name }));
-  const yearOptions: ListboxOption[] = [
+  const cycleOptions: FieldListboxOption[] = cycles.map((cycle) => ({ value: cycle.code, label: cycle.name }));
+  const yearOptions: FieldListboxOption[] = [
     { value: "1", label: "1º curso" },
     { value: "2", label: "2º curso" },
   ];
@@ -284,99 +161,6 @@ export function OnboardingForm({
           gap: 20px;
         }
 
-        .onboarding-field {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .onboarding-field-label {
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--alio-graphite);
-        }
-
-        .onboarding-listbox { position: relative; }
-
-        .onboarding-listbox-trigger {
-          width: 100%;
-          height: 54px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          border-radius: 12px;
-          border: 1px solid #E4DFD5;
-          background: white;
-          padding: 0 14px;
-          cursor: pointer;
-          font-size: 14.5px;
-          color: var(--alio-graphite);
-          transition: border-color 0.15s, box-shadow 0.15s;
-        }
-
-        .onboarding-listbox-trigger:hover { border-color: #d8d1c2; }
-        .onboarding-listbox-trigger[aria-expanded="true"] {
-          border-color: rgba(225, 93, 45, 0.5);
-          box-shadow: 0 0 0 3px rgba(225, 93, 45, 0.12);
-        }
-
-        .onboarding-listbox-icon-svg { width: 17px; height: 17px; flex-shrink: 0; }
-        .onboarding-listbox-icon-terracotta { color: var(--alio-terracotta); }
-        .onboarding-listbox-icon-sage { color: var(--alio-sage); }
-
-        .onboarding-listbox-value { flex: 1; text-align: left; }
-        .onboarding-listbox-placeholder { color: #a39d8e; }
-
-        .onboarding-listbox-chevron {
-          width: 16px;
-          height: 16px;
-          color: #9a9589;
-          transition: transform 0.15s;
-          flex-shrink: 0;
-        }
-        .onboarding-listbox-trigger[aria-expanded="true"] .onboarding-listbox-chevron { transform: rotate(180deg); }
-
-        .onboarding-listbox-panel {
-          position: absolute;
-          z-index: 20;
-          top: calc(100% + 8px);
-          left: 0;
-          right: 0;
-          background: white;
-          border: 1px solid #ECE7DC;
-          border-radius: 14px;
-          box-shadow: 0 16px 40px rgba(17, 17, 17, 0.12);
-          padding: 6px;
-          margin: 0;
-          list-style: none;
-          max-height: 280px;
-          overflow-y: auto;
-        }
-
-        .onboarding-listbox-option {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          text-align: left;
-          padding: 10px 12px;
-          border-radius: 9px;
-          border: none;
-          background: transparent;
-          font-size: 14px;
-          color: var(--alio-graphite);
-          cursor: pointer;
-        }
-
-        .onboarding-listbox-option:hover { background: #F7F4EE; }
-        .onboarding-listbox-option-selected {
-          background: var(--alio-terracotta-soft);
-          color: var(--alio-terracotta);
-          font-weight: 600;
-        }
-
-        .onboarding-listbox-check { width: 15px; height: 15px; flex-shrink: 0; }
-
         .onboarding-chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 
         .onboarding-chip {
@@ -491,8 +275,8 @@ export function OnboardingForm({
                 onChange={setAcademicYear}
               />
 
-              <div className="onboarding-field">
-                <span className="onboarding-field-label">Te interesa (opcional)</span>
+              <div className="al-field">
+                <span className="al-field-label">Te interesa (opcional)</span>
                 <div className="onboarding-chip-grid">
                   {ONBOARDING_INTEREST_OPTIONS.map((id) => {
                     const meta = INTEREST_META[id];

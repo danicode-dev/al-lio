@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
 import { upsertProfile } from "@/lib/db/repositories/profiles";
@@ -50,4 +51,43 @@ export async function completeOnboardingAction(
   }
 
   redirect("/dashboard");
+}
+
+export type ProfileUpdateState = {
+  error: string | null;
+  savedAt: number | null;
+};
+
+export async function updateProfileAction(
+  previousState: ProfileUpdateState,
+  formData: FormData
+): Promise<ProfileUpdateState> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const parsed = onboardingSchema.safeParse({
+    cycleCode: formData.get("cycleCode"),
+    academicYear: formData.get("academicYear"),
+    interests: formData.getAll("interests"),
+  });
+
+  if (!parsed.success) {
+    return { error: "onboarding_invalid", savedAt: previousState.savedAt };
+  }
+
+  const { cycleCode, academicYear, interests } = parsed.data;
+
+  try {
+    await upsertProfile(session.uid, {
+      cycle_code: cycleCode,
+      cycle_group: cycleGroupForCode(cycleCode),
+      academic_year: academicYear,
+      interests,
+    });
+  } catch {
+    return { error: "onboarding_save_failed", savedAt: previousState.savedAt };
+  }
+
+  revalidatePath("/profile");
+  return { error: null, savedAt: Date.now() };
 }
