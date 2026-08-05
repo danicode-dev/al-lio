@@ -3963,10 +3963,16 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
 
   useEffect(() => {
     if (!item) return;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
     document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
     return () => {
       document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
     };
   }, [item]);
 
@@ -3983,7 +3989,7 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
         .al-modal-shell { background: white; border-radius: 22px 22px 0 0; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
         @media (min-width: 640px) { .al-modal-shell { border-radius: 22px; } }
         .al-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #f0ece2; flex-shrink: 0; }
-        .al-modal-head-icon { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex-shrink: 0; }
+        .al-modal-head-icon { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; flex-shrink: 0; }
         .al-modal-title { font-size: 18px; font-weight: 700; color: #111111; line-height: 24px; letter-spacing: -0.02em; }
         .al-modal-subtitle { font-size: 11.5px; color: #6b6f72; margin-top: 2px; }
         .al-modal-close { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; flex-shrink: 0; }
