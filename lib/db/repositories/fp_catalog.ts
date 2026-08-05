@@ -170,6 +170,25 @@ export async function getUserContentState(
   return res.rows[0] ?? null;
 }
 
+export async function getUserContentStatesForItems(
+  userId: string,
+  contentItemIds: string[]
+): Promise<Map<string, DbFpUserContentState["status"]>> {
+  const map = new Map<string, DbFpUserContentState["status"]>();
+  if (contentItemIds.length === 0) return map;
+
+  const res = await query<Pick<DbFpUserContentState, "content_item_id" | "status">>(
+    `SELECT content_item_id, status FROM public.fp_user_content_state WHERE user_id = $1 AND content_item_id = ANY($2)`,
+    [userId, contentItemIds]
+  );
+
+  for (const row of res.rows) {
+    map.set(row.content_item_id, row.status);
+  }
+
+  return map;
+}
+
 export async function getFpUserContentStateCounts(userId: string): Promise<Record<string, number>> {
   const res = await query<{ status: DbFpUserContentState["status"]; count: string }>(
     `SELECT status, count(*) as count
