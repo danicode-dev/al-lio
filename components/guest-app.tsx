@@ -7,6 +7,7 @@ import {
   AlarmClock,
   Bell,
   Bookmark,
+  BookOpen,
   Briefcase,
   Building2,
   CalendarDays,
@@ -3029,9 +3030,9 @@ function Tasks({ store, actions }: { store: Store; actions: ReturnTypeActions })
 
 
 function courseStatusClass(status: string) {
-  if (status === "empezado") return "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300";
+  if (status === "empezado") return "al-course-chip-terracotta";
   if (status === "terminado") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
-  if (status === "pausado") return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  if (status === "pausado") return "al-course-chip-amber";
   if (status === "descartado") return "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300";
   return "";
 }
@@ -3172,19 +3173,6 @@ function MonthChips({
           </button>
         );
       })}
-    </div>
-  );
-}
-
-function KpiRow({ items }: { items: [string, number, string][] }) {
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {items.map(([label, value, cls]) => (
-        <Card key={label} className="p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
-          <p className={cn("mt-1 text-2xl font-bold leading-none tabular-nums", cls)}>{value}</p>
-        </Card>
-      ))}
     </div>
   );
 }
@@ -3390,134 +3378,191 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-48 flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar título, entidad, tag..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9 text-sm" />
-        </div>
-        <div className="flex items-center gap-0.5 rounded-md border bg-card p-0.5">
-          {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
-            <Button key={id} type="button" size="sm" variant={viewTab === id ? "default" : "ghost"} className="h-7 px-3 text-xs" onClick={() => { setViewTab(id); clearAll(); }}>
-              {label}
-            </Button>
-          ))}
-        </div>
-        <Button type="button" size="sm" variant={showFilters ? "default" : "outline"} className="gap-1.5" onClick={() => setShowFilters((v) => !v)}>
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
-        </Button>
-      </div>
-
-      <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
-
-      <div className="flex flex-col gap-5 lg:flex-row">
-        <div className="min-w-0 flex-1 space-y-4">
-          <KpiRow items={[
-            ["Total", tabBase.length, ""],
-            ["Empezados", kpiEmpezados, "text-blue-600 dark:text-blue-400"],
-            ["Pendientes", kpiPendientes, "text-amber-600 dark:text-amber-400"],
-            ["Próx. inicio", kpiProx, "text-emerald-600 dark:text-emerald-400"],
-          ]} />
-
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground">
-              Mostrando {filtered.length} {filtered.length === 1 ? "curso" : "cursos"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
-            </p>
-            <ViewToggle value={viewMode} onChange={setViewMode} />
+    <>
+      <style>{`
+        .al-course-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+        .al-course-search { position: relative; flex: 1; min-width: 220px; }
+        .al-course-search input { padding-left: 36px; height: 40px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 13px; }
+        .al-course-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #9a958a; }
+        .al-course-tabs { display: flex; align-items: center; gap: 2px; border-radius: 12px; border: 1px solid #ece7dc; background: white; padding: 3px; }
+        .al-course-tab { height: 32px; padding: 0 12px; border-radius: 9px; font-size: 12.5px; font-weight: 600; color: #6b6f72; background: transparent; border: none; cursor: pointer; transition: background 0.15s, color 0.15s; }
+        .al-course-tab.al-course-tab-active { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; box-shadow: 0 6px 14px rgba(225, 93, 45, 0.25); }
+        .al-course-filter-btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 12.5px; font-weight: 600; color: #333029; cursor: pointer; }
+        .al-course-filter-btn.al-course-filter-btn-active { background: #fbe7dd; border-color: rgba(225, 93, 45, 0.3); color: #c94f21; }
+        .al-course-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        @media (min-width: 640px) { .al-course-stats { grid-template-columns: repeat(4, 1fr); } }
+        .al-course-stat-card { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid #ece7dc; border-radius: 18px; padding: 14px 16px; box-shadow: 0 8px 20px rgba(17, 17, 17, 0.04); }
+        .al-course-stat-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
+        .al-course-stat-value { font-size: 22px; font-weight: 800; line-height: 1; color: #111111; }
+        .al-course-stat-label { font-size: 11px; font-weight: 600; color: #6b6f72; margin-top: 3px; }
+        .al-course-chip-terracotta { border-color: rgba(225, 93, 45, 0.3) !important; background: #fbe7dd !important; color: #c94f21 !important; }
+        .al-course-chip-amber { border-color: rgba(180, 121, 31, 0.3) !important; background: #fdf1dd !important; color: #8a5c14 !important; }
+        .al-course-chip-green { border-color: rgba(31, 122, 77, 0.3) !important; background: #e7f5ee !important; color: #1f7a4d !important; }
+        .al-course-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .al-course-count-text { font-size: 12px; color: #6b6f72; }
+        .al-course-grid { display: grid; gap: 12px; }
+        .al-course-grid-2 { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+        .al-course-card { position: relative; display: flex; flex-direction: column; gap: 8px; background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 13px; }
+        .al-course-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+        .al-course-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; }
+        .al-course-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; }
+        .al-course-card-meta { font-size: 11px; color: #6b6f72; }
+        .al-course-card-desc { font-size: 11.5px; color: #4b4740; line-height: 1.4; }
+        .al-course-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
+        .al-course-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
+        .al-course-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+        .al-course-empty { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .al-course-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
+        .al-course-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
+        .al-course-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
+        .al-course-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; }
+      `}</style>
+      <div className="space-y-4">
+        <div className="al-course-toolbar">
+          <div className="al-course-search">
+            <Search />
+            <Input placeholder="Buscar título, entidad, tag..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           </div>
+          <div className="al-course-tabs">
+            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
+              <button key={id} type="button" className={cn("al-course-tab", viewTab === id && "al-course-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className={cn("al-course-filter-btn", showFilters && "al-course-filter-btn-active")} onClick={() => setShowFilters((v) => !v)}>
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
+          </button>
+        </div>
 
-          <div className={cn(viewMode === "grid" ? "grid gap-4 sm:grid-cols-2" : "space-y-3")}>
-            {filtered.length ? filtered.map((item) => {
-              const tags = splitTags(item.tags);
-              const startDate = item.fecha_inicio || item.start_at;
-              const endDate = item.fecha_fin || item.deadline_at;
-              const place = [item.localidad, item.provincia].filter(Boolean).join(" / ");
-              const url = item.fuente_url || item.url;
-              return (
-                <Card key={item.id} className="flex flex-col gap-3 p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-semibold leading-snug">{item.title}</p>
-                      {(item.entidad || item.platform) && <p className="mt-0.5 text-xs text-muted-foreground">{item.entidad || item.platform}</p>}
+        <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
+
+        <div className="flex flex-col gap-5 lg:flex-row">
+          <div className="min-w-0 flex-1 space-y-4">
+            <div className="al-course-stats">
+              <div className="al-course-stat-card">
+                <span className="al-course-stat-icon" style={{ background: "#fbe7dd", color: "#E15D2D" }}><BookOpen className="h-4.5 w-4.5" /></span>
+                <div><p className="al-course-stat-value">{tabBase.length}</p><p className="al-course-stat-label">Total</p></div>
+              </div>
+              <div className="al-course-stat-card">
+                <span className="al-course-stat-icon" style={{ background: "#e7f5ee", color: "#1f7a4d" }}><CheckCircle2 className="h-4.5 w-4.5" /></span>
+                <div><p className="al-course-stat-value">{kpiEmpezados}</p><p className="al-course-stat-label">Empezados</p></div>
+              </div>
+              <div className="al-course-stat-card">
+                <span className="al-course-stat-icon" style={{ background: "#fdf1dd", color: "#b4791f" }}><Clock className="h-4.5 w-4.5" /></span>
+                <div><p className="al-course-stat-value">{kpiPendientes}</p><p className="al-course-stat-label">Pendientes</p></div>
+              </div>
+              <div className="al-course-stat-card">
+                <span className="al-course-stat-icon" style={{ background: "#f3ece1", color: "#6b6f72" }}><AlarmClock className="h-4.5 w-4.5" /></span>
+                <div><p className="al-course-stat-value">{kpiProx}</p><p className="al-course-stat-label">Próx. inicio</p></div>
+              </div>
+            </div>
+
+            <div className="al-course-count-row">
+              <p className="al-course-count-text">
+                Mostrando {filtered.length} {filtered.length === 1 ? "curso" : "cursos"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
+              </p>
+              <ViewToggle value={viewMode} onChange={setViewMode} />
+            </div>
+
+            {filtered.length ? (
+              <div className={cn("al-course-grid", viewMode === "grid" ? "al-course-grid-2" : "")}>
+                {filtered.map((item) => {
+                  const startDate = item.fecha_inicio || item.start_at;
+                  const endDate = item.fecha_fin || item.deadline_at;
+                  const place = [item.localidad, item.provincia].filter(Boolean).join(" / ");
+                  const url = item.fuente_url || item.url;
+                  return (
+                    <div key={item.id} className="al-course-card">
+                      <div className="al-course-card-top">
+                        <div className="min-w-0">
+                          <p className="al-course-card-title">{item.title}</p>
+                          {(item.entidad || item.platform) && <p className="al-course-card-org">{item.entidad || item.platform}</p>}
+                        </div>
+                        <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
+                      </div>
+                      {(startDate || endDate) && (
+                        <p className="al-course-card-meta">
+                          {startDate ? formatDateLabel(startDate) : "—"}{endDate ? ` → ${formatDateLabel(endDate)}` : ""}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-1.5">
+                        {place && <ChipTag icon="pin">{place}</ChipTag>}
+                        {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
+                        {item.prioridad && <ChipTag className={coursePriorityClass(item.prioridad)}>{priorityText(item.prioridad)}</ChipTag>}
+                      </div>
+                      {item.requisitos_resumen && <p className="al-course-card-desc line-clamp-1">{item.requisitos_resumen}</p>}
+                      <div className="al-course-card-actions">
+                        {url && <a href={url} target="_blank" rel="noreferrer" className="al-course-btn"><ExternalLink className="h-3.5 w-3.5" />Abrir</a>}
+                        {!isCourseArchived(item) && (
+                          <button type="button" className="al-course-btn" onClick={() => completeCourseItem(item, actions)}>
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Terminado
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
-                  </div>
-                  {(startDate || endDate) && (
-                    <p className="text-xs text-muted-foreground">
-                      {startDate ? formatDateLabel(startDate) : "—"}{endDate ? ` → ${formatDateLabel(endDate)}` : ""}
-                    </p>
-                  )}
-                  <div className="flex flex-wrap gap-1.5">
-                    {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
-                    {place && <ChipTag icon="pin">{place}</ChipTag>}
-                    {item.horas_totales ? <ChipTag>{item.horas_totales}h</ChipTag> : null}
-                    {item.prioridad && <ChipTag className={genericPriorityClass(item.prioridad)}>{priorityText(item.prioridad)}</ChipTag>}
-                    {item.coste ? <ChipTag>{item.coste}</ChipTag> : null}
-                    {item.encaje_daw_1_5 ? <ChipTag>DAW {item.encaje_daw_1_5}/5</ChipTag> : null}
-                    {item.certificacion_tipo && <ChipTag>{item.certificacion_tipo}</ChipTag>}
-                    {item.practicas_empresa === true && <ChipTag>Prácticas</ChipTag>}
-                    {tags.map((tag) => <ChipTag key={tag}>{tag}</ChipTag>)}
-                  </div>
-                  {item.requisitos_resumen && <p className="text-xs italic text-muted-foreground line-clamp-2">{item.requisitos_resumen}</p>}
-                  <div className="mt-auto flex flex-wrap gap-1.5">
-                    {url && <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs"><a href={url} target="_blank" rel="noreferrer">Abrir</a></Button>}
-                    {!isCourseArchived(item) && (
-                      <Button type="button" size="sm" variant="outline" className="h-7 px-2.5 text-xs" onClick={() => completeCourseItem(item, actions)}>
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        Terminado
-                      </Button>
-                    )}
-                  </div>
-                </Card>
-              );
-            }) : (
-              <div className={cn(viewMode === "grid" && "sm:col-span-2")}>
-                <EmptyText>{search || activeFilterCount > 0 ? "No hay cursos con estos filtros." : "No hay cursos en esta vista."}</EmptyText>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="al-course-empty">
+                <span className="al-course-empty-icon"><BookOpen className="h-6 w-6" /></span>
+                <p className="al-course-empty-title">Sin resultados</p>
+                <p className="al-course-empty-desc">{search || activeFilterCount > 0 ? "Ningún curso coincide con tu búsqueda o filtros." : "No hay cursos en esta vista todavía."}</p>
+                {(search || activeFilterCount > 0) && <button type="button" className="al-course-empty-btn" onClick={clearAll}>Quitar filtros</button>}
               </div>
             )}
           </div>
-        </div>
 
-        {showFilters && (
-          <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
-            <FilterSection label="Calendario">
-              <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
-            </FilterSection>
-            <FilterSection label="Estado">
-              <FilterChips
-                options={[["", "Todos"], ["pendiente", "Pendiente"], ["empezado", "Activo"], ["pausado", "Pausado"]]}
-                value={estadoFilter}
-                onChange={setEstadoFilter}
-              />
-            </FilterSection>
-            {modalidades.length > 0 && (
-              <FilterSection label="Modalidad">
+          {showFilters && (
+            <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
+              <FilterSection label="Calendario">
+                <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
+              </FilterSection>
+              <FilterSection label="Estado">
                 <FilterChips
-                  options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
-                  value={modalidadFilter}
-                  onChange={setModalidadFilter}
+                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["empezado", "Activo"], ["pausado", "Pausado"]]}
+                  value={estadoFilter}
+                  onChange={setEstadoFilter}
                 />
               </FilterSection>
-            )}
-            <FilterSection label="Prioridad">
-              <FilterChips
-                options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
-                value={prioridadFilter}
-                onChange={setPrioridadFilter}
-              />
-            </FilterSection>
-            <FilterSection label="Solo">
-              <label className="flex cursor-pointer items-center gap-2 text-xs">
-                <input type="checkbox" checked={soloGratuitos} onChange={(e) => setSoloGratuitos(e.target.checked)} className="rounded" />
-                Gratuitos
-              </label>
-            </FilterSection>
-          </FilterPanel>
-        )}
+              {modalidades.length > 0 && (
+                <FilterSection label="Modalidad">
+                  <FilterChips
+                    options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
+                    value={modalidadFilter}
+                    onChange={setModalidadFilter}
+                  />
+                </FilterSection>
+              )}
+              <FilterSection label="Prioridad">
+                <FilterChips
+                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
+                  value={prioridadFilter}
+                  onChange={setPrioridadFilter}
+                />
+              </FilterSection>
+              <FilterSection label="Solo">
+                <label className="flex cursor-pointer items-center gap-2 text-xs">
+                  <input type="checkbox" checked={soloGratuitos} onChange={(e) => setSoloGratuitos(e.target.checked)} className="rounded" />
+                  Gratuitos
+                </label>
+              </FilterSection>
+            </FilterPanel>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
+}
+
+function coursePriorityClass(value?: string): string {
+  const priority = normalizePriorityText(value);
+  if (priority.includes("alta")) return "al-course-chip-terracotta";
+  if (priority.includes("baja")) return "al-course-chip-green";
+  return "al-course-chip-amber";
 }
 
 function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
@@ -4834,10 +4879,6 @@ function val(form: FormData, key: string) {
   return String(form.get(key) ?? "").trim();
 }
 
-function splitTags(value?: string | string[]) {
-  const raw = Array.isArray(value) ? value : String(value || "").split("|");
-  return raw.map((tag) => tag.trim()).filter(Boolean).slice(0, 8);
-}
 
 function normalizePriorityText(value?: string) {
   return String(value || "media").trim().toLowerCase();
@@ -4850,12 +4891,6 @@ function priorityText(value?: string) {
   return "Media";
 }
 
-function genericPriorityClass(value?: string) {
-  const priority = normalizePriorityText(value);
-  if (priority.includes("alta")) return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
-  if (priority.includes("baja")) return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
-  return "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300";
-}
 
 
 function toTaskBucket(value?: string): TaskBucket {
