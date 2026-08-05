@@ -43,36 +43,34 @@ reporta y se salta esa fila en vez de fallar todo el import. Si hay
 entero antes de tocar la base de datos (evita que un duplicado silencioso
 pise una fila valida).
 
-## Origen de los datos (2026-08-06, ChatGPT + verificacion cruzada — vigente)
+## Origen de los datos (2026-08-06, ChatGPT + revision manual de encaje — vigente)
 
-54 de los 55 recursos que quedaban pendientes tras la curacion estricta del
-2026-08-05 se resolvieron con 4 lotes de candidatos (uno por ciclo/grupo:
-TSAF, DAW/DAM, AF, MP) generados por ChatGPT a partir de los prompts en
-`PROMPT_DEV.md` / `PROMPT_AF.md` / `PROMPT_MP.md` / `PROMPT_TSAF.md`
-(no committeados, son prompts de trabajo, no datos del catalogo). Los 4
-JSON crudos que devolvio ChatGPT estan archivados en
+4 lotes de candidatos (uno por ciclo/grupo: TSAF, DAW/DAM, AF, MP) generados
+por ChatGPT a partir de los prompts en `PROMPT_DEV.md` / `PROMPT_AF.md` /
+`PROMPT_MP.md` / `PROMPT_TSAF.md` (no committeados, son prompts de trabajo,
+no datos del catalogo). Los 4 JSON crudos estan archivados en
 `source-2026-08-06-chatgpt/` para trazabilidad.
 
-Cada candidato se cruzo con el recurso pendiente de dos formas, por orden
-de confianza:
-1. **Coincidencia directa**: el candidato ya venia etiquetado por ChatGPT
-   con el `id_slug` exacto del recurso (`recursos_compatibles` en el JSON
-   de origen). Se verifico que ese `id_slug` existe de verdad en el
-   catalogo antes de aceptarlo — 0 referencias inventadas detectadas.
-2. **Coincidencia por competencia**: sin etiqueta directa, se cruzo el
-   listado de competencias del candidato contra las competencias reales
-   que ese recurso desarrolla en `item_competencias.csv` (mismo texto
-   exacto que se le paso a ChatGPT en el prompt). Se exige al menos una
-   competencia en comun.
+**Primer intento (revertido el mismo dia):** cruzar cada candidato contra el
+recurso pendiente por coincidencia directa de `id_slug` (si el JSON de
+origen ya lo etiquetaba en `recursos_compatibles`) o por al menos una
+competencia en comun con `item_competencias.csv`. Resolvio 54 recursos, pero
+aceptar una sola coincidencia de texto sin comprobar el tema real del video
+dejo pasar emparejamientos incorrectos (ej. un video de "Marketing" en un
+curso de "Auxiliar administrativo", un video de "Word" en un curso de
+"edicion de video") — visible en produccion como videos repetidos/genericos
+en varios ciclos. Ver `PENDIENTES_VIDEO.md` para el detalle completo del
+incidente.
 
-Se mantiene el mismo tope de 5 reutilizaciones por video que en el lote
-anterior, contando tambien los 45 videos ya aprobados el 2026-08-05 (no
-solo los nuevos) para no reabrir la monocultura de un video en decenas de
-tarjetas.
+**Correccion aplicada:** los 54 se revisaron uno por uno comprobando que el
+tema real del video coincide con el tema real del recurso, no solo el texto
+de la competencia. Solo 12 pasaron esa revision manual; los otros 42 se
+revirtieron (`video_url = NULL`) y volvieron a la lista de pendientes.
 
-El unico recurso que se quedo sin video esta vez: `af_camara_nominas_seguros_sociales_2026`
-(ningun candidato de los 4 lotes comparte competencia con ese recurso).
-Pendiente de que Daniel reenvie un candidato para ese caso puntual.
+Se mantiene el tope de 5 reutilizaciones por video (verificado tambien
+contra la base de datos real) y, tras la correccion, **0 videos compartidos
+entre grupos de ciclo distintos** (AF/MP/TSAF/DEV) — verificado con consulta
+directa a la base de datos, no solo contra el archivo de origen.
 
 ### Origen 2026-08-05 (curacion estricta, superado por el lote 2026-08-06)
 

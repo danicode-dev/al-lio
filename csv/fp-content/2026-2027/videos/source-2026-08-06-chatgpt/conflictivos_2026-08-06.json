@@ -1,5 +1,299 @@
 [
   {
+    "cycle": "DEV",
+    "slug": "dam_kotlin_get_started",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO REACT NATIVE desde CERO - Creamos una app paso a paso",
+    "video_revertido": "https://www.youtube.com/watch?v=qi87b6VcIHY"
+  },
+  {
+    "cycle": "DEV",
+    "slug": "daw_github_skills",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Aprende Docker ahora! curso completo desde cero",
+    "video_revertido": "https://www.youtube.com/watch?v=4Dko5W96WHg"
+  },
+  {
+    "cycle": "DEV",
+    "slug": "daw_github_student_pack",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Aprende Docker ahora! curso completo desde cero",
+    "video_revertido": "https://www.youtube.com/watch?v=4Dko5W96WHg"
+  },
+  {
+    "cycle": "DEV",
+    "slug": "daw_microsoft_web_dev_beginners",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Curso Completo de Python para Principiantes",
+    "video_revertido": "https://www.youtube.com/watch?v=swdcD6OPMlk"
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_camara_auxiliar_administrativo_2026",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO DE MARKETING - COMPLETO",
+    "video_revertido": "https://www.youtube.com/watch?v=iHaxFWiW9v8"
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_camara_emprendimiento_idea_accion_2026",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO de Marketing Digital Completo (2026)",
+    "video_revertido": "https://www.youtube.com/watch?v=v17EXDu3t0E"
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_herramienta_autofirma",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO COMPLETO DE WORD 2023",
+    "video_revertido": "https://www.youtube.com/watch?v=81s3hxEa93o"
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_herramienta_circe",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO DE MARKETING DIGITAL - COMPLETO",
+    "video_revertido": "https://www.youtube.com/watch?v=V92Jx72x88c"
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_herramienta_contasol",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO DE SQL CON MySQL",
+    "video_revertido": "https://www.youtube.com/watch?v=c4P__KoPZwo"
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_herramienta_facturae",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Curso COMPLETO de PYTHON desde CERO",
+    "video_revertido": "https://www.youtube.com/watch?v=Kp4Mvapo5kc"
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_herramienta_importass",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO Completo de FINANZAS PERSONALES",
+    "video_revertido": "https://www.youtube.com/watch?v=UhzdeGjLJ78"
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_herramienta_nominasol",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Curso COMPLETO de PYTHON desde CERO",
+    "video_revertido": "https://www.youtube.com/watch?v=Kp4Mvapo5kc"
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_herramienta_power_bi_desktop",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Excel Course - Pivot Tables basic/intermediate/advanced 2021",
+    "video_revertido": "https://www.youtube.com/watch?v=L8poMIC84bE"
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_herramienta_sede_aeat",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Curso COMPLETO de PYTHON desde CERO",
+    "video_revertido": "https://www.youtube.com/watch?v=Kp4Mvapo5kc"
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_power_bi_ruta_aprendizaje",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO DE EXCEL COMPLETO EN 1 VÍDEO - BÁSICO E INTERMEDIO",
+    "video_revertido": "https://www.youtube.com/watch?v=eZPCVg4Jk00"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_camara_direccion_edicion_video_2026",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO COMPLETO DE WORD 2023 - El Tío Tech",
+    "video_revertido": "https://www.youtube.com/watch?v=n0yn3TZ1lSQ"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_camara_ia_marketing_2026",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Curso COMPLETO de PYTHON desde CERO para BACKEND",
+    "video_revertido": "https://www.youtube.com/watch?v=_y9qQZXE24A"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_google_ads_skillshop",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO GRATIS de iniciación a la INTELIGENCIA ARTIFICIAL",
+    "video_revertido": "https://www.youtube.com/watch?v=Zw0MwIVG3zE"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_herramienta_google_analytics",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Power BI tutorial desde CERO (Curso Completo)",
+    "video_revertido": "https://www.youtube.com/watch?v=OQ0IpdT-KuI"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_herramienta_google_forms",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO DE SPSS STATISTICS",
+    "video_revertido": "https://www.youtube.com/watch?v=Ibyg6fc5xrE"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_herramienta_google_trends",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO DE SPSS STATISTICS",
+    "video_revertido": "https://www.youtube.com/watch?v=Ibyg6fc5xrE"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_herramienta_hubspot_crm",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO DE MARKETING DIGITAL - COMPLETO",
+    "video_revertido": "https://www.youtube.com/watch?v=V92Jx72x88c"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_herramienta_looker_studio",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Power BI tutorial desde CERO (Curso Completo)",
+    "video_revertido": "https://www.youtube.com/watch?v=OQ0IpdT-KuI"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_herramienta_mailchimp",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Curso GRATIS De Copywriting ($3,000/mes en 30 días)",
+    "video_revertido": "https://www.youtube.com/watch?v=3gkKsFVK5F4"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_herramienta_meta_business_suite",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Google Sheets Course 2022 - El Tío Tech",
+    "video_revertido": "https://www.youtube.com/watch?v=hoMFIS5jZQY"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_herramienta_metricool",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO DE MARKETING DIGITAL - COMPLETO",
+    "video_revertido": "https://www.youtube.com/watch?v=V92Jx72x88c"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_herramienta_search_console",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Curso de Wordpress COMPLETO desde Cero (2024)",
+    "video_revertido": "https://www.youtube.com/watch?v=NZIDCoO6ySE"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_hubspot_marketing_digital",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Curso de Wordpress COMPLETO desde Cero (2024)",
+    "video_revertido": "https://www.youtube.com/watch?v=NZIDCoO6ySE"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_hubspot_publicidad_digital",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Curso de YouTube Gratis | De 0 al Millón [Parte 1]",
+    "video_revertido": "https://www.youtube.com/watch?v=qgwa9NmUd9w"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_hubspot_social_media",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Curso de YouTube Gratis | De 0 al Millón [Parte 1]",
+    "video_revertido": "https://www.youtube.com/watch?v=qgwa9NmUd9w"
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_meta_blueprint_publicidad",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Curso de YouTube Gratis | De 0 al Millón [Parte 1]",
+    "video_revertido": "https://www.youtube.com/watch?v=qgwa9NmUd9w"
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_herramienta_garmin_connect",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Cómo usar Power BI (Tutorial desde cero)",
+    "video_revertido": "https://www.youtube.com/watch?v=pwJuFbyhZFE"
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_herramienta_google_forms",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "CURSO COMPLETO DE WORD 2023",
+    "video_revertido": "https://www.youtube.com/watch?v=n0yn3TZ1lSQ"
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_herramienta_hexfit",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Ejercicios para BAJAR DE PESO en casa Full Body Cardio 45 min",
+    "video_revertido": "https://www.youtube.com/watch?v=TqaMwmJXBS4"
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_herramienta_kinovea",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Clase Completa de Vinyasa Yoga (1 hora)",
+    "video_revertido": "https://www.youtube.com/watch?v=ORZqGpZguD0"
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_herramienta_polar_flow",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Cómo usar Power BI (Tutorial desde cero)",
+    "video_revertido": "https://www.youtube.com/watch?v=pwJuFbyhZFE"
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_herramienta_strava",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Curso Completo de Power BI",
+    "video_revertido": "https://www.youtube.com/watch?v=sjrlIAQnD8M"
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_herramienta_trainerize",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Ejercicios para BAJAR DE PESO en casa Full Body Cardio 45 min",
+    "video_revertido": "https://www.youtube.com/watch?v=TqaMwmJXBS4"
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_herramienta_trainingpeaks",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Ejercicios para BAJAR DE PESO en casa Full Body Cardio 45 min",
+    "video_revertido": "https://www.youtube.com/watch?v=TqaMwmJXBS4"
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_iad_accesibilidad_instalaciones",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Clase Completa de Vinyasa Yoga (1 hora)",
+    "video_revertido": "https://www.youtube.com/watch?v=ORZqGpZguD0"
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_iad_entrenamiento_fuerza",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Ejercicios para BAJAR DE PESO en casa Full Body Cardio 45 min",
+    "video_revertido": "https://www.youtube.com/watch?v=TqaMwmJXBS4"
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_iad_fundamentos_entrenamiento",
+    "motivo": "encaje_tematico_incorrecto_revertido_2026-08-06",
+    "candidato_revertido": "Ejercicios para BAJAR DE PESO en casa Full Body Cardio 45 min",
+    "video_revertido": "https://www.youtube.com/watch?v=TqaMwmJXBS4"
+  },
+  {
     "cycle": "AF",
     "slug": "af_camara_nominas_seguros_sociales_2026",
     "titulo": "Gestión de nóminas y seguros sociales para tu empresa",
