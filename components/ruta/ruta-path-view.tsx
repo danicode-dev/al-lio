@@ -78,7 +78,7 @@ export function RutaPathView({
       const note = result.note;
       setStepState((current) =>
         current.map((entry, i) =>
-          i === activeIndex
+          steps[i].primary?.idSlug === idSlug
             ? {
                 ...entry,
                 notes: [...entry.notes, { id: note.id, timestampSeconds: note.timestamp_seconds, body: note.body, createdAt: note.created_at }].sort(
@@ -102,7 +102,9 @@ export function RutaPathView({
         toast.error("No se pudo actualizar el estado.");
         return;
       }
-      setStepState((current) => current.map((entry, i) => (i === activeIndex ? { ...entry, status: result.status } : entry)));
+      setStepState((current) =>
+        current.map((entry, i) => (steps[i].primary?.idSlug === idSlug ? { ...entry, status: result.status } : entry))
+      );
       toast.success("Paso marcado como hecho");
     });
   }
@@ -189,6 +191,7 @@ export function RutaPathView({
           background: #0b0b0b;
         }
         .al-path-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+        .al-path-video-mount { position: absolute; inset: 0; width: 100%; height: 100%; }
         .al-path-video-fallback {
           position: absolute;
           inset: 0;
@@ -391,9 +394,8 @@ export function RutaPathView({
         <div className="al-path-main">
           <div className="al-path-video-card">
             <div className="al-path-video-wrap">
-              {youtubeRef ? (
-                <div ref={playerContainerRef} />
-              ) : (
+              <div className="al-path-video-mount" ref={playerContainerRef} style={{ visibility: youtubeRef ? "visible" : "hidden" }} />
+              {!youtubeRef && (
                 <p className="al-path-video-fallback">
                   {step.primary ? "Vídeo no disponible." : "Todavía no hay vídeo curado para esta aptitud."}
                 </p>

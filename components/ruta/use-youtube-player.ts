@@ -49,9 +49,17 @@ function loadYouTubeApi(): Promise<void> {
   return youTubeApiPromise;
 }
 
+// The YouTube IFrame API replaces whatever element it's given with its own
+// <iframe>, outside of React's control. If that element is one React also
+// renders/diffs (even just to toggle a class or style), React and the API
+// end up fighting over the same DOM node and React throws trying to remove
+// a node that's no longer where it expects. To avoid that, `wrapperRef` is
+// the only thing React ever renders — it's an empty, static leaf. Everything
+// the API touches (the mount div, the iframe it creates) is created and torn
+// down imperatively inside the effect, so React never has children to diff there.
 export function useYouTubePlayer(videoUrl: string | null | undefined) {
   const youtubeRef = videoUrl ? parseYouTubeUrl(videoUrl) : null;
-  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YouTubePlayerInstance | null>(null);
   const [playerReady, setPlayerReady] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -59,15 +67,23 @@ export function useYouTubePlayer(videoUrl: string | null | undefined) {
   useEffect(() => {
     setPlayerReady(false);
     setCurrentTime(0);
-    if (!youtubeRef || !playerContainerRef.current) return;
+    const wrapper = wrapperRef.current;
+    if (!youtubeRef || !wrapper) return;
     let cancelled = false;
+
+    const mountNode = document.createElement("div");
+    mountNode.style.position = "absolute";
+    mountNode.style.inset = "0";
+    mountNode.style.width = "100%";
+    mountNode.style.height = "100%";
+    wrapper.appendChild(mountNode);
 
     const playerVars: Record<string, number | string> =
       youtubeRef.type === "playlist" ? { rel: 0, listType: "playlist", list: youtubeRef.id } : { rel: 0 };
 
     loadYouTubeApi().then(() => {
-      if (cancelled || !playerContainerRef.current || !window.YT) return;
-      playerRef.current = new window.YT.Player(playerContainerRef.current, {
+      if (cancelled || !window.YT) return;
+      playerRef.current = new window.YT.Player(mountNode, {
         ...(youtubeRef.type === "video" ? { videoId: youtubeRef.id } : {}),
         playerVars,
         events: { onReady: () => setPlayerReady(true) },
@@ -78,6 +94,10 @@ export function useYouTubePlayer(videoUrl: string | null | undefined) {
       cancelled = true;
       playerRef.current?.destroy();
       playerRef.current = null;
+      // Whatever is left in `wrapper` (the mountNode, or the iframe the API
+      // swapped it for) was never rendered by React, so clearing it manually
+      // here is safe and keeps the wrapper empty for the next run.
+      wrapper.innerHTML = "";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [youtubeRef?.type, youtubeRef?.id]);
@@ -95,7 +115,7 @@ export function useYouTubePlayer(videoUrl: string | null | undefined) {
     playerRef.current?.seekTo(seconds, true);
   }
 
-  return { youtubeRef, playerContainerRef, playerReady, currentTime, seekTo };
+  return { youtubeRef, playerContainerRef: wrapperRef, playerReady, currentTime, seekTo };
 }
 
 export function formatTimestamp(seconds: number) {

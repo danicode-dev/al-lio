@@ -194,6 +194,7 @@ export function RutaView({
           background: #0b0b0b;
         }
         .al-ruta-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+        .al-ruta-video-mount { position: absolute; inset: 0; width: 100%; height: 100%; }
         .al-ruta-video-fallback {
           position: absolute;
           inset: 0;
@@ -332,11 +333,8 @@ export function RutaView({
         <div className="al-ruta-main">
           <div className="al-ruta-video-card">
             <div className="al-ruta-video-wrap">
-              {youtubeRef ? (
-                <div ref={playerContainerRef} />
-              ) : (
-                <p className="al-ruta-video-fallback">Vídeo no disponible.</p>
-              )}
+              <div className="al-ruta-video-mount" ref={playerContainerRef} style={{ visibility: youtubeRef ? "visible" : "hidden" }} />
+              {!youtubeRef && <p className="al-ruta-video-fallback">Vídeo no disponible.</p>}
             </div>
             <div className="al-ruta-video-footer">
               <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="al-ruta-source-link">
