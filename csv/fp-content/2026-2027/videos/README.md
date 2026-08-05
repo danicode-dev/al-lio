@@ -27,13 +27,34 @@ npm run import:fp-resource-videos
 Idempotente. Si un `id_slug` no existe en el catalogo ya importado, se
 reporta y se salta esa fila en vez de fallar todo el import.
 
-## Origen de los datos (2026-08-04)
+## Origen de los datos (2026-08-05, curacion estricta — vigente)
 
-Las 250 filas actuales de `recursos_video.csv` vienen de
-`source-2026-08-04/`, un paquete de curacion de videos de YouTube
-(`AL_LIO_ROADMAPS_FP_YOUTUBE_2026_08_04.zip`) con 47 videos/playlists
-reales verificados manualmente (canales oficiales, fabricantes,
-organismos publicos y creadores profesionales reconocidos).
+Las filas actuales de `recursos_video.csv` vienen de
+`source-2026-08-05-curado/` (`AL_LIO_ROADMAPS_FP_YOUTUBE_CURADO_2026_08_05.zip`),
+que sustituye a la entrega del 2026-08-04. Un video solo entra en
+`recursos_video.csv` si pasa los 5 filtros de `auditoria_youtube_estricta_todos_ciclos.csv`
+(duracion >=45 min, >=300.000 visitas en ese video concreto, relacion
+directa con el ciclo/competencia, canal fiable, video unico auditable
+— nunca playlist). Ver `PENDIENTES_VIDEO.md` para el detalle completo
+de reglas y la lista de recursos que todavia no tienen un video que
+las cumpla.
+
+Ademas, ningun video se reutiliza como principal en mas de 5 recursos
+distintos (tope fijado a proposito para no repetir el mismo video en
+decenas de tarjetas, ver `_tmp-build-curated-videos.mjs` en el
+historial de commits para el criterio exacto — no forma parte del
+repo, era un script puntual). Los recursos que se quedaron sin video
+por el tope de reuso (no porque no hubiera ningun video valido) tambien
+aparecen en `PENDIENTES_VIDEO.md`.
+
+### Origen anterior (2026-08-04, superado)
+
+`source-2026-08-04/` (`AL_LIO_ROADMAPS_FP_YOUTUBE_2026_08_04.zip`) fue
+la primera entrega: 47 videos/playlists reales verificados manualmente
+(canales oficiales, fabricantes, organismos publicos y creadores
+profesionales reconocidos), pero sin verificar duracion ni visitas por
+video. Se mantiene en el repo solo como referencia historica — ya no
+es la fuente de `recursos_video.csv`.
 
 Ese paquete relaciona cada recurso con **varios** videos distintos segun
 la competencia desde la que se mire (a veces el mismo video con tramos
