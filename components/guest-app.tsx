@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import React, { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlarmClock,
@@ -857,7 +856,6 @@ function NotificationBell({ store, actions }: { store: Store; actions: ReturnTyp
 }
 
 export function GuestApp({ view }: { view: View }) {
-  const router = useRouter();
   const { store, actions } = useStore();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
 
@@ -866,9 +864,6 @@ export function GuestApp({ view }: { view: View }) {
       {view !== "dashboard" && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => router.back()} aria-label="Volver atrás" className="h-10 w-10 shrink-0 rounded-full">
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
             <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
               {({
                 work: "Trabajo",
@@ -3152,10 +3147,10 @@ function MonthChips({
         onClick={() => onSelect("")}
         className={cn(
           "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors hover:bg-muted",
-          !monthFilter && "border-primary bg-primary text-primary-foreground"
+          !monthFilter && "border-transparent bg-[linear-gradient(180deg,#F06A37_0%,#E15D2D_100%)] text-white"
         )}
       >
-        TODOS <span className={cn("font-normal", !monthFilter && "text-primary-foreground/70")}>{totalCount}</span>
+        TODOS <span className={cn("font-normal", !monthFilter && "text-white/70")}>{totalCount}</span>
       </button>
       {Array.from(monthGroups.entries()).map(([month, count]) => {
         const [y, m] = month.split("-");
@@ -3170,10 +3165,10 @@ function MonthChips({
             onClick={() => onSelect(isSelected ? "" : month)}
             className={cn(
               "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors hover:bg-muted",
-              isSelected && "border-primary bg-primary text-primary-foreground"
+              isSelected && "border-transparent bg-[linear-gradient(180deg,#F06A37_0%,#E15D2D_100%)] text-white"
             )}
           >
-            {label} <span className={cn("font-normal", isSelected && "text-primary-foreground/70")}>{count}</span>
+            {label} <span className={cn("font-normal", isSelected && "text-white/70")}>{count}</span>
           </button>
         );
       })}
@@ -3629,7 +3624,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-chip-terracotta { border-color: rgba(225, 93, 45, 0.3) !important; background: #fbe7dd !important; color: #c94f21 !important; }
         .al-hack-chip-amber { border-color: rgba(180, 121, 31, 0.3) !important; background: #fdf1dd !important; color: #8a5c14 !important; }
         .al-hack-chip-green { border-color: rgba(31, 122, 77, 0.3) !important; background: #e7f5ee !important; color: #1f7a4d !important; }
-        .al-hack-hero { position: relative; overflow: hidden; border-radius: 22px; background: linear-gradient(135deg, #fff8f4 0%, #ffe9dc 100%); border: 1px solid #f3d9c8; color: #111111; padding: clamp(18px, 3vw, 26px); display: flex; flex-direction: column; gap: 18px; }
+        .al-hack-hero { position: relative; overflow: hidden; border-radius: 22px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); color: #111111; padding: clamp(18px, 3vw, 26px); display: flex; flex-direction: column; gap: 18px; }
         @media (min-width: 900px) { .al-hack-hero { flex-direction: row; align-items: stretch; } }
         .al-hack-hero-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
         .al-hack-hero-kicker { display: inline-flex; align-items: center; gap: 6px; width: fit-content; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #c94f21; }
@@ -3641,7 +3636,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-hero-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
         .al-hack-hero-btn-primary { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 16px; border-radius: 12px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 13px; font-weight: 700; box-shadow: 0 10px 24px rgba(225, 93, 45, 0.28); border: none; cursor: pointer; }
         .al-hack-hero-btn-ghost { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-radius: 12px; background: white; color: #333029; font-size: 13px; font-weight: 600; border: 1px solid #ece7dc; cursor: pointer; }
-        .al-hack-hero-side { width: 100%; background: white; border: 1px solid #f3d9c8; border-radius: 16px; padding: 16px; }
+        .al-hack-hero-side { width: 100%; background: #faf8f4; border: 1px solid #ece7dc; border-radius: 16px; padding: 16px; }
         @media (min-width: 900px) { .al-hack-hero-side { width: 220px; flex-shrink: 0; } }
         .al-hack-hero-side-label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: #6b6f72; text-transform: uppercase; letter-spacing: 0.05em; }
         .al-hack-hero-side-value { font-size: 12.5px; font-weight: 700; color: #c94f21; }
