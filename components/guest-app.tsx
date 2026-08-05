@@ -48,7 +48,7 @@ import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplin
 import { insertDb, updateDb, deleteDb } from "@/lib/db";
 import { toast } from "sonner";
 import { TechOpportunitiesSection, type TechOpportunityTaskTarget } from "@/components/tech-opportunities-section";
-import { toggleFavoriteAction } from "@/lib/fp/resource-notes-actions";
+import { toggleFavoriteAction, markResourceStatusAction } from "@/lib/fp/resource-notes-actions";
 import { BlocNotepad } from "@/components/bloc-notepad";
 import type { TechOpportunity } from "@/lib/tech-opportunity-types";
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
@@ -445,6 +445,7 @@ export type ReturnTypeActions = {
   updateCompany: (id: string, data: Partial<Company>) => void;
   addLink: (data: Omit<QuickLink, "id" | "created_at">) => void;
   toggleFpFavorite: (idSlug: string, nextValue: boolean) => void;
+  markLearningItemDone: (idSlug: string) => void;
   reset: () => void;
 };
 
@@ -617,6 +618,24 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
             ...current,
             fpContent: current.fpContent.map((item) => (item.id_slug === idSlug ? { ...item, is_favorite: !nextValue } : item)),
           }));
+          toast.error("No se pudo guardar");
+        }
+      });
+    },
+    markLearningItemDone: (idSlug: string) => {
+      const patchLearningItems = (fpContent: FpCatalogItem[], status: string | null) => fpContent.map((item) => ({
+        ...item,
+        requiredCompetencies: item.requiredCompetencies?.map((competency) => ({
+          ...competency,
+          learningItems: competency.learningItems.map((learningItem) =>
+            learningItem.id_slug === idSlug ? { ...learningItem, user_status: status } : learningItem
+          ),
+        })),
+      }));
+      setStore((current) => ({ ...current, fpContent: patchLearningItems(current.fpContent, "completed") }));
+      markResourceStatusAction(idSlug, "completed").then((result) => {
+        if (result.error) {
+          setStore((current) => ({ ...current, fpContent: patchLearningItems(current.fpContent, null) }));
           toast.error("No se pudo guardar");
         }
       });
@@ -3024,7 +3043,7 @@ function courseStatusClass(status: string) {
 
 function hackathonStatusClass(status: string) {
   if (status === "inscripcion_abierta") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
-  if (status === "realizado") return "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300";
+  if (status === "realizado") return "border-slate-400/30 bg-slate-400/10 text-slate-600 dark:text-slate-300";
   if (status === "descartado") return "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300";
   if (status === "revisar_futura_edicion") return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
   return "";
@@ -3607,39 +3626,41 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-stat-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
         .al-hack-stat-value { font-size: 22px; font-weight: 800; line-height: 1; color: #111111; }
         .al-hack-stat-label { font-size: 11px; font-weight: 600; color: #6b6f72; margin-top: 3px; }
-        .al-hack-hero { position: relative; overflow: hidden; border-radius: 22px; background: #111111; color: white; padding: clamp(18px, 3vw, 26px); display: flex; flex-direction: column; gap: 18px; }
+        .al-hack-chip-terracotta { border-color: rgba(225, 93, 45, 0.3) !important; background: #fbe7dd !important; color: #c94f21 !important; }
+        .al-hack-chip-amber { border-color: rgba(180, 121, 31, 0.3) !important; background: #fdf1dd !important; color: #8a5c14 !important; }
+        .al-hack-chip-green { border-color: rgba(31, 122, 77, 0.3) !important; background: #e7f5ee !important; color: #1f7a4d !important; }
+        .al-hack-hero { position: relative; overflow: hidden; border-radius: 22px; background: linear-gradient(135deg, #fff8f4 0%, #ffe9dc 100%); border: 1px solid #f3d9c8; color: #111111; padding: clamp(18px, 3vw, 26px); display: flex; flex-direction: column; gap: 18px; }
         @media (min-width: 900px) { .al-hack-hero { flex-direction: row; align-items: stretch; } }
         .al-hack-hero-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-        .al-hack-hero-kicker { display: inline-flex; align-items: center; gap: 6px; width: fit-content; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #ffb08f; }
+        .al-hack-hero-kicker { display: inline-flex; align-items: center; gap: 6px; width: fit-content; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #c94f21; }
         .al-hack-hero-kicker-dot { width: 6px; height: 6px; border-radius: 999px; background: #4C9A6E; box-shadow: 0 0 0 3px rgba(76, 154, 110, 0.25); }
-        .al-hack-hero-title { font-family: var(--font-barlow, sans-serif); font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; line-height: 1.15; }
-        .al-hack-hero-org { font-size: 12.5px; color: rgba(255, 255, 255, 0.65); }
-        .al-hack-hero-meta { font-size: 12.5px; color: rgba(255, 255, 255, 0.8); }
-        .al-hack-hero-desc { font-size: 13px; color: rgba(255, 255, 255, 0.72); line-height: 1.5; max-width: 56ch; }
+        .al-hack-hero-title { font-family: var(--font-barlow, sans-serif); font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; line-height: 1.15; color: #111111; }
+        .al-hack-hero-org { font-size: 12.5px; color: #6b6f72; }
+        .al-hack-hero-meta { font-size: 12.5px; color: #4b4740; }
+        .al-hack-hero-desc { font-size: 13px; color: #4b4740; line-height: 1.5; max-width: 56ch; }
         .al-hack-hero-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
         .al-hack-hero-btn-primary { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 16px; border-radius: 12px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 13px; font-weight: 700; box-shadow: 0 10px 24px rgba(225, 93, 45, 0.28); border: none; cursor: pointer; }
-        .al-hack-hero-btn-ghost { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.08); color: white; font-size: 13px; font-weight: 600; border: 1px solid rgba(255, 255, 255, 0.14); cursor: pointer; }
-        .al-hack-hero-side { width: 100%; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 16px; }
+        .al-hack-hero-btn-ghost { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-radius: 12px; background: white; color: #333029; font-size: 13px; font-weight: 600; border: 1px solid #ece7dc; cursor: pointer; }
+        .al-hack-hero-side { width: 100%; background: white; border: 1px solid #f3d9c8; border-radius: 16px; padding: 16px; }
         @media (min-width: 900px) { .al-hack-hero-side { width: 220px; flex-shrink: 0; } }
-        .al-hack-hero-side-label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: rgba(255, 255, 255, 0.6); text-transform: uppercase; letter-spacing: 0.05em; }
-        .al-hack-hero-side-value { font-size: 12.5px; font-weight: 700; color: white; }
-        .al-hack-hero-progress-bar { margin-top: 10px; height: 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+        .al-hack-hero-side-label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: #6b6f72; text-transform: uppercase; letter-spacing: 0.05em; }
+        .al-hack-hero-side-value { font-size: 12.5px; font-weight: 700; color: #c94f21; }
+        .al-hack-hero-progress-bar { margin-top: 10px; height: 8px; border-radius: 999px; background: #f3ece1; overflow: hidden; }
         .al-hack-hero-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #F06A37, #E15D2D); transition: width 0.3s ease; }
-        .al-hack-hero-side-hint { margin-top: 10px; font-size: 11.5px; color: rgba(255, 255, 255, 0.55); line-height: 1.4; }
+        .al-hack-hero-side-hint { margin-top: 10px; font-size: 11.5px; color: #6b6f72; line-height: 1.4; }
         .al-hack-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .al-hack-count-text { font-size: 12px; color: #6b6f72; }
-        .al-hack-grid { display: grid; gap: 14px; }
-        .al-hack-grid-2 { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-        .al-hack-card { position: relative; display: flex; flex-direction: column; gap: 10px; background: white; border: 1px solid #ece7dc; border-radius: 20px; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); padding: 16px; }
-        .al-hack-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-        .al-hack-card-title { font-size: 14.5px; font-weight: 700; color: #111111; line-height: 1.3; }
-        .al-hack-card-org { font-size: 11.5px; color: #6b6f72; margin-top: 2px; }
-        .al-hack-bookmark { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 10px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .al-hack-grid { display: grid; gap: 12px; }
+        .al-hack-grid-2 { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+        .al-hack-card { position: relative; display: flex; flex-direction: column; gap: 8px; background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 13px; }
+        .al-hack-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+        .al-hack-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; }
+        .al-hack-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; }
+        .al-hack-bookmark { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
         .al-hack-bookmark.al-hack-bookmark-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
-        .al-hack-card-meta { font-size: 11.5px; color: #6b6f72; }
-        .al-hack-card-desc { font-size: 12px; color: #4b4740; line-height: 1.45; }
-        .al-hack-aptitudes-label { font-size: 10.5px; font-weight: 700; color: #6b6f72; text-transform: uppercase; letter-spacing: 0.04em; }
-        .al-hack-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
+        .al-hack-card-meta { font-size: 11px; color: #6b6f72; }
+        .al-hack-card-desc { font-size: 11.5px; color: #4b4740; line-height: 1.4; }
+        .al-hack-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
         .al-hack-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; }
         .al-hack-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
         .al-hack-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
@@ -3688,7 +3709,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                 <div><p className="al-hack-stat-value">{kpiPendientes}</p><p className="al-hack-stat-label">Pendientes</p></div>
               </div>
               <div className="al-hack-stat-card">
-                <span className="al-hack-stat-icon" style={{ background: "#e8eefd", color: "#3159c9" }}><AlarmClock className="h-4.5 w-4.5" /></span>
+                <span className="al-hack-stat-icon" style={{ background: "#f3ece1", color: "#6b6f72" }}><AlarmClock className="h-4.5 w-4.5" /></span>
                 <div><p className="al-hack-stat-value">{kpiProx}</p><p className="al-hack-stat-label">Próx. inicio</p></div>
               </div>
             </div>
@@ -3696,7 +3717,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             {featuredHackathon && (
               <div className="al-hack-hero">
                 <div className="al-hack-hero-main">
-                  <span className="al-hack-hero-kicker"><span className="al-hack-hero-kicker-dot" />Tu hackatón en marcha</span>
+                  <span className="al-hack-hero-kicker"><span className="al-hack-hero-kicker-dot" />Hackatón futuro</span>
                   <p className="al-hack-hero-title">{featuredHackathon.name}</p>
                   {featuredHackathon.organizer && <p className="al-hack-hero-org">{featuredHackathon.organizer}</p>}
                   {(featuredHackathon.start_at || featuredHackathon.end_at) && (
@@ -3748,7 +3769,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             {filtered.length ? (
               <div className={cn("al-hack-grid", viewMode === "grid" ? "al-hack-grid-2" : "")}>
                 {filtered.map((item) => {
-                  const tags = splitTags(item.tags);
                   const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
                   const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
                   const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
@@ -3782,29 +3802,11 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                         </p>
                       )}
                       <div className="flex flex-wrap gap-1.5">
-                        {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
                         {place && <ChipTag icon="pin">{place}</ChipTag>}
-                        {item.priority && <ChipTag className={genericPriorityClass(item.priority)}>{priorityText(item.priority)}</ChipTag>}
-                        {item.certificacion_o_premio && <ChipTag>{item.certificacion_o_premio}</ChipTag>}
-                        {item.encaje_daw_1_5 ? <ChipTag>DAW {item.encaje_daw_1_5}/5</ChipTag> : null}
-                        {item.practicas_empresa === true && <ChipTag>Prácticas</ChipTag>}
-                        {item.status === "inscripcion_abierta" && <ChipTag className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Inscripción abierta</ChipTag>}
-                        {tags.map((tag) => <ChipTag key={tag}>{tag}</ChipTag>)}
+                        {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
+                        {item.priority && <ChipTag className={hackPriorityClass(item.priority)}>{priorityText(item.priority)}</ChipTag>}
                       </div>
-                      {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="al-hack-aptitudes-label">Aptitudes:</span>
-                          {item.requiredCompetencies.filter((c) => c.obligatoria_para_item).slice(0, 3).map((competency) => (
-                            <ChipTag key={competency.id} className="border-primary/25 bg-primary/5 text-primary">
-                              {competency.titulo}
-                            </ChipTag>
-                          ))}
-                          {item.requiredCompetencies.length > 3 && (
-                            <span className="text-[11px] text-muted-foreground">+{item.requiredCompetencies.length - 3} más</span>
-                          )}
-                        </div>
-                      )}
-                      {item.notes && <p className="al-hack-card-desc line-clamp-2">{item.notes}</p>}
+                      {item.notes && <p className="al-hack-card-desc line-clamp-1">{item.notes}</p>}
                       <div className="al-hack-card-actions">
                         {hasRuta ? (
                           <Link href={`/ruta/${item.id_slug}`} className="al-hack-btn al-hack-btn-primary">
@@ -3926,38 +3928,68 @@ function HackathonsEmptyState({ variant, onClearFilters }: { variant: "sin_resul
 }
 
 function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackathon | null; actions: ReturnTypeActions; onClose: () => void }) {
-  if (!item) return null;
-  const competencies = item.requiredCompetencies ?? [];
+  const competencies = item?.requiredCompetencies ?? [];
   const obligatorias = competencies.filter((competency) => competency.obligatoria_para_item);
   const recomendadas = competencies.filter((competency) => !competency.obligatoria_para_item);
+  const steps = [...obligatorias, ...recomendadas];
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    setStepIndex(0);
+  }, [item?.id]);
+
+  useEffect(() => {
+    if (!item) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [item]);
+
+  if (!item) return null;
+
   const hasRuta = hackathonHasRutaVideo(item);
-  const hasExternalResource = competencies.some((c) => c.learningItems.some((li) => !li.video_url));
   const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
+  const safeIndex = steps.length > 0 ? Math.min(stepIndex, steps.length - 1) : 0;
+  const currentStep = steps[safeIndex] ?? null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/55 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6" role="dialog" aria-modal="true">
       <style>{`
-        .al-modal-shell { background: white; border-radius: 22px 22px 0 0; box-shadow: 0 24px 60px rgba(17,17,17,0.18); }
+        .al-modal-shell { background: white; border-radius: 22px 22px 0 0; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
         @media (min-width: 640px) { .al-modal-shell { border-radius: 22px; } }
-        .al-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid #f0ece2; }
-        .al-modal-head-icon { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: #fbe7dd; color: #E15D2D; flex-shrink: 0; }
-        .al-modal-title { font-family: var(--font-barlow, sans-serif); font-size: 17px; font-weight: 700; color: #111111; line-height: 1.25; }
-        .al-modal-subtitle { font-size: 12px; color: #6b6f72; margin-top: 2px; }
-        .al-modal-close { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; flex-shrink: 0; }
-        .al-modal-section-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-        .al-modal-section-imprescindibles { color: #1f7a4d; }
-        .al-modal-section-recomendadas { color: #b4791f; }
-        .al-modal-req { display: flex; gap: 10px; border: 1px solid #ece7dc; border-radius: 14px; padding: 12px; }
-        .al-modal-req-check { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; flex-shrink: 0; margin-top: 1px; }
+        .al-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #f0ece2; flex-shrink: 0; }
+        .al-modal-head-icon { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 11px; background: #fbe7dd; color: #E15D2D; flex-shrink: 0; }
+        .al-modal-title { font-family: var(--font-barlow, sans-serif); font-size: 15.5px; font-weight: 700; color: #111111; line-height: 1.3; }
+        .al-modal-subtitle { font-size: 11.5px; color: #6b6f72; margin-top: 2px; }
+        .al-modal-close { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; flex-shrink: 0; }
+        .al-modal-step-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px; }
+        .al-modal-step-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+        .al-modal-step-badge { display: inline-flex; align-items: center; height: 22px; padding: 0 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
+        .al-modal-step-badge-oblig { background: #e7f5ee; color: #1f7a4d; }
+        .al-modal-step-badge-reco { background: #fdf1dd; color: #b4791f; }
+        .al-modal-step-count { font-size: 11px; font-weight: 600; color: #9a958a; }
+        .al-modal-step-card { border: 1px solid #ece7dc; border-radius: 16px; padding: 16px; }
+        .al-modal-step-card-head { display: flex; align-items: flex-start; gap: 10px; }
+        .al-modal-req-check { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; flex-shrink: 0; margin-top: 1px; }
         .al-modal-req-check-done { background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
         .al-modal-req-check-pending { border: 2px solid #e4dfd5; color: transparent; }
-        .al-modal-req-title { font-size: 13px; font-weight: 700; color: #111111; }
-        .al-modal-req-desc { font-size: 11.5px; color: #6b6f72; margin-top: 2px; line-height: 1.4; }
-        .al-modal-req-actions { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
-        .al-modal-req-btn { display: inline-flex; align-items: center; gap: 5px; height: 27px; padding: 0 9px; border-radius: 8px; border: 1px solid #ece7dc; background: white; font-size: 10.5px; font-weight: 600; color: #333029; text-decoration: none; cursor: pointer; }
+        .al-modal-req-title { font-size: 14.5px; font-weight: 700; color: #111111; line-height: 1.35; }
+        .al-modal-req-desc { font-size: 12.5px; color: #4b4740; margin-top: 8px; line-height: 1.55; }
+        .al-modal-req-actions { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .al-modal-req-btn { display: inline-flex; align-items: center; gap: 5px; height: 29px; padding: 0 10px; border-radius: 8px; border: 1px solid #ece7dc; background: white; font-size: 11px; font-weight: 600; color: #333029; text-decoration: none; cursor: pointer; }
         .al-modal-req-btn-video { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
-        .al-modal-warning { display: flex; gap: 8px; align-items: flex-start; background: #fdf1dd; border: 1px solid rgba(180, 121, 31, 0.25); border-radius: 12px; padding: 10px 12px; font-size: 11.5px; color: #7a5a12; line-height: 1.4; }
-        .al-modal-footer { border-top: 1px solid #f0ece2; padding: 14px 20px; display: flex; flex-direction: column; gap: 8px; }
+        .al-modal-mark-done { margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 9px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 700; background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
+        .al-modal-mark-done-active { background: #e7f5ee; color: #1f7a4d; cursor: default; }
+        .al-modal-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 18px; border-top: 1px solid #f0ece2; flex-shrink: 0; }
+        .al-modal-nav-btn { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 11px; border-radius: 9px; border: 1px solid #ece7dc; background: white; font-size: 11.5px; font-weight: 600; color: #333029; cursor: pointer; }
+        .al-modal-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .al-modal-dots { display: flex; align-items: center; gap: 5px; }
+        .al-modal-dot { width: 6px; height: 6px; border-radius: 999px; background: #e4dfd5; }
+        .al-modal-dot-done { background: #a9d6bc; }
+        .al-modal-dot-active { width: 16px; background: linear-gradient(90deg, #F06A37, #E15D2D); }
+        .al-modal-footer { border-top: 1px solid #f0ece2; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
         .al-modal-footer-row { display: flex; gap: 8px; }
         .al-modal-btn-primary { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 42px; border-radius: 13px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 13px; font-weight: 700; box-shadow: 0 10px 24px rgba(225,93,45,0.25); border: none; cursor: pointer; text-decoration: none; flex-direction: column; line-height: 1.25; }
         .al-modal-btn-primary small { font-weight: 500; font-size: 10.5px; opacity: 0.85; }
@@ -3966,40 +3998,45 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
       `}</style>
       <div className="al-modal-shell max-h-[92svh] w-full overflow-hidden sm:max-w-lg">
         <div className="al-modal-head">
-          <span className="al-modal-head-icon"><ListChecks className="h-4.5 w-4.5" /></span>
+          <span className="al-modal-head-icon"><ListChecks className="h-4 w-4" /></span>
           <div className="min-w-0 flex-1">
-            <h2 className="al-modal-title truncate">Requisitos para {item.name}</h2>
+            <h2 className="al-modal-title line-clamp-2">Requisitos para {item.name}</h2>
             <p className="al-modal-subtitle">Todo lo que conviene dominar antes de presentarte.</p>
           </div>
           <button type="button" className="al-modal-close" onClick={onClose} aria-label="Cerrar">
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="max-h-[calc(92svh-73px)] space-y-4 overflow-y-auto p-4">
-          {obligatorias.length > 0 && (
-            <div className="space-y-2.5">
-              <p className="al-modal-section-label al-modal-section-imprescindibles">Imprescindibles</p>
-              {obligatorias.map((competency) => (
-                <CompetencyRequirement key={competency.id} competency={competency} hackathonSlug={item.id_slug} />
-              ))}
+        {currentStep ? (
+          <>
+            <div className="al-modal-step-scroll">
+              <div className="al-modal-step-top">
+                <span className={cn("al-modal-step-badge", currentStep.obligatoria_para_item ? "al-modal-step-badge-oblig" : "al-modal-step-badge-reco")}>
+                  {currentStep.obligatoria_para_item ? "Imprescindible" : "Recomendada"}
+                </span>
+                <span className="al-modal-step-count">Paso {safeIndex + 1} de {steps.length}</span>
+              </div>
+              <CompetencyRequirement competency={currentStep} hackathonSlug={item.id_slug} actions={actions} />
             </div>
-          )}
-          {recomendadas.length > 0 && (
-            <div className="space-y-2.5">
-              <p className="al-modal-section-label al-modal-section-recomendadas">Recomendadas</p>
-              {recomendadas.map((competency) => (
-                <CompetencyRequirement key={competency.id} competency={competency} hackathonSlug={item.id_slug} />
-              ))}
+            <div className="al-modal-nav">
+              <button type="button" className="al-modal-nav-btn" onClick={() => setStepIndex((i) => Math.max(0, i - 1))} disabled={safeIndex === 0}>
+                <ChevronLeft className="h-3.5 w-3.5" />Anterior
+              </button>
+              <div className="al-modal-dots">
+                {steps.map((step, i) => (
+                  <span key={step.id} className={cn("al-modal-dot", i === safeIndex && "al-modal-dot-active", i !== safeIndex && isCompetencyDone(step) && "al-modal-dot-done")} />
+                ))}
+              </div>
+              <button type="button" className="al-modal-nav-btn" onClick={() => setStepIndex((i) => Math.min(steps.length - 1, i + 1))} disabled={safeIndex === steps.length - 1}>
+                Siguiente<ChevronRight className="h-3.5 w-3.5" />
+              </button>
             </div>
-          )}
-          {competencies.length === 0 && <EmptyText>No hay aptitudes registradas todavía para este hackathon.</EmptyText>}
-          {hasExternalResource && (
-            <div className="al-modal-warning">
-              <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>Algunos recursos te redirigirán fuera de AL-LÍO. Te avisaremos antes de salir.</span>
-            </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className="al-modal-step-scroll">
+            <EmptyText>No hay aptitudes registradas todavía para este hackathon.</EmptyText>
+          </div>
+        )}
         <div className="al-modal-footer">
           <div className="al-modal-footer-row">
             {hasRuta && item.id_slug ? (
@@ -4041,36 +4078,60 @@ function hackathonAptitudeProgress(item: Hackathon): { done: number; total: numb
   return { done: obligatorias.filter(isCompetencyDone).length, total: obligatorias.length };
 }
 
-function CompetencyRequirement({ competency, hackathonSlug }: { competency: RequiredCompetency; hackathonSlug?: string }) {
+function hackPriorityClass(value?: string): string {
+  const priority = normalizePriorityText(value);
+  if (priority.includes("alta")) return "al-hack-chip-terracotta";
+  if (priority.includes("baja")) return "al-hack-chip-green";
+  return "al-hack-chip-amber";
+}
+
+function CompetencyRequirement({ competency, hackathonSlug, actions }: { competency: RequiredCompetency; hackathonSlug?: string; actions: ReturnTypeActions }) {
   const done = isCompetencyDone(competency);
   const videoItem = competency.learningItems.find((li) => li.video_url);
   const docItems = competency.learningItems.filter((li) => !li.video_url);
 
+  function markDone() {
+    for (const learningItem of competency.learningItems) {
+      actions.markLearningItemDone(learningItem.id_slug);
+    }
+  }
+
   return (
-    <div className="al-modal-req">
-      <span className={cn("al-modal-req-check", done ? "al-modal-req-check-done" : "al-modal-req-check-pending")}>
-        <Check className="h-3 w-3" />
-      </span>
-      <div className="min-w-0 flex-1">
+    <div className="al-modal-step-card">
+      <div className="al-modal-step-card-head">
+        <span className={cn("al-modal-req-check", done ? "al-modal-req-check-done" : "al-modal-req-check-pending")}>
+          <Check className="h-3.5 w-3.5" />
+        </span>
         <p className="al-modal-req-title">{competency.titulo}</p>
-        {competency.descripcion && <p className="al-modal-req-desc">{competency.descripcion}</p>}
-        {(videoItem || docItems.length > 0) && (
-          <div className="al-modal-req-actions">
-            {videoItem && hackathonSlug && (
-              <Link href={`/ruta/${hackathonSlug}?paso=${competency.id}`} className="al-modal-req-btn al-modal-req-btn-video">
-                <Youtube className="h-3 w-3" />
-                YouTube en la app
-              </Link>
-            )}
-            {docItems.map((learningItem) => (
-              <a key={learningItem.id} href={learningItem.source_url} target="_blank" rel="noreferrer" className="al-modal-req-btn">
-                <ExternalLink className="h-3 w-3" />
-                {learningItem.title}
-              </a>
-            ))}
-          </div>
-        )}
       </div>
+      {competency.descripcion && <p className="al-modal-req-desc">{competency.descripcion}</p>}
+      {(videoItem || docItems.length > 0) && (
+        <div className="al-modal-req-actions">
+          {videoItem && hackathonSlug && (
+            <Link href={`/ruta/${hackathonSlug}?paso=${competency.id}`} className="al-modal-req-btn al-modal-req-btn-video">
+              <Youtube className="h-3 w-3" />
+              YouTube en la app
+            </Link>
+          )}
+          {docItems.map((learningItem) => (
+            <a key={learningItem.id} href={learningItem.source_url} target="_blank" rel="noreferrer" className="al-modal-req-btn">
+              <ExternalLink className="h-3 w-3" />
+              {learningItem.title}
+            </a>
+          ))}
+        </div>
+      )}
+      {competency.learningItems.length > 0 && (
+        done ? (
+          <span className="al-modal-mark-done al-modal-mark-done-active">
+            <CheckCircle2 className="h-3.5 w-3.5" />Marcado como hecho
+          </span>
+        ) : (
+          <button type="button" className="al-modal-mark-done" onClick={markDone}>
+            <Check className="h-3.5 w-3.5" />Marcar como hecho
+          </button>
+        )
+      )}
     </div>
   );
 }
