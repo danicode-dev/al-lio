@@ -1,0 +1,417 @@
+{
+  "schema_version": "1.0",
+  "proyecto": "AL-LIO",
+  "dominio": "recursos_video",
+  "descripcion": "Mapa id_slug -> video_url de YouTube para recursos del catalogo FP. Formato JSON desde 2026-08-06 (sustituye a recursos_video.csv).",
+  "actualizado": "2026-08-06",
+  "reglas_de_curacion": {
+    "duracion_minima_minutos": 45,
+    "visualizaciones_minimas": 300000,
+    "video_individual_no_playlist": true,
+    "tope_reutilizacion_por_video": 5,
+    "encaje_tematico_verificado_manualmente": true
+  },
+  "total_recursos_con_video": 80,
+  "recursos": [
+    {
+      "id_slug": "af_aula_mentor_iniciacion_office",
+      "video_url": "https://www.youtube.com/watch?v=m8i4fMUCpK0",
+      "notas": "APROBADO_PRINCIPAL - competencia: AF-BAS-003 (Operar con porcentajes, reglas de tres e importes) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "af_aula_mentor_nominas_seguros_sociales",
+      "video_url": "https://www.youtube.com/watch?v=m8i4fMUCpK0",
+      "notas": "APROBADO_PRINCIPAL - competencia: AF-LAB-002 (Calcular y revisar una nómina) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "af_ayuntamiento_granada_bolsas_empleo",
+      "video_url": "https://www.youtube.com/watch?v=m8i4fMUCpK0",
+      "notas": "APROBADO_PRINCIPAL - competencia: AF-DIG-001 (Automatizar procesos administrativos con control) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "af_camara_comercio_granada_entidad",
+      "video_url": "https://www.youtube.com/watch?v=m8i4fMUCpK0",
+      "notas": "APROBADO_PRINCIPAL - competencia: AF-PRJ-001 (Diseñar una solución administrativa integral) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "af_camara_contabilidad_facturacion_pymes_2026",
+      "video_url": "https://www.youtube.com/watch?v=m8i4fMUCpK0",
+      "notas": "APROBADO_PRINCIPAL - competencia: AF-DIG-001 (Automatizar procesos administrativos con control) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "af_excel_formacion_oficial",
+      "video_url": "https://www.youtube.com/watch?v=v_R5SaMTlug",
+      "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=4) - fuente: chatgpt_2026-08-06 - candidato: \"BASIC EXCEL COURSE - COMPLETE 2020\""
+    },
+    {
+      "id_slug": "af_excel_power_query_power_pivot",
+      "video_url": "https://www.youtube.com/watch?v=v_R5SaMTlug",
+      "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"BASIC EXCEL COURSE - COMPLETE 2020\""
+    },
+    {
+      "id_slug": "af_herramienta_autofirma",
+      "video_url": "https://www.youtube.com/watch?v=81s3hxEa93o",
+      "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=2) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO COMPLETO DE WORD 2023\""
+    },
+    {
+      "id_slug": "af_herramienta_excel",
+      "video_url": "https://www.youtube.com/watch?v=v_R5SaMTlug",
+      "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"BASIC EXCEL COURSE - COMPLETE 2020\""
+    },
+    {
+      "id_slug": "af_herramienta_importass",
+      "video_url": "https://www.youtube.com/watch?v=UhzdeGjLJ78",
+      "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=1) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO Completo de FINANZAS PERSONALES\""
+    },
+    {
+      "id_slug": "af_herramienta_power_bi_desktop",
+      "video_url": "https://www.youtube.com/watch?v=v_R5SaMTlug",
+      "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=2) - fuente: chatgpt_2026-08-06 - candidato: \"BASIC EXCEL COURSE - COMPLETE 2020\""
+    },
+    {
+      "id_slug": "af_power_bi_ruta_aprendizaje",
+      "video_url": "https://www.youtube.com/watch?v=v_R5SaMTlug",
+      "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=2) - fuente: chatgpt_2026-08-06 - candidato: \"BASIC EXCEL COURSE - COMPLETE 2020\""
+    },
+    {
+      "id_slug": "dam_andalucia_orienta",
+      "video_url": "https://www.youtube.com/watch?v=3GymExBkKjE",
+      "notas": "APROBADO_PRINCIPAL - competencia: DAM-ED-001 (Usar Git y un flujo de trabajo colaborativo) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_andalucia_vuela_iniciacion_programacion",
+      "video_url": "https://www.youtube.com/watch?v=JOAqpdM36wI",
+      "notas": "APROBADO_PRINCIPAL - competencia: DAM-PRO-001 (Programar con variables, decisiones y bucles) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_android_basics_compose",
+      "video_url": "https://www.youtube.com/watch?v=vJapzH_46a8",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-ANDROID-COMPOSE-001) - competencia: DAM-MOB-001 (Crear una aplicación móvil con navegación y estado) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_android_developers_blog",
+      "video_url": "https://www.youtube.com/watch?v=vJapzH_46a8",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-ANDROID-COMPOSE-001) - competencia: DAM-MOB-001 (Crear una aplicación móvil con navegación y estado) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_android_studio",
+      "video_url": "https://www.youtube.com/watch?v=vJapzH_46a8",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-ANDROID-COMPOSE-001) - competencia: DAM-MOB-001 (Crear una aplicación móvil con navegación y estado) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_ayuntamiento_granada_empleo",
+      "video_url": "https://www.youtube.com/watch?v=3GymExBkKjE",
+      "notas": "APROBADO_PRINCIPAL - competencia: DAM-ED-001 (Usar Git y un flujo de trabajo colaborativo) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_ayuntamiento_granada_recurso_local",
+      "video_url": "https://www.youtube.com/watch?v=Ei1y51K8jQk",
+      "notas": "APROBADO_APOYO - competencia: DAM-BAS-005 (Documentar errores y aprender mediante práctica) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_camara_comercio_granada",
+      "video_url": "https://www.youtube.com/watch?v=OuJerKzV5T0",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-DB-DESIGN-001) - competencia: DAM-BD-001 (Modelar datos relacionales) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_commit_conf_2026",
+      "video_url": "https://www.youtube.com/watch?v=JOAqpdM36wI",
+      "notas": "APROBADO_PRINCIPAL - competencia: DAM-PRO-001 (Programar con variables, decisiones y bucles) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_dev_java",
+      "video_url": "https://www.youtube.com/watch?v=JOAqpdM36wI",
+      "notas": "APROBADO_PRINCIPAL - competencia: DAM-PRO-001 (Programar con variables, decisiones y bucles) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_dev_java_learn",
+      "video_url": "https://www.youtube.com/watch?v=JOAqpdM36wI",
+      "notas": "APROBADO_PRINCIPAL - competencia: DAM-PRO-003 (Aplicar programación orientada a objetos) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_docker",
+      "video_url": "https://www.youtube.com/watch?v=OuJerKzV5T0",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-DB-DESIGN-001) - competencia: DAM-BD-001 (Modelar datos relacionales) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_evidencia_android_compose",
+      "video_url": "https://www.youtube.com/watch?v=JOAqpdM36wI",
+      "notas": "APROBADO_PRINCIPAL - competencia: DAM-PRO-004 (Gestionar errores, ficheros y pruebas) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_evidencia_android_room",
+      "video_url": "https://www.youtube.com/watch?v=OuJerKzV5T0",
+      "notas": "APROBADO_PRINCIPAL - competencia: DAM-BD-002 (Crear y consultar una base de datos con SQL) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_evidencia_ci_docker",
+      "video_url": "https://www.youtube.com/watch?v=Ei1y51K8jQk",
+      "notas": "APROBADO_APOYO - competencia: DAM-ED-002 (Depurar, automatizar y mantener calidad) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_evidencia_spring_boot_api",
+      "video_url": "https://www.youtube.com/watch?v=OuJerKzV5T0",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-DB-DESIGN-001) - competencia: DAM-BD-001 (Modelar datos relacionales) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_feria_empleo_granada_2026",
+      "video_url": "https://www.youtube.com/watch?v=3GymExBkKjE",
+      "notas": "APROBADO_PRINCIPAL - competencia: DAM-ED-001 (Usar Git y un flujo de trabajo colaborativo) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_fundacion_sepi_becas",
+      "video_url": "https://www.youtube.com/watch?v=3GymExBkKjE",
+      "notas": "APROBADO_PRINCIPAL - competencia: DAM-ED-001 (Usar Git y un flujo de trabajo colaborativo) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_github_actions",
+      "video_url": "https://www.youtube.com/watch?v=Ei1y51K8jQk",
+      "notas": "APROBADO_APOYO - competencia: DAM-ED-002 (Depurar, automatizar y mantener calidad) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_github_skills",
+      "video_url": "https://www.youtube.com/watch?v=3GymExBkKjE",
+      "notas": "APROBADO_PRINCIPAL - competencia: DAM-ED-001 (Usar Git y un flujo de trabajo colaborativo) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_gradle",
+      "video_url": "https://www.youtube.com/watch?v=vJapzH_46a8",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-ANDROID-COMPOSE-001) - competencia: DAM-MOB-001 (Crear una aplicación móvil con navegación y estado) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_gsoc_2026",
+      "video_url": "https://www.youtube.com/watch?v=vJapzH_46a8",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-ANDROID-COMPOSE-001) - competencia: DAM-MOB-001 (Crear una aplicación móvil con navegación y estado) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_incibe_formacion",
+      "video_url": "https://www.youtube.com/watch?v=Ei1y51K8jQk",
+      "notas": "APROBADO_APOYO - competencia: DAM-BAS-005 (Documentar errores y aprender mediante práctica) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_intellij_idea",
+      "video_url": "https://www.youtube.com/watch?v=Ei1y51K8jQk",
+      "notas": "APROBADO_APOYO - competencia: DAM-ED-002 (Depurar, automatizar y mantener calidad) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_kotlin_get_started",
+      "video_url": "https://www.youtube.com/watch?v=qi87b6VcIHY",
+      "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO REACT NATIVE desde CERO - Creamos una app paso a paso\""
+    },
+    {
+      "id_slug": "dam_nasa_space_apps_2026",
+      "video_url": "https://www.youtube.com/watch?v=ELSm-G201Ls",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-HTML-001) - competencia: DAM-LM-001 (Estructurar información con lenguajes de marcas) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "dam_spring_guides",
+      "video_url": "https://www.youtube.com/watch?v=OuJerKzV5T0",
+      "notas": "APROBADO_PRINCIPAL - competencia: DAM-AD-001 (Conectar aplicaciones a bases de datos) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_andalucia_vuela_html_css",
+      "video_url": "https://www.youtube.com/watch?v=TkN2i-_4N4g",
+      "notas": "APROBADO_APOYO (sustituto de YT-PROG-INTRO-001) - competencia: DAW-BAS-003 (Resolver problemas mediante algoritmos simples) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_docker",
+      "video_url": "https://www.youtube.com/watch?v=ELSm-G201Ls",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-HTML-001) - competencia: DAW-LM-001 (Estructurar información con lenguajes de marcas) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_etsiit_ugr_recurso_local",
+      "video_url": "https://www.youtube.com/watch?v=z95mZVUcJ-E",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-JS-PLAYLIST-001) - competencia: DAW-CLI-001 (Programar interacción con JavaScript en el navegador) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_evidencia_api_openapi",
+      "video_url": "https://www.youtube.com/watch?v=z95mZVUcJ-E",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-JS-PLAYLIST-001) - competencia: DAW-CLI-002 (Consumir APIs y gestionar asincronía) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_evidencia_dashboard_fullstack",
+      "video_url": "https://www.youtube.com/watch?v=7iobxzd_2wY",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-REACT-PLAYLIST-001) - competencia: DAW-CLI-003 (Construir interfaces basadas en componentes) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_evidencia_portfolio_accesible",
+      "video_url": "https://www.youtube.com/watch?v=ELSm-G201Ls",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-RESPONSIVE-001) - competencia: DAW-LM-002 (Presentar información de forma responsive) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_figma_education",
+      "video_url": "https://www.youtube.com/watch?v=ELSm-G201Ls",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-RESPONSIVE-001) - competencia: DAW-LM-002 (Presentar información de forma responsive) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_github_skills",
+      "video_url": "https://www.youtube.com/watch?v=4Dko5W96WHg",
+      "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"Aprende Docker ahora! curso completo desde cero\""
+    },
+    {
+      "id_slug": "daw_github_student_pack",
+      "video_url": "https://www.youtube.com/watch?v=4Dko5W96WHg",
+      "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"Aprende Docker ahora! curso completo desde cero\""
+    },
+    {
+      "id_slug": "daw_mdn_aprende_desarrollo_web",
+      "video_url": "https://www.youtube.com/watch?v=ELSm-G201Ls",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-RESPONSIVE-001) - competencia: DAW-LM-002 (Presentar información de forma responsive) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_microsoft_web_dev_beginners",
+      "video_url": "https://www.youtube.com/watch?v=swdcD6OPMlk",
+      "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"Curso Completo de Python para Principiantes\""
+    },
+    {
+      "id_slug": "daw_nextjs_learn",
+      "video_url": "https://www.youtube.com/watch?v=7iobxzd_2wY",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-REACT-PLAYLIST-001) - competencia: DAW-CLI-003 (Construir interfaces basadas en componentes) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_postman",
+      "video_url": "https://www.youtube.com/watch?v=z95mZVUcJ-E",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-JS-PLAYLIST-001) - competencia: DAW-CLI-002 (Consumir APIs y gestionar asincronía) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_react_learn",
+      "video_url": "https://www.youtube.com/watch?v=z95mZVUcJ-E",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-JS-PLAYLIST-001) - competencia: DAW-CLI-001 (Programar interacción con JavaScript en el navegador) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_sae_ofertas_empleo",
+      "video_url": "https://www.youtube.com/watch?v=z95mZVUcJ-E",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-JS-PLAYLIST-001) - competencia: DAW-CLI-001 (Programar interacción con JavaScript en el navegador) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_tecnoempleo",
+      "video_url": "https://www.youtube.com/watch?v=7iobxzd_2wY",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-REACT-PLAYLIST-001) - competencia: DAW-CLI-003 (Construir interfaces basadas en componentes) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "daw_visual_studio_code",
+      "video_url": "https://www.youtube.com/watch?v=7iobxzd_2wY",
+      "notas": "APROBADO_PRINCIPAL (sustituto de YT-REACT-PLAYLIST-001) - competencia: DAW-CLI-003 (Construir interfaces basadas en componentes) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "mp_andalucia_vuela_campanas_redes",
+      "video_url": "https://www.youtube.com/watch?v=iHaxFWiW9v8",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO DE MARKETING - COMPLETO\""
+    },
+    {
+      "id_slug": "mp_andalucia_vuela_marca_redes",
+      "video_url": "https://www.youtube.com/watch?v=fdxnEr61Z5c",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=1) - fuente: chatgpt_2026-08-06 - candidato: \"MEGA CURSO de Canva GRATIS 2025 - Masterclass - Tutorial Completo Desde Cero\""
+    },
+    {
+      "id_slug": "mp_camara_fotografia_producto_2026",
+      "video_url": "https://www.youtube.com/watch?v=foVY02NE5_Y",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=2) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO COMPLETO DE PHOTOSHOP | De Principiante a Experto\""
+    },
+    {
+      "id_slug": "mp_camara_ux_ui_2026",
+      "video_url": "https://www.youtube.com/watch?v=bYOjmW-740M",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO DE DISEÑO Y DESARROLLO WEB - COMPLETO\""
+    },
+    {
+      "id_slug": "mp_herramienta_canva",
+      "video_url": "https://www.youtube.com/watch?v=fdxnEr61Z5c",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"MEGA CURSO de Canva GRATIS 2025 - Masterclass - Tutorial Completo Desde Cero\""
+    },
+    {
+      "id_slug": "mp_herramienta_google_analytics",
+      "video_url": "https://www.youtube.com/watch?v=L8poMIC84bE",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=1) - fuente: chatgpt_2026-08-06 - candidato: \"Excel Course - Pivot Tables (basic - intermediate - advanced) 2021\""
+    },
+    {
+      "id_slug": "mp_herramienta_google_forms",
+      "video_url": "https://www.youtube.com/watch?v=Ibyg6fc5xrE",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO DE SPSS STATISTICS\""
+    },
+    {
+      "id_slug": "mp_herramienta_google_trends",
+      "video_url": "https://www.youtube.com/watch?v=Ibyg6fc5xrE",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO DE SPSS STATISTICS\""
+    },
+    {
+      "id_slug": "mp_herramienta_hubspot_crm",
+      "video_url": "https://www.youtube.com/watch?v=V92Jx72x88c",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO DE MARKETING DIGITAL - COMPLETO\""
+    },
+    {
+      "id_slug": "mp_herramienta_looker_studio",
+      "video_url": "https://www.youtube.com/watch?v=OQ0IpdT-KuI",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=4) - fuente: chatgpt_2026-08-06 - candidato: \"Power BI tutorial desde CERO (Curso Completo)\""
+    },
+    {
+      "id_slug": "mp_herramienta_mailchimp",
+      "video_url": "https://www.youtube.com/watch?v=3gkKsFVK5F4",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"Curso GRATIS De Copywriting ($3,000/mes en 30 días)\""
+    },
+    {
+      "id_slug": "mp_herramienta_metricool",
+      "video_url": "https://www.youtube.com/watch?v=v17EXDu3t0E",
+      "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=1) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO de Marketing Digital Completo (2026)\""
+    },
+    {
+      "id_slug": "mp_herramienta_search_console",
+      "video_url": "https://www.youtube.com/watch?v=NZIDCoO6ySE",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=1) - fuente: chatgpt_2026-08-06 - candidato: \"Curso de Wordpress COMPLETO desde Cero (2024)\""
+    },
+    {
+      "id_slug": "mp_hubspot_marketing_digital",
+      "video_url": "https://www.youtube.com/watch?v=V92Jx72x88c",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=4) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO DE MARKETING DIGITAL - COMPLETO\""
+    },
+    {
+      "id_slug": "mp_hubspot_publicidad_digital",
+      "video_url": "https://www.youtube.com/watch?v=v17EXDu3t0E",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=2) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO de Marketing Digital Completo (2026)\""
+    },
+    {
+      "id_slug": "mp_hubspot_social_media",
+      "video_url": "https://www.youtube.com/watch?v=v17EXDu3t0E",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO de Marketing Digital Completo (2026)\""
+    },
+    {
+      "id_slug": "mp_meta_blueprint_publicidad",
+      "video_url": "https://www.youtube.com/watch?v=v17EXDu3t0E",
+      "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=2) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO de Marketing Digital Completo (2026)\""
+    },
+    {
+      "id_slug": "tsaf_herramienta_excel",
+      "video_url": "https://www.youtube.com/watch?v=eZPCVg4Jk00",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO DE EXCEL COMPLETO EN 1 VÍDEO - BÁSICO E INTERMEDIO\""
+    },
+    {
+      "id_slug": "tsaf_herramienta_google_forms",
+      "video_url": "https://www.youtube.com/watch?v=n0yn3TZ1lSQ",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=1) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO COMPLETO DE WORD 2023\""
+    },
+    {
+      "id_slug": "tsaf_iad_dolor_lumbar_2026",
+      "video_url": "https://www.youtube.com/watch?v=gps_6qc6mtA",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=2) - fuente: chatgpt_2026-08-06 - candidato: \"Rutina de ejercicios para la ARTROSIS DE CADERA de 1 hora\""
+    },
+    {
+      "id_slug": "tsaf_iad_entrenamiento_fuerza",
+      "video_url": "https://www.youtube.com/watch?v=w_MUOByxbkk",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=2) - fuente: chatgpt_2026-08-06 - candidato: \"Rutina para tonificar y adelgazar rápido | 45 minutos FULL BODY CARDIO 3\""
+    },
+    {
+      "id_slug": "tsaf_iad_fundamentos_entrenamiento",
+      "video_url": "https://www.youtube.com/watch?v=w_MUOByxbkk",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=2) - fuente: chatgpt_2026-08-06 - candidato: \"Rutina para tonificar y adelgazar rápido | 45 minutos FULL BODY CARDIO 3\""
+    },
+    {
+      "id_slug": "tsaf_iad_rcp_profesionales_deporte",
+      "video_url": "https://www.youtube.com/watch?v=2VfLYaUx-mY",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=4) - fuente: chatgpt_2026-08-06 - candidato: \"RCP y Primeros Auxilios (niños y adultos) - Curso Completo\""
+    },
+    {
+      "id_slug": "tsaf_iad_tecnicos_personas_mayores",
+      "video_url": "https://www.youtube.com/watch?v=ORZqGpZguD0",
+      "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=2) - fuente: chatgpt_2026-08-06 - candidato: \"Clase Completa de Vinyasa Yoga (1 hora)\""
+    }
+  ]
+}

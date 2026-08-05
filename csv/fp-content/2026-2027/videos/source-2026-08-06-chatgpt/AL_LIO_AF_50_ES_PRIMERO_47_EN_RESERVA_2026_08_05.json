@@ -1,0 +1,3572 @@
+{
+  "schema_version": "3.0",
+  "proyecto": "AL-LÍO",
+  "ciclo": "Administración y Finanzas",
+  "tipo_dataset": "banco_multidioma_ordenado",
+  "fecha_verificacion": "2026-08-05",
+  "orden_recomendado_de_consumo": [
+    "es_prioridad",
+    "en_reserva"
+  ],
+  "reglas_base": {
+    "video_individual": true,
+    "duracion_minima_minutos": 45,
+    "visualizaciones_minimas": 300000,
+    "canal_requerido": "especializado, verificado, institucional u oficial",
+    "preferencia_idioma": "español"
+  },
+  "politica_de_uso": {
+    "es_prioridad": "Mostrar primero para preselección y cruzar después con competencias concretas.",
+    "en_reserva": "No mostrar por defecto. Conservar para futuras candidaturas, itinerarios bilingües o ausencia de alternativa española.",
+    "produccion": "Ningún candidato debe publicarse automáticamente sin revalidar disponibilidad, inserción, duración, visitas y encaje."
+  },
+  "resumen": {
+    "videos_totales": 97,
+    "videos_espanol_prioridad": 50,
+    "videos_ingles_reserva": 47,
+    "videos_unicos": 97,
+    "espanol_por_nivel_de_encaje": {
+      "directo": 20,
+      "adyacente": 14,
+      "complementario_digital": 16
+    },
+    "espanol_por_categoria": {
+      "excel": 5,
+      "excel_tablas_dinamicas": 1,
+      "word": 4,
+      "powerpoint": 2,
+      "power_bi": 2,
+      "power_bi_dax": 1,
+      "marketing": 1,
+      "marketing_digital": 2,
+      "finanzas": 1,
+      "sql": 3,
+      "python": 4,
+      "python_proyectos": 1,
+      "git_github": 2,
+      "nodejs": 1,
+      "html_css": 1,
+      "react": 1,
+      "sql_bases_datos": 1,
+      "python_poo": 1,
+      "javascript": 5,
+      "css": 2,
+      "html": 2,
+      "vscode": 2,
+      "git": 2,
+      "docker": 1,
+      "python_backend": 1,
+      "logica_programacion": 1
+    }
+  },
+  "indices": {
+    "es_prioridad": {
+      "desde": 0,
+      "hasta": 49,
+      "cantidad": 50
+    },
+    "en_reserva": {
+      "desde": 50,
+      "hasta": 96,
+      "cantidad": 47
+    }
+  },
+  "videos": [
+    {
+      "id": "af_es_m8i4fMUCpK0",
+      "youtube_id": "m8i4fMUCpK0",
+      "titulo": "Curso Completo de Excel Gratis!!",
+      "canal": "A2 Capacitación: Excel",
+      "url": "https://www.youtube.com/watch?v=m8i4fMUCpK0",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "excel",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": "≈1 h 50 min",
+      "visualizaciones_snapshot": 2030653,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_jqyGUK4VvjQ",
+      "youtube_id": "jqyGUK4VvjQ",
+      "titulo": "Curso de Excel completo y gratis [+ 200 ejercicios en 1 video]",
+      "canal": "El Tío Tech",
+      "url": "https://www.youtube.com/watch?v=jqyGUK4VvjQ",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "excel",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": "≈4 h 47 min",
+      "visualizaciones_snapshot": 1250000,
+      "visualizaciones_aproximadas": true,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_v_R5SaMTlug",
+      "youtube_id": "v_R5SaMTlug",
+      "titulo": "BASIC EXCEL COURSE - COMPLETE 2020",
+      "canal": "El Tío Tech",
+      "url": "https://www.youtube.com/watch?v=v_R5SaMTlug",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "excel",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">1 h",
+      "visualizaciones_snapshot": 10000000,
+      "visualizaciones_aproximadas": true,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_L8poMIC84bE",
+      "youtube_id": "L8poMIC84bE",
+      "titulo": "Excel Course - Pivot Tables basic/intermediate/advanced 2021",
+      "canal": "El Tío Tech",
+      "url": "https://www.youtube.com/watch?v=L8poMIC84bE",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "excel_tablas_dinamicas",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">1 h",
+      "visualizaciones_snapshot": 4200000,
+      "visualizaciones_aproximadas": true,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_eZPCVg4Jk00",
+      "youtube_id": "eZPCVg4Jk00",
+      "titulo": "CURSO DE EXCEL COMPLETO EN 1 VÍDEO - BÁSICO E INTERMEDIO",
+      "canal": "Dostin Hurtado",
+      "url": "https://www.youtube.com/watch?v=eZPCVg4Jk00",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "excel",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">1 h 25 min",
+      "visualizaciones_snapshot": 4800000,
+      "visualizaciones_aproximadas": true,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_wj4YDF7GWuk",
+      "youtube_id": "wj4YDF7GWuk",
+      "titulo": "CURSO DE EXCEL 2019 - COMPLETO",
+      "canal": "Yoney Gallardo",
+      "url": "https://www.youtube.com/watch?v=wj4YDF7GWuk",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "excel",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">4 h 13 min",
+      "visualizaciones_snapshot": 1326141,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_a0cWZYKSLGQ",
+      "youtube_id": "a0cWZYKSLGQ",
+      "titulo": "CURSO DE WORD 2019 - COMPLETO",
+      "canal": "Yoney Gallardo",
+      "url": "https://www.youtube.com/watch?v=a0cWZYKSLGQ",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "word",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">3 h 59 min",
+      "visualizaciones_snapshot": 785673,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Crear documentos administrativos mediante estilos y plantillas",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_RCf9f9ZVP4g",
+      "youtube_id": "RCf9f9ZVP4g",
+      "titulo": "CURSO DE WORD 2021",
+      "canal": "Yoney Gallardo",
+      "url": "https://www.youtube.com/watch?v=RCf9f9ZVP4g",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "word",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">3 h 48 min",
+      "visualizaciones_snapshot": 579000,
+      "visualizaciones_aproximadas": true,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Crear documentos administrativos mediante estilos y plantillas",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_ra0hKJv8zbw",
+      "youtube_id": "ra0hKJv8zbw",
+      "titulo": "CURSO DE POWERPOINT 2019 - COMPLETO",
+      "canal": "Yoney Gallardo",
+      "url": "https://www.youtube.com/watch?v=ra0hKJv8zbw",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "powerpoint",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">3 h 15 min",
+      "visualizaciones_snapshot": 1372935,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Crear documentos administrativos mediante estilos y plantillas",
+        "Organizar archivos y documentación administrativa",
+        "Presentar y defender una propuesta administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_5-mCjVRXdO8",
+      "youtube_id": "5-mCjVRXdO8",
+      "titulo": "CURSO DE POWERPOINT 2016 - COMPLETO",
+      "canal": "Yoney Gallardo",
+      "url": "https://www.youtube.com/watch?v=5-mCjVRXdO8",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "powerpoint",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": "≈4 h",
+      "visualizaciones_snapshot": 315342,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Crear documentos administrativos mediante estilos y plantillas",
+        "Organizar archivos y documentación administrativa",
+        "Presentar y defender una propuesta administrativa"
+      ],
+      "limitaciones": [
+        "Está relativamente cerca del umbral de 300.000 visualizaciones; revalidar antes de publicar."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_2jvEaBEJinI",
+      "youtube_id": "2jvEaBEJinI",
+      "titulo": "Curso Completo de Word 2024",
+      "canal": "Dostin Hurtado",
+      "url": "https://www.youtube.com/watch?v=2jvEaBEJinI",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "word",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">1 h 1 min",
+      "visualizaciones_snapshot": 347898,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Crear documentos administrativos mediante estilos y plantillas",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_81s3hxEa93o",
+      "youtube_id": "81s3hxEa93o",
+      "titulo": "CURSO COMPLETO DE WORD 2023",
+      "canal": "El Tío Tech",
+      "url": "https://www.youtube.com/watch?v=81s3hxEa93o",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "word",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": "≈2 h 47 min",
+      "visualizaciones_snapshot": 1920000,
+      "visualizaciones_aproximadas": true,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Crear documentos administrativos mediante estilos y plantillas",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_sjrlIAQnD8M",
+      "youtube_id": "sjrlIAQnD8M",
+      "titulo": "Curso Completo de Power BI",
+      "canal": "datdata",
+      "url": "https://www.youtube.com/watch?v=sjrlIAQnD8M",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "power_bi",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">2 h 7 min",
+      "visualizaciones_snapshot": 1258599,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros",
+        "Usar Excel para gestión administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_F_xNyI-gtYc",
+      "youtube_id": "F_xNyI-gtYc",
+      "titulo": "Curso de DAX en Power BI - Principiante a Avanzado en 6 horas",
+      "canal": "datdata",
+      "url": "https://www.youtube.com/watch?v=F_xNyI-gtYc",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "power_bi_dax",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">5 h 49 min",
+      "visualizaciones_snapshot": 675050,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros",
+        "Usar Excel para gestión administrativa"
+      ],
+      "limitaciones": [
+        "DAX es contenido avanzado; asignarlo a itinerarios de analítica y cuadros de mando."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_OQ0IpdT-KuI",
+      "youtube_id": "OQ0IpdT-KuI",
+      "titulo": "Power BI tutorial desde CERO (Curso Completo)",
+      "canal": "Profesor_Danny",
+      "url": "https://www.youtube.com/watch?v=OQ0IpdT-KuI",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "power_bi",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">1 h 8 min",
+      "visualizaciones_snapshot": 353657,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros",
+        "Usar Excel para gestión administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_iHaxFWiW9v8",
+      "youtube_id": "iHaxFWiW9v8",
+      "titulo": "CURSO DE MARKETING - COMPLETO",
+      "canal": "Yoney Gallardo",
+      "url": "https://www.youtube.com/watch?v=iHaxFWiW9v8",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "marketing",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">3 h 25 min",
+      "visualizaciones_snapshot": 3073176,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Atender y registrar consultas, quejas y reclamaciones"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_V92Jx72x88c",
+      "youtube_id": "V92Jx72x88c",
+      "titulo": "CURSO DE MARKETING DIGITAL - COMPLETO",
+      "canal": "Yoney Gallardo",
+      "url": "https://www.youtube.com/watch?v=V92Jx72x88c",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "marketing_digital",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">4 h 4 min",
+      "visualizaciones_snapshot": 1141676,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Atender y registrar consultas, quejas y reclamaciones"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_v17EXDu3t0E",
+      "youtube_id": "v17EXDu3t0E",
+      "titulo": "CURSO de Marketing Digital Completo (2026)",
+      "canal": "Cyberclick",
+      "url": "https://www.youtube.com/watch?v=v17EXDu3t0E",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "marketing_digital",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">3 h 31 min",
+      "visualizaciones_snapshot": 3754575,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Atender y registrar consultas, quejas y reclamaciones"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_UhzdeGjLJ78",
+      "youtube_id": "UhzdeGjLJ78",
+      "titulo": "CURSO Completo de FINANZAS PERSONALES",
+      "canal": "Andrés Garza",
+      "url": "https://www.youtube.com/watch?v=UhzdeGjLJ78",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "finanzas",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">1 h 11 min",
+      "visualizaciones_snapshot": 1355830,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Gestionar tesorería, financiación y riesgo",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Presentar y defender una propuesta administrativa"
+      ],
+      "limitaciones": [
+        "Finanzas personales: útil para conceptos financieros, pero no sustituye tesorería empresarial ni normativa española."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_c4P__KoPZwo",
+      "youtube_id": "c4P__KoPZwo",
+      "titulo": "CURSO DE SQL CON MySQL",
+      "canal": "Yoney Gallardo",
+      "url": "https://www.youtube.com/watch?v=c4P__KoPZwo",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "sql",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "directo",
+      "duracion": ">1 h 58 min",
+      "visualizaciones_snapshot": 437463,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Diseñar una solución administrativa integral",
+        "Proteger datos, credenciales y documentación"
+      ],
+      "limitaciones": [
+        "Encaje directo con consolidación y tratamiento de datos; no con fiscalidad o nóminas."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_DLikpfc64cA",
+      "youtube_id": "DLikpfc64cA",
+      "titulo": "Aprende Python - Curso de Python desde Cero",
+      "canal": "freeCodeCamp Español",
+      "url": "https://www.youtube.com/watch?v=DLikpfc64cA",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "python",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": ">4 h 19 min",
+      "visualizaciones_snapshot": 1757475,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Diseñar una solución administrativa integral",
+        "Proteger datos, credenciales y documentación"
+      ],
+      "limitaciones": [
+        "Contenido técnico para automatización; no asignar automáticamente a competencias fiscales o laborales."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_tWnyBD2src0",
+      "youtube_id": "tWnyBD2src0",
+      "titulo": "6 Proyectos de Python Básicos",
+      "canal": "freeCodeCamp Español",
+      "url": "https://www.youtube.com/watch?v=tWnyBD2src0",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "python_proyectos",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": "≈2 h 28 min",
+      "visualizaciones_snapshot": 523997,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Diseñar una solución administrativa integral",
+        "Proteger datos, credenciales y documentación"
+      ],
+      "limitaciones": [
+        "Contenido técnico complementario."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_mBYSUUnMt9M",
+      "youtube_id": "mBYSUUnMt9M",
+      "titulo": "Aprende Git y GitHub",
+      "canal": "freeCodeCamp Español",
+      "url": "https://www.youtube.com/watch?v=mBYSUUnMt9M",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "git_github",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": "≈5 h 32 min",
+      "visualizaciones_snapshot": 343513,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Organizar archivos y documentación administrativa",
+        "Proteger datos, credenciales y documentación",
+        "Diseñar una solución administrativa integral"
+      ],
+      "limitaciones": [
+        "Útil para versionado y trazabilidad documental; no es una herramienta administrativa estándar."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_1hpc70_OoAg",
+      "youtube_id": "1hpc70_OoAg",
+      "titulo": "Aprende Node.js y Express",
+      "canal": "freeCodeCamp Español",
+      "url": "https://www.youtube.com/watch?v=1hpc70_OoAg",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "nodejs",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": "≈8 h 29 min",
+      "visualizaciones_snapshot": 605218,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [
+        "Contenido de desarrollo web; útil solo para itinerarios de automatización o construcción de soluciones."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_XqFR2lqBYPs",
+      "youtube_id": "XqFR2lqBYPs",
+      "titulo": "Aprende HTML y CSS",
+      "canal": "freeCodeCamp Español",
+      "url": "https://www.youtube.com/watch?v=XqFR2lqBYPs",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "html_css",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": "≈5 h 15 min",
+      "visualizaciones_snapshot": 1876421,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [
+        "Contenido de desarrollo web complementario."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_6Jfk8ic3KVk",
+      "youtube_id": "6Jfk8ic3KVk",
+      "titulo": "Aprende React Desde Cero",
+      "canal": "freeCodeCamp Español",
+      "url": "https://www.youtube.com/watch?v=6Jfk8ic3KVk",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "react",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": "≈8 h 10 min",
+      "visualizaciones_snapshot": 1185667,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [
+        "Contenido de desarrollo web complementario."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_Kp4Mvapo5kc",
+      "youtube_id": "Kp4Mvapo5kc",
+      "titulo": "Curso COMPLETO de PYTHON desde CERO",
+      "canal": "MoureDev",
+      "url": "https://www.youtube.com/watch?v=Kp4Mvapo5kc",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "python",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": "≈10 h 6 min",
+      "visualizaciones_snapshot": 3160400,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Diseñar una solución administrativa integral",
+        "Proteger datos, credenciales y documentación"
+      ],
+      "limitaciones": [
+        "Contenido técnico para automatización y tratamiento de datos."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_OuJerKzV5T0",
+      "youtube_id": "OuJerKzV5T0",
+      "titulo": "Curso COMPLETO de SQL y bases de datos",
+      "canal": "MoureDev",
+      "url": "https://www.youtube.com/watch?v=OuJerKzV5T0",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "sql_bases_datos",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": "≈6 h 51 min",
+      "visualizaciones_snapshot": 1800000,
+      "visualizaciones_aproximadas": true,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Diseñar una solución administrativa integral",
+        "Proteger datos, credenciales y documentación"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_3GymExBkKjE",
+      "youtube_id": "3GymExBkKjE",
+      "titulo": "Curso COMPLETO de GIT y GITHUB",
+      "canal": "MoureDev",
+      "url": "https://www.youtube.com/watch?v=3GymExBkKjE",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "git_github",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": "≈5 h 4 min",
+      "visualizaciones_snapshot": 1145997,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Organizar archivos y documentación administrativa",
+        "Proteger datos, credenciales y documentación",
+        "Diseñar una solución administrativa integral"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_TkN2i-_4N4g",
+      "youtube_id": "TkN2i-_4N4g",
+      "titulo": "Curso COMPLETO de PYTHON desde CERO para Principiantes 2025",
+      "canal": "midudev",
+      "url": "https://www.youtube.com/watch?v=TkN2i-_4N4g",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "python",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": ">8 h 10 min",
+      "visualizaciones_snapshot": 1532653,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Diseñar una solución administrativa integral",
+        "Proteger datos, credenciales y documentación"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_HtKqSJX7VoM",
+      "youtube_id": "HtKqSJX7VoM",
+      "titulo": "Curso de POO con PYTHON desde CERO",
+      "canal": "Soy Dalto",
+      "url": "https://www.youtube.com/watch?v=HtKqSJX7VoM",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "python_poo",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈4 h 14 min",
+      "visualizaciones_snapshot": 639344,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [
+        "Formación técnica; no cubre una competencia administrativa de forma autónoma."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_DFg1V-rO6Pg",
+      "youtube_id": "DFg1V-rO6Pg",
+      "titulo": "Curso de SQL desde CERO",
+      "canal": "Soy Dalto",
+      "url": "https://www.youtube.com/watch?v=DFg1V-rO6Pg",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "sql",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈7 h 18 min",
+      "visualizaciones_snapshot": 2165290,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Diseñar una solución administrativa integral",
+        "Proteger datos, credenciales y documentación"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_EbMi1Qj4rVE",
+      "youtube_id": "EbMi1Qj4rVE",
+      "titulo": "Curso de JAVASCRIPT desde CERO - Nivel Master",
+      "canal": "Soy Dalto",
+      "url": "https://www.youtube.com/watch?v=EbMi1Qj4rVE",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "javascript",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈9 h 22 min",
+      "visualizaciones_snapshot": 490534,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_z95mZVUcJ-E",
+      "youtube_id": "z95mZVUcJ-E",
+      "titulo": "Curso de JAVASCRIPT desde CERO - Nivel Junior",
+      "canal": "Soy Dalto",
+      "url": "https://www.youtube.com/watch?v=z95mZVUcJ-E",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "javascript",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈10 h",
+      "visualizaciones_snapshot": 5081365,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_xOinGb2MZSk",
+      "youtube_id": "xOinGb2MZSk",
+      "titulo": "Curso de JAVASCRIPT desde CERO - Nivel Mid",
+      "canal": "Soy Dalto",
+      "url": "https://www.youtube.com/watch?v=xOinGb2MZSk",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "javascript",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈7 h 56 min",
+      "visualizaciones_snapshot": 843635,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_nKPbfIU442g",
+      "youtube_id": "nKPbfIU442g",
+      "titulo": "Curso de PYTHON desde CERO",
+      "canal": "Soy Dalto",
+      "url": "https://www.youtube.com/watch?v=nKPbfIU442g",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "python",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": "≈8 h 6 min",
+      "visualizaciones_snapshot": 5400000,
+      "visualizaciones_aproximadas": true,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Diseñar una solución administrativa integral",
+        "Proteger datos, credenciales y documentación"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_OWKXEJN67FE",
+      "youtube_id": "OWKXEJN67FE",
+      "titulo": "Curso de CSS desde CERO",
+      "canal": "Soy Dalto",
+      "url": "https://www.youtube.com/watch?v=OWKXEJN67FE",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "css",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈9 h",
+      "visualizaciones_snapshot": 3900000,
+      "visualizaciones_aproximadas": true,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_kN1XP-Bef7w",
+      "youtube_id": "kN1XP-Bef7w",
+      "titulo": "Curso de HTML5 desde CERO",
+      "canal": "Soy Dalto",
+      "url": "https://www.youtube.com/watch?v=kN1XP-Bef7w",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "html",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈2 h 23 min",
+      "visualizaciones_snapshot": 300000,
+      "visualizaciones_aproximadas": true,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [
+        "Revalidar visualizaciones: la evidencia consultada confirma el umbral, pero está en el límite mínimo."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_TbzrOz8HbFM",
+      "youtube_id": "TbzrOz8HbFM",
+      "titulo": "Curso de VISUAL STUDIO CODE desde CERO",
+      "canal": "Soy Dalto",
+      "url": "https://www.youtube.com/watch?v=TbzrOz8HbFM",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "vscode",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈2 h 17 min",
+      "visualizaciones_snapshot": 544804,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Organizar archivos y documentación administrativa",
+        "Proteger datos, credenciales y documentación",
+        "Diseñar una solución administrativa integral"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_9ZJ-K-zk_Go",
+      "youtube_id": "9ZJ-K-zk_Go",
+      "titulo": "Curso de GIT desde CERO",
+      "canal": "Soy Dalto",
+      "url": "https://www.youtube.com/watch?v=9ZJ-K-zk_Go",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "git",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈4 h 10 min",
+      "visualizaciones_snapshot": 394032,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Organizar archivos y documentación administrativa",
+        "Proteger datos, credenciales y documentación",
+        "Diseñar una solución administrativa integral"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_QoC4RxNIs5M",
+      "youtube_id": "QoC4RxNIs5M",
+      "titulo": "Aprende JavaScript Ahora!",
+      "canal": "HolaMundo",
+      "url": "https://www.youtube.com/watch?v=QoC4RxNIs5M",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "javascript",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈3 h 58 min",
+      "visualizaciones_snapshot": 3336820,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_wZniZEbPAzk",
+      "youtube_id": "wZniZEbPAzk",
+      "titulo": "Aprende CSS ahora!",
+      "canal": "HolaMundo",
+      "url": "https://www.youtube.com/watch?v=wZniZEbPAzk",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "css",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈2 h 4 min",
+      "visualizaciones_snapshot": 1646596,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_uUdKAYl-F7g",
+      "youtube_id": "uUdKAYl-F7g",
+      "titulo": "Aprende SQL ahora!",
+      "canal": "HolaMundo",
+      "url": "https://www.youtube.com/watch?v=uUdKAYl-F7g",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "sql",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": "≈1 h 55 min",
+      "visualizaciones_snapshot": 2154070,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Diseñar una solución administrativa integral",
+        "Proteger datos, credenciales y documentación"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_VdGzPZ31ts8",
+      "youtube_id": "VdGzPZ31ts8",
+      "titulo": "Aprende GIT ahora!",
+      "canal": "HolaMundo",
+      "url": "https://www.youtube.com/watch?v=VdGzPZ31ts8",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "git",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈1 h 6 min",
+      "visualizaciones_snapshot": 1145597,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Organizar archivos y documentación administrativa",
+        "Proteger datos, credenciales y documentación",
+        "Diseñar una solución administrativa integral"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_MJkdaVFHrto",
+      "youtube_id": "MJkdaVFHrto",
+      "titulo": "Aprende HTML ahora!",
+      "canal": "HolaMundo",
+      "url": "https://www.youtube.com/watch?v=MJkdaVFHrto",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "html",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈1 h 33 min",
+      "visualizaciones_snapshot": 2500000,
+      "visualizaciones_aproximadas": true,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_4Dko5W96WHg",
+      "youtube_id": "4Dko5W96WHg",
+      "titulo": "Aprende Docker ahora!",
+      "canal": "HolaMundo",
+      "url": "https://www.youtube.com/watch?v=4Dko5W96WHg",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "docker",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈1 h 28 min",
+      "visualizaciones_snapshot": 1170129,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Organizar archivos y documentación administrativa",
+        "Proteger datos, credenciales y documentación",
+        "Diseñar una solución administrativa integral"
+      ],
+      "limitaciones": [
+        "Docker solo es útil para itinerarios técnicos o despliegue de soluciones internas."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_Ei1y51K8jQk",
+      "youtube_id": "Ei1y51K8jQk",
+      "titulo": "Aprende VS Code ahora!",
+      "canal": "HolaMundo",
+      "url": "https://www.youtube.com/watch?v=Ei1y51K8jQk",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "vscode",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈1 h 4 min",
+      "visualizaciones_snapshot": 1147012,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Organizar archivos y documentación administrativa",
+        "Proteger datos, credenciales y documentación",
+        "Diseñar una solución administrativa integral"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es__y9qQZXE24A",
+      "youtube_id": "_y9qQZXE24A",
+      "titulo": "Curso COMPLETO de PYTHON desde CERO para BACKEND",
+      "canal": "MoureDev",
+      "url": "https://www.youtube.com/watch?v=_y9qQZXE24A",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "python_backend",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": "≈7 h 54 min",
+      "visualizaciones_snapshot": 632804,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Diseñar una solución administrativa integral",
+        "Proteger datos, credenciales y documentación"
+      ],
+      "limitaciones": [
+        "Contenido técnico avanzado para automatización y backend."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_1glVfFxj8a4",
+      "youtube_id": "1glVfFxj8a4",
+      "titulo": "Curso COMPLETO de JavaScript DESDE CERO",
+      "canal": "MoureDev",
+      "url": "https://www.youtube.com/watch?v=1glVfFxj8a4",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "javascript",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "complementario_digital",
+      "duracion": "≈6 h 19 min",
+      "visualizaciones_snapshot": 443455,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_es_TdITcVD64zI",
+      "youtube_id": "TdITcVD64zI",
+      "titulo": "Curso COMPLETO de LÓGICA DE PROGRAMACIÓN Desde Cero",
+      "canal": "MoureDev",
+      "url": "https://www.youtube.com/watch?v=TdITcVD64zI",
+      "idioma": "es",
+      "grupo": "es_prioridad",
+      "prioridad": 1,
+      "categoria": "logica_programacion",
+      "estado_verificacion": "verificado_base_2026_08_05",
+      "apto_para_preseleccion": true,
+      "usar_en_produccion": false,
+      "requiere_revision_antes_de_publicar": true,
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "nivel_encaje_administracion_finanzas": "adyacente",
+      "duracion": "≈7 h 29 min",
+      "visualizaciones_snapshot": 918281,
+      "visualizaciones_aproximadas": false,
+      "fecha_snapshot": "2026-08-05",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Automatizar limpieza y consolidación de datos",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [
+        "Útil para diseñar automatizaciones; no sustituye formación administrativa."
+      ],
+      "origen_dataset": "investigacion_espanol_2026_08_05"
+    },
+    {
+      "id": "af_video_rro5t8eHXaY",
+      "youtube_id": "rro5t8eHXaY",
+      "titulo": "Excel Full Course Tutorial (4+ Hours)",
+      "canal": "Learn Skills Daily",
+      "url": "https://www.youtube.com/watch?v=rro5t8eHXaY",
+      "idioma": "en",
+      "categoria": "excel",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "4+ h",
+      "visualizaciones_snapshot": 985100,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés; validar terminología para alumnado español.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_qrbf9DtR3_c",
+      "youtube_id": "qrbf9DtR3_c",
+      "titulo": "Excel Data Analysis Full Course Tutorial (7+ Hours)",
+      "canal": "Learn Skills Daily",
+      "url": "https://www.youtube.com/watch?v=qrbf9DtR3_c",
+      "idioma": "en",
+      "categoria": "excel_analisis",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "7+ h",
+      "visualizaciones_snapshot": 1900000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_yebsZPhpGzc",
+      "youtube_id": "yebsZPhpGzc",
+      "titulo": "Excel 2021 VBA Full Course Tutorial (6+ Hours)",
+      "canal": "Learn Skills Daily",
+      "url": "https://www.youtube.com/watch?v=yebsZPhpGzc",
+      "idioma": "en",
+      "categoria": "excel_vba",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "6+ h",
+      "visualizaciones_snapshot": 304500,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "VBA es contenido avanzado y no imprescindible para todas las competencias de AF.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_SA_SDo-cqpg",
+      "youtube_id": "SA_SDo-cqpg",
+      "titulo": "Excel Full Course for Data Analysis with Projects [2 Hours]",
+      "canal": "WsCube Tech",
+      "url": "https://www.youtube.com/watch?v=SA_SDo-cqpg",
+      "idioma": "en",
+      "categoria": "excel_analisis",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈2 h",
+      "visualizaciones_snapshot": 1800000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_7QNgqq154gE",
+      "youtube_id": "7QNgqq154gE",
+      "titulo": "How to Master Excel for Data Analysis in 4 Hours",
+      "canal": "Chandoo",
+      "url": "https://www.youtube.com/watch?v=7QNgqq154gE",
+      "idioma": "en",
+      "categoria": "excel_analisis",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈4 h",
+      "visualizaciones_snapshot": 617600,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_pCJ15nGFgVg",
+      "youtube_id": "pCJ15nGFgVg",
+      "titulo": "How to Master Excel for Data Analytics",
+      "canal": "Luke Barousse",
+      "url": "https://www.youtube.com/watch?v=pCJ15nGFgVg",
+      "idioma": "en",
+      "categoria": "excel_analisis",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈11 h",
+      "visualizaciones_snapshot": 985700,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Orientado a analítica de datos, no a normativa administrativa española.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_8Ob8Hre_SnI",
+      "youtube_id": "8Ob8Hre_SnI",
+      "titulo": "How to Master Microsoft Excel: Complete Beginner to Advanced Guide",
+      "canal": "Simplilearn",
+      "url": "https://www.youtube.com/watch?v=8Ob8Hre_SnI",
+      "idioma": "en",
+      "categoria": "excel",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈11 h",
+      "visualizaciones_snapshot": 2100000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_Vl0H-qTclOg",
+      "youtube_id": "Vl0H-qTclOg",
+      "titulo": "How to Use Excel for Beginners: Complete Guide",
+      "canal": "freeCodeCamp.org",
+      "url": "https://www.youtube.com/watch?v=Vl0H-qTclOg",
+      "idioma": "en",
+      "categoria": "excel",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈2 h",
+      "visualizaciones_snapshot": 11300000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros",
+        "Calcular y revisar una nómina"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "La nómina usada es un ejercicio de hoja de cálculo, no normativa laboral española.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_wbJcJCkBcMg",
+      "youtube_id": "wbJcJCkBcMg",
+      "titulo": "Excel for Beginners - The Complete Course",
+      "canal": "Technology for Teachers and Students",
+      "url": "https://www.youtube.com/watch?v=wbJcJCkBcMg",
+      "idioma": "en",
+      "categoria": "excel",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": ">45 min",
+      "visualizaciones_snapshot": 15800000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Escribir con precisión y usar funciones básicas de Office"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_DzTCFsdxMP4",
+      "youtube_id": "DzTCFsdxMP4",
+      "titulo": "Microsoft Office Tutorial: Learn Excel, PowerPoint and Word - 9 HOUR MS Office Course",
+      "canal": "Simon Sez IT",
+      "url": "https://www.youtube.com/watch?v=DzTCFsdxMP4",
+      "idioma": "en",
+      "categoria": "office",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈9 h 4 min",
+      "visualizaciones_snapshot": 993917,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Crear documentos administrativos mediante estilos y plantillas",
+        "Redactar correos y comunicaciones profesionales"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_r5fXft08dVY",
+      "youtube_id": "r5fXft08dVY",
+      "titulo": "Excel 2025 Complete Course: From Beginner to Advanced",
+      "canal": "Pavan Lalwani",
+      "url": "https://www.youtube.com/watch?v=r5fXft08dVY",
+      "idioma": "en",
+      "categoria": "excel",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": ">45 min",
+      "visualizaciones_snapshot": 302000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Está cerca del umbral de 300.000; revalidar antes de publicar.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_uwe8C7K8fXY",
+      "youtube_id": "uwe8C7K8fXY",
+      "titulo": "Beginner to PRO Data Analysis with Power BI - Full Length Course",
+      "canal": "Chandoo",
+      "url": "https://www.youtube.com/watch?v=uwe8C7K8fXY",
+      "idioma": "en",
+      "categoria": "power_bi",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": ">45 min",
+      "visualizaciones_snapshot": 1100000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_e6QD8lP-m6E",
+      "youtube_id": "e6QD8lP-m6E",
+      "titulo": "Power BI Full Course Tutorial (8 Hours)",
+      "canal": "Learnit Training",
+      "url": "https://www.youtube.com/watch?v=e6QD8lP-m6E",
+      "idioma": "en",
+      "categoria": "power_bi",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈8 h",
+      "visualizaciones_snapshot": 849700,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_3u7MQz1EyPY",
+      "youtube_id": "3u7MQz1EyPY",
+      "titulo": "Power BI Full Course - Learn Power BI in 4 Hours",
+      "canal": "edureka!",
+      "url": "https://www.youtube.com/watch?v=3u7MQz1EyPY",
+      "idioma": "en",
+      "categoria": "power_bi",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈4 h",
+      "visualizaciones_snapshot": 3900000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_C8TgduBEg2E",
+      "youtube_id": "C8TgduBEg2E",
+      "titulo": "Power BI Full Course for FREE with Practical Projects [3 Hours]",
+      "canal": "WsCube Tech",
+      "url": "https://www.youtube.com/watch?v=C8TgduBEg2E",
+      "idioma": "en",
+      "categoria": "power_bi",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈3 h",
+      "visualizaciones_snapshot": 1200000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_qOTdpjLUELg",
+      "youtube_id": "qOTdpjLUELg",
+      "titulo": "Power BI Full Course in 8 Hours",
+      "canal": "Accounts Expert",
+      "url": "https://www.youtube.com/watch?v=qOTdpjLUELg",
+      "idioma": "en",
+      "categoria": "power_bi",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈8 h",
+      "visualizaciones_snapshot": 608400,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros",
+        "Registrar el ciclo contable básico",
+        "Completar el ciclo contable",
+        "Gestionar una empresa simulada de forma integrada"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_UXhGRVTndQA",
+      "youtube_id": "UXhGRVTndQA",
+      "titulo": "Power BI Full Course in 8 Hours",
+      "canal": "Pavan Lalwani",
+      "url": "https://www.youtube.com/watch?v=UXhGRVTndQA",
+      "idioma": "en",
+      "categoria": "power_bi",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈8 h",
+      "visualizaciones_snapshot": 4000000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_gjnnqsdvAc0",
+      "youtube_id": "gjnnqsdvAc0",
+      "titulo": "Excel to Power BI [Full Course]",
+      "canal": "Pragmatic Works",
+      "url": "https://www.youtube.com/watch?v=gjnnqsdvAc0",
+      "idioma": "en",
+      "categoria": "excel_power_bi",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": ">45 min",
+      "visualizaciones_snapshot": 655200,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Usar Excel para gestión administrativa",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Escribir con precisión y usar funciones básicas de Office",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_MrLnibFTtbA",
+      "youtube_id": "MrLnibFTtbA",
+      "titulo": "Data Modeling for Power BI [Full Course]",
+      "canal": "Pragmatic Works",
+      "url": "https://www.youtube.com/watch?v=MrLnibFTtbA",
+      "idioma": "en",
+      "categoria": "power_bi_modelado",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": ">45 min",
+      "visualizaciones_snapshot": 3000000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Contenido técnico avanzado.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_QJw4HkagVWc",
+      "youtube_id": "QJw4HkagVWc",
+      "titulo": "Power BI DAX Functions Tutorial for Beginners | FULL COURSE",
+      "canal": "Pragmatic Works",
+      "url": "https://www.youtube.com/watch?v=QJw4HkagVWc",
+      "idioma": "en",
+      "categoria": "power_bi_dax",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": ">45 min",
+      "visualizaciones_snapshot": 1800000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros",
+        "Gestionar tesorería, financiación y riesgo",
+        "Operar con porcentajes, reglas de tres e importes"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "DAX es contenido avanzado.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_rJsHc-4w60g",
+      "youtube_id": "rJsHc-4w60g",
+      "titulo": "Power Apps Tutorial | FULL COURSE for Beginners",
+      "canal": "Pragmatic Works",
+      "url": "https://www.youtube.com/watch?v=rJsHc-4w60g",
+      "idioma": "en",
+      "categoria": "power_apps",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": ">45 min",
+      "visualizaciones_snapshot": 313000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Gestionar una empresa simulada de forma integrada",
+        "Gestionar comunicaciones y archivo multicanal"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Está cerca del umbral de 300.000; revalidar antes de publicar.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_KsgxDz-nY_I",
+      "youtube_id": "KsgxDz-nY_I",
+      "titulo": "Power Automate Tutorial - Beginner To Pro [Full Course]",
+      "canal": "Pragmatic Works",
+      "url": "https://www.youtube.com/watch?v=KsgxDz-nY_I",
+      "idioma": "en",
+      "categoria": "power_automate",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈2 h 30 min",
+      "visualizaciones_snapshot": 551510,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Gestionar una empresa simulada de forma integrada",
+        "Gestionar comunicaciones y archivo multicanal",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_Dk25lwdTKow",
+      "youtube_id": "Dk25lwdTKow",
+      "titulo": "ULTIMATE Power BI Tutorial - Beginner to Pro Course (2024)",
+      "canal": "Pragmatic Works",
+      "url": "https://www.youtube.com/watch?v=Dk25lwdTKow",
+      "idioma": "en",
+      "categoria": "power_bi",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈3 h 40 min",
+      "visualizaciones_snapshot": 1012060,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_FwjaHCVNBWA",
+      "youtube_id": "FwjaHCVNBWA",
+      "titulo": "Power BI for Data Analytics - Full Course for Beginners",
+      "canal": "Luke Barousse",
+      "url": "https://www.youtube.com/watch?v=FwjaHCVNBWA",
+      "idioma": "en",
+      "categoria": "power_bi",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈8 h 24 min",
+      "visualizaciones_snapshot": 1160000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Orientado a analítica y portfolio profesional.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_gPBhGkBN30s",
+      "youtube_id": "gPBhGkBN30s",
+      "titulo": "LEARN ACCOUNTING in Under 5 Hours!",
+      "canal": "Accounting Stuff",
+      "url": "https://www.youtube.com/watch?v=gPBhGkBN30s",
+      "idioma": "en",
+      "categoria": "contabilidad",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "<5 h y >45 min",
+      "visualizaciones_snapshot": 1100000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Registrar el ciclo contable básico",
+        "Completar el ciclo contable",
+        "Gestionar una empresa simulada de forma integrada",
+        "Gestionar tesorería, financiación y riesgo",
+        "Operar con porcentajes, reglas de tres e importes"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "No aplica el Plan General Contable español de forma específica.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_v-djL7SPw4c",
+      "youtube_id": "v-djL7SPw4c",
+      "titulo": "Full Financial Accounting Course in One Video (10 Hours)",
+      "canal": "Tony Bell",
+      "url": "https://www.youtube.com/watch?v=v-djL7SPw4c",
+      "idioma": "en",
+      "categoria": "contabilidad_financiera",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈10 h",
+      "visualizaciones_snapshot": 2500000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Registrar el ciclo contable básico",
+        "Completar el ciclo contable",
+        "Gestionar una empresa simulada de forma integrada",
+        "Gestionar tesorería, financiación y riesgo",
+        "Operar con porcentajes, reglas de tres e importes"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Marco contable internacional; contrastar con el PGC español.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_eyXKvOrDoqw",
+      "youtube_id": "eyXKvOrDoqw",
+      "titulo": "Complete Financial Accounting Course - 11-Hour Full Tutorial for Beginners",
+      "canal": "Tony Bell",
+      "url": "https://www.youtube.com/watch?v=eyXKvOrDoqw",
+      "idioma": "en",
+      "categoria": "contabilidad_financiera",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈11 h",
+      "visualizaciones_snapshot": 497000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Registrar el ciclo contable básico",
+        "Completar el ciclo contable",
+        "Gestionar una empresa simulada de forma integrada",
+        "Gestionar tesorería, financiación y riesgo",
+        "Operar con porcentajes, reglas de tres e importes"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Marco contable internacional; contrastar con el PGC español.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_Lz2VFRYBdm0",
+      "youtube_id": "Lz2VFRYBdm0",
+      "titulo": "Full Management Accounting Course in One Video (10 Hours)",
+      "canal": "Tony Bell",
+      "url": "https://www.youtube.com/watch?v=Lz2VFRYBdm0",
+      "idioma": "en",
+      "categoria": "contabilidad_gestion",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈10 h",
+      "visualizaciones_snapshot": 418700,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Registrar el ciclo contable básico",
+        "Completar el ciclo contable",
+        "Gestionar una empresa simulada de forma integrada",
+        "Gestionar tesorería, financiación y riesgo",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Gestionar una empresa simulada de forma integrada"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "No sustituye contenidos fiscales o contables españoles.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_aoWghI3kvpc",
+      "youtube_id": "aoWghI3kvpc",
+      "titulo": "QuickBooks Online Complete Tutorial",
+      "canal": "thequickbooksdude",
+      "url": "https://www.youtube.com/watch?v=aoWghI3kvpc",
+      "idioma": "en",
+      "categoria": "software_contable",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈3 h",
+      "visualizaciones_snapshot": 1400000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Registrar el ciclo contable básico",
+        "Completar el ciclo contable",
+        "Gestionar una empresa simulada de forma integrada",
+        "Gestionar compras, ventas, facturas y cobros"
+      ],
+      "limitaciones": [
+        "QuickBooks no es CONTASOL ni una herramienta oficial española.",
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_ouvbeb2wSGA",
+      "youtube_id": "ouvbeb2wSGA",
+      "titulo": "Master Financial Literacy in Just 63 Minutes",
+      "canal": "Tina Huang",
+      "url": "https://www.youtube.com/watch?v=ouvbeb2wSGA",
+      "idioma": "en",
+      "categoria": "educacion_financiera",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈1 h 3 min",
+      "visualizaciones_snapshot": 1400000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Gestionar tesorería, financiación y riesgo",
+        "Operar con porcentajes, reglas de tres e importes"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Finanzas personales; no cubre contabilidad empresarial completa.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_EJHPltmAULA",
+      "youtube_id": "EJHPltmAULA",
+      "titulo": "Fundamentals of Finance & Economics for Businesses - Crash Course",
+      "canal": "freeCodeCamp.org",
+      "url": "https://www.youtube.com/watch?v=EJHPltmAULA",
+      "idioma": "en",
+      "categoria": "finanzas_empresa",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈1 h 36 min",
+      "visualizaciones_snapshot": 2174918,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Gestionar tesorería, financiación y riesgo",
+        "Operar con porcentajes, reglas de tres e importes",
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Gestionar una empresa simulada de forma integrada"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "No aborda fiscalidad española.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_uWPIsaYpY7U",
+      "youtube_id": "uWPIsaYpY7U",
+      "titulo": "Project Management Full Course In 8 Hours",
+      "canal": "Simplilearn",
+      "url": "https://www.youtube.com/watch?v=uWPIsaYpY7U",
+      "idioma": "en",
+      "categoria": "gestion_proyectos",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈8 h",
+      "visualizaciones_snapshot": 2300000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Gestionar una empresa simulada de forma integrada"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_vzqDTSZOTic",
+      "youtube_id": "vzqDTSZOTic",
+      "titulo": "PMP Certification Full Course - Learn PMP Fundamentals in 12 Hours",
+      "canal": "edureka!",
+      "url": "https://www.youtube.com/watch?v=vzqDTSZOTic",
+      "idioma": "en",
+      "categoria": "gestion_proyectos",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈12 h",
+      "visualizaciones_snapshot": 2100000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Gestionar una empresa simulada de forma integrada"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Orientado a PMP, no específicamente a FP de Administración y Finanzas.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_UBVzucVpG7k",
+      "youtube_id": "UBVzucVpG7k",
+      "titulo": "Business Analyst Full Course In 2 Hours",
+      "canal": "Simplilearn",
+      "url": "https://www.youtube.com/watch?v=UBVzucVpG7k",
+      "idioma": "en",
+      "categoria": "analisis_negocio",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈2 h",
+      "visualizaciones_snapshot": 915800,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Gestionar una empresa simulada de forma integrada",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_OnwhPsfbMmU",
+      "youtube_id": "OnwhPsfbMmU",
+      "titulo": "Business Analyst Course in 6 Hours",
+      "canal": "ThePrefectBA",
+      "url": "https://www.youtube.com/watch?v=OnwhPsfbMmU",
+      "idioma": "en",
+      "categoria": "analisis_negocio",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈6 h",
+      "visualizaciones_snapshot": 388000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "directo",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Gestionar una empresa simulada de forma integrada",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Revalidar visitas antes de publicar.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_xQuKdFNK7tk",
+      "youtube_id": "xQuKdFNK7tk",
+      "titulo": "33 Years of Business Experience in 4hrs FULL COURSE",
+      "canal": "CEO Entrepreneur",
+      "url": "https://www.youtube.com/watch?v=xQuKdFNK7tk",
+      "idioma": "en",
+      "categoria": "emprendimiento",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈4 h",
+      "visualizaciones_snapshot": 455900,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Gestionar una empresa simulada de forma integrada",
+        "Gestionar tesorería, financiación y riesgo",
+        "Operar con porcentajes, reglas de tres e importes"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Consejos empresariales generales; seleccionar capítulos según competencia.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_4C5LYI1DLR4",
+      "youtube_id": "4C5LYI1DLR4",
+      "titulo": "Project Management Tutorial: 11 Years of Experience in 45 Minutes",
+      "canal": "IT Project Managers",
+      "url": "https://www.youtube.com/watch?v=4C5LYI1DLR4",
+      "idioma": "en",
+      "categoria": "gestion_proyectos",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈45 min",
+      "visualizaciones_snapshot": 484700,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Gestionar una empresa simulada de forma integrada"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Está justo en el mínimo de duración; revalidar duración exacta.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_nkNHn0VqVBA",
+      "youtube_id": "nkNHn0VqVBA",
+      "titulo": "Digital Marketing Full Course - 10 Hours",
+      "canal": "edureka!",
+      "url": "https://www.youtube.com/watch?v=nkNHn0VqVBA",
+      "idioma": "en",
+      "categoria": "marketing_digital",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈10 h",
+      "visualizaciones_snapshot": 1400000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Gestionar una empresa simulada de forma integrada",
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros",
+        "Atender y registrar consultas, quejas y reclamaciones"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Marketing es complementario, no núcleo contable o fiscal.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_q_JsgpiuY98",
+      "youtube_id": "q_JsgpiuY98",
+      "titulo": "SQL Full Course In 10 Hours",
+      "canal": "edureka!",
+      "url": "https://www.youtube.com/watch?v=q_JsgpiuY98",
+      "idioma": "en",
+      "categoria": "sql",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈10 h",
+      "visualizaciones_snapshot": 1500000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros",
+        "Proteger datos, credenciales y documentación",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "SQL es una competencia técnica de apoyo.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_5OdVJbNCSso",
+      "youtube_id": "5OdVJbNCSso",
+      "titulo": "SQL Full Course for Beginners",
+      "canal": "Bro Code",
+      "url": "https://www.youtube.com/watch?v=5OdVJbNCSso",
+      "idioma": "en",
+      "categoria": "sql",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈3 h",
+      "visualizaciones_snapshot": 3400000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros",
+        "Proteger datos, credenciales y documentación",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_7mz73uXD9DA",
+      "youtube_id": "7mz73uXD9DA",
+      "titulo": "SQL for Data Analytics - Learn SQL in 4 Hours",
+      "canal": "Luke Barousse",
+      "url": "https://www.youtube.com/watch?v=7mz73uXD9DA",
+      "idioma": "en",
+      "categoria": "sql_analitica",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈4 h",
+      "visualizaciones_snapshot": 1300000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_HXV3zeQKqGY",
+      "youtube_id": "HXV3zeQKqGY",
+      "titulo": "SQL Tutorial - Full Database Course for Beginners",
+      "canal": "freeCodeCamp.org",
+      "url": "https://www.youtube.com/watch?v=HXV3zeQKqGY",
+      "idioma": "en",
+      "categoria": "sql",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈4 h 8 min",
+      "visualizaciones_snapshot": 20567862,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros",
+        "Proteger datos, credenciales y documentación",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_r-uOLxNrNk8",
+      "youtube_id": "r-uOLxNrNk8",
+      "titulo": "Data Analysis with Python - Full Course for Beginners",
+      "canal": "freeCodeCamp.org",
+      "url": "https://www.youtube.com/watch?v=r-uOLxNrNk8",
+      "idioma": "en",
+      "categoria": "python_analitica",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈3 h 55 min",
+      "visualizaciones_snapshot": 4078492,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Python es más técnico de lo exigible en AF.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_xxpc-HPKN28",
+      "youtube_id": "xxpc-HPKN28",
+      "titulo": "Statistics - A Full University Course on Data Science Basics",
+      "canal": "freeCodeCamp.org",
+      "url": "https://www.youtube.com/watch?v=xxpc-HPKN28",
+      "idioma": "en",
+      "categoria": "estadistica",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈8 h 15 min",
+      "visualizaciones_snapshot": 4000000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros",
+        "Gestionar tesorería, financiación y riesgo",
+        "Operar con porcentajes, reglas de tres e importes"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Nivel universitario; seleccionar bloques aplicables.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_aHaOIvR00So",
+      "youtube_id": "aHaOIvR00So",
+      "titulo": "Tableau Full Course - Learn Tableau in 6 Hours",
+      "canal": "edureka!",
+      "url": "https://www.youtube.com/watch?v=aHaOIvR00So",
+      "idioma": "en",
+      "categoria": "tableau",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈6 h",
+      "visualizaciones_snapshot": 3800000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Automatizar limpieza y consolidación de datos",
+        "Crear cuadros de mando administrativos y financieros"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Tableau es alternativa a Power BI, no la herramienta prioritaria del recurso original.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_lpa8uy4DyMo",
+      "youtube_id": "lpa8uy4DyMo",
+      "titulo": "Cyber Security Full Course - 11 Hours",
+      "canal": "edureka!",
+      "url": "https://www.youtube.com/watch?v=lpa8uy4DyMo",
+      "idioma": "en",
+      "categoria": "ciberseguridad",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": "≈11 h",
+      "visualizaciones_snapshot": 613200,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Proteger datos, credenciales y documentación",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Curso amplio; seleccionar módulos de phishing, credenciales y protección de datos.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    },
+    {
+      "id": "af_video_hXSFdwIOfnE",
+      "youtube_id": "hXSFdwIOfnE",
+      "titulo": "Cyber Security Full Course 2026",
+      "canal": "Simplilearn",
+      "url": "https://www.youtube.com/watch?v=hXSFdwIOfnE",
+      "idioma": "en",
+      "categoria": "ciberseguridad",
+      "estado": "candidato_fiable",
+      "cumple_filtros_base": {
+        "video_individual": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "canal_especializado_verificado_institucional_u_oficial": true
+      },
+      "duracion": ">45 min",
+      "visualizaciones_snapshot": 1900000,
+      "fecha_snapshot": "2026-08-05",
+      "nivel_encaje_administracion_finanzas": "complementario",
+      "competencias_sugeridas": [
+        "Proteger datos, credenciales y documentación",
+        "Organizar archivos y documentación administrativa"
+      ],
+      "limitaciones": [
+        "Contenido en inglés.",
+        "Curso amplio y técnico; seleccionar módulos aplicables a oficina y administración.",
+        "Candidato en inglés conservado como reserva; revalidar metadatos y encaje antes de reutilizar."
+      ],
+      "fuente_verificacion": "YouTube y páginas de indexación/transcripción consultadas el 2026-08-05",
+      "requiere_revision_antes_de_publicar": true,
+      "grupo": "en_reserva",
+      "prioridad": 2,
+      "estado_verificacion": "heredado_requiere_revalidacion",
+      "apto_para_preseleccion": false,
+      "usar_en_produccion": false,
+      "origen_dataset": "AL_LIO_BANCO_50_VIDEOS_ADMINISTRACION_FINANZAS_2026_08_05.json"
+    }
+  ]
+}
