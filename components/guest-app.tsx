@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import React, { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -19,7 +20,6 @@ import {
   ExternalLink,
   Flame,
   FolderKanban,
-  Frown,
   ListChecks,
   ListTodo,
   MapPin,
@@ -3661,10 +3661,11 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
         .al-hack-empty-wrap { display: grid; gap: 14px; grid-template-columns: 1fr; }
         @media (min-width: 640px) { .al-hack-empty-wrap.al-hack-empty-two { grid-template-columns: 1fr 1fr; } }
-        .al-hack-empty { background: #111111; border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-        .al-hack-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: rgba(225, 93, 45, 0.15); display: flex; align-items: center; justify-content: center; color: #F06A37; }
-        .al-hack-empty-title { color: white; font-weight: 700; font-size: 15px; }
-        .al-hack-empty-desc { color: rgba(255, 255, 255, 0.6); font-size: 12.5px; max-width: 32ch; }
+        .al-hack-empty { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .al-hack-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
+        .al-hack-empty-illustration { width: 100%; max-width: 280px; height: auto; }
+        .al-hack-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
+        .al-hack-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
         .al-hack-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; }
       `}</style>
       <div className="space-y-4">
@@ -3909,12 +3910,12 @@ function HackathonsEmptyState({ variant, onClearFilters }: { variant: "sin_resul
   return (
     <div className="al-hack-empty-wrap al-hack-empty-two">
       <div className="al-hack-empty">
-        <span className="al-hack-empty-icon"><Trophy className="h-6 w-6" /></span>
+        <Image src="/assets/hackathons/hackathons-empty-sin-datos.png" alt="" width={900} height={295} sizes="280px" className="al-hack-empty-illustration" />
         <p className="al-hack-empty-title">¡Sin hackatones disponibles!</p>
         <p className="al-hack-empty-desc">Vuelve pronto para nuevos eventos de programación.</p>
       </div>
       <div className="al-hack-empty">
-        <span className="al-hack-empty-icon"><Frown className="h-6 w-6" /></span>
+        <Image src="/assets/hackathons/hackathons-empty-sin-activos.png" alt="" width={900} height={295} sizes="280px" className="al-hack-empty-illustration" />
         <p className="al-hack-empty-title">¡Aún no te has inscrito!</p>
         <p className="al-hack-empty-desc">Busca un hackatón y demuestra tus habilidades.</p>
       </div>
