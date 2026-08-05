@@ -6,6 +6,7 @@ import React, { createContext, memo, useCallback, useContext, useEffect, useMemo
 import {
   AlarmClock,
   Bell,
+  Bookmark,
   Briefcase,
   Building2,
   CalendarDays,
@@ -19,6 +20,7 @@ import {
   ExternalLink,
   Flame,
   FolderKanban,
+  Frown,
   ListChecks,
   ListTodo,
   MapPin,
@@ -29,7 +31,9 @@ import {
   SlidersHorizontal,
   Target,
   Trash2,
+  Trophy,
   X,
+  Youtube,
 } from "lucide-react";
 import { DndContext, useDraggable, useDroppable, MouseSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
@@ -44,6 +48,7 @@ import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplin
 import { insertDb, updateDb, deleteDb } from "@/lib/db";
 import { toast } from "sonner";
 import { TechOpportunitiesSection, type TechOpportunityTaskTarget } from "@/components/tech-opportunities-section";
+import { toggleFavoriteAction } from "@/lib/fp/resource-notes-actions";
 import { BlocNotepad } from "@/components/bloc-notepad";
 import type { TechOpportunity } from "@/lib/tech-opportunity-types";
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
@@ -144,6 +149,7 @@ type RequiredCompetencyLearningItem = {
   source_url: string;
   video_url: string | null;
   tipo_relacion: string;
+  user_status?: string | null;
 };
 
 type RequiredCompetency = {
@@ -181,6 +187,9 @@ type FpCatalogItem = {
   notes?: string;
   priority: "Alta" | "Media" | "Baja";
   requiredCompetencies?: RequiredCompetency[];
+  is_favorite?: boolean;
+  user_status?: string | null;
+  user_completed_at?: string | null;
   created_at: string;
 };
 
@@ -211,6 +220,7 @@ type Hackathon = {
   notes?: string;
   sourceTable?: "hackathons" | "tech_opportunities" | "fp_content_items";
   requiredCompetencies?: RequiredCompetency[];
+  is_favorite?: boolean;
   created_at: string;
 };
 
@@ -434,6 +444,7 @@ export type ReturnTypeActions = {
   addCompany: (data: Omit<Company, "id" | "created_at" | "link_status"> & { link_status?: Company["link_status"] }) => void;
   updateCompany: (id: string, data: Partial<Company>) => void;
   addLink: (data: Omit<QuickLink, "id" | "created_at">) => void;
+  toggleFpFavorite: (idSlug: string, nextValue: boolean) => void;
   reset: () => void;
 };
 
@@ -594,6 +605,21 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       } catch {
         toast.error("Error al guardar el enlace");
       }
+    },
+    toggleFpFavorite: (idSlug: string, nextValue: boolean) => {
+      setStore((current) => ({
+        ...current,
+        fpContent: current.fpContent.map((item) => (item.id_slug === idSlug ? { ...item, is_favorite: nextValue } : item)),
+      }));
+      toggleFavoriteAction(idSlug, nextValue).then((result) => {
+        if (result.error) {
+          setStore((current) => ({
+            ...current,
+            fpContent: current.fpContent.map((item) => (item.id_slug === idSlug ? { ...item, is_favorite: !nextValue } : item)),
+          }));
+          toast.error("No se pudo guardar");
+        }
+      });
     },
     reset: () => setStore({ ...emptyStore, hackathons: seedHackathons }),
   };
@@ -3554,231 +3580,447 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setProvinciaFilter(""); setModalidadFilter(""); setPrioridadFilter(""); setSoloInscripcionAbierta(false); setSearchInput(""); setSearch("");
   }
 
+  const featuredHackathon = useMemo(() => {
+    const open = activos.filter((h) => h.status === "inscripcion_abierta");
+    const pool = open.length > 0 ? open : activos;
+    if (pool.length === 0) return null;
+    return [...pool].sort((a, b) => (a.start_at || "9999-99-99").localeCompare(b.start_at || "9999-99-99"))[0];
+  }, [activos]);
+  const featuredProgress = featuredHackathon ? hackathonAptitudeProgress(featuredHackathon) : null;
+  const featuredHasRuta = featuredHackathon ? !!(featuredHackathon.id_slug && hackathonHasRutaVideo(featuredHackathon)) : false;
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-48 flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar nombre, organizador, tag..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9 text-sm" />
-        </div>
-        <div className="flex items-center gap-0.5 rounded-md border bg-card p-0.5">
-          {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
-            <Button key={id} type="button" size="sm" variant={viewTab === id ? "default" : "ghost"} className="h-7 px-3 text-xs" onClick={() => { setViewTab(id); clearAll(); }}>
-              {label}
-            </Button>
-          ))}
-        </div>
-        <Button type="button" size="sm" variant={showFilters ? "default" : "outline"} className="gap-1.5" onClick={() => setShowFilters((v) => !v)}>
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
-        </Button>
-      </div>
-
-      <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
-
-      <div className="flex flex-col gap-5 lg:flex-row">
-        <div className="min-w-0 flex-1 space-y-4">
-          <KpiRow items={[
-            ["Total", tabBase.length, ""],
-            ["Inscripción abierta", kpiAbiertos, "text-emerald-600 dark:text-emerald-400"],
-            ["Pendientes", kpiPendientes, "text-amber-600 dark:text-amber-400"],
-            ["Próx. inicio", kpiProx, "text-blue-600 dark:text-blue-400"],
-          ]} />
-
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground">
-              Mostrando {filtered.length} {filtered.length === 1 ? "hackathon" : "hackathons"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
-            </p>
-            <ViewToggle value={viewMode} onChange={setViewMode} />
+    <>
+      <style>{`
+        .al-hack-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+        .al-hack-search { position: relative; flex: 1; min-width: 220px; }
+        .al-hack-search input { padding-left: 36px; height: 40px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 13px; }
+        .al-hack-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #9a958a; }
+        .al-hack-tabs { display: flex; align-items: center; gap: 2px; border-radius: 12px; border: 1px solid #ece7dc; background: white; padding: 3px; }
+        .al-hack-tab { height: 32px; padding: 0 12px; border-radius: 9px; font-size: 12.5px; font-weight: 600; color: #6b6f72; background: transparent; border: none; cursor: pointer; transition: background 0.15s, color 0.15s; }
+        .al-hack-tab.al-hack-tab-active { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; box-shadow: 0 6px 14px rgba(225, 93, 45, 0.25); }
+        .al-hack-filter-btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 12.5px; font-weight: 600; color: #333029; cursor: pointer; }
+        .al-hack-filter-btn.al-hack-filter-btn-active { background: #fbe7dd; border-color: rgba(225, 93, 45, 0.3); color: #c94f21; }
+        .al-hack-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        @media (min-width: 640px) { .al-hack-stats { grid-template-columns: repeat(4, 1fr); } }
+        .al-hack-stat-card { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid #ece7dc; border-radius: 18px; padding: 14px 16px; box-shadow: 0 8px 20px rgba(17, 17, 17, 0.04); }
+        .al-hack-stat-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
+        .al-hack-stat-value { font-size: 22px; font-weight: 800; line-height: 1; color: #111111; }
+        .al-hack-stat-label { font-size: 11px; font-weight: 600; color: #6b6f72; margin-top: 3px; }
+        .al-hack-hero { position: relative; overflow: hidden; border-radius: 22px; background: #111111; color: white; padding: clamp(18px, 3vw, 26px); display: flex; flex-direction: column; gap: 18px; }
+        @media (min-width: 900px) { .al-hack-hero { flex-direction: row; align-items: stretch; } }
+        .al-hack-hero-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+        .al-hack-hero-kicker { display: inline-flex; align-items: center; gap: 6px; width: fit-content; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #ffb08f; }
+        .al-hack-hero-kicker-dot { width: 6px; height: 6px; border-radius: 999px; background: #4C9A6E; box-shadow: 0 0 0 3px rgba(76, 154, 110, 0.25); }
+        .al-hack-hero-title { font-family: var(--font-barlow, sans-serif); font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; line-height: 1.15; }
+        .al-hack-hero-org { font-size: 12.5px; color: rgba(255, 255, 255, 0.65); }
+        .al-hack-hero-meta { font-size: 12.5px; color: rgba(255, 255, 255, 0.8); }
+        .al-hack-hero-desc { font-size: 13px; color: rgba(255, 255, 255, 0.72); line-height: 1.5; max-width: 56ch; }
+        .al-hack-hero-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+        .al-hack-hero-btn-primary { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 16px; border-radius: 12px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 13px; font-weight: 700; box-shadow: 0 10px 24px rgba(225, 93, 45, 0.28); border: none; cursor: pointer; }
+        .al-hack-hero-btn-ghost { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.08); color: white; font-size: 13px; font-weight: 600; border: 1px solid rgba(255, 255, 255, 0.14); cursor: pointer; }
+        .al-hack-hero-side { width: 100%; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 16px; }
+        @media (min-width: 900px) { .al-hack-hero-side { width: 220px; flex-shrink: 0; } }
+        .al-hack-hero-side-label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: rgba(255, 255, 255, 0.6); text-transform: uppercase; letter-spacing: 0.05em; }
+        .al-hack-hero-side-value { font-size: 12.5px; font-weight: 700; color: white; }
+        .al-hack-hero-progress-bar { margin-top: 10px; height: 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+        .al-hack-hero-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #F06A37, #E15D2D); transition: width 0.3s ease; }
+        .al-hack-hero-side-hint { margin-top: 10px; font-size: 11.5px; color: rgba(255, 255, 255, 0.55); line-height: 1.4; }
+        .al-hack-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .al-hack-count-text { font-size: 12px; color: #6b6f72; }
+        .al-hack-grid { display: grid; gap: 14px; }
+        .al-hack-grid-2 { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+        .al-hack-card { position: relative; display: flex; flex-direction: column; gap: 10px; background: white; border: 1px solid #ece7dc; border-radius: 20px; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); padding: 16px; }
+        .al-hack-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+        .al-hack-card-title { font-size: 14.5px; font-weight: 700; color: #111111; line-height: 1.3; }
+        .al-hack-card-org { font-size: 11.5px; color: #6b6f72; margin-top: 2px; }
+        .al-hack-bookmark { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 10px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .al-hack-bookmark.al-hack-bookmark-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
+        .al-hack-card-meta { font-size: 11.5px; color: #6b6f72; }
+        .al-hack-card-desc { font-size: 12px; color: #4b4740; line-height: 1.45; }
+        .al-hack-aptitudes-label { font-size: 10.5px; font-weight: 700; color: #6b6f72; text-transform: uppercase; letter-spacing: 0.04em; }
+        .al-hack-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
+        .al-hack-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; }
+        .al-hack-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+        .al-hack-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
+        .al-hack-empty-wrap { display: grid; gap: 14px; grid-template-columns: 1fr; }
+        @media (min-width: 640px) { .al-hack-empty-wrap.al-hack-empty-two { grid-template-columns: 1fr 1fr; } }
+        .al-hack-empty { background: #111111; border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .al-hack-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: rgba(225, 93, 45, 0.15); display: flex; align-items: center; justify-content: center; color: #F06A37; }
+        .al-hack-empty-title { color: white; font-weight: 700; font-size: 15px; }
+        .al-hack-empty-desc { color: rgba(255, 255, 255, 0.6); font-size: 12.5px; max-width: 32ch; }
+        .al-hack-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; }
+      `}</style>
+      <div className="space-y-4">
+        <div className="al-hack-toolbar">
+          <div className="al-hack-search">
+            <Search />
+            <Input placeholder="Buscar nombre, organizador, tema, aptitud..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           </div>
+          <div className="al-hack-tabs">
+            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
+              <button key={id} type="button" className={cn("al-hack-tab", viewTab === id && "al-hack-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className={cn("al-hack-filter-btn", showFilters && "al-hack-filter-btn-active")} onClick={() => setShowFilters((v) => !v)}>
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
+          </button>
+        </div>
 
-          <div className={cn(viewMode === "grid" ? "grid gap-4 sm:grid-cols-2" : "space-y-3")}>
-            {filtered.length ? filtered.map((item) => {
-              const tags = splitTags(item.tags);
-              const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
-              const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
-              const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
-              const hasRuta = item.id_slug && hackathonHasRutaVideo(item);
-              return (
-                <Card key={item.id} className="flex flex-col gap-3 p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-semibold leading-snug">{item.name}</p>
-                      {item.organizer && <p className="mt-0.5 text-xs text-muted-foreground">{item.organizer}</p>}
-                    </div>
-                    <Badge className={cn("shrink-0", hackathonStatusClass(item.status))}>{hackathonStatusLabel(item.status)}</Badge>
-                  </div>
-                  {(item.start_at || item.end_at) && (
-                    <p className="text-xs text-muted-foreground">
-                      {item.start_at ? formatDateLabel(item.start_at) : "—"}{item.end_at ? ` → ${formatDateLabel(item.end_at)}` : ""}
-                      {inscripcionFin && <span className="ml-2 opacity-70">· Inscripción hasta {formatDateLabel(inscripcionFin)}</span>}
+        <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
+
+        <div className="flex flex-col gap-5 lg:flex-row">
+          <div className="min-w-0 flex-1 space-y-4">
+            <div className="al-hack-stats">
+              <div className="al-hack-stat-card">
+                <span className="al-hack-stat-icon" style={{ background: "#fbe7dd", color: "#E15D2D" }}><Trophy className="h-4.5 w-4.5" /></span>
+                <div><p className="al-hack-stat-value">{tabBase.length}</p><p className="al-hack-stat-label">Total</p></div>
+              </div>
+              <div className="al-hack-stat-card">
+                <span className="al-hack-stat-icon" style={{ background: "#e7f5ee", color: "#1f7a4d" }}><CheckCircle2 className="h-4.5 w-4.5" /></span>
+                <div><p className="al-hack-stat-value">{kpiAbiertos}</p><p className="al-hack-stat-label">Inscripción abierta</p></div>
+              </div>
+              <div className="al-hack-stat-card">
+                <span className="al-hack-stat-icon" style={{ background: "#fdf1dd", color: "#b4791f" }}><Clock className="h-4.5 w-4.5" /></span>
+                <div><p className="al-hack-stat-value">{kpiPendientes}</p><p className="al-hack-stat-label">Pendientes</p></div>
+              </div>
+              <div className="al-hack-stat-card">
+                <span className="al-hack-stat-icon" style={{ background: "#e8eefd", color: "#3159c9" }}><AlarmClock className="h-4.5 w-4.5" /></span>
+                <div><p className="al-hack-stat-value">{kpiProx}</p><p className="al-hack-stat-label">Próx. inicio</p></div>
+              </div>
+            </div>
+
+            {featuredHackathon && (
+              <div className="al-hack-hero">
+                <div className="al-hack-hero-main">
+                  <span className="al-hack-hero-kicker"><span className="al-hack-hero-kicker-dot" />Tu hackatón en marcha</span>
+                  <p className="al-hack-hero-title">{featuredHackathon.name}</p>
+                  {featuredHackathon.organizer && <p className="al-hack-hero-org">{featuredHackathon.organizer}</p>}
+                  {(featuredHackathon.start_at || featuredHackathon.end_at) && (
+                    <p className="al-hack-hero-meta">
+                      {featuredHackathon.start_at ? formatDateLabel(featuredHackathon.start_at) : "—"}
+                      {featuredHackathon.end_at ? ` → ${formatDateLabel(featuredHackathon.end_at)}` : ""}
                     </p>
                   )}
-                  <div className="flex flex-wrap gap-1.5">
-                    {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
-                    {place && <ChipTag icon="pin">{place}</ChipTag>}
-                    {item.priority && <ChipTag className={genericPriorityClass(item.priority)}>{priorityText(item.priority)}</ChipTag>}
-                    {item.certificacion_o_premio && <ChipTag>{item.certificacion_o_premio}</ChipTag>}
-                    {item.encaje_daw_1_5 ? <ChipTag>DAW {item.encaje_daw_1_5}/5</ChipTag> : null}
-                    {item.practicas_empresa === true && <ChipTag>Prácticas</ChipTag>}
-                    {item.status === "inscripcion_abierta" && <ChipTag className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Inscripción abierta</ChipTag>}
-                    {tags.map((tag) => <ChipTag key={tag}>{tag}</ChipTag>)}
+                  {featuredHackathon.notes && <p className="al-hack-hero-desc">{featuredHackathon.notes}</p>}
+                  <div className="al-hack-hero-actions">
+                    {featuredHasRuta ? (
+                      <Link href={`/ruta/${featuredHackathon.id_slug}`} className="al-hack-hero-btn-primary">
+                        <PlayCircle className="h-4 w-4" />Entrar al hackatón
+                      </Link>
+                    ) : featuredHackathon.url ? (
+                      <a href={featuredHackathon.url} target="_blank" rel="noreferrer" className="al-hack-hero-btn-primary">
+                        <ExternalLink className="h-4 w-4" />Entrar al hackatón
+                      </a>
+                    ) : null}
+                    {featuredHackathon.requiredCompetencies && featuredHackathon.requiredCompetencies.length > 0 && (
+                      <button type="button" className="al-hack-hero-btn-ghost" onClick={() => setRequirementsItem(featuredHackathon)}>
+                        <ListChecks className="h-4 w-4" />Aptitudes mínimas
+                      </button>
+                    )}
                   </div>
-                  {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] font-medium text-muted-foreground">Aptitudes:</span>
-                      {item.requiredCompetencies.filter((c) => c.obligatoria_para_item).slice(0, 3).map((competency) => (
-                        <ChipTag key={competency.id} className="border-primary/25 bg-primary/5 text-primary">
-                          {competency.titulo}
-                        </ChipTag>
-                      ))}
-                      {item.requiredCompetencies.length > 3 && (
-                        <span className="text-[11px] text-muted-foreground">+{item.requiredCompetencies.length - 3} más</span>
-                      )}
+                </div>
+                {featuredProgress && featuredProgress.total > 0 && (
+                  <div className="al-hack-hero-side">
+                    <div className="al-hack-hero-side-label">
+                      <span>Tu progreso</span>
+                      <span className="al-hack-hero-side-value">{featuredProgress.done}/{featuredProgress.total} completadas</span>
                     </div>
-                  )}
-                  {item.notes && <p className="text-xs italic text-muted-foreground line-clamp-2">{item.notes}</p>}
-                  <div className="mt-auto flex flex-wrap gap-1.5">
-                    {hasRuta ? (
-                      <Button asChild size="sm" variant="outline" className="h-7 gap-1 px-2.5 text-xs">
-                        <Link href={`/ruta/${item.id_slug}`}>
-                          <PlayCircle className="h-3.5 w-3.5" />
-                          Abrir ruta
-                        </Link>
-                      </Button>
-                    ) : (
-                      item.url && (
-                        <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs">
-                          <a href={item.url} target="_blank" rel="noreferrer">Abrir web</a>
-                        </Button>
-                      )
-                    )}
-                    {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
-                      <Button type="button" size="sm" variant="outline" className="h-7 px-2.5 text-xs" onClick={() => setRequirementsItem(item)}>
-                        <ListChecks className="h-3.5 w-3.5" />
-                        Ver requisitos
-                      </Button>
-                    )}
-                    <Button type="button" size="sm" variant="outline" className="h-7 px-2.5 text-xs" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Hackathon" })}>Crear tarea</Button>
-                    {!isHackathonArchived(item) && (
-                      <Button type="button" size="sm" variant="ghost" className="h-7 px-2.5 text-xs" onClick={() => completeHackathonItem(item, actions)}>
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        Realizado
-                      </Button>
-                    )}
-                    {!readOnlyTechItem && item.status === "revisar_futura_edicion" && <Button type="button" size="sm" variant="ghost" className="h-7 px-2.5 text-xs" onClick={() => actions.updateHackathon(item.id, { status: "pendiente" })}>Revisado</Button>}
+                    <div className="al-hack-hero-progress-bar">
+                      <div className="al-hack-hero-progress-fill" style={{ width: `${Math.round((featuredProgress.done / featuredProgress.total) * 100)}%` }} />
+                    </div>
+                    <p className="al-hack-hero-side-hint">Aptitudes imprescindibles que ya has completado en tu ruta de aprendizaje.</p>
                   </div>
-                </Card>
-              );
-            }) : (
-              <div className={cn(viewMode === "grid" && "sm:col-span-2")}>
-                <EmptyText>{search || activeFilterCount > 0 ? "No hay hackathons con estos filtros." : "No hay hackathons en esta vista."}</EmptyText>
+                )}
               </div>
             )}
+
+            <div className="al-hack-count-row">
+              <p className="al-hack-count-text">
+                Mostrando {filtered.length} {filtered.length === 1 ? "hackathon" : "hackathons"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
+              </p>
+              <ViewToggle value={viewMode} onChange={setViewMode} />
+            </div>
+
+            {filtered.length ? (
+              <div className={cn("al-hack-grid", viewMode === "grid" ? "al-hack-grid-2" : "")}>
+                {filtered.map((item) => {
+                  const tags = splitTags(item.tags);
+                  const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
+                  const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
+                  const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
+                  const hasRuta = item.id_slug && hackathonHasRutaVideo(item);
+                  const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
+                  return (
+                    <div key={item.id} className="al-hack-card">
+                      <div className="al-hack-card-top">
+                        <div className="min-w-0">
+                          <p className="al-hack-card-title">{item.name}</p>
+                          {item.organizer && <p className="al-hack-card-org">{item.organizer}</p>}
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <Badge className={cn("shrink-0", hackathonStatusClass(item.status))}>{hackathonStatusLabel(item.status)}</Badge>
+                          {canFavorite && (
+                            <button
+                              type="button"
+                              className={cn("al-hack-bookmark", item.is_favorite && "al-hack-bookmark-active")}
+                              aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
+                              onClick={() => actions.toggleFpFavorite(item.id_slug!, !item.is_favorite)}
+                            >
+                              <Bookmark className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {(item.start_at || item.end_at) && (
+                        <p className="al-hack-card-meta">
+                          {item.start_at ? formatDateLabel(item.start_at) : "—"}{item.end_at ? ` → ${formatDateLabel(item.end_at)}` : ""}
+                          {inscripcionFin && <span className="ml-2 opacity-70">· Inscripción hasta {formatDateLabel(inscripcionFin)}</span>}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-1.5">
+                        {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
+                        {place && <ChipTag icon="pin">{place}</ChipTag>}
+                        {item.priority && <ChipTag className={genericPriorityClass(item.priority)}>{priorityText(item.priority)}</ChipTag>}
+                        {item.certificacion_o_premio && <ChipTag>{item.certificacion_o_premio}</ChipTag>}
+                        {item.encaje_daw_1_5 ? <ChipTag>DAW {item.encaje_daw_1_5}/5</ChipTag> : null}
+                        {item.practicas_empresa === true && <ChipTag>Prácticas</ChipTag>}
+                        {item.status === "inscripcion_abierta" && <ChipTag className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Inscripción abierta</ChipTag>}
+                        {tags.map((tag) => <ChipTag key={tag}>{tag}</ChipTag>)}
+                      </div>
+                      {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="al-hack-aptitudes-label">Aptitudes:</span>
+                          {item.requiredCompetencies.filter((c) => c.obligatoria_para_item).slice(0, 3).map((competency) => (
+                            <ChipTag key={competency.id} className="border-primary/25 bg-primary/5 text-primary">
+                              {competency.titulo}
+                            </ChipTag>
+                          ))}
+                          {item.requiredCompetencies.length > 3 && (
+                            <span className="text-[11px] text-muted-foreground">+{item.requiredCompetencies.length - 3} más</span>
+                          )}
+                        </div>
+                      )}
+                      {item.notes && <p className="al-hack-card-desc line-clamp-2">{item.notes}</p>}
+                      <div className="al-hack-card-actions">
+                        {hasRuta ? (
+                          <Link href={`/ruta/${item.id_slug}`} className="al-hack-btn al-hack-btn-primary">
+                            <PlayCircle className="h-3.5 w-3.5" />Abrir ruta
+                          </Link>
+                        ) : (
+                          item.url && (
+                            <a href={item.url} target="_blank" rel="noreferrer" className="al-hack-btn">
+                              <ExternalLink className="h-3.5 w-3.5" />Abrir web
+                            </a>
+                          )
+                        )}
+                        {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
+                          <button type="button" className="al-hack-btn" onClick={() => setRequirementsItem(item)}>
+                            <ListChecks className="h-3.5 w-3.5" />Ver detalles
+                          </button>
+                        )}
+                        <button type="button" className="al-hack-btn" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Hackathon" })}>
+                          <Plus className="h-3.5 w-3.5" />Crear tarea
+                        </button>
+                        {!isHackathonArchived(item) && (
+                          <button type="button" className="al-hack-btn" onClick={() => completeHackathonItem(item, actions)}>
+                            <CheckCircle2 className="h-3.5 w-3.5" />Realizado
+                          </button>
+                        )}
+                        {!readOnlyTechItem && item.status === "revisar_futura_edicion" && (
+                          <button type="button" className="al-hack-btn" onClick={() => actions.updateHackathon(item.id, { status: "pendiente" })}>Revisado</button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <HackathonsEmptyState variant={search || activeFilterCount > 0 ? "sin_resultados" : viewTab === "activos" ? "sin_activos" : "sin_datos"} onClearFilters={clearAll} />
+            )}
           </div>
+
+          {showFilters && (
+            <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
+              <FilterSection label="Calendario">
+                <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
+              </FilterSection>
+              <FilterSection label="Estado">
+                <FilterChips
+                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["inscripcion_abierta", "Activo"]]}
+                  value={estadoFilter}
+                  onChange={setEstadoFilter}
+                />
+              </FilterSection>
+              {modalidades.length > 0 && (
+                <FilterSection label="Modalidad">
+                  <FilterChips
+                    options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
+                    value={modalidadFilter}
+                    onChange={setModalidadFilter}
+                  />
+                </FilterSection>
+              )}
+              {provincias.length > 0 && (
+                <FilterSection label="Provincia">
+                  <FilterChips
+                    options={[["", "Todas"], ...provincias.map((p): [string, string] => [p, p])]}
+                    value={provinciaFilter}
+                    onChange={setProvinciaFilter}
+                  />
+                </FilterSection>
+              )}
+              <FilterSection label="Prioridad">
+                <FilterChips
+                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
+                  value={prioridadFilter}
+                  onChange={setPrioridadFilter}
+                />
+              </FilterSection>
+              <FilterSection label="Solo">
+                <label className="flex cursor-pointer items-center gap-2 text-xs">
+                  <input type="checkbox" checked={soloInscripcionAbierta} onChange={(e) => setSoloInscripcionAbierta(e.target.checked)} className="rounded" />
+                  Inscripción abierta
+                </label>
+              </FilterSection>
+            </FilterPanel>
+          )}
         </div>
 
-        {showFilters && (
-          <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
-            <FilterSection label="Calendario">
-              <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
-            </FilterSection>
-            <FilterSection label="Estado">
-              <FilterChips
-                options={[["", "Todos"], ["pendiente", "Pendiente"], ["inscripcion_abierta", "Activo"]]}
-                value={estadoFilter}
-                onChange={setEstadoFilter}
-              />
-            </FilterSection>
-            {modalidades.length > 0 && (
-              <FilterSection label="Modalidad">
-                <FilterChips
-                  options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
-                  value={modalidadFilter}
-                  onChange={setModalidadFilter}
-                />
-              </FilterSection>
-            )}
-            {provincias.length > 0 && (
-              <FilterSection label="Provincia">
-                <FilterChips
-                  options={[["", "Todas"], ...provincias.map((p): [string, string] => [p, p])]}
-                  value={provinciaFilter}
-                  onChange={setProvinciaFilter}
-                />
-              </FilterSection>
-            )}
-            <FilterSection label="Prioridad">
-              <FilterChips
-                options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
-                value={prioridadFilter}
-                onChange={setPrioridadFilter}
-              />
-            </FilterSection>
-            <FilterSection label="Solo">
-              <label className="flex cursor-pointer items-center gap-2 text-xs">
-                <input type="checkbox" checked={soloInscripcionAbierta} onChange={(e) => setSoloInscripcionAbierta(e.target.checked)} className="rounded" />
-                Inscripción abierta
-              </label>
-            </FilterSection>
-          </FilterPanel>
-        )}
+        <HackathonRequirementsModal item={requirementsItem} actions={actions} onClose={() => setRequirementsItem(null)} />
       </div>
+    </>
+  );
+}
 
-      <HackathonRequirementsModal item={requirementsItem} onClose={() => setRequirementsItem(null)} />
+function HackathonsEmptyState({ variant, onClearFilters }: { variant: "sin_resultados" | "sin_activos" | "sin_datos"; onClearFilters: () => void }) {
+  if (variant === "sin_resultados") {
+    return (
+      <div className="al-hack-empty-wrap">
+        <div className="al-hack-empty">
+          <span className="al-hack-empty-icon"><Search className="h-6 w-6" /></span>
+          <p className="al-hack-empty-title">Sin resultados</p>
+          <p className="al-hack-empty-desc">Ningún hackathon coincide con tu búsqueda o filtros.</p>
+          <button type="button" className="al-hack-empty-btn" onClick={onClearFilters}>Quitar filtros</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="al-hack-empty-wrap al-hack-empty-two">
+      <div className="al-hack-empty">
+        <span className="al-hack-empty-icon"><Trophy className="h-6 w-6" /></span>
+        <p className="al-hack-empty-title">¡Sin hackatones disponibles!</p>
+        <p className="al-hack-empty-desc">Vuelve pronto para nuevos eventos de programación.</p>
+      </div>
+      <div className="al-hack-empty">
+        <span className="al-hack-empty-icon"><Frown className="h-6 w-6" /></span>
+        <p className="al-hack-empty-title">¡Aún no te has inscrito!</p>
+        <p className="al-hack-empty-desc">Busca un hackatón y demuestra tus habilidades.</p>
+      </div>
     </div>
   );
 }
 
-function HackathonRequirementsModal({ item, onClose }: { item: Hackathon | null; onClose: () => void }) {
+function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackathon | null; actions: ReturnTypeActions; onClose: () => void }) {
   if (!item) return null;
-
   const competencies = item.requiredCompetencies ?? [];
   const obligatorias = competencies.filter((competency) => competency.obligatoria_para_item);
   const recomendadas = competencies.filter((competency) => !competency.obligatoria_para_item);
   const hasRuta = hackathonHasRutaVideo(item);
+  const hasExternalResource = competencies.some((c) => c.learningItems.some((li) => !li.video_url));
+  const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/55 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6" role="dialog" aria-modal="true">
-      <div className="max-h-[92svh] w-full overflow-hidden rounded-t-lg border bg-background shadow-2xl sm:max-w-lg sm:rounded-lg">
-        <div className="flex items-center justify-between gap-3 border-b p-4">
-          <div className="min-w-0">
-            <h2 className="truncate text-lg font-semibold">Aptitudes para {item.name}</h2>
-            <p className="text-xs text-muted-foreground">Lo que conviene dominar antes de presentarte.</p>
+      <style>{`
+        .al-modal-shell { background: white; border-radius: 22px 22px 0 0; box-shadow: 0 24px 60px rgba(17,17,17,0.18); }
+        @media (min-width: 640px) { .al-modal-shell { border-radius: 22px; } }
+        .al-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid #f0ece2; }
+        .al-modal-head-icon { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: #fbe7dd; color: #E15D2D; flex-shrink: 0; }
+        .al-modal-title { font-family: var(--font-barlow, sans-serif); font-size: 17px; font-weight: 700; color: #111111; line-height: 1.25; }
+        .al-modal-subtitle { font-size: 12px; color: #6b6f72; margin-top: 2px; }
+        .al-modal-close { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; flex-shrink: 0; }
+        .al-modal-section-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+        .al-modal-section-imprescindibles { color: #1f7a4d; }
+        .al-modal-section-recomendadas { color: #b4791f; }
+        .al-modal-req { display: flex; gap: 10px; border: 1px solid #ece7dc; border-radius: 14px; padding: 12px; }
+        .al-modal-req-check { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; flex-shrink: 0; margin-top: 1px; }
+        .al-modal-req-check-done { background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
+        .al-modal-req-check-pending { border: 2px solid #e4dfd5; color: transparent; }
+        .al-modal-req-title { font-size: 13px; font-weight: 700; color: #111111; }
+        .al-modal-req-desc { font-size: 11.5px; color: #6b6f72; margin-top: 2px; line-height: 1.4; }
+        .al-modal-req-actions { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .al-modal-req-btn { display: inline-flex; align-items: center; gap: 5px; height: 27px; padding: 0 9px; border-radius: 8px; border: 1px solid #ece7dc; background: white; font-size: 10.5px; font-weight: 600; color: #333029; text-decoration: none; cursor: pointer; }
+        .al-modal-req-btn-video { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
+        .al-modal-warning { display: flex; gap: 8px; align-items: flex-start; background: #fdf1dd; border: 1px solid rgba(180, 121, 31, 0.25); border-radius: 12px; padding: 10px 12px; font-size: 11.5px; color: #7a5a12; line-height: 1.4; }
+        .al-modal-footer { border-top: 1px solid #f0ece2; padding: 14px 20px; display: flex; flex-direction: column; gap: 8px; }
+        .al-modal-footer-row { display: flex; gap: 8px; }
+        .al-modal-btn-primary { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 42px; border-radius: 13px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 13px; font-weight: 700; box-shadow: 0 10px 24px rgba(225,93,45,0.25); border: none; cursor: pointer; text-decoration: none; flex-direction: column; line-height: 1.25; }
+        .al-modal-btn-primary small { font-weight: 500; font-size: 10.5px; opacity: 0.85; }
+        .al-modal-btn-secondary { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 16px; border-radius: 13px; border: 1px solid #ece7dc; background: white; color: #333029; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+        .al-modal-footer-hint { text-align: center; font-size: 10.5px; color: #9a958a; }
+      `}</style>
+      <div className="al-modal-shell max-h-[92svh] w-full overflow-hidden sm:max-w-lg">
+        <div className="al-modal-head">
+          <span className="al-modal-head-icon"><ListChecks className="h-4.5 w-4.5" /></span>
+          <div className="min-w-0 flex-1">
+            <h2 className="al-modal-title truncate">Requisitos para {item.name}</h2>
+            <p className="al-modal-subtitle">Todo lo que conviene dominar antes de presentarte.</p>
           </div>
-          <Button type="button" size="icon" variant="ghost" onClick={onClose} aria-label="Cerrar">
+          <button type="button" className="al-modal-close" onClick={onClose} aria-label="Cerrar">
             <X className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
-        <div className="max-h-[calc(92svh-73px)] space-y-5 overflow-y-auto p-4">
+        <div className="max-h-[calc(92svh-73px)] space-y-4 overflow-y-auto p-4">
           {obligatorias.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Imprescindibles</p>
+            <div className="space-y-2.5">
+              <p className="al-modal-section-label al-modal-section-imprescindibles">Imprescindibles</p>
               {obligatorias.map((competency) => (
                 <CompetencyRequirement key={competency.id} competency={competency} hackathonSlug={item.id_slug} />
               ))}
             </div>
           )}
           {recomendadas.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recomendadas</p>
+            <div className="space-y-2.5">
+              <p className="al-modal-section-label al-modal-section-recomendadas">Recomendadas</p>
               {recomendadas.map((competency) => (
                 <CompetencyRequirement key={competency.id} competency={competency} hackathonSlug={item.id_slug} />
               ))}
             </div>
           )}
           {competencies.length === 0 && <EmptyText>No hay aptitudes registradas todavía para este hackathon.</EmptyText>}
+          {hasExternalResource && (
+            <div className="al-modal-warning">
+              <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>Algunos recursos te redirigirán fuera de AL-LÍO. Te avisaremos antes de salir.</span>
+            </div>
+          )}
         </div>
-        {hasRuta && item.id_slug && (
-          <div className="border-t p-4">
-            <Button asChild className="w-full gap-1.5">
-              <Link href={`/ruta/${item.id_slug}`}>
-                <PlayCircle className="h-4 w-4" />
-                Abrir ruta completa
+        <div className="al-modal-footer">
+          <div className="al-modal-footer-row">
+            {hasRuta && item.id_slug ? (
+              <Link href={`/ruta/${item.id_slug}`} className="al-modal-btn-primary">
+                <span>Abrir ruta completa</span>
+                <small>Ver pasos, links y recursos</small>
               </Link>
-            </Button>
+            ) : (
+              <span className="al-modal-btn-primary" style={{ opacity: 0.5, cursor: "not-allowed" }}>
+                <span>Ruta todavía sin vídeo</span>
+              </span>
+            )}
+            {canFavorite && (
+              <button type="button" className="al-modal-btn-secondary" onClick={() => actions.toggleFpFavorite(item.id_slug!, !item.is_favorite)}>
+                <Bookmark className="h-4 w-4" fill={item.is_favorite ? "currentColor" : "none"} />
+                {item.is_favorite ? "Guardado" : "Guardar para después"}
+              </button>
+            )}
           </div>
-        )}
+          <p className="al-modal-footer-hint">Parte del aprendizaje se queda en AL-LÍO. Tú eliges dónde estudiar.</p>
+        </div>
       </div>
     </div>
   );
@@ -3790,32 +4032,45 @@ function hackathonHasRutaVideo(item: Hackathon): boolean {
   );
 }
 
+function isCompetencyDone(competency: RequiredCompetency): boolean {
+  return competency.learningItems.some((learningItem) => learningItem.user_status === "completed");
+}
+
+function hackathonAptitudeProgress(item: Hackathon): { done: number; total: number } {
+  const obligatorias = (item.requiredCompetencies ?? []).filter((c) => c.obligatoria_para_item);
+  return { done: obligatorias.filter(isCompetencyDone).length, total: obligatorias.length };
+}
+
 function CompetencyRequirement({ competency, hackathonSlug }: { competency: RequiredCompetency; hackathonSlug?: string }) {
+  const done = isCompetencyDone(competency);
+  const videoItem = competency.learningItems.find((li) => li.video_url);
+  const docItems = competency.learningItems.filter((li) => !li.video_url);
+
   return (
-    <div className="rounded-md border p-3">
-      <p className="text-sm font-medium">{competency.titulo}</p>
-      {competency.descripcion && <p className="mt-1 text-xs text-muted-foreground">{competency.descripcion}</p>}
-      {competency.learningItems.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {competency.learningItems.map((learningItem) =>
-            learningItem.video_url && hackathonSlug ? (
-              <Button key={learningItem.id} asChild size="sm" variant="outline" className="h-6 gap-1 px-2 text-[11px]">
-                <Link href={`/ruta/${hackathonSlug}?paso=${competency.id}`}>
-                  <PlayCircle className="h-3 w-3" />
-                  {learningItem.title}
-                </Link>
-              </Button>
-            ) : (
-              <Button key={learningItem.id} asChild size="sm" variant="outline" className="h-6 gap-1 px-2 text-[11px]">
-                <a href={learningItem.source_url} target="_blank" rel="noreferrer">
-                  <ExternalLink className="h-3 w-3" />
-                  {learningItem.title}
-                </a>
-              </Button>
-            )
-          )}
-        </div>
-      )}
+    <div className="al-modal-req">
+      <span className={cn("al-modal-req-check", done ? "al-modal-req-check-done" : "al-modal-req-check-pending")}>
+        <Check className="h-3 w-3" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="al-modal-req-title">{competency.titulo}</p>
+        {competency.descripcion && <p className="al-modal-req-desc">{competency.descripcion}</p>}
+        {(videoItem || docItems.length > 0) && (
+          <div className="al-modal-req-actions">
+            {videoItem && hackathonSlug && (
+              <Link href={`/ruta/${hackathonSlug}?paso=${competency.id}`} className="al-modal-req-btn al-modal-req-btn-video">
+                <Youtube className="h-3 w-3" />
+                YouTube en la app
+              </Link>
+            )}
+            {docItems.map((learningItem) => (
+              <a key={learningItem.id} href={learningItem.source_url} target="_blank" rel="noreferrer" className="al-modal-req-btn">
+                <ExternalLink className="h-3 w-3" />
+                {learningItem.title}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -4290,6 +4545,7 @@ function fpItemToHackathon(item: FpCatalogItem): Hackathon {
     notes: fpItemNotes(item),
     sourceTable: "fp_content_items",
     requiredCompetencies: item.requiredCompetencies,
+    is_favorite: item.is_favorite ?? false,
     created_at: item.created_at,
   };
 }
