@@ -3598,6 +3598,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
               const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
               const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
               const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
+              const rutaSlug = firstRutaSlugForHackathon(item);
               return (
                 <Card key={item.id} className="flex flex-col gap-3 p-4">
                   <div className="flex items-start justify-between gap-2">
@@ -3638,7 +3639,20 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   )}
                   {item.notes && <p className="text-xs italic text-muted-foreground line-clamp-2">{item.notes}</p>}
                   <div className="mt-auto flex flex-wrap gap-1.5">
-                    {item.url && <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs"><a href={item.url} target="_blank" rel="noreferrer">Abrir web</a></Button>}
+                    {rutaSlug ? (
+                      <Button asChild size="sm" variant="outline" className="h-7 gap-1 px-2.5 text-xs">
+                        <Link href={`/ruta/${rutaSlug}`}>
+                          <PlayCircle className="h-3.5 w-3.5" />
+                          Abrir ruta
+                        </Link>
+                      </Button>
+                    ) : (
+                      item.url && (
+                        <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs">
+                          <a href={item.url} target="_blank" rel="noreferrer">Abrir web</a>
+                        </Button>
+                      )
+                    )}
                     {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
                       <Button type="button" size="sm" variant="outline" className="h-7 px-2.5 text-xs" onClick={() => setRequirementsItem(item)}>
                         <ListChecks className="h-3.5 w-3.5" />
@@ -3757,6 +3771,15 @@ function HackathonRequirementsModal({ item, onClose }: { item: Hackathon | null;
       </div>
     </div>
   );
+}
+
+function firstRutaSlugForHackathon(item: Hackathon): string | null {
+  for (const competency of item.requiredCompetencies ?? []) {
+    for (const learningItem of competency.learningItems) {
+      if (learningItem.video_url) return learningItem.id_slug;
+    }
+  }
+  return null;
 }
 
 function CompetencyRequirement({ competency }: { competency: RequiredCompetency }) {

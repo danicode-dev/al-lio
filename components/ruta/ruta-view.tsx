@@ -209,11 +209,31 @@ export function RutaView({
         .al-ruta-back:hover { color: #111111; }
         .al-ruta-back-icon { width: 15px; height: 15px; }
 
-        .al-ruta-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .al-ruta-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+        .al-ruta-header-main { min-width: 0; }
+
+        .al-ruta-title {
+          font-size: clamp(1.4rem, 2.2vw, 1.85rem);
+          font-weight: 800;
+          color: #111111;
+          line-height: 1.2;
+          margin: 0 0 6px 0;
+          font-family: var(--font-barlow, sans-serif);
+        }
+
+        .al-ruta-header-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
         .al-ruta-type-badge {
           display: inline-flex;
           align-items: center;
+          flex-shrink: 0;
           border-radius: 999px;
           border: 1px solid rgba(225, 93, 45, 0.25);
           background: #fbe7dd;
@@ -223,10 +243,14 @@ export function RutaView({
           padding: 4px 10px;
         }
 
+        .al-ruta-entity { color: #6b6f72; font-size: 13.5px; margin: 0; }
+
         .al-ruta-done-badge {
           display: inline-flex;
           align-items: center;
+          flex-shrink: 0;
           gap: 4px;
+          margin-top: 2px;
           border-radius: 999px;
           background: #e7f5ee;
           color: #1f7a4d;
@@ -235,15 +259,6 @@ export function RutaView({
           padding: 4px 10px;
         }
         .al-ruta-done-badge-icon { width: 13px; height: 13px; }
-
-        .al-ruta-title {
-          font-size: clamp(1.4rem, 2.2vw, 1.85rem);
-          font-weight: 800;
-          color: #111111;
-          margin: 0 0 4px 0;
-          font-family: var(--font-barlow, sans-serif);
-        }
-        .al-ruta-entity { color: #6b6f72; font-size: 14px; margin: 0 0 20px 0; }
 
         .al-ruta-grid {
           display: grid;
@@ -391,8 +406,14 @@ export function RutaView({
         Volver
       </button>
 
-      <div className="al-ruta-title-row">
-        <span className="al-ruta-type-badge">{typeLabel}</span>
+      <div className="al-ruta-header">
+        <div className="al-ruta-header-main">
+          <h1 className="al-ruta-title">{item.title}</h1>
+          <div className="al-ruta-header-meta">
+            <span className="al-ruta-type-badge">{typeLabel}</span>
+            {item.entity && <span className="al-ruta-entity">{item.entity}</span>}
+          </div>
+        </div>
         {isCompleted && (
           <span className="al-ruta-done-badge">
             <CheckCircle2 className="al-ruta-done-badge-icon" aria-hidden="true" />
@@ -400,8 +421,6 @@ export function RutaView({
           </span>
         )}
       </div>
-      <h1 className="al-ruta-title">{item.title}</h1>
-      {item.entity && <p className="al-ruta-entity">{item.entity}</p>}
 
       <div className="al-ruta-grid">
         <div className="al-ruta-main">
