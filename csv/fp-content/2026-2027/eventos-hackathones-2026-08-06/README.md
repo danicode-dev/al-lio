@@ -67,8 +67,31 @@ clave. Si algo no queda bien clasificado, es aquí donde hay que corregirlo:
   filas como `requiere_revision_antes_publicar: "Sí"` — queda visible para
   quien revise el dato, no se ocultó.
 
-## Siguiente paso
+## Siguiente paso — pendiente, ver issue en GitHub
 
 Enlazar competencias reales a estos 120 recursos (mismo patrón que
 `csv/fp-content/2026-2027/competencias/item_competencias.csv` para los 250
 originales) para que empiecen a mostrar Aptitudes y, más adelante, vídeo.
+
+Los 4 prompts ya listos para pedirle a ChatGPT esa asignación (uno por
+ciclo: DEV, AF, MP, TSAF) están en `prompts-competencias/`. Cada uno le da
+a ChatGPT la lista CERRADA de competencias que ya existen para ese ciclo
+(no puede inventar ninguna nueva) más los hackathones sin asignar, y le
+pide entre 3 y 5 competencias por hackathón con un JSON de salida ya
+definido (`item_id_slug`, `competencia_id`, `obligatoria`,
+`orden_preparacion`, `motivo`).
+
+Flujo para cerrarlo cuando se retome:
+1. Pegar cada prompt en un chat nuevo de ChatGPT, uno por ciclo.
+2. Pasarle las 4 respuestas a Claude para que las convierta en filas de
+   `item_competencias.csv` y las importe (`npm run import:fp-competencias`).
+3. Una vez importadas, revisar qué competencias de las recién asignadas
+   todavía no tienen vídeo en `recursos_video.json` y generar un prompt de
+   vídeo final solo para esas — no se puede saber cuáles son hasta tener
+   el resultado del paso 2.
+4. Recurso de vídeo suelto que sigue sin resolver de una ronda anterior:
+   `af_camara_nominas_seguros_sociales_2026` (nóminas y seguros sociales
+   para pymes) — independiente de los 120, se puede pedir en cualquier
+   momento con las mismas reglas de siempre.
+
+Ver issue de GitHub para el seguimiento de esta tarea.
