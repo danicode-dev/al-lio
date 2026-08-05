@@ -2,16 +2,17 @@
   "schema_version": "1.0",
   "proyecto": "AL-LIO",
   "dominio": "recursos_video",
-  "descripcion": "Mapa id_slug -> video_url de YouTube para recursos del catalogo FP. Formato JSON desde 2026-08-06 (sustituye a recursos_video.csv).",
+  "descripcion": "Mapa id_slug -> video_url de YouTube para recursos del catalogo FP. Formato JSON desde 2026-08-06.",
   "actualizado": "2026-08-06",
   "reglas_de_curacion": {
     "duracion_minima_minutos": 45,
     "visualizaciones_minimas": 300000,
     "video_individual_no_playlist": true,
     "tope_reutilizacion_por_video": 5,
-    "encaje_tematico_verificado_manualmente": true
+    "nota_tope": "Excepcion documentada: 1 video de entrenamiento fisico usado en 7 recursos de herramientas de nicho sin tutorial propio, a peticion explicita de Daniel 2026-08-06 - ver PENDIENTES_VIDEO.md",
+    "encaje_generico_permitido": true
   },
-  "total_recursos_con_video": 80,
+  "total_recursos_con_video": 98,
   "recursos": [
     {
       "id_slug": "af_aula_mentor_iniciacion_office",
@@ -29,6 +30,11 @@
       "notas": "APROBADO_PRINCIPAL - competencia: AF-DIG-001 (Automatizar procesos administrativos con control) - curacion estricta 2026-08-05"
     },
     {
+      "id_slug": "af_camara_auxiliar_administrativo_2026",
+      "video_url": "https://www.youtube.com/watch?v=eZPCVg4Jk00",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"CURSO DE EXCEL COMPLETO EN 1 VÍDEO - BÁSICO E INTERMEDIO\" (Dostin Hurtado) - competencia: Organizar archivos y documentación administrativa - fuente: chatgpt_nicho_2026-08-06"
+    },
+    {
       "id_slug": "af_camara_comercio_granada_entidad",
       "video_url": "https://www.youtube.com/watch?v=m8i4fMUCpK0",
       "notas": "APROBADO_PRINCIPAL - competencia: AF-PRJ-001 (Diseñar una solución administrativa integral) - curacion estricta 2026-08-05"
@@ -37,6 +43,11 @@
       "id_slug": "af_camara_contabilidad_facturacion_pymes_2026",
       "video_url": "https://www.youtube.com/watch?v=m8i4fMUCpK0",
       "notas": "APROBADO_PRINCIPAL - competencia: AF-DIG-001 (Automatizar procesos administrativos con control) - curacion estricta 2026-08-05"
+    },
+    {
+      "id_slug": "af_camara_emprendimiento_idea_accion_2026",
+      "video_url": "https://www.youtube.com/watch?v=9_R3mqTkekE",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Dame 1 Hora y Te Muestro Cómo Empezar y Crecer Tu Negocio en 2025 con Titto Gálvez\" (BiiA LAB) - competencia: Gestionar una empresa simulada de forma integrada - fuente: chatgpt_nicho_2026-08-06"
     },
     {
       "id_slug": "af_excel_formacion_oficial",
@@ -54,9 +65,24 @@
       "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=2) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO COMPLETO DE WORD 2023\""
     },
     {
+      "id_slug": "af_herramienta_circe",
+      "video_url": "https://www.youtube.com/watch?v=9_R3mqTkekE",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Dame 1 Hora y Te Muestro Cómo Empezar y Crecer Tu Negocio en 2025 con Titto Gálvez\" (BiiA LAB) - competencia: Gestionar una empresa simulada de forma integrada - fuente: chatgpt_nicho_2026-08-06"
+    },
+    {
+      "id_slug": "af_herramienta_contasol",
+      "video_url": "https://www.youtube.com/watch?v=ZwCO7tHz1vw",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Aprende Contabilidad en 2 HORAS\" (Felipe Delgado) - competencia: contabilidad y facturación de pymes - fuente: chatgpt_nicho_2026-08-06"
+    },
+    {
       "id_slug": "af_herramienta_excel",
       "video_url": "https://www.youtube.com/watch?v=v_R5SaMTlug",
       "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"BASIC EXCEL COURSE - COMPLETE 2020\""
+    },
+    {
+      "id_slug": "af_herramienta_facturae",
+      "video_url": "https://www.youtube.com/watch?v=ZwCO7tHz1vw",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Aprende Contabilidad en 2 HORAS\" (Felipe Delgado) - competencia: contabilidad y facturación de pymes - fuente: chatgpt_nicho_2026-08-06"
     },
     {
       "id_slug": "af_herramienta_importass",
@@ -64,9 +90,19 @@
       "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=1) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO Completo de FINANZAS PERSONALES\""
     },
     {
+      "id_slug": "af_herramienta_nominasol",
+      "video_url": "https://www.youtube.com/watch?v=c1npicEPaHw",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Complete HR Management Crash Course | 2-Hour Masterclass\" (AIHR - Academy to Innovate HR) - competencia: nóminas, cotización y gestión laboral - fuente: chatgpt_nicho_2026-08-06"
+    },
+    {
       "id_slug": "af_herramienta_power_bi_desktop",
       "video_url": "https://www.youtube.com/watch?v=v_R5SaMTlug",
       "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=2) - fuente: chatgpt_2026-08-06 - candidato: \"BASIC EXCEL COURSE - COMPLETE 2020\""
+    },
+    {
+      "id_slug": "af_herramienta_sede_aeat",
+      "video_url": "https://www.youtube.com/watch?v=ZwCO7tHz1vw",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Aprende Contabilidad en 2 HORAS\" (Felipe Delgado) - competencia: contabilidad y facturación de pymes - fuente: chatgpt_nicho_2026-08-06"
     },
     {
       "id_slug": "af_power_bi_ruta_aprendizaje",
@@ -304,14 +340,29 @@
       "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=1) - fuente: chatgpt_2026-08-06 - candidato: \"MEGA CURSO de Canva GRATIS 2025 - Masterclass - Tutorial Completo Desde Cero\""
     },
     {
+      "id_slug": "mp_camara_direccion_edicion_video_2026",
+      "video_url": "https://www.youtube.com/watch?v=XBxO6Jr5NSA",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Tutorial Completo de Capcut de COMPUTADORA (PC) ACTUALIZADO\" (Eduard Gonzalez) - competencia: producción y edición de contenido audiovisual para marketing - fuente: chatgpt_nicho_2026-08-06"
+    },
+    {
       "id_slug": "mp_camara_fotografia_producto_2026",
       "video_url": "https://www.youtube.com/watch?v=foVY02NE5_Y",
       "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=2) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO COMPLETO DE PHOTOSHOP | De Principiante a Experto\""
     },
     {
+      "id_slug": "mp_camara_ia_marketing_2026",
+      "video_url": "https://www.youtube.com/watch?v=Phal-sPAunk",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"El Mejor Curso Gratis De Inteligencia Artificial\" (Adrián Sáenz) - competencia: uso de IA generativa aplicada a marketing y contenido - fuente: chatgpt_nicho_2026-08-06"
+    },
+    {
       "id_slug": "mp_camara_ux_ui_2026",
       "video_url": "https://www.youtube.com/watch?v=bYOjmW-740M",
       "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO DE DISEÑO Y DESARROLLO WEB - COMPLETO\""
+    },
+    {
+      "id_slug": "mp_google_ads_skillshop",
+      "video_url": "https://www.youtube.com/watch?v=artZsPRGX-c",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Curso Aprende marketing digital en 60 minutos, GRATIS y ONLINE 2024\" (Cursos de inteligencia artificial IA University) - competencia: Planificar publicidad digital - fuente: chatgpt_nicho_2026-08-06"
     },
     {
       "id_slug": "mp_herramienta_canva",
@@ -349,6 +400,11 @@
       "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"Curso GRATIS De Copywriting ($3,000/mes en 30 días)\""
     },
     {
+      "id_slug": "mp_herramienta_meta_business_suite",
+      "video_url": "https://www.youtube.com/watch?v=artZsPRGX-c",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Curso Aprende marketing digital en 60 minutos, GRATIS y ONLINE 2024\" (Cursos de inteligencia artificial IA University) - competencia: Planificar publicidad digital - fuente: chatgpt_nicho_2026-08-06"
+    },
+    {
       "id_slug": "mp_herramienta_metricool",
       "video_url": "https://www.youtube.com/watch?v=v17EXDu3t0E",
       "notas": "APROBADO (coincidencia=por_competencia_comun, competencias_en_comun=1) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO de Marketing Digital Completo (2026)\""
@@ -384,9 +440,44 @@
       "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=3) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO DE EXCEL COMPLETO EN 1 VÍDEO - BÁSICO E INTERMEDIO\""
     },
     {
+      "id_slug": "tsaf_herramienta_garmin_connect",
+      "video_url": "https://www.youtube.com/watch?v=yqc5UhdYPpQ",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Catedrático de Ejercicio: La Estrategia Exacta de Entrenamiento para Ganar Músculo y Vivir Mejor\" (Dr. Borja Bandera) - competencia: seguimiento y análisis de datos de entrenamiento - fuente: chatgpt_nicho_2026-08-06"
+    },
+    {
       "id_slug": "tsaf_herramienta_google_forms",
       "video_url": "https://www.youtube.com/watch?v=n0yn3TZ1lSQ",
       "notas": "APROBADO (coincidencia=directa_id_slug, competencias_en_comun=1) - fuente: chatgpt_2026-08-06 - candidato: \"CURSO COMPLETO DE WORD 2023\""
+    },
+    {
+      "id_slug": "tsaf_herramienta_hexfit",
+      "video_url": "https://www.youtube.com/watch?v=yqc5UhdYPpQ",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Catedrático de Ejercicio: La Estrategia Exacta de Entrenamiento para Ganar Músculo y Vivir Mejor\" (Dr. Borja Bandera) - competencia: seguimiento y análisis de datos de entrenamiento - fuente: chatgpt_nicho_2026-08-06"
+    },
+    {
+      "id_slug": "tsaf_herramienta_kinovea",
+      "video_url": "https://www.youtube.com/watch?v=yqc5UhdYPpQ",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Catedrático de Ejercicio: La Estrategia Exacta de Entrenamiento para Ganar Músculo y Vivir Mejor\" (Dr. Borja Bandera) - competencia: seguimiento y análisis de datos de entrenamiento - fuente: chatgpt_nicho_2026-08-06"
+    },
+    {
+      "id_slug": "tsaf_herramienta_polar_flow",
+      "video_url": "https://www.youtube.com/watch?v=yqc5UhdYPpQ",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Catedrático de Ejercicio: La Estrategia Exacta de Entrenamiento para Ganar Músculo y Vivir Mejor\" (Dr. Borja Bandera) - competencia: seguimiento y análisis de datos de entrenamiento - fuente: chatgpt_nicho_2026-08-06"
+    },
+    {
+      "id_slug": "tsaf_herramienta_strava",
+      "video_url": "https://www.youtube.com/watch?v=yqc5UhdYPpQ",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Catedrático de Ejercicio: La Estrategia Exacta de Entrenamiento para Ganar Músculo y Vivir Mejor\" (Dr. Borja Bandera) - competencia: seguimiento y análisis de datos de entrenamiento - fuente: chatgpt_nicho_2026-08-06"
+    },
+    {
+      "id_slug": "tsaf_herramienta_trainerize",
+      "video_url": "https://www.youtube.com/watch?v=yqc5UhdYPpQ",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Catedrático de Ejercicio: La Estrategia Exacta de Entrenamiento para Ganar Músculo y Vivir Mejor\" (Dr. Borja Bandera) - competencia: seguimiento y análisis de datos de entrenamiento - fuente: chatgpt_nicho_2026-08-06"
+    },
+    {
+      "id_slug": "tsaf_herramienta_trainingpeaks",
+      "video_url": "https://www.youtube.com/watch?v=yqc5UhdYPpQ",
+      "notas": "APROBADO (generico, encaje amplio pedido por Daniel 2026-08-06) - candidato: \"Catedrático de Ejercicio: La Estrategia Exacta de Entrenamiento para Ganar Músculo y Vivir Mejor\" (Dr. Borja Bandera) - competencia: seguimiento y análisis de datos de entrenamiento - fuente: chatgpt_nicho_2026-08-06"
     },
     {
       "id_slug": "tsaf_iad_dolor_lumbar_2026",

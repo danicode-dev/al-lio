@@ -1,0 +1,172 @@
+{
+  "ciclo": "MIXTO",
+  "generado": "2026-08-06",
+  "candidatos": [
+    {
+      "id_slug_objetivo": [
+        "af_camara_auxiliar_administrativo_2026"
+      ],
+      "titulo_video": "CURSO DE EXCEL COMPLETO EN 1 VÍDEO - BÁSICO E INTERMEDIO",
+      "canal": "Dostin Hurtado",
+      "url": "https://www.youtube.com/watch?v=eZPCVg4Jk00",
+      "duracion_minutos": 99,
+      "visualizaciones": 4800000,
+      "idioma": "es",
+      "tipo_encaje": "generico",
+      "competencias_relacionadas": [
+        "Organizar archivos y documentación administrativa"
+      ],
+      "justificacion": "Curso completo de Excel útil para ordenar, registrar, filtrar y gestionar documentación administrativa, aunque no es el curso específico de Cámara."
+    },
+    {
+      "id_slug_objetivo": [
+        "af_camara_emprendimiento_idea_accion_2026",
+        "af_herramienta_circe"
+      ],
+      "titulo_video": "Dame 1 Hora y Te Muestro Cómo Empezar y Crecer Tu Negocio en 2025 con Titto Gálvez",
+      "canal": "BiiA LAB",
+      "url": "https://www.youtube.com/watch?v=9_R3mqTkekE",
+      "duracion_minutos": 85,
+      "visualizaciones": 3500000,
+      "idioma": "es",
+      "tipo_encaje": "generico",
+      "competencias_relacionadas": [
+        "Gestionar una empresa simulada de forma integrada",
+        "Diseñar una solución administrativa integral",
+        "Presentar y defender una propuesta administrativa",
+        "Preparar trámites de constitución y documentación oficial"
+      ],
+      "justificacion": "Explica de forma amplia cómo iniciar y desarrollar un negocio; sirve para emprendimiento y puesta en marcha, pero no enseña CIRCE ni el Documento Único Electrónico."
+    },
+    {
+      "id_slug_objetivo": [
+        "af_herramienta_contasol",
+        "af_herramienta_facturae",
+        "af_herramienta_sede_aeat"
+      ],
+      "titulo_video": "Aprende Contabilidad en 2 HORAS",
+      "canal": "Felipe Delgado",
+      "url": "https://www.youtube.com/watch?v=ZwCO7tHz1vw",
+      "duracion_minutos": 115,
+      "visualizaciones": 620000,
+      "idioma": "es",
+      "tipo_encaje": "generico",
+      "competencias_relacionadas": [
+        "contabilidad y facturación de pymes",
+        "factura electrónica y documentación administrativa",
+        "obligaciones fiscales y trámites con la administración"
+      ],
+      "justificacion": "Curso de fundamentos contables con cuentas, balances e IVA; aporta la base conceptual para CONTASOL, Facturae y trámites fiscales, aunque no muestra esas herramientas concretas."
+    },
+    {
+      "id_slug_objetivo": [
+        "af_herramienta_nominasol"
+      ],
+      "titulo_video": "Complete HR Management Crash Course | 2-Hour Masterclass",
+      "canal": "AIHR - Academy to Innovate HR",
+      "url": "https://www.youtube.com/watch?v=c1npicEPaHw",
+      "duracion_minutos": 120,
+      "visualizaciones": 510000,
+      "idioma": "en",
+      "tipo_encaje": "generico",
+      "competencias_relacionadas": [
+        "nóminas, cotización y gestión laboral"
+      ],
+      "justificacion": "Curso técnico de referencia sobre gestión de recursos humanos que incluye payroll y cumplimiento laboral; no enseña NOMINASOL ni la normativa española de cotización."
+    },
+    {
+      "id_slug_objetivo": [
+        "mp_camara_direccion_edicion_video_2026"
+      ],
+      "titulo_video": "Tutorial Completo de Capcut de COMPUTADORA (PC) ACTUALIZADO",
+      "canal": "Eduard Gonzalez",
+      "url": "https://www.youtube.com/watch?v=XBxO6Jr5NSA",
+      "duracion_minutos": 82,
+      "visualizaciones": 527000,
+      "idioma": "es",
+      "tipo_encaje": "generico",
+      "competencias_relacionadas": [
+        "producción y edición de contenido audiovisual para marketing"
+      ],
+      "justificacion": "Tutorial extenso de edición en CapCut para ordenador que cubre el flujo práctico de creación y montaje de contenido audiovisual, aunque no es el curso corporativo de Cámara."
+    },
+    {
+      "id_slug_objetivo": [
+        "mp_camara_ia_marketing_2026"
+      ],
+      "titulo_video": "El Mejor Curso Gratis De Inteligencia Artificial",
+      "canal": "Adrián Sáenz",
+      "url": "https://www.youtube.com/watch?v=Phal-sPAunk",
+      "duracion_minutos": 510,
+      "visualizaciones": 564000,
+      "idioma": "es",
+      "tipo_encaje": "generico",
+      "competencias_relacionadas": [
+        "uso de IA generativa aplicada a marketing y contenido"
+      ],
+      "justificacion": "Curso amplio de IA generativa con ChatGPT, prompts y creación de textos; ofrece fundamentos directamente reutilizables en marketing y producción de contenido."
+    },
+    {
+      "id_slug_objetivo": [
+        "mp_google_ads_skillshop",
+        "mp_herramienta_meta_business_suite"
+      ],
+      "titulo_video": "Curso Aprende marketing digital en 60 minutos, GRATIS y ONLINE 2024",
+      "canal": "Cursos de inteligencia artificial IA University",
+      "url": "https://www.youtube.com/watch?v=artZsPRGX-c",
+      "duracion_minutos": 51,
+      "visualizaciones": 2800000,
+      "idioma": "es",
+      "tipo_encaje": "generico",
+      "competencias_relacionadas": [
+        "Planificar publicidad digital",
+        "Medir adquisición, conversión y rendimiento",
+        "gestión de redes sociales y publicidad en Meta/Facebook/Instagram"
+      ],
+      "justificacion": "Introduce estrategia de marketing digital, medios, captación y medición; encaja como base para Google Ads y Meta, pero no sustituye los tutoriales específicos de ambas plataformas."
+    },
+    {
+      "id_slug_objetivo": [
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_kinovea",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_herramienta_strava",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks"
+      ],
+      "titulo_video": "Catedrático de Ejercicio: La Estrategia Exacta de Entrenamiento para Ganar Músculo y Vivir Mejor",
+      "canal": "Dr. Borja Bandera",
+      "url": "https://www.youtube.com/watch?v=yqc5UhdYPpQ",
+      "duracion_minutos": 116,
+      "visualizaciones": 509000,
+      "idioma": "es",
+      "tipo_encaje": "generico",
+      "competencias_relacionadas": [
+        "seguimiento y análisis de datos de entrenamiento",
+        "software de gestión de programas de entrenamiento en centros deportivos",
+        "análisis de vídeo del movimiento y técnica deportiva",
+        "seguimiento de actividad física y entrenamiento",
+        "software de gestión de clientes y programas de entrenamiento personal",
+        "planificación y seguimiento de cargas de entrenamiento"
+      ],
+      "justificacion": "Clase extensa sobre programación, adaptación y evaluación del entrenamiento; aporta el marco técnico común de estas aplicaciones, pero no enseña a utilizar ninguna de ellas y el encaje con Kinovea es especialmente general."
+    },
+    {
+      "id_slug_objetivo": [
+        "tsaf_iad_accesibilidad_instalaciones"
+      ],
+      "titulo_video": "no tengo un candidato ni siquiera genérico para este",
+      "canal": "",
+      "url": "",
+      "duracion_minutos": 0,
+      "visualizaciones": 0,
+      "idioma": "es",
+      "tipo_encaje": "generico",
+      "competencias_relacionadas": [
+        "accesibilidad y adaptación de instalaciones y actividad física"
+      ],
+      "justificacion": "No se localizó un vídeo único, fiable y razonablemente relacionado que cumpliera a la vez el mínimo de 45 minutos y 300.000 visualizaciones."
+    }
+  ]
+}
