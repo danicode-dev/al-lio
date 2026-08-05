@@ -1,33 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { parseYouTubeUrl } from "@/lib/utils";
 import { addResourceNoteAction, markResourceStatusAction } from "@/lib/fp/resource-notes-actions";
-
-type YouTubePlayerInstance = {
-  getCurrentTime: () => number;
-  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
-  destroy: () => void;
-};
-
-declare global {
-  interface Window {
-    YT?: {
-      Player: new (
-        element: HTMLElement,
-        options: {
-          videoId?: string;
-          playerVars?: Record<string, number | string>;
-          events?: { onReady?: () => void };
-        }
-      ) => YouTubePlayerInstance;
-    };
-    onYouTubeIframeAPIReady?: () => void;
-  }
-}
+import { useYouTubePlayer, formatTimestamp } from "@/components/ruta/use-youtube-player";
 
 const TYPE_LABELS: Record<string, string> = {
   curso_basico: "Curso básico",
@@ -65,37 +43,6 @@ export type RutaNote = {
 
 type ContentStatus = "saved" | "started" | "completed" | "dismissed";
 
-function formatTimestamp(seconds: number) {
-  const safe = Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
-  const m = Math.floor(safe / 60);
-  const s = Math.floor(safe % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
-let youTubeApiPromise: Promise<void> | null = null;
-
-function loadYouTubeApi(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if (window.YT?.Player) return Promise.resolve();
-  if (youTubeApiPromise) return youTubeApiPromise;
-
-  youTubeApiPromise = new Promise((resolve) => {
-    const previous = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = () => {
-      previous?.();
-      resolve();
-    };
-    if (!document.getElementById("youtube-iframe-api")) {
-      const script = document.createElement("script");
-      script.id = "youtube-iframe-api";
-      script.src = "https://www.youtube.com/iframe_api";
-      document.head.appendChild(script);
-    }
-  });
-
-  return youTubeApiPromise;
-}
-
 export function RutaView({
   item,
   notes: initialNotes,
@@ -106,52 +53,11 @@ export function RutaView({
   initialStatus: ContentStatus | null;
 }) {
   const router = useRouter();
-  const youtubeRef = parseYouTubeUrl(item.videoUrl);
-  const playerContainerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<YouTubePlayerInstance | null>(null);
-  const [playerReady, setPlayerReady] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
+  const { youtubeRef, playerContainerRef, currentTime, seekTo } = useYouTubePlayer(item.videoUrl);
   const [notes, setNotes] = useState(initialNotes);
   const [noteBody, setNoteBody] = useState("");
   const [status, setStatus] = useState<ContentStatus | null>(initialStatus);
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    if (!youtubeRef || !playerContainerRef.current) return;
-    let cancelled = false;
-
-    const playerVars: Record<string, number | string> =
-      youtubeRef.type === "playlist" ? { rel: 0, listType: "playlist", list: youtubeRef.id } : { rel: 0 };
-
-    loadYouTubeApi().then(() => {
-      if (cancelled || !playerContainerRef.current || !window.YT) return;
-      playerRef.current = new window.YT.Player(playerContainerRef.current, {
-        ...(youtubeRef.type === "video" ? { videoId: youtubeRef.id } : {}),
-        playerVars,
-        events: { onReady: () => setPlayerReady(true) },
-      });
-    });
-
-    return () => {
-      cancelled = true;
-      playerRef.current?.destroy();
-      playerRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [youtubeRef?.type, youtubeRef?.id]);
-
-  useEffect(() => {
-    if (!playerReady) return;
-    const interval = setInterval(() => {
-      const time = playerRef.current?.getCurrentTime();
-      if (typeof time === "number") setCurrentTime(time);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [playerReady]);
-
-  function seekTo(seconds: number) {
-    playerRef.current?.seekTo(seconds, true);
-  }
 
   function handleAddNote(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

@@ -3598,7 +3598,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
               const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
               const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
               const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
-              const rutaSlug = firstRutaSlugForHackathon(item);
+              const hasRuta = item.id_slug && hackathonHasRutaVideo(item);
               return (
                 <Card key={item.id} className="flex flex-col gap-3 p-4">
                   <div className="flex items-start justify-between gap-2">
@@ -3639,9 +3639,9 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   )}
                   {item.notes && <p className="text-xs italic text-muted-foreground line-clamp-2">{item.notes}</p>}
                   <div className="mt-auto flex flex-wrap gap-1.5">
-                    {rutaSlug ? (
+                    {hasRuta ? (
                       <Button asChild size="sm" variant="outline" className="h-7 gap-1 px-2.5 text-xs">
-                        <Link href={`/ruta/${rutaSlug}`}>
+                        <Link href={`/ruta/${item.id_slug}`}>
                           <PlayCircle className="h-3.5 w-3.5" />
                           Abrir ruta
                         </Link>
@@ -3736,6 +3736,7 @@ function HackathonRequirementsModal({ item, onClose }: { item: Hackathon | null;
   const competencies = item.requiredCompetencies ?? [];
   const obligatorias = competencies.filter((competency) => competency.obligatoria_para_item);
   const recomendadas = competencies.filter((competency) => !competency.obligatoria_para_item);
+  const hasRuta = hackathonHasRutaVideo(item);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/55 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6" role="dialog" aria-modal="true">
@@ -3754,7 +3755,7 @@ function HackathonRequirementsModal({ item, onClose }: { item: Hackathon | null;
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Imprescindibles</p>
               {obligatorias.map((competency) => (
-                <CompetencyRequirement key={competency.id} competency={competency} />
+                <CompetencyRequirement key={competency.id} competency={competency} hackathonSlug={item.id_slug} />
               ))}
             </div>
           )}
@@ -3762,27 +3763,34 @@ function HackathonRequirementsModal({ item, onClose }: { item: Hackathon | null;
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recomendadas</p>
               {recomendadas.map((competency) => (
-                <CompetencyRequirement key={competency.id} competency={competency} />
+                <CompetencyRequirement key={competency.id} competency={competency} hackathonSlug={item.id_slug} />
               ))}
             </div>
           )}
           {competencies.length === 0 && <EmptyText>No hay aptitudes registradas todavía para este hackathon.</EmptyText>}
         </div>
+        {hasRuta && item.id_slug && (
+          <div className="border-t p-4">
+            <Button asChild className="w-full gap-1.5">
+              <Link href={`/ruta/${item.id_slug}`}>
+                <PlayCircle className="h-4 w-4" />
+                Abrir ruta completa
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function firstRutaSlugForHackathon(item: Hackathon): string | null {
-  for (const competency of item.requiredCompetencies ?? []) {
-    for (const learningItem of competency.learningItems) {
-      if (learningItem.video_url) return learningItem.id_slug;
-    }
-  }
-  return null;
+function hackathonHasRutaVideo(item: Hackathon): boolean {
+  return (item.requiredCompetencies ?? []).some((competency) =>
+    competency.learningItems.some((learningItem) => learningItem.video_url)
+  );
 }
 
-function CompetencyRequirement({ competency }: { competency: RequiredCompetency }) {
+function CompetencyRequirement({ competency, hackathonSlug }: { competency: RequiredCompetency; hackathonSlug?: string }) {
   return (
     <div className="rounded-md border p-3">
       <p className="text-sm font-medium">{competency.titulo}</p>
@@ -3790,9 +3798,9 @@ function CompetencyRequirement({ competency }: { competency: RequiredCompetency 
       {competency.learningItems.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {competency.learningItems.map((learningItem) =>
-            learningItem.video_url ? (
+            learningItem.video_url && hackathonSlug ? (
               <Button key={learningItem.id} asChild size="sm" variant="outline" className="h-6 gap-1 px-2 text-[11px]">
-                <Link href={`/ruta/${learningItem.id_slug}`}>
+                <Link href={`/ruta/${hackathonSlug}?paso=${competency.id}`}>
                   <PlayCircle className="h-3 w-3" />
                   {learningItem.title}
                 </Link>

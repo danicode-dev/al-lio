@@ -15,7 +15,7 @@ import {
   getLearningItemsForCompetencies,
 } from "@/lib/db/repositories/fp_catalog";
 
-const FP_APTITUDE_GATED_TYPES = new Set(["hackathon", "evento", "reto", "convocatoria_practicas"]);
+export const FP_APTITUDE_GATED_TYPES = new Set(["hackathon", "evento", "reto", "convocatoria_practicas"]);
 
 export async function getGlobalStore() {
   const session = await getSession();
