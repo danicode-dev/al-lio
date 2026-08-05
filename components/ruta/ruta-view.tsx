@@ -1,33 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { parseYouTubeUrl } from "@/lib/utils";
 import { addResourceNoteAction, markResourceStatusAction } from "@/lib/fp/resource-notes-actions";
-
-type YouTubePlayerInstance = {
-  getCurrentTime: () => number;
-  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
-  destroy: () => void;
-};
-
-declare global {
-  interface Window {
-    YT?: {
-      Player: new (
-        element: HTMLElement,
-        options: {
-          videoId?: string;
-          playerVars?: Record<string, number | string>;
-          events?: { onReady?: () => void };
-        }
-      ) => YouTubePlayerInstance;
-    };
-    onYouTubeIframeAPIReady?: () => void;
-  }
-}
+import { useYouTubePlayer, formatTimestamp } from "@/components/ruta/use-youtube-player";
 
 const TYPE_LABELS: Record<string, string> = {
   curso_basico: "Curso básico",
@@ -65,37 +43,6 @@ export type RutaNote = {
 
 type ContentStatus = "saved" | "started" | "completed" | "dismissed";
 
-function formatTimestamp(seconds: number) {
-  const safe = Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
-  const m = Math.floor(safe / 60);
-  const s = Math.floor(safe % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
-let youTubeApiPromise: Promise<void> | null = null;
-
-function loadYouTubeApi(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if (window.YT?.Player) return Promise.resolve();
-  if (youTubeApiPromise) return youTubeApiPromise;
-
-  youTubeApiPromise = new Promise((resolve) => {
-    const previous = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = () => {
-      previous?.();
-      resolve();
-    };
-    if (!document.getElementById("youtube-iframe-api")) {
-      const script = document.createElement("script");
-      script.id = "youtube-iframe-api";
-      script.src = "https://www.youtube.com/iframe_api";
-      document.head.appendChild(script);
-    }
-  });
-
-  return youTubeApiPromise;
-}
-
 export function RutaView({
   item,
   notes: initialNotes,
@@ -106,52 +53,11 @@ export function RutaView({
   initialStatus: ContentStatus | null;
 }) {
   const router = useRouter();
-  const youtubeRef = parseYouTubeUrl(item.videoUrl);
-  const playerContainerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<YouTubePlayerInstance | null>(null);
-  const [playerReady, setPlayerReady] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
+  const { youtubeRef, playerContainerRef, currentTime, seekTo } = useYouTubePlayer(item.videoUrl);
   const [notes, setNotes] = useState(initialNotes);
   const [noteBody, setNoteBody] = useState("");
   const [status, setStatus] = useState<ContentStatus | null>(initialStatus);
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    if (!youtubeRef || !playerContainerRef.current) return;
-    let cancelled = false;
-
-    const playerVars: Record<string, number | string> =
-      youtubeRef.type === "playlist" ? { rel: 0, listType: "playlist", list: youtubeRef.id } : { rel: 0 };
-
-    loadYouTubeApi().then(() => {
-      if (cancelled || !playerContainerRef.current || !window.YT) return;
-      playerRef.current = new window.YT.Player(playerContainerRef.current, {
-        ...(youtubeRef.type === "video" ? { videoId: youtubeRef.id } : {}),
-        playerVars,
-        events: { onReady: () => setPlayerReady(true) },
-      });
-    });
-
-    return () => {
-      cancelled = true;
-      playerRef.current?.destroy();
-      playerRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [youtubeRef?.type, youtubeRef?.id]);
-
-  useEffect(() => {
-    if (!playerReady) return;
-    const interval = setInterval(() => {
-      const time = playerRef.current?.getCurrentTime();
-      if (typeof time === "number") setCurrentTime(time);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [playerReady]);
-
-  function seekTo(seconds: number) {
-    playerRef.current?.seekTo(seconds, true);
-  }
 
   function handleAddNote(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -209,11 +115,31 @@ export function RutaView({
         .al-ruta-back:hover { color: #111111; }
         .al-ruta-back-icon { width: 15px; height: 15px; }
 
-        .al-ruta-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .al-ruta-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+        .al-ruta-header-main { min-width: 0; }
+
+        .al-ruta-title {
+          font-size: clamp(1.4rem, 2.2vw, 1.85rem);
+          font-weight: 800;
+          color: #111111;
+          line-height: 1.2;
+          margin: 0 0 6px 0;
+          font-family: var(--font-barlow, sans-serif);
+        }
+
+        .al-ruta-header-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
         .al-ruta-type-badge {
           display: inline-flex;
           align-items: center;
+          flex-shrink: 0;
           border-radius: 999px;
           border: 1px solid rgba(225, 93, 45, 0.25);
           background: #fbe7dd;
@@ -223,10 +149,14 @@ export function RutaView({
           padding: 4px 10px;
         }
 
+        .al-ruta-entity { color: #6b6f72; font-size: 13.5px; margin: 0; }
+
         .al-ruta-done-badge {
           display: inline-flex;
           align-items: center;
+          flex-shrink: 0;
           gap: 4px;
+          margin-top: 2px;
           border-radius: 999px;
           background: #e7f5ee;
           color: #1f7a4d;
@@ -235,15 +165,6 @@ export function RutaView({
           padding: 4px 10px;
         }
         .al-ruta-done-badge-icon { width: 13px; height: 13px; }
-
-        .al-ruta-title {
-          font-size: clamp(1.4rem, 2.2vw, 1.85rem);
-          font-weight: 800;
-          color: #111111;
-          margin: 0 0 4px 0;
-          font-family: var(--font-barlow, sans-serif);
-        }
-        .al-ruta-entity { color: #6b6f72; font-size: 14px; margin: 0 0 20px 0; }
 
         .al-ruta-grid {
           display: grid;
@@ -273,6 +194,7 @@ export function RutaView({
           background: #0b0b0b;
         }
         .al-ruta-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+        .al-ruta-video-mount { position: absolute; inset: 0; width: 100%; height: 100%; }
         .al-ruta-video-fallback {
           position: absolute;
           inset: 0;
@@ -391,8 +313,14 @@ export function RutaView({
         Volver
       </button>
 
-      <div className="al-ruta-title-row">
-        <span className="al-ruta-type-badge">{typeLabel}</span>
+      <div className="al-ruta-header">
+        <div className="al-ruta-header-main">
+          <h1 className="al-ruta-title">{item.title}</h1>
+          <div className="al-ruta-header-meta">
+            <span className="al-ruta-type-badge">{typeLabel}</span>
+            {item.entity && <span className="al-ruta-entity">{item.entity}</span>}
+          </div>
+        </div>
         {isCompleted && (
           <span className="al-ruta-done-badge">
             <CheckCircle2 className="al-ruta-done-badge-icon" aria-hidden="true" />
@@ -400,18 +328,13 @@ export function RutaView({
           </span>
         )}
       </div>
-      <h1 className="al-ruta-title">{item.title}</h1>
-      {item.entity && <p className="al-ruta-entity">{item.entity}</p>}
 
       <div className="al-ruta-grid">
         <div className="al-ruta-main">
           <div className="al-ruta-video-card">
             <div className="al-ruta-video-wrap">
-              {youtubeRef ? (
-                <div ref={playerContainerRef} />
-              ) : (
-                <p className="al-ruta-video-fallback">Vídeo no disponible.</p>
-              )}
+              <div className="al-ruta-video-mount" ref={playerContainerRef} style={{ visibility: youtubeRef ? "visible" : "hidden" }} />
+              {!youtubeRef && <p className="al-ruta-video-fallback">Vídeo no disponible.</p>}
             </div>
             <div className="al-ruta-video-footer">
               <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="al-ruta-source-link">
