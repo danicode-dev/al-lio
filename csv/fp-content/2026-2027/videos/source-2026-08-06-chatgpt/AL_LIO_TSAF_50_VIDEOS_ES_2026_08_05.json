@@ -1,0 +1,2503 @@
+{
+  "proyecto": "AL-LÍO",
+  "ciclo": "Técnico Superior en Acondicionamiento Físico (TSAF)",
+  "fecha_compilacion": "2026-08-05",
+  "formato": "banco_de_candidatos_youtube_exclusivamente_en_espanol",
+  "total_candidatos": 50,
+  "idioma_obligatorio": "español",
+  "criterios_obligatorios": {
+    "duracion_minima_minutos": 45,
+    "visualizaciones_minimas": 300000,
+    "relacion_con_competencia_tsaf": true,
+    "canal_especializado_verificado_institucional_u_oficial": true,
+    "solo_video_individual": true,
+    "videos_en_ingles_permitidos": false
+  },
+  "control_calidad": {
+    "videos_en_espanol": 50,
+    "videos_en_ingles": 0,
+    "ids_youtube_unicos": 50,
+    "urls_youtube_unicas": 50,
+    "duplicados_detectados": [],
+    "todos_superan_45_minutos": true,
+    "todos_superan_300000_visualizaciones": true
+  },
+  "resumen": {
+    "por_categoria": {
+      "comunicacion_visual": 1,
+      "documentacion_digital": 2,
+      "ejercicio_terapeutico": 2,
+      "entrenamiento_full_body": 14,
+      "excel": 4,
+      "excel_dashboard": 4,
+      "movilidad_yoga": 10,
+      "power_bi": 7,
+      "rcp": 1,
+      "recuperacion_relajacion": 5
+    },
+    "por_nivel_ajuste": {
+      "alto": 42,
+      "medio": 8
+    },
+    "por_uso_recomendado": {
+      "apoyo": 8,
+      "principal": 42
+    },
+    "por_canal": {
+      "gymvirtual": 12,
+      "MalovaElena": 8,
+      "datdata": 6,
+      "Anabel Otero": 5,
+      "Excel Hecho Fácil": 4,
+      "Dostin Hurtado": 2,
+      "El Tío Tech": 2,
+      "Fisioterapia a tu alcance": 2,
+      "Sientete Joven": 2,
+      "A2 Capacitación: Excel": 1,
+      "Excel Cursos - Ericka": 1,
+      "Fundación Científica del Sur": 1,
+      "Lucia Liencres yoga": 1,
+      "Profesor_Danny": 1,
+      "Valeria Digital": 1,
+      "Xuan Lan Yoga": 1
+    }
+  },
+  "metodologia_y_limitaciones": {
+    "visualizaciones": "Son valores observados durante la búsqueda o en el último rastreo público disponible el 05/08/2026. Pueden aumentar con el tiempo.",
+    "duracion": "Se conserva la duración exacta cuando estaba disponible. Cuando la fuente mostraba capítulos o el título confirmaba el umbral, se registra una duración mínima confirmada suficiente para validar los 45 minutos.",
+    "seleccion_editorial": "El banco sirve para preselección. Antes de incrustar un vídeo en AL-LÍO debe reproducirse y revisarse completo, comprobar que continúa público y embebible, y validar que su enfoque respeta el alcance del TSAF.",
+    "alcance_profesional": "Los vídeos sanitarios, de dolor, artrosis, hernia discal, relajación o primeros auxilios no sustituyen formación práctica acreditada, evaluación sanitaria, diagnóstico ni tratamiento."
+  },
+  "candidatos": [
+    {
+      "id_candidato": "tsaf_es_050",
+      "video_id_youtube": "gps_6qc6mtA",
+      "titulo": "Rutina de ejercicios para la ARTROSIS DE CADERA de 1 hora",
+      "canal": "Fisioterapia a tu alcance",
+      "url_youtube": "https://www.youtube.com/watch?v=gps_6qc6mtA",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "más de 51 min",
+      "duracion_segundos_usados_para_validacion": 3099,
+      "visualizaciones_observadas": 989000,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "ejercicio_terapeutico",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Analizar patrones posturales y funcionales sin diagnosticar",
+        "Realizar entrevista inicial y cribado básico",
+        "Programar movilidad, estabilidad y mantenimiento funcional",
+        "Distinguir alcance profesional, derivación y consentimiento"
+      ],
+      "recursos_compatibles": [
+        "tsaf_iad_dolor_lumbar_2026",
+        "tsaf_iad_tecnicos_personas_mayores",
+        "tsaf_herramienta_kinovea"
+      ],
+      "justificacion": "Permite observar una sesión funcional prolongada y estudiar regresiones, movilidad y límites de actuación; el TSAF no debe usarla para diagnosticar ni tratar patologías.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn123175youtube38",
+        "url_video": "https://www.youtube.com/watch?v=gps_6qc6mtA"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [
+        "Uso educativo: no habilita al TSAF para diagnosticar ni tratar patologías; requiere cribado y derivación cuando proceda."
+      ],
+      "orden_recomendado_revision": 1
+    },
+    {
+      "id_candidato": "tsaf_es_049",
+      "video_id_youtube": "BTevYzLaSXE",
+      "titulo": "Rutina de ejercicios para hernia discal de 1 hora, HAZ LOS EJERCICIOS CONMIGO",
+      "canal": "Fisioterapia a tu alcance",
+      "url_youtube": "https://www.youtube.com/watch?v=BTevYzLaSXE",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "1 h 04 min",
+      "duracion_segundos_usados_para_validacion": 3888,
+      "visualizaciones_observadas": 570651,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "ejercicio_terapeutico",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Analizar patrones posturales y funcionales sin diagnosticar",
+        "Realizar entrevista inicial y cribado básico",
+        "Programar movilidad, estabilidad y mantenimiento funcional",
+        "Distinguir alcance profesional, derivación y consentimiento"
+      ],
+      "recursos_compatibles": [
+        "tsaf_iad_dolor_lumbar_2026",
+        "tsaf_iad_tecnicos_personas_mayores",
+        "tsaf_herramienta_kinovea"
+      ],
+      "justificacion": "Permite observar una sesión funcional prolongada y estudiar regresiones, movilidad y límites de actuación; el TSAF no debe usarla para diagnosticar ni tratar patologías.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn123175youtube37",
+        "url_video": "https://www.youtube.com/watch?v=BTevYzLaSXE"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [
+        "Uso educativo: no habilita al TSAF para diagnosticar ni tratar patologías; requiere cribado y derivación cuando proceda."
+      ],
+      "orden_recomendado_revision": 2
+    },
+    {
+      "id_candidato": "tsaf_es_010",
+      "video_id_youtube": "w_MUOByxbkk",
+      "titulo": "Rutina para tonificar y adelgazar rápido | 45 minutos FULL BODY CARDIO 3",
+      "canal": "gymvirtual",
+      "url_youtube": "https://www.youtube.com/watch?v=w_MUOByxbkk",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 3246217,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn463941youtube1",
+        "url_video": "https://www.youtube.com/watch?v=w_MUOByxbkk"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 3
+    },
+    {
+      "id_candidato": "tsaf_es_001",
+      "video_id_youtube": "TqaMwmJXBS4",
+      "titulo": "Ejercicios para BAJAR DE PESO en casa Full Body Cardio 45 min",
+      "canal": "Sientete Joven",
+      "url_youtube": "https://www.youtube.com/watch?v=TqaMwmJXBS4",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 2332057,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn193143youtube0",
+        "url_video": "https://www.youtube.com/watch?v=TqaMwmJXBS4"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 4
+    },
+    {
+      "id_candidato": "tsaf_es_011",
+      "video_id_youtube": "GjaNoV6NJNs",
+      "titulo": "Rutina completa para tonificar todo el cuerpo | 45 minutos Full Body Cardio 7",
+      "canal": "gymvirtual",
+      "url_youtube": "https://www.youtube.com/watch?v=GjaNoV6NJNs",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 1884873,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn431014youtube31",
+        "url_video": "https://www.youtube.com/watch?v=GjaNoV6NJNs"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 5
+    },
+    {
+      "id_candidato": "tsaf_es_013",
+      "video_id_youtube": "oXBPDBmVb3E",
+      "titulo": "Eliminar grasa con una rutina completa | 45 minutos FULL BODY CARDIO 4",
+      "canal": "gymvirtual",
+      "url_youtube": "https://www.youtube.com/watch?v=oXBPDBmVb3E",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 1806909,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn794024youtube25",
+        "url_video": "https://www.youtube.com/watch?v=oXBPDBmVb3E"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 6
+    },
+    {
+      "id_candidato": "tsaf_es_012",
+      "video_id_youtube": "J7UX9Ove5qc",
+      "titulo": "Rutina ideal para adelgazar 45 minutos | Full Body Cardio 10",
+      "canal": "gymvirtual",
+      "url_youtube": "https://www.youtube.com/watch?v=J7UX9Ove5qc",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 1525632,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn994890youtube33",
+        "url_video": "https://www.youtube.com/watch?v=J7UX9Ove5qc"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 7
+    },
+    {
+      "id_candidato": "tsaf_es_009",
+      "video_id_youtube": "fZJ82S51PDE",
+      "titulo": "Quemar grasa y fortalecer musculatura 45 minutos | Full Body Cardio 9",
+      "canal": "gymvirtual",
+      "url_youtube": "https://www.youtube.com/watch?v=fZJ82S51PDE",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 1442517,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn404767youtube45",
+        "url_video": "https://www.youtube.com/watch?v=fZJ82S51PDE"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 8
+    },
+    {
+      "id_candidato": "tsaf_es_008",
+      "video_id_youtube": "ITa6QbPswa8",
+      "titulo": "Rutina completa 45 minutos FULL BODY CARDIO 2",
+      "canal": "gymvirtual",
+      "url_youtube": "https://www.youtube.com/watch?v=ITa6QbPswa8",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 1422579,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn298035youtube44",
+        "url_video": "https://www.youtube.com/watch?v=ITa6QbPswa8"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 9
+    },
+    {
+      "id_candidato": "tsaf_es_007",
+      "video_id_youtube": "WfndrwwVSPA",
+      "titulo": "Fortalecer musculatura y reducir grasa | 45 minutos FULL BODY CARDIO 5",
+      "canal": "gymvirtual",
+      "url_youtube": "https://www.youtube.com/watch?v=WfndrwwVSPA",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 1408686,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn298035youtube43",
+        "url_video": "https://www.youtube.com/watch?v=WfndrwwVSPA"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 10
+    },
+    {
+      "id_candidato": "tsaf_es_002",
+      "video_id_youtube": "NRIXqP-DoA0",
+      "titulo": "Ejercicios Para Quemar Grasa Y Ganar Musculo",
+      "canal": "Sientete Joven",
+      "url_youtube": "https://www.youtube.com/watch?v=NRIXqP-DoA0",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 1076874,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn193143youtube1",
+        "url_video": "https://www.youtube.com/watch?v=NRIXqP-DoA0"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 11
+    },
+    {
+      "id_candidato": "tsaf_es_003",
+      "video_id_youtube": "NH7IifyJlSY",
+      "titulo": "Rutina completa TOTAL BODY 45 Minutos",
+      "canal": "gymvirtual",
+      "url_youtube": "https://www.youtube.com/watch?v=NH7IifyJlSY",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 651674,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn319778youtube0",
+        "url_video": "https://www.youtube.com/watch?v=NH7IifyJlSY"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 12
+    },
+    {
+      "id_candidato": "tsaf_es_006",
+      "video_id_youtube": "L39nY2kGBow",
+      "titulo": "TOTAL BODY | RUTINA COMPLETA 50 minutos",
+      "canal": "gymvirtual",
+      "url_youtube": "https://www.youtube.com/watch?v=L39nY2kGBow",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "50 min",
+      "duracion_segundos_usados_para_validacion": 3000,
+      "visualizaciones_observadas": 645948,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn600294youtube0",
+        "url_video": "https://www.youtube.com/watch?v=L39nY2kGBow"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 13
+    },
+    {
+      "id_candidato": "tsaf_es_005",
+      "video_id_youtube": "XuECgJ56maU",
+      "titulo": "Rutina completa CORE CARDIO 45 MINUTOS | FITCAMP",
+      "canal": "gymvirtual",
+      "url_youtube": "https://www.youtube.com/watch?v=XuECgJ56maU",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 572254,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn737385youtube10",
+        "url_video": "https://www.youtube.com/watch?v=XuECgJ56maU"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 14
+    },
+    {
+      "id_candidato": "tsaf_es_004",
+      "video_id_youtube": "0NCiZW_JLgo",
+      "titulo": "UPPER BODY | RUTINA COMPLETA 50 MINUTOS PARTE SUPERIOR",
+      "canal": "gymvirtual",
+      "url_youtube": "https://www.youtube.com/watch?v=0NCiZW_JLgo",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "50 min",
+      "duracion_segundos_usados_para_validacion": 3000,
+      "visualizaciones_observadas": 453396,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn319778youtube1",
+        "url_video": "https://www.youtube.com/watch?v=0NCiZW_JLgo"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 15
+    },
+    {
+      "id_candidato": "tsaf_es_014",
+      "video_id_youtube": "0x2HBc1GA_4",
+      "titulo": "RUTINA COMPLETA FULL BODY CARDIO | SOLO DEPENDE DE TI",
+      "canal": "gymvirtual",
+      "url_youtube": "https://www.youtube.com/watch?v=0x2HBc1GA_4",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "52 min",
+      "duracion_segundos_usados_para_validacion": 3120,
+      "visualizaciones_observadas": 375920,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "entrenamiento_full_body",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Dirigir y adaptar una sesión individual",
+        "Programar fuerza, resistencia y movilidad",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Comprender respuestas básicas al ejercicio"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_hexfit",
+        "tsaf_herramienta_trainerize",
+        "tsaf_herramienta_trainingpeaks",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_entrenamiento_fuerza"
+      ],
+      "justificacion": "Presenta una sesión completa con calentamiento, bloque principal y vuelta a la calma, útil para analizar estructura, intensidad, selección de ejercicios y adaptaciones.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn422159youtube43",
+        "url_video": "https://www.youtube.com/watch?v=0x2HBc1GA_4"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 16
+    },
+    {
+      "id_candidato": "tsaf_es_015",
+      "video_id_youtube": "eZPCVg4Jk00",
+      "titulo": "CURSO DE EXCEL COMPLETO EN 1 VÍDEO - BÁSICO E INTERMEDIO",
+      "canal": "Dostin Hurtado",
+      "url_youtube": "https://www.youtube.com/watch?v=eZPCVg4Jk00",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "1 h 39 min",
+      "duracion_segundos_usados_para_validacion": 5950,
+      "visualizaciones_observadas": 4638778,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "excel",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Registrar y analizar evolución",
+        "Aplicar pruebas básicas de condición física",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel"
+      ],
+      "justificacion": "Permite crear registros de usuarios, sesiones y pruebas, aplicar cálculos y comparar mediciones para comunicar tendencias de evolución.",
+      "canal_fiable_por": [
+        "canal especializado en formación digital"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn326035youtube42",
+        "url_video": "https://www.youtube.com/watch?v=eZPCVg4Jk00"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 17
+    },
+    {
+      "id_candidato": "tsaf_es_017",
+      "video_id_youtube": "m8i4fMUCpK0",
+      "titulo": "Curso Completo de Excel Gratis!!",
+      "canal": "A2 Capacitación: Excel",
+      "url_youtube": "https://www.youtube.com/watch?v=m8i4fMUCpK0",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "2 h",
+      "duracion_segundos_usados_para_validacion": 7200,
+      "visualizaciones_observadas": 2030653,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "excel",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Registrar y analizar evolución",
+        "Aplicar pruebas básicas de condición física",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel"
+      ],
+      "justificacion": "Permite crear registros de usuarios, sesiones y pruebas, aplicar cálculos y comparar mediciones para comunicar tendencias de evolución.",
+      "canal_fiable_por": [
+        "canal especializado en formación digital"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn301370youtube0",
+        "url_video": "https://www.youtube.com/watch?v=m8i4fMUCpK0"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 18
+    },
+    {
+      "id_candidato": "tsaf_es_016",
+      "video_id_youtube": "jqyGUK4VvjQ",
+      "titulo": "Curso de Excel completo y gratis [+ 200 ejercicios en 1 video]",
+      "canal": "El Tío Tech",
+      "url_youtube": "https://www.youtube.com/watch?v=jqyGUK4VvjQ",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "4 h 47 min",
+      "duracion_segundos_usados_para_validacion": 17269,
+      "visualizaciones_observadas": 1247881,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "excel",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Registrar y analizar evolución",
+        "Aplicar pruebas básicas de condición física",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel"
+      ],
+      "justificacion": "Permite crear registros de usuarios, sesiones y pruebas, aplicar cálculos y comparar mediciones para comunicar tendencias de evolución.",
+      "canal_fiable_por": [
+        "canal especializado en formación digital"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn914810search6",
+        "url_video": "https://www.youtube.com/watch?v=jqyGUK4VvjQ"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 19
+    },
+    {
+      "id_candidato": "tsaf_es_018",
+      "video_id_youtube": "iG7Pruev84o",
+      "titulo": "CURSO DE EXCEL DESDE CERO PARA PRINCIPIANTES. APRENDE EN 2 HORAS EXCEL.",
+      "canal": "Excel Cursos - Ericka",
+      "url_youtube": "https://www.youtube.com/watch?v=iG7Pruev84o",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "1 h 54 min",
+      "duracion_segundos_usados_para_validacion": 6854,
+      "visualizaciones_observadas": 481800,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "excel",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Registrar y analizar evolución",
+        "Aplicar pruebas básicas de condición física",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel"
+      ],
+      "justificacion": "Permite crear registros de usuarios, sesiones y pruebas, aplicar cálculos y comparar mediciones para comunicar tendencias de evolución.",
+      "canal_fiable_por": [
+        "canal especializado en formación digital"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn301370youtube1",
+        "url_video": "https://www.youtube.com/watch?v=iG7Pruev84o"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 20
+    },
+    {
+      "id_candidato": "tsaf_es_022",
+      "video_id_youtube": "KVMn06NGFdg",
+      "titulo": "Aprende a Construir este DashBoard en Excel desde cero en 1 Hora",
+      "canal": "Excel Hecho Fácil",
+      "url_youtube": "https://www.youtube.com/watch?v=KVMn06NGFdg",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "1 h",
+      "duracion_segundos_usados_para_validacion": 3600,
+      "visualizaciones_observadas": 1562392,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "excel_dashboard",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Registrar y analizar evolución",
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad",
+        "Crear un programa integral de acondicionamiento físico"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel",
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_herramienta_trainingpeaks"
+      ],
+      "justificacion": "Enseña a transformar registros en paneles visuales para revisar indicadores, comparar mediciones y comunicar la evolución de usuarios o programas.",
+      "canal_fiable_por": [
+        "canal especializado en formación digital"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn950074youtube45",
+        "url_video": "https://www.youtube.com/watch?v=KVMn06NGFdg"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 21
+    },
+    {
+      "id_candidato": "tsaf_es_021",
+      "video_id_youtube": "f2EG9Sjdq4U",
+      "titulo": "Cómo Crear Este DASHBOARD en Excel 100% Interactivo",
+      "canal": "Excel Hecho Fácil",
+      "url_youtube": "https://www.youtube.com/watch?v=f2EG9Sjdq4U",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "4 h 13 min",
+      "duracion_segundos_usados_para_validacion": 15215,
+      "visualizaciones_observadas": 1483243,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "excel_dashboard",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Registrar y analizar evolución",
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad",
+        "Crear un programa integral de acondicionamiento físico"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel",
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_herramienta_trainingpeaks"
+      ],
+      "justificacion": "Enseña a transformar registros en paneles visuales para revisar indicadores, comparar mediciones y comunicar la evolución de usuarios o programas.",
+      "canal_fiable_por": [
+        "canal especializado en formación digital"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn595124youtube28",
+        "url_video": "https://www.youtube.com/watch?v=f2EG9Sjdq4U"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 22
+    },
+    {
+      "id_candidato": "tsaf_es_020",
+      "video_id_youtube": "03ptcgg9Rs8",
+      "titulo": "Crea este Dashboard desde cero completamente en Excel ¡Impresiona a tu jefe!",
+      "canal": "Excel Hecho Fácil",
+      "url_youtube": "https://www.youtube.com/watch?v=03ptcgg9Rs8",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "más de 54 min",
+      "duracion_segundos_usados_para_validacion": 3240,
+      "visualizaciones_observadas": 1094802,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "excel_dashboard",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Registrar y analizar evolución",
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad",
+        "Crear un programa integral de acondicionamiento físico"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel",
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_herramienta_trainingpeaks"
+      ],
+      "justificacion": "Enseña a transformar registros en paneles visuales para revisar indicadores, comparar mediciones y comunicar la evolución de usuarios o programas.",
+      "canal_fiable_por": [
+        "canal especializado en formación digital"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn413118youtube0",
+        "url_video": "https://www.youtube.com/watch?v=03ptcgg9Rs8"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 23
+    },
+    {
+      "id_candidato": "tsaf_es_019",
+      "video_id_youtube": "5eS812SDZ9Y",
+      "titulo": "Aprende a Construir este DashBoard en Excel desde cero en 2 Horas",
+      "canal": "Excel Hecho Fácil",
+      "url_youtube": "https://www.youtube.com/watch?v=5eS812SDZ9Y",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "2 h",
+      "duracion_segundos_usados_para_validacion": 7200,
+      "visualizaciones_observadas": 657502,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "excel_dashboard",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Registrar y analizar evolución",
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad",
+        "Crear un programa integral de acondicionamiento físico"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel",
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_herramienta_trainingpeaks"
+      ],
+      "justificacion": "Enseña a transformar registros en paneles visuales para revisar indicadores, comparar mediciones y comunicar la evolución de usuarios o programas.",
+      "canal_fiable_por": [
+        "canal especializado en formación digital"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn243549youtube1",
+        "url_video": "https://www.youtube.com/watch?v=5eS812SDZ9Y"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 24
+    },
+    {
+      "id_candidato": "tsaf_es_033",
+      "video_id_youtube": "ORZqGpZguD0",
+      "titulo": "Clase Completa de Vinyasa Yoga (1 hora)",
+      "canal": "Xuan Lan Yoga",
+      "url_youtube": "https://www.youtube.com/watch?v=ORZqGpZguD0",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "1 h",
+      "duracion_segundos_usados_para_validacion": 3600,
+      "visualizaciones_observadas": 2400694,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "movilidad_yoga",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Programar movilidad, estabilidad y mantenimiento funcional",
+        "Reconocer anatomía y movimientos fundamentales",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Dirigir y adaptar una sesión individual"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_kinovea",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_tecnicos_personas_mayores"
+      ],
+      "justificacion": "Ofrece una sesión prolongada de movilidad, control corporal, respiración y progresión, útil para estudiar técnica, secuenciación y adaptación.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn976008youtube0",
+        "url_video": "https://www.youtube.com/watch?v=ORZqGpZguD0"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 25
+    },
+    {
+      "id_candidato": "tsaf_es_036",
+      "video_id_youtube": "kVPnQVSGpGQ",
+      "titulo": "YOGA PARA PRINCIPIANTES nivel A | Clase 1 - 45 min",
+      "canal": "MalovaElena",
+      "url_youtube": "https://www.youtube.com/watch?v=kVPnQVSGpGQ",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 1433213,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "movilidad_yoga",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Programar movilidad, estabilidad y mantenimiento funcional",
+        "Reconocer anatomía y movimientos fundamentales",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Dirigir y adaptar una sesión individual"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_kinovea",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_tecnicos_personas_mayores"
+      ],
+      "justificacion": "Ofrece una sesión prolongada de movilidad, control corporal, respiración y progresión, útil para estudiar técnica, secuenciación y adaptación.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn987394youtube0",
+        "url_video": "https://www.youtube.com/watch?v=kVPnQVSGpGQ"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 26
+    },
+    {
+      "id_candidato": "tsaf_es_037",
+      "video_id_youtube": "VNNRQ0vKAGU",
+      "titulo": "YOGA PARA PRINCIPIANTES nivel A | Clase 2 - 45 min",
+      "canal": "MalovaElena",
+      "url_youtube": "https://www.youtube.com/watch?v=VNNRQ0vKAGU",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 589178,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "movilidad_yoga",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Programar movilidad, estabilidad y mantenimiento funcional",
+        "Reconocer anatomía y movimientos fundamentales",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Dirigir y adaptar una sesión individual"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_kinovea",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_tecnicos_personas_mayores"
+      ],
+      "justificacion": "Ofrece una sesión prolongada de movilidad, control corporal, respiración y progresión, útil para estudiar técnica, secuenciación y adaptación.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn207131youtube0",
+        "url_video": "https://www.youtube.com/watch?v=VNNRQ0vKAGU"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 27
+    },
+    {
+      "id_candidato": "tsaf_es_042",
+      "video_id_youtube": "hrM3v9vCyN0",
+      "titulo": "Yoga para los principiantes 60 min (Español) | Vinyasa Flow",
+      "canal": "MalovaElena",
+      "url_youtube": "https://www.youtube.com/watch?v=hrM3v9vCyN0",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "60 min",
+      "duracion_segundos_usados_para_validacion": 3600,
+      "visualizaciones_observadas": 528423,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "movilidad_yoga",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Programar movilidad, estabilidad y mantenimiento funcional",
+        "Reconocer anatomía y movimientos fundamentales",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Dirigir y adaptar una sesión individual"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_kinovea",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_tecnicos_personas_mayores"
+      ],
+      "justificacion": "Ofrece una sesión prolongada de movilidad, control corporal, respiración y progresión, útil para estudiar técnica, secuenciación y adaptación.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn744182youtube13",
+        "url_video": "https://www.youtube.com/watch?v=hrM3v9vCyN0"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 28
+    },
+    {
+      "id_candidato": "tsaf_es_038",
+      "video_id_youtube": "__MXmHzJBAQ",
+      "titulo": "YOGA PARA PRINCIPIANTES nivel A | Clase 3 - 45 min",
+      "canal": "MalovaElena",
+      "url_youtube": "https://www.youtube.com/watch?v=__MXmHzJBAQ",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 418020,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "movilidad_yoga",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Programar movilidad, estabilidad y mantenimiento funcional",
+        "Reconocer anatomía y movimientos fundamentales",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Dirigir y adaptar una sesión individual"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_kinovea",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_tecnicos_personas_mayores"
+      ],
+      "justificacion": "Ofrece una sesión prolongada de movilidad, control corporal, respiración y progresión, útil para estudiar técnica, secuenciación y adaptación.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn948961youtube0",
+        "url_video": "https://www.youtube.com/watch?v=__MXmHzJBAQ"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 29
+    },
+    {
+      "id_candidato": "tsaf_es_040",
+      "video_id_youtube": "yUJmMbHCneM",
+      "titulo": "YOGA PARA PRINCIPIANTES nivel A | Clase 5 - 45 min",
+      "canal": "MalovaElena",
+      "url_youtube": "https://www.youtube.com/watch?v=yUJmMbHCneM",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 365035,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "movilidad_yoga",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Programar movilidad, estabilidad y mantenimiento funcional",
+        "Reconocer anatomía y movimientos fundamentales",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Dirigir y adaptar una sesión individual"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_kinovea",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_tecnicos_personas_mayores"
+      ],
+      "justificacion": "Ofrece una sesión prolongada de movilidad, control corporal, respiración y progresión, útil para estudiar técnica, secuenciación y adaptación.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn948961youtube1",
+        "url_video": "https://www.youtube.com/watch?v=yUJmMbHCneM"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 30
+    },
+    {
+      "id_candidato": "tsaf_es_041",
+      "video_id_youtube": "PT48j5z0KYk",
+      "titulo": "YOGA PARA PRINCIPIANTES nivel A+ | Clase 1 - 45 min",
+      "canal": "MalovaElena",
+      "url_youtube": "https://www.youtube.com/watch?v=PT48j5z0KYk",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 360368,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "movilidad_yoga",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Programar movilidad, estabilidad y mantenimiento funcional",
+        "Reconocer anatomía y movimientos fundamentales",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Dirigir y adaptar una sesión individual"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_kinovea",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_tecnicos_personas_mayores"
+      ],
+      "justificacion": "Ofrece una sesión prolongada de movilidad, control corporal, respiración y progresión, útil para estudiar técnica, secuenciación y adaptación.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn184170youtube0",
+        "url_video": "https://www.youtube.com/watch?v=PT48j5z0KYk"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 31
+    },
+    {
+      "id_candidato": "tsaf_es_034",
+      "video_id_youtube": "0nc2whntA4I",
+      "titulo": "YOGA SLOW FLOW TODO CUERPO | LENTO E INTENSO 50 MINUTOS",
+      "canal": "MalovaElena",
+      "url_youtube": "https://www.youtube.com/watch?v=0nc2whntA4I",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "50 min",
+      "duracion_segundos_usados_para_validacion": 3000,
+      "visualizaciones_observadas": 344335,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "movilidad_yoga",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Programar movilidad, estabilidad y mantenimiento funcional",
+        "Reconocer anatomía y movimientos fundamentales",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Dirigir y adaptar una sesión individual"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_kinovea",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_tecnicos_personas_mayores"
+      ],
+      "justificacion": "Ofrece una sesión prolongada de movilidad, control corporal, respiración y progresión, útil para estudiar técnica, secuenciación y adaptación.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn391512youtube45",
+        "url_video": "https://www.youtube.com/watch?v=0nc2whntA4I"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 32
+    },
+    {
+      "id_candidato": "tsaf_es_039",
+      "video_id_youtube": "dCngvWr5gKs",
+      "titulo": "YOGA PARA PRINCIPIANTES nivel A | Clase 4 - 45 min",
+      "canal": "MalovaElena",
+      "url_youtube": "https://www.youtube.com/watch?v=dCngvWr5gKs",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "45 min",
+      "duracion_segundos_usados_para_validacion": 2700,
+      "visualizaciones_observadas": 318975,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "movilidad_yoga",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Programar movilidad, estabilidad y mantenimiento funcional",
+        "Reconocer anatomía y movimientos fundamentales",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Dirigir y adaptar una sesión individual"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_kinovea",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_tecnicos_personas_mayores"
+      ],
+      "justificacion": "Ofrece una sesión prolongada de movilidad, control corporal, respiración y progresión, útil para estudiar técnica, secuenciación y adaptación.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn371221youtube3",
+        "url_video": "https://www.youtube.com/watch?v=dCngvWr5gKs"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 33
+    },
+    {
+      "id_candidato": "tsaf_es_035",
+      "video_id_youtube": "SHx9YjEP8xE",
+      "titulo": "Primera serie de ashtanga yoga guiada por Lucía Liencres - Yoga chikitsa",
+      "canal": "Lucia Liencres yoga",
+      "url_youtube": "https://www.youtube.com/watch?v=SHx9YjEP8xE",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "serie completa; mínimo confirmado superior a 45 min",
+      "duracion_segundos_usados_para_validacion": 3600,
+      "visualizaciones_observadas": 318358,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "movilidad_yoga",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Programar movilidad, estabilidad y mantenimiento funcional",
+        "Reconocer anatomía y movimientos fundamentales",
+        "Seleccionar ejercicios y enseñar técnica",
+        "Dirigir y adaptar una sesión individual"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_kinovea",
+        "tsaf_iad_fundamentos_entrenamiento",
+        "tsaf_iad_tecnicos_personas_mayores"
+      ],
+      "justificacion": "Ofrece una sesión prolongada de movilidad, control corporal, respiración y progresión, útil para estudiar técnica, secuenciación y adaptación.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn233041youtube5",
+        "url_video": "https://www.youtube.com/watch?v=SHx9YjEP8xE"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [
+        "Clase avanzada de Ashtanga: requiere experiencia previa y adaptación a la capacidad del usuario."
+      ],
+      "orden_recomendado_revision": 34
+    },
+    {
+      "id_candidato": "tsaf_es_028",
+      "video_id_youtube": "pwJuFbyhZFE",
+      "titulo": "Cómo usar Power BI (Tutorial desde cero)",
+      "canal": "datdata",
+      "url_youtube": "https://www.youtube.com/watch?v=pwJuFbyhZFE",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "más de 54 min",
+      "duracion_segundos_usados_para_validacion": 3284,
+      "visualizaciones_observadas": 2636729,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "power_bi",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Registrar y analizar evolución",
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad",
+        "Crear un programa integral de acondicionamiento físico"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel",
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_herramienta_strava",
+        "tsaf_herramienta_trainingpeaks"
+      ],
+      "justificacion": "Desarrolla limpieza, modelado y visualización de datos, aplicable a paneles de valoración, asistencia, carga, adherencia y evolución.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn909828youtube42",
+        "url_video": "https://www.youtube.com/watch?v=pwJuFbyhZFE"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 35
+    },
+    {
+      "id_candidato": "tsaf_es_027",
+      "video_id_youtube": "sjrlIAQnD8M",
+      "titulo": "Curso Completo de Power BI",
+      "canal": "datdata",
+      "url_youtube": "https://www.youtube.com/watch?v=sjrlIAQnD8M",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "más de 2 h 07 min",
+      "duracion_segundos_usados_para_validacion": 7638,
+      "visualizaciones_observadas": 1258599,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "power_bi",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Registrar y analizar evolución",
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad",
+        "Crear un programa integral de acondicionamiento físico"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel",
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_herramienta_strava",
+        "tsaf_herramienta_trainingpeaks"
+      ],
+      "justificacion": "Desarrolla limpieza, modelado y visualización de datos, aplicable a paneles de valoración, asistencia, carga, adherencia y evolución.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn288859youtube48",
+        "url_video": "https://www.youtube.com/watch?v=sjrlIAQnD8M"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 36
+    },
+    {
+      "id_candidato": "tsaf_es_030",
+      "video_id_youtube": "lAebJGKPRdc",
+      "titulo": "Curso de Power BI desde cero (Guía actualizada)",
+      "canal": "datdata",
+      "url_youtube": "https://www.youtube.com/watch?v=lAebJGKPRdc",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "más de 1 h 27 min",
+      "duracion_segundos_usados_para_validacion": 5255,
+      "visualizaciones_observadas": 693599,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "power_bi",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Registrar y analizar evolución",
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad",
+        "Crear un programa integral de acondicionamiento físico"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel",
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_herramienta_strava",
+        "tsaf_herramienta_trainingpeaks"
+      ],
+      "justificacion": "Desarrolla limpieza, modelado y visualización de datos, aplicable a paneles de valoración, asistencia, carga, adherencia y evolución.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn784098youtube28",
+        "url_video": "https://www.youtube.com/watch?v=lAebJGKPRdc"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 37
+    },
+    {
+      "id_candidato": "tsaf_es_029",
+      "video_id_youtube": "F_xNyI-gtYc",
+      "titulo": "Curso de DAX en Power BI - Principiante a Avanzado en 6 horas",
+      "canal": "datdata",
+      "url_youtube": "https://www.youtube.com/watch?v=F_xNyI-gtYc",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "6 h 20 min",
+      "duracion_segundos_usados_para_validacion": 22824,
+      "visualizaciones_observadas": 674837,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "power_bi",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Registrar y analizar evolución",
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad",
+        "Crear un programa integral de acondicionamiento físico"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel",
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_herramienta_strava",
+        "tsaf_herramienta_trainingpeaks"
+      ],
+      "justificacion": "Desarrolla limpieza, modelado y visualización de datos, aplicable a paneles de valoración, asistencia, carga, adherencia y evolución.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn172058search1",
+        "url_video": "https://www.youtube.com/watch?v=F_xNyI-gtYc"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 38
+    },
+    {
+      "id_candidato": "tsaf_es_032",
+      "video_id_youtube": "vufMFnWpINo",
+      "titulo": "Curso de Power BI (2025)",
+      "canal": "datdata",
+      "url_youtube": "https://www.youtube.com/watch?v=vufMFnWpINo",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "más de 1 h 56 min",
+      "duracion_segundos_usados_para_validacion": 6976,
+      "visualizaciones_observadas": 446237,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "power_bi",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Registrar y analizar evolución",
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad",
+        "Crear un programa integral de acondicionamiento físico"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel",
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_herramienta_strava",
+        "tsaf_herramienta_trainingpeaks"
+      ],
+      "justificacion": "Desarrolla limpieza, modelado y visualización de datos, aplicable a paneles de valoración, asistencia, carga, adherencia y evolución.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn554468youtube15",
+        "url_video": "https://www.youtube.com/watch?v=vufMFnWpINo"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 39
+    },
+    {
+      "id_candidato": "tsaf_es_026",
+      "video_id_youtube": "OQ0IpdT-KuI",
+      "titulo": "Power BI tutorial desde CERO (Curso Completo)",
+      "canal": "Profesor_Danny",
+      "url_youtube": "https://www.youtube.com/watch?v=OQ0IpdT-KuI",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "más de 1 h 08 min",
+      "duracion_segundos_usados_para_validacion": 4107,
+      "visualizaciones_observadas": 353657,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "power_bi",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Registrar y analizar evolución",
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad",
+        "Crear un programa integral de acondicionamiento físico"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel",
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_herramienta_strava",
+        "tsaf_herramienta_trainingpeaks"
+      ],
+      "justificacion": "Desarrolla limpieza, modelado y visualización de datos, aplicable a paneles de valoración, asistencia, carga, adherencia y evolución.",
+      "canal_fiable_por": [
+        "canal especializado en formación digital"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn969223youtube0",
+        "url_video": "https://www.youtube.com/watch?v=OQ0IpdT-KuI"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 40
+    },
+    {
+      "id_candidato": "tsaf_es_031",
+      "video_id_youtube": "8Qh2oStdADE",
+      "titulo": "Reporte Financiero en Power BI desde Cero",
+      "canal": "datdata",
+      "url_youtube": "https://www.youtube.com/watch?v=8Qh2oStdADE",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "más de 1 h 03 min",
+      "duracion_segundos_usados_para_validacion": 3794,
+      "visualizaciones_observadas": 335443,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "power_bi",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Registrar y analizar evolución",
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Usar tecnología y datos en seguimiento sin invadir privacidad",
+        "Crear un programa integral de acondicionamiento físico"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_excel",
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_herramienta_strava",
+        "tsaf_herramienta_trainingpeaks"
+      ],
+      "justificacion": "Desarrolla limpieza, modelado y visualización de datos, aplicable a paneles de valoración, asistencia, carga, adherencia y evolución.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn784098youtube29",
+        "url_video": "https://www.youtube.com/watch?v=8Qh2oStdADE"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 41
+    },
+    {
+      "id_candidato": "tsaf_es_048",
+      "video_id_youtube": "2VfLYaUx-mY",
+      "titulo": "RCP y Primeros Auxilios (niños y adultos) - Curso Completo",
+      "canal": "Fundación Científica del Sur",
+      "url_youtube": "https://www.youtube.com/watch?v=2VfLYaUx-mY",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "más de 52 min",
+      "duracion_segundos_usados_para_validacion": 3131,
+      "visualizaciones_observadas": 2109601,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "rcp",
+      "nivel_ajuste_tsaf": "alto",
+      "uso_recomendado": "principal",
+      "competencias_compatibles": [
+        "Actuar ante una emergencia y activar ayuda",
+        "Aplicar RCP básica y DEA",
+        "Distinguir alcance profesional, derivación y consentimiento",
+        "Organizar recursos, calidad y seguridad de una instalación"
+      ],
+      "recursos_compatibles": [
+        "tsaf_iad_rcp_profesionales_deporte"
+      ],
+      "justificacion": "Curso completo directamente relacionado con la actuación inicial ante emergencias, RCP y primeros auxilios dentro de entornos deportivos.",
+      "canal_fiable_por": [
+        "institucional",
+        "fundación científica",
+        "contenido sanitario formativo"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn751863youtube1",
+        "url_video": "https://www.youtube.com/watch?v=2VfLYaUx-mY"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [
+        "Publicado en 2017: contrastar procedimientos con las guías vigentes de RCP y DEA antes de publicarlo."
+      ],
+      "orden_recomendado_revision": 42
+    },
+    {
+      "id_candidato": "tsaf_es_025",
+      "video_id_youtube": "fdxnEr61Z5c",
+      "titulo": "MEGA CURSO de Canva GRATIS 2025 - Masterclass - Tutorial Completo Desde Cero",
+      "canal": "Valeria Digital",
+      "url_youtube": "https://www.youtube.com/watch?v=fdxnEr61Z5c",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "más de 2 h 43 min",
+      "duracion_segundos_usados_para_validacion": 9794,
+      "visualizaciones_observadas": 570933,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "comunicacion_visual",
+      "nivel_ajuste_tsaf": "medio",
+      "uso_recomendado": "apoyo",
+      "competencias_compatibles": [
+        "Crear un programa integral de acondicionamiento físico",
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Distinguir alcance profesional, derivación y consentimiento"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_google_forms",
+        "tsaf_herramienta_excel"
+      ],
+      "justificacion": "Permite diseñar fichas, infografías y materiales de comunicación para explicar programas, normas de seguridad, consentimientos y resultados.",
+      "canal_fiable_por": [
+        "canal especializado en formación digital"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn763135youtube36",
+        "url_video": "https://www.youtube.com/watch?v=fdxnEr61Z5c"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 43
+    },
+    {
+      "id_candidato": "tsaf_es_024",
+      "video_id_youtube": "n0yn3TZ1lSQ",
+      "titulo": "CURSO COMPLETO DE WORD 2023",
+      "canal": "El Tío Tech",
+      "url_youtube": "https://www.youtube.com/watch?v=n0yn3TZ1lSQ",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "2 h 47 min",
+      "duracion_segundos_usados_para_validacion": 10077,
+      "visualizaciones_observadas": 1920000,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "documentacion_digital",
+      "nivel_ajuste_tsaf": "medio",
+      "uso_recomendado": "apoyo",
+      "competencias_compatibles": [
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Distinguir alcance profesional, derivación y consentimiento",
+        "Crear un programa integral de acondicionamiento físico"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_google_forms",
+        "tsaf_herramienta_excel"
+      ],
+      "justificacion": "Ayuda a preparar documentación estructurada, consentimientos, informes y materiales de comunicación asociados al seguimiento y a la programación.",
+      "canal_fiable_por": [
+        "canal especializado en formación digital"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn104480search0",
+        "url_video": "https://www.youtube.com/watch?v=n0yn3TZ1lSQ"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 44
+    },
+    {
+      "id_candidato": "tsaf_es_023",
+      "video_id_youtube": "2jvEaBEJinI",
+      "titulo": "Curso Completo de Word 2024 en 1 Vídeo - Básico e Intermedio",
+      "canal": "Dostin Hurtado",
+      "url_youtube": "https://www.youtube.com/watch?v=2jvEaBEJinI",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "aprox. 1 h 03 min",
+      "duracion_segundos_usados_para_validacion": 3780,
+      "visualizaciones_observadas": 347898,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "documentacion_digital",
+      "nivel_ajuste_tsaf": "medio",
+      "uso_recomendado": "apoyo",
+      "competencias_compatibles": [
+        "Organizar archivos, formularios y hojas de cálculo",
+        "Distinguir alcance profesional, derivación y consentimiento",
+        "Crear un programa integral de acondicionamiento físico"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_google_forms",
+        "tsaf_herramienta_excel"
+      ],
+      "justificacion": "Ayuda a preparar documentación estructurada, consentimientos, informes y materiales de comunicación asociados al seguimiento y a la programación.",
+      "canal_fiable_por": [
+        "canal especializado en formación digital"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn991617youtube42",
+        "url_video": "https://www.youtube.com/watch?v=2jvEaBEJinI"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [],
+      "orden_recomendado_revision": 45
+    },
+    {
+      "id_candidato": "tsaf_es_043",
+      "video_id_youtube": "QL8th-8wUps",
+      "titulo": "Yoga Nidra para DORMIR PROFUNDAMENTE (2 horas)",
+      "canal": "Anabel Otero",
+      "url_youtube": "https://www.youtube.com/watch?v=QL8th-8wUps",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "2 h",
+      "duracion_segundos_usados_para_validacion": 7200,
+      "visualizaciones_observadas": 6531514,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "recuperacion_relajacion",
+      "nivel_ajuste_tsaf": "medio",
+      "uso_recomendado": "apoyo",
+      "competencias_compatibles": [
+        "Comprender respuestas básicas al ejercicio",
+        "Dirigir y adaptar una sesión individual",
+        "Programar movilidad, estabilidad y mantenimiento funcional"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_iad_fundamentos_entrenamiento"
+      ],
+      "justificacion": "Sirve como apoyo para estudiar relajación, respiración, vuelta a la calma y percepción de recuperación, sin sustituir atención sanitaria.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn194483youtube12",
+        "url_video": "https://www.youtube.com/watch?v=QL8th-8wUps"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [
+        "Contenido de apoyo para relajación y vuelta a la calma; no sustituye evaluación o tratamiento sanitario."
+      ],
+      "orden_recomendado_revision": 46
+    },
+    {
+      "id_candidato": "tsaf_es_047",
+      "video_id_youtube": "bfnXDAFosHA",
+      "titulo": "Yoga Nidra para Dormir & Insomnio - 1 h 30 min",
+      "canal": "Anabel Otero",
+      "url_youtube": "https://www.youtube.com/watch?v=bfnXDAFosHA",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "1 h 30 min",
+      "duracion_segundos_usados_para_validacion": 5400,
+      "visualizaciones_observadas": 3324775,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "recuperacion_relajacion",
+      "nivel_ajuste_tsaf": "medio",
+      "uso_recomendado": "apoyo",
+      "competencias_compatibles": [
+        "Comprender respuestas básicas al ejercicio",
+        "Dirigir y adaptar una sesión individual",
+        "Programar movilidad, estabilidad y mantenimiento funcional"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_iad_fundamentos_entrenamiento"
+      ],
+      "justificacion": "Sirve como apoyo para estudiar relajación, respiración, vuelta a la calma y percepción de recuperación, sin sustituir atención sanitaria.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn479985youtube0",
+        "url_video": "https://www.youtube.com/watch?v=bfnXDAFosHA"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [
+        "Contenido de apoyo para relajación y vuelta a la calma; no sustituye evaluación o tratamiento sanitario."
+      ],
+      "orden_recomendado_revision": 47
+    },
+    {
+      "id_candidato": "tsaf_es_045",
+      "video_id_youtube": "U6ElWFUAiJU",
+      "titulo": "Yoga Nidra para el insomnio (sesión completa 1 hora)",
+      "canal": "Anabel Otero",
+      "url_youtube": "https://www.youtube.com/watch?v=U6ElWFUAiJU",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "1 h",
+      "duracion_segundos_usados_para_validacion": 3600,
+      "visualizaciones_observadas": 1519090,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "recuperacion_relajacion",
+      "nivel_ajuste_tsaf": "medio",
+      "uso_recomendado": "apoyo",
+      "competencias_compatibles": [
+        "Comprender respuestas básicas al ejercicio",
+        "Dirigir y adaptar una sesión individual",
+        "Programar movilidad, estabilidad y mantenimiento funcional"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_iad_fundamentos_entrenamiento"
+      ],
+      "justificacion": "Sirve como apoyo para estudiar relajación, respiración, vuelta a la calma y percepción de recuperación, sin sustituir atención sanitaria.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn409022youtube0",
+        "url_video": "https://www.youtube.com/watch?v=U6ElWFUAiJU"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [
+        "Contenido de apoyo para relajación y vuelta a la calma; no sustituye evaluación o tratamiento sanitario."
+      ],
+      "orden_recomendado_revision": 48
+    },
+    {
+      "id_candidato": "tsaf_es_046",
+      "video_id_youtube": "TmuGbgCCzvE",
+      "titulo": "Yoga Nidra para DORMIR & INSOMNIO (1 h 30 min)",
+      "canal": "Anabel Otero",
+      "url_youtube": "https://www.youtube.com/watch?v=TmuGbgCCzvE",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "1 h 30 min",
+      "duracion_segundos_usados_para_validacion": 5400,
+      "visualizaciones_observadas": 1036058,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "recuperacion_relajacion",
+      "nivel_ajuste_tsaf": "medio",
+      "uso_recomendado": "apoyo",
+      "competencias_compatibles": [
+        "Comprender respuestas básicas al ejercicio",
+        "Dirigir y adaptar una sesión individual",
+        "Programar movilidad, estabilidad y mantenimiento funcional"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_iad_fundamentos_entrenamiento"
+      ],
+      "justificacion": "Sirve como apoyo para estudiar relajación, respiración, vuelta a la calma y percepción de recuperación, sin sustituir atención sanitaria.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn409022youtube1",
+        "url_video": "https://www.youtube.com/watch?v=TmuGbgCCzvE"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [
+        "Contenido de apoyo para relajación y vuelta a la calma; no sustituye evaluación o tratamiento sanitario."
+      ],
+      "orden_recomendado_revision": 49
+    },
+    {
+      "id_candidato": "tsaf_es_044",
+      "video_id_youtube": "NVCzLNNzMVM",
+      "titulo": "1 hora de Yoga Nidra para Insomnio - Meditación Guiada para Dormir",
+      "canal": "Anabel Otero",
+      "url_youtube": "https://www.youtube.com/watch?v=NVCzLNNzMVM",
+      "tipo_url": "video_individual",
+      "idioma": "español",
+      "duracion_mostrada_o_minima_confirmada": "1 h",
+      "duracion_segundos_usados_para_validacion": 3600,
+      "visualizaciones_observadas": 412976,
+      "fecha_verificacion": "2026-08-05",
+      "categoria_tematica": "recuperacion_relajacion",
+      "nivel_ajuste_tsaf": "medio",
+      "uso_recomendado": "apoyo",
+      "competencias_compatibles": [
+        "Comprender respuestas básicas al ejercicio",
+        "Dirigir y adaptar una sesión individual",
+        "Programar movilidad, estabilidad y mantenimiento funcional"
+      ],
+      "recursos_compatibles": [
+        "tsaf_herramienta_garmin_connect",
+        "tsaf_herramienta_polar_flow",
+        "tsaf_iad_fundamentos_entrenamiento"
+      ],
+      "justificacion": "Sirve como apoyo para estudiar relajación, respiración, vuelta a la calma y percepción de recuperación, sin sustituir atención sanitaria.",
+      "canal_fiable_por": [
+        "canal especializado",
+        "canal verificado"
+      ],
+      "fuente_verificacion_principal": {
+        "tipo": "resultado_web_de_youtube_o_indice_publico",
+        "referencia_interna": "turn194483youtube13",
+        "url_video": "https://www.youtube.com/watch?v=NVCzLNNzMVM"
+      },
+      "cumplimiento": {
+        "idioma_espanol": true,
+        "duracion_minima_45_min": true,
+        "visualizaciones_minimas_300000": true,
+        "video_individual": true,
+        "canal_especializado_verificado_institucional_u_oficial": true,
+        "relacion_directa_con_al_menos_una_competencia": true
+      },
+      "estado_revision": "candidato_verificado_para_preseleccion",
+      "advertencias_editoriales": [
+        "Contenido de apoyo para relajación y vuelta a la calma; no sustituye evaluación o tratamiento sanitario."
+      ],
+      "orden_recomendado_revision": 50
+    }
+  ]
+}

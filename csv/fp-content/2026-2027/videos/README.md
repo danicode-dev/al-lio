@@ -5,18 +5,31 @@ confianza a un recurso ya existente (`fp_content_items.id_slug`), para que
 se pueda ver dentro de AL-LIO (`/ruta/[slug]`) en vez de mandar al usuario
 fuera de la app.
 
-No reemplaza ni modifica el catalogo base — es una tabla de referencias
-(`id_slug -> video_url`) que se puede ampliar fila a fila cuando haya un
-video curado para ese recurso. Un `id_slug` sin fila aqui simplemente no
-tiene video todavia; la app muestra el recurso igual, sin reproductor.
+No reemplaza ni modifica el catalogo base — es un mapa de referencias
+(`id_slug -> video_url`) que se puede ampliar cuando haya un video curado
+para ese recurso. Un `id_slug` sin entrada aqui simplemente no tiene video
+todavia; la app muestra el recurso igual, sin reproductor.
 
-## Columnas
+## Formato: JSON desde 2026-08-06
+
+`recursos_video.json` es la fuente activa. Objeto con un array `recursos`,
+cada elemento con las mismas tres columnas que antes:
 
 - `id_slug`: debe existir ya en `csv/fp-content/2026-2027/raw/*.csv`.
 - `video_url`: URL completa de YouTube (`https://www.youtube.com/watch?v=...`
   o `https://youtu.be/...`).
-- `notas`: opcional, contexto interno (por que se eligio ese video, quien lo
-  reviso, etc.). No se muestra al usuario.
+- `notas`: opcional, contexto interno (por que se eligio ese video, de que
+  fuente viene, cuantas competencias en comun tenia, etc.). No se muestra
+  al usuario.
+
+Este dominio usaba CSV hasta el 2026-08-05 (`recursos_video.csv`, retirado
+del arbol de trabajo el 2026-08-06 — sigue en el historial de git). Se
+cambia a JSON porque los lotes que llegan ahora (candidatos de video vía
+ChatGPT) ya vienen en JSON de origen, y porque `notas`/futuras listas
+anidadas (varias competencias, varios candidatos de reserva) encajan mejor
+en JSON que en filas planas de CSV — no es una migracion del resto del
+catalogo, que sigue en CSV en `csv/fp-content/2026-2027/raw/` y
+`csv/fp-content/2026-2027/competencias/` sin cambios.
 
 ## Import
 
@@ -25,9 +38,43 @@ npm run import:fp-resource-videos
 ```
 
 Idempotente. Si un `id_slug` no existe en el catalogo ya importado, se
-reporta y se salta esa fila en vez de fallar todo el import.
+reporta y se salta esa fila en vez de fallar todo el import. Si hay
+`id_slug` duplicados dentro de `recursos_video.json`, el import falla
+entero antes de tocar la base de datos (evita que un duplicado silencioso
+pise una fila valida).
 
-## Origen de los datos (2026-08-05, curacion estricta — vigente)
+## Origen de los datos (2026-08-06, ChatGPT + verificacion cruzada — vigente)
+
+54 de los 55 recursos que quedaban pendientes tras la curacion estricta del
+2026-08-05 se resolvieron con 4 lotes de candidatos (uno por ciclo/grupo:
+TSAF, DAW/DAM, AF, MP) generados por ChatGPT a partir de los prompts en
+`PROMPT_DEV.md` / `PROMPT_AF.md` / `PROMPT_MP.md` / `PROMPT_TSAF.md`
+(no committeados, son prompts de trabajo, no datos del catalogo). Los 4
+JSON crudos que devolvio ChatGPT estan archivados en
+`source-2026-08-06-chatgpt/` para trazabilidad.
+
+Cada candidato se cruzo con el recurso pendiente de dos formas, por orden
+de confianza:
+1. **Coincidencia directa**: el candidato ya venia etiquetado por ChatGPT
+   con el `id_slug` exacto del recurso (`recursos_compatibles` en el JSON
+   de origen). Se verifico que ese `id_slug` existe de verdad en el
+   catalogo antes de aceptarlo — 0 referencias inventadas detectadas.
+2. **Coincidencia por competencia**: sin etiqueta directa, se cruzo el
+   listado de competencias del candidato contra las competencias reales
+   que ese recurso desarrolla en `item_competencias.csv` (mismo texto
+   exacto que se le paso a ChatGPT en el prompt). Se exige al menos una
+   competencia en comun.
+
+Se mantiene el mismo tope de 5 reutilizaciones por video que en el lote
+anterior, contando tambien los 45 videos ya aprobados el 2026-08-05 (no
+solo los nuevos) para no reabrir la monocultura de un video en decenas de
+tarjetas.
+
+El unico recurso que se quedo sin video esta vez: `af_camara_nominas_seguros_sociales_2026`
+(ningun candidato de los 4 lotes comparte competencia con ese recurso).
+Pendiente de que Daniel reenvie un candidato para ese caso puntual.
+
+### Origen 2026-08-05 (curacion estricta, superado por el lote 2026-08-06)
 
 Las filas actuales de `recursos_video.csv` vienen de
 `source-2026-08-05-curado/` (`AL_LIO_ROADMAPS_FP_YOUTUBE_CURADO_2026_08_05.zip`),

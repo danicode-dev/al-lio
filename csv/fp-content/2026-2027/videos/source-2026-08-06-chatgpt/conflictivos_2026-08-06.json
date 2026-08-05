@@ -1,0 +1,224 @@
+[
+  {
+    "cycle": "AF",
+    "slug": "af_camara_nominas_seguros_sociales_2026",
+    "titulo": "Gestión de nóminas y seguros sociales para tu empresa",
+    "tipo": "curso_complementario",
+    "competencyTitles": [
+      "Calcular y revisar una nómina",
+      "Interpretar contratos, jornada y documentación laboral",
+      "Gestionar una empresa simulada de forma integrada",
+      "Distinguir formas jurídicas y órganos de la empresa",
+      "Aplicar responsabilidad social, igualdad y protección"
+    ],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_evidencia_calendario_fiscal_pyme",
+    "titulo": "Calendario fiscal y checklist de cumplimiento",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_evidencia_ciclo_contable_completo",
+    "titulo": "Caso completo de ciclo contable y cierre",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_evidencia_dashboard_financiero_power_bi",
+    "titulo": "Dashboard financiero en Power BI",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_evidencia_expediente_nomina_cotizacion",
+    "titulo": "Expediente laboral de nómina y cotización",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_evidencia_factura_electronica_firmada",
+    "titulo": "Flujo de factura electrónica",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_evidencia_plan_empresa_circe",
+    "titulo": "Plan administrativo de creación de empresa",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "AF",
+    "slug": "af_evidencia_presupuesto_tesoreria_excel",
+    "titulo": "Presupuesto y previsión de tesorería en Excel",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "DEV",
+    "slug": "daw_evidencia_pwa_offline",
+    "titulo": "PWA instalable con modo offline",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_evidencia_calendario_contenidos",
+    "titulo": "Calendario editorial multicanal",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_evidencia_campana_email",
+    "titulo": "Secuencia de email marketing",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_evidencia_campana_google_ads",
+    "titulo": "Campaña simulada de Google Ads",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_evidencia_campana_social_ads",
+    "titulo": "Campaña de Meta Ads con variantes creativas",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_evidencia_dashboard_marketing",
+    "titulo": "Dashboard de rendimiento de marketing",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_evidencia_investigacion_mercado",
+    "titulo": "Investigación de mercado con encuesta",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "MP",
+    "slug": "mp_evidencia_plan_marketing_integrado",
+    "titulo": "Plan de marketing integrado",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_evidencia_acondicionamiento_agua",
+    "titulo": "Programa básico de acondicionamiento físico en el agua",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_evidencia_plan_emergencia_dea",
+    "titulo": "Plan de actuación ante emergencias en una sala fitness",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_evidencia_programa_fuerza_12_semanas",
+    "titulo": "Programa progresivo de fuerza de doce semanas",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_evidencia_programa_personas_mayores",
+    "titulo": "Programa de ejercicio para personas mayores",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_evidencia_servicio_entrenamiento_personal",
+    "titulo": "Servicio completo de entrenamiento personal",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_evidencia_sesion_soporte_musical",
+    "titulo": "Sesión colectiva con soporte musical",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_evidencia_valoracion_inicial",
+    "titulo": "Protocolo de valoración inicial y consentimiento",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  },
+  {
+    "cycle": "TSAF",
+    "slug": "tsaf_evidencia_videoanalisis_kinovea",
+    "titulo": "Análisis técnico de movimiento con Kinovea",
+    "tipo": "evidencia_recomendada",
+    "competencyTitles": [],
+    "motivo": "sin_candidato_con_competencia_en_comun",
+    "candidatos_descartados": []
+  }
+]
