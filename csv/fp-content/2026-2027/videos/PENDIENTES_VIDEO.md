@@ -1,38 +1,36 @@
 # Vídeos pendientes de curar — AL-LÍO FP
 
-Actualizado tras corregir un problema real de encaje temático detectado el 2026-08-06 (ver sección "Qué pasó" abajo).
+Actualizado tras dos correcciones seguidas el 2026-08-06 (ver "Qué pasó" abajo).
 
 ## Estado actual de cobertura
 
 - **250** recursos en el catálogo.
-- **57** tienen un vídeo real que pasa los 5 filtros estrictos Y un encaje temático verificado manualmente (45 de la curación del 2026-08-05 + 12 nuevos, verificados uno a uno, del lote de ChatGPT del 2026-08-06).
-- **19 vídeos distintos** en total. Tope de reutilización de 5 por vídeo, verificado también contra la base de datos real. 0 vídeos compartidos entre grupos de ciclo distintos (AF/MP/TSAF/DEV) — verificado con consulta directa.
-- Por ciclo: AF 8, DEV 40, MP 5, TSAF 4.
+- **80** tienen un vídeo real (45 curación estricta 2026-08-05 + 35 verificados a mano el 2026-08-06, nivel de exigencia "mismo dominio real", no solo "misma herramienta exacta").
+- **0** vídeos compartidos entre grupos de ciclo distintos (AF/MP/TSAF/DEV) — verificado contra la base de datos, no solo contra el archivo.
+- **0** vídeos por encima del tope de 5 reutilizaciones.
+- Variedad real por ciclo (vídeos distintos que un usuario puede llegar a ver navegando sus hackathons): DEV 12, MP 11, AF 5, TSAF 5.
 
-## Qué pasó (2026-08-06, corregido en el mismo día)
+## Qué pasó (2026-08-06, dos correcciones en el mismo día)
 
-Un primer intento incorporó 54 vídeos del lote de ChatGPT aceptando cualquier candidato que compartiera **al menos una** etiqueta de competencia con el recurso, incluidas etiquetas de tipo `recursos_compatibles` que el propio JSON de origen ya traía. Esto coló bastantes emparejamientos sin sentido temático real: un vídeo de "Marketing" asignado a "Auxiliar administrativo", un vídeo de "Word" a un curso de "Dirección y edición de vídeo", vídeos de "Power BI" o "Python" a herramientas concretas (ContaSol, Nominasol, Garmin Connect, Strava...) que no tienen nada que ver. Esto es justo lo que provocó que un mismo puñado de vídeos genéricos apareciera repetido en recursos de distintos ciclos — incluido al menos un caso real de un vídeo compartido entre AF y MP y otro entre MP y TSAF.
+**Intento 1** (54 vídeos): aceptaba un candidato con que compartiera una sola etiqueta de competencia. Coló emparejamientos sin sentido temático real y dos fugas entre ciclos. Corregido revisando uno a uno — quedó en 12.
 
-Se corrigió revisando los 54 uno por uno por sentido temático real (no solo por coincidencia de texto): de 54, solo **12 pasaron la revisión manual**. Los otros 42 se quitaron de `fp_content_items.video_url` en la base de datos y vuelven a la lista de pendientes de abajo.
+**Intento 2, tras que Daniel siguiera viendo repetición** (bajado a 12 vídeos distintos totales entre AF/MP/TSAF): técnicamente correcto pero demasiado poco para no notarse — en AF, por ejemplo, solo había 2 vídeos distintos sirviendo a los 9 hackathons del ciclo (uno de ellos usado en los 9). Eso es indistinguible de "siempre el mismo vídeo" aunque cada emparejamiento fuera válido. Se relajó el criterio de "misma herramienta exacta" a "mismo dominio real" (ej. Power BI vale para un recurso de Looker Studio o Google Analytics — distinto software, mismo dominio de dashboards/datos; un vídeo de cardio vale para "fundamentos de entrenamiento" — no para "usar la app Strava"). Se recuperaron 23 de los 42 revertidos en el intento 1, dejando 35 aprobados.
 
-**Lección aplicada:** de aquí en adelante, ningún vídeo se acepta solo porque el JSON de origen lo etiquete como compatible o comparta una palabra de competencia — tiene que superar una revisión de que el tema real del vídeo coincide con el tema real del recurso.
+**Bug adicional encontrado y arreglado en el proceso:** `scripts/import-fp-resource-videos.mjs` solo hacía `UPDATE` de las filas presentes en `recursos_video.json` — nunca limpiaba `video_url` de un `id_slug` que desaparecía del archivo entre una ejecución y la siguiente. Esto causó que un vídeo revertido en el intento 2 se quedara "fantasma" en la base de datos y siguiera generando una fuga entre ciclos ya arreglada en el archivo pero no en la BD real. El script ahora hace una sincronización completa: limpia cualquier `video_url` que ya no esté en el JSON antes de aplicar las filas actuales, en la misma transacción.
 
-## Patrón estructural en lo que sigue pendiente: recursos `herramienta`
-
-Buena parte de los 42 que se revirtieron eran de tipo `herramienta` (software concreto: ContaSol, Nominasol, sede electrónica AEAT, Garmin Connect, Strava, TrainerRize, HexFit, Google Forms, Meta Business Suite, Search Console...). Para estas apps/portales específicos casi nunca existe un tutorial real de YouTube de 45+ minutos y 300k+ visitas — son herramientas de nicho, no cursos masivos. Esto no es un fallo de búsqueda, es que probablemente ese tipo de recurso necesita otro criterio (ej. aceptar vídeos más cortos, o la documentación oficial del fabricante en vez de vídeo) en vez de forzar el mismo estándar que usamos para "aprende Excel" o "aprende Python". Pendiente de que Daniel decida si se relaja el criterio para `herramienta` o se deja sin vídeo por diseño.
-
-## Patrón ya documentado: recursos `evidencia_recomendada`
-
-23 recursos de tipo `evidencia_recomendada` siguen sin vídeo por una razón de esquema, no de búsqueda: están enlazados a sus competencias con `tipo_relacion=demuestra`, que la lógica de la ruta (`getLearningItemsForCompetencies`) excluye a propósito de la resolución de vídeo. Ver commit anterior para el detalle — sigue pendiente de decisión de producto, no se ha tocado en esta corrección.
-
-## Regla que debe cumplir cualquier vídeo nuevo
+## Regla vigente para cualquier vídeo nuevo
 
 1. Duración individual mínima de **45 minutos** (vídeo real, no playlist).
-2. Al menos **300.000 visualizaciones** en ese vídeo concreto (no la media del canal).
-3. Relación **directa** con el ciclo formativo y la competencia indicada — no genérico ni de otro área. **El título y el tema real del vídeo tienen que coincidir con el recurso, no solo compartir una etiqueta.**
+2. Al menos **300.000 visualizaciones** en ese vídeo concreto.
+3. Mismo **dominio real** que el recurso (no hace falta ser la herramienta exacta, pero sí el mismo área — dashboards/BI, ofimática, marketing digital, desarrollo, entrenamiento físico... — nunca un tema sin relación real).
 4. Canal especializado, verificado, institucional o con fiabilidad editorial suficiente.
-5. URL de un único vídeo auditable — **nunca una playlist**.
+5. URL de un único vídeo auditable — nunca una playlist.
+6. **Nunca el mismo vídeo entre dos grupos de ciclo distintos** (AF/MP/TSAF/DEV) — se verifica contra la base de datos real en cada import, no solo contra el archivo de origen.
 
-Si no hay ningún vídeo real que cumpla las 5 condiciones para un recurso, mejor dejarlo sin vídeo que forzar uno que no encaje.
+## Recursos que siguen sin vídeo (43)
 
-Lista completa de los 42 revertidos + los 23 `evidencia_recomendada` + el conflictivo original: ver `conflictivos_2026-08-06.json` en `source-2026-08-06-chatgpt/`.
+Dos grupos, documentados en `source-2026-08-06-chatgpt/conflictivos_2026-08-06.json`:
+
+- **19** con mezcla de dominio real (software de nicho sin tutorial real de 45+min/300k+visitas: ContaSol, CIRCE, Sede AEAT, Garmin Connect, Strava, HexFit, TrainerRize, Kinovea...; o un tema genuinamente distinto). Pendiente de que Daniel decida si se relaja aún más el criterio para herramientas de nicho o se dejan sin vídeo.
+- **1** (`af_camara_nominas_seguros_sociales_2026`) sin ningún candidato con relación real en los 4 lotes.
+- **23** `evidencia_recomendada` sin vídeo por diseño: enlazados con `tipo_relacion=demuestra`, que la lógica de rutas excluye a propósito de la resolución de vídeo (`getLearningItemsForCompetencies` solo usa `desarrolla`/`apoya`). Es una decisión de producto pendiente, no un hueco de datos.

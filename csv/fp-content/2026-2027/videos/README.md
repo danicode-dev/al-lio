@@ -62,15 +62,24 @@ curso de "Auxiliar administrativo", un video de "Word" en un curso de
 en varios ciclos. Ver `PENDIENTES_VIDEO.md` para el detalle completo del
 incidente.
 
-**Correccion aplicada:** los 54 se revisaron uno por uno comprobando que el
-tema real del video coincide con el tema real del recurso, no solo el texto
-de la competencia. Solo 12 pasaron esa revision manual; los otros 42 se
-revirtieron (`video_url = NULL`) y volvieron a la lista de pendientes.
+**Segunda correccion (mismo dia):** con el criterio de "misma herramienta
+exacta" del primer arreglo, AF quedo con solo 2 videos distintos sirviendo
+a sus 9 hackathons (uno de ellos en los 9) — tecnicamente correcto pero
+indistinguible en la practica de "siempre el mismo video". Se relajo el
+criterio a "mismo dominio real" (ej. un video de Power BI vale para un
+recurso de Looker Studio o Google Analytics — distinto software, mismo
+dominio de datos/dashboards) y se recuperaron 23 de los 42 revertidos,
+dejando 35 aprobados (12 + 23). Tambien se encontro y arreglo un bug real
+en `import-fp-resource-videos.mjs`: solo hacia `UPDATE` de las filas
+presentes en el JSON, nunca limpiaba `video_url` de un recurso que
+desaparecia entre una ejecucion y la siguiente — un video ya revertido en
+el archivo seguia "fantasma" en la base de datos real. El import ahora
+sincroniza completo (limpia lo que ya no esta en el JSON) en cada ejecucion.
 
-Se mantiene el tope de 5 reutilizaciones por video (verificado tambien
-contra la base de datos real) y, tras la correccion, **0 videos compartidos
+Se mantiene el tope de 5 reutilizaciones por video y **0 videos compartidos
 entre grupos de ciclo distintos** (AF/MP/TSAF/DEV) — verificado con consulta
-directa a la base de datos, no solo contra el archivo de origen.
+directa a la base de datos tras cada import, no solo contra el archivo de
+origen.
 
 ### Origen 2026-08-05 (curacion estricta, superado por el lote 2026-08-06)
 

@@ -81,6 +81,17 @@ async function main() {
   try {
     await client.query("BEGIN");
 
+    // Full sync, not just additive update: this file is the single source of truth for
+    // fp_content_items.video_url, so any id_slug that currently has a video but is no
+    // longer in the JSON must be cleared here. Otherwise a resource dropped from a later
+    // curation pass keeps showing its old (possibly wrong) video forever.
+    const currentSlugs = records.map((r) => r.id_slug).filter(Boolean);
+    const staleRes = await client.query(
+      `UPDATE public.fp_content_items SET video_url = NULL, updated_at = now()
+       WHERE video_url IS NOT NULL AND NOT (id_slug = ANY($1)) RETURNING id_slug`,
+      [currentSlugs]
+    );
+
     let updated = 0;
     const orphans = [];
     const suspiciousUrls = [];
@@ -109,6 +120,10 @@ async function main() {
     console.log("OK: FP resource videos imported.");
     console.log(`Rows in recursos_video.json: ${records.length}`);
     console.log(`Updated: ${updated}`);
+    if (staleRes.rowCount > 0) {
+      console.log(`Cleared (had a video_url but are no longer in recursos_video.json): ${staleRes.rowCount}`);
+      console.log(staleRes.rows.map((r) => `  - ${r.id_slug}`).join("\n"));
+    }
     if (orphans.length > 0) {
       console.log(`Skipped (id_slug not found in fp_content_items): ${orphans.length}`);
       console.log(orphans.map((slug) => `  - ${slug}`).join("\n"));
