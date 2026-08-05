@@ -3106,21 +3106,21 @@ function FilterCalendar({
               className={cn(
                 "relative flex flex-col items-center py-0.5 text-[11px] leading-5 transition-colors",
                 !cell.inMonth && "text-muted-foreground/40",
-                isSelected && "rounded bg-primary text-primary-foreground",
-                isToday && !isSelected && "font-bold text-primary",
+                isSelected && "al-filter-day-selected rounded",
+                isToday && !isSelected && "al-filter-day-today font-bold",
                 !isSelected && cell.inMonth && "cursor-pointer rounded hover:bg-muted",
               )}
             >
               {cell.date.getDate()}
               {hasItem && !isSelected && (
-                <span className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary/60" />
+                <span className="al-filter-dot absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full" />
               )}
             </button>
           );
         })}
       </div>
       <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-        <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary/60" />
+        <span className="al-filter-dot inline-block h-1.5 w-1.5 rounded-full" />
         con cursos
       </div>
     </div>
@@ -3193,7 +3193,19 @@ function ViewToggle({ value, onChange }: { value: "grid" | "lista"; onChange: (v
   return (
     <div className="flex shrink-0 items-center rounded-md border bg-card p-0.5 gap-0.5">
       {(["grid", "lista"] as const).map((v) => (
-        <Button key={v} type="button" size="sm" variant={value === v ? "default" : "ghost"} className="h-6 px-2 text-[11px]" onClick={() => onChange(v)}>
+        <Button
+          key={v}
+          type="button"
+          size="sm"
+          variant="ghost"
+          className={cn(
+            "h-6 px-2 text-[11px]",
+            value === v
+              ? "bg-[linear-gradient(180deg,#F06A37_0%,#E15D2D_100%)] text-white hover:bg-[linear-gradient(180deg,#F06A37_0%,#E15D2D_100%)]"
+              : "text-[#333029]"
+          )}
+          onClick={() => onChange(v)}
+        >
           {v === "grid" ? "Grid" : "Lista"}
         </Button>
       ))}
@@ -3213,24 +3225,42 @@ function FilterPanel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="w-full shrink-0 space-y-5 lg:w-60">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold">{title}</span>
-        {activeCount > 0 && (
-          <button type="button" onClick={onClear} className="text-xs text-muted-foreground hover:text-foreground">
-            Limpiar
-          </button>
-        )}
+    <div className="w-full shrink-0 lg:w-64">
+      <style>{`
+        .al-filter-panel { background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+        .al-filter-head { display: flex; align-items: center; justify-content: space-between; }
+        .al-filter-title { font-size: 13px; font-weight: 700; color: #111111; }
+        .al-filter-clear { font-size: 11.5px; font-weight: 600; color: #9a958a; }
+        .al-filter-clear:hover { color: #c94f21; }
+        .al-filter-section { padding-top: 14px; border-top: 1px solid #f0ece2; }
+        .al-filter-section:first-child { padding-top: 0; border-top: none; }
+        .al-filter-section-label { margin-bottom: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9a958a; }
+        .al-filter-chip { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 999px; border: 1px solid #ece7dc; background: white; color: #333029; padding: 3px 10px; font-size: 11.5px; font-weight: 600; transition: border-color 0.15s, color 0.15s; }
+        .al-filter-chip:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+        .al-filter-chip-active, .al-filter-chip-active:hover { border-color: transparent; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; }
+        .al-filter-day-selected, .al-filter-day-selected:hover { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; }
+        .al-filter-day-today { color: #c94f21; }
+        .al-filter-dot { background: #E15D2D; }
+      `}</style>
+      <div className="al-filter-panel">
+        <div className="al-filter-head">
+          <span className="al-filter-title">{title}</span>
+          {activeCount > 0 && (
+            <button type="button" onClick={onClear} className="al-filter-clear">
+              Limpiar
+            </button>
+          )}
+        </div>
+        {children}
       </div>
-      {children}
     </div>
   );
 }
 
 function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+    <div className="al-filter-section">
+      <p className="al-filter-section-label">{label}</p>
       {children}
     </div>
   );
@@ -3246,17 +3276,14 @@ function FilterChips({ options, value, onChange }: { options: [string, string][]
     );
   }
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex flex-wrap gap-1.5">
       {options.map(([v, l]) => (
         <button
           key={v}
           type="button"
           title={l}
           onClick={() => onChange(value === v && v !== "" ? "" : v)}
-          className={cn(
-            "max-w-[130px] truncate rounded-full border px-2.5 py-0.5 text-xs transition-colors hover:bg-muted",
-            value === v && "border-primary bg-primary text-primary-foreground"
-          )}
+          className={cn("al-filter-chip", value === v && "al-filter-chip-active")}
         >
           {l}
         </button>
@@ -3629,7 +3656,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-hero-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
         .al-hack-hero-kicker { display: inline-flex; align-items: center; gap: 6px; width: fit-content; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #c94f21; }
         .al-hack-hero-kicker-dot { width: 6px; height: 6px; border-radius: 999px; background: #4C9A6E; box-shadow: 0 0 0 3px rgba(76, 154, 110, 0.25); }
-        .al-hack-hero-title { font-family: var(--font-barlow, sans-serif); font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; line-height: 1.15; color: #111111; }
+        .al-hack-hero-title { font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; color: #111111; }
         .al-hack-hero-org { font-size: 12.5px; color: #6b6f72; }
         .al-hack-hero-meta { font-size: 12.5px; color: #4b4740; }
         .al-hack-hero-desc { font-size: 13px; color: #4b4740; line-height: 1.5; max-width: 56ch; }
@@ -3956,8 +3983,8 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
         .al-modal-shell { background: white; border-radius: 22px 22px 0 0; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
         @media (min-width: 640px) { .al-modal-shell { border-radius: 22px; } }
         .al-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #f0ece2; flex-shrink: 0; }
-        .al-modal-head-icon { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 11px; background: #fbe7dd; color: #E15D2D; flex-shrink: 0; }
-        .al-modal-title { font-family: var(--font-barlow, sans-serif); font-size: 15.5px; font-weight: 700; color: #111111; line-height: 1.3; }
+        .al-modal-head-icon { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex-shrink: 0; }
+        .al-modal-title { font-size: 18px; font-weight: 700; color: #111111; line-height: 24px; letter-spacing: -0.02em; }
         .al-modal-subtitle { font-size: 11.5px; color: #6b6f72; margin-top: 2px; }
         .al-modal-close { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; flex-shrink: 0; }
         .al-modal-step-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px; }
@@ -3994,7 +4021,9 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
       `}</style>
       <div className="al-modal-shell max-h-[92svh] w-full overflow-hidden sm:max-w-lg">
         <div className="al-modal-head">
-          <span className="al-modal-head-icon"><ListChecks className="h-4 w-4" /></span>
+          <span className="al-modal-head-icon">
+            <Image src="/assets/hackathons/hackathons-modal-checklist-icon.png" alt="" width={160} height={160} className="h-full w-full object-contain" />
+          </span>
           <div className="min-w-0 flex-1">
             <h2 className="al-modal-title line-clamp-2">Requisitos para {item.name}</h2>
             <p className="al-modal-subtitle">Todo lo que conviene dominar antes de presentarte.</p>
