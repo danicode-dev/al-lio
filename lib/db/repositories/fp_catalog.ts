@@ -1,9 +1,9 @@
 import "server-only";
 import { query } from "@/lib/db/pool";
 import type {
-  DbFpCompetency,
   DbFpContentItem,
   DbFpCycle,
+  DbFpSkill,
   DbFpUserContentState,
   DbProfile,
   FpAcademicYear,
@@ -91,7 +91,10 @@ export async function getFpContentForProfile(
   return res.rows;
 }
 
-export type RequiredCompetency = DbFpCompetency & {
+// content_item_id + link fields se apilan sobre la habilidad canonica
+// (DbFpSkill). El nombre RequiredCompetency se mantiene en el lado
+// cliente porque asi es como ya se llama en el resto de la app.
+export type RequiredCompetency = DbFpSkill & {
   content_item_id: string;
   obligatoria_para_item: boolean;
   orden_preparacion: number | null;
@@ -102,9 +105,9 @@ export async function getRequiredCompetenciesForItems(contentItemIds: string[]):
   if (contentItemIds.length === 0) return map;
 
   const res = await query<RequiredCompetency>(
-    `SELECT link.content_item_id, comp.*, link.obligatoria_para_item, link.orden_preparacion
+    `SELECT link.content_item_id, skill.*, link.obligatoria_para_item, link.orden_preparacion
      FROM public.fp_item_competencies link
-     INNER JOIN public.fp_competencies comp ON comp.id = link.competencia_id
+     INNER JOIN public.fp_skills skill ON skill.id = link.skill_id
      WHERE link.content_item_id = ANY($1) AND link.tipo_relacion = 'requiere'
      ORDER BY link.obligatoria_para_item DESC, link.orden_preparacion ASC NULLS LAST`,
     [contentItemIds]
@@ -120,7 +123,7 @@ export async function getRequiredCompetenciesForItems(contentItemIds: string[]):
 }
 
 export type CompetencyLearningItem = {
-  competencia_id: string;
+  skill_id: string;
   id: string;
   id_slug: string;
   title: string;
@@ -130,30 +133,34 @@ export type CompetencyLearningItem = {
   tipo_relacion: FpItemCompetencyRelation;
 };
 
+// Solo recursos que ENSEÑAN la habilidad (tipo_relacion = 'ensena'). Los
+// que la EXIGEN ('requiere') o la DEMUESTRAN ('demuestra', ej. un
+// proyecto/evidencia) son conceptos distintos y no pertenecen a "aqui
+// tienes para aprender esto".
 export async function getLearningItemsForCompetencies(
-  competencyIds: string[],
+  skillIds: string[],
   cycleGroup: FpCycleGroup,
-  perCompetencyLimit = 3
+  perSkillLimit = 3
 ): Promise<Map<string, CompetencyLearningItem[]>> {
   const map = new Map<string, CompetencyLearningItem[]>();
-  if (competencyIds.length === 0) return map;
+  if (skillIds.length === 0) return map;
 
   const res = await query<CompetencyLearningItem>(
-    `SELECT DISTINCT link.competencia_id, item.id, item.id_slug, item.title, item.type, item.source_url, item.video_url, link.tipo_relacion
+    `SELECT DISTINCT link.skill_id, item.id, item.id_slug, item.title, item.type, item.source_url, item.video_url, link.tipo_relacion
      FROM public.fp_item_competencies link
      INNER JOIN public.fp_content_items item ON item.id = link.content_item_id
      INNER JOIN public.fp_content_cycle_fit fit ON fit.content_item_id = item.id
-     WHERE link.competencia_id = ANY($1)
-       AND link.tipo_relacion IN ('desarrolla', 'apoya')
+     WHERE link.skill_id = ANY($1)
+       AND link.tipo_relacion = 'ensena'
        AND fit.cycle_group = $2
-     ORDER BY link.competencia_id, link.tipo_relacion`,
-    [competencyIds, cycleGroup]
+     ORDER BY link.skill_id`,
+    [skillIds, cycleGroup]
   );
 
   for (const row of res.rows) {
-    const list = map.get(row.competencia_id) ?? [];
-    if (list.length < perCompetencyLimit) list.push(row);
-    map.set(row.competencia_id, list);
+    const list = map.get(row.skill_id) ?? [];
+    if (list.length < perSkillLimit) list.push(row);
+    map.set(row.skill_id, list);
   }
 
   return map;
