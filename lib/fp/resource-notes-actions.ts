@@ -34,6 +34,24 @@ export async function addResourceNoteAction(
   }
 }
 
+export async function toggleFavoriteAction(
+  idSlug: string,
+  isFavorite: boolean
+): Promise<{ error: string | null }> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const item = await getFpContentItemBySlug(idSlug);
+  if (!item) return { error: "resource_not_found" };
+
+  try {
+    await upsertFpUserContentState(session.uid, item.id, { is_favorite: isFavorite });
+    return { error: null };
+  } catch {
+    return { error: "favorite_save_failed" };
+  }
+}
+
 export async function markResourceStatusAction(
   idSlug: string,
   status: DbFpUserContentState["status"]

@@ -13,6 +13,8 @@ import {
   getFpContentForProfile,
   getRequiredCompetenciesForItems,
   getLearningItemsForCompetencies,
+  getUserContentStatesForItems,
+  type CompetencyLearningItem,
 } from "@/lib/db/repositories/fp_catalog";
 
 export const FP_APTITUDE_GATED_TYPES = new Set(["hackathon", "evento", "reto", "convocatoria_practicas"]);
@@ -46,6 +48,8 @@ export async function getGlobalStore() {
   const learningItemsByCompetency = profile.cycle_group
     ? await getLearningItemsForCompetencies(requiredCompetencyIds, profile.cycle_group)
     : new Map();
+  const learningItemIds = [...new Set([...learningItemsByCompetency.values()].flat().map((li) => li.id))];
+  const learningItemStatusById = await getUserContentStatesForItems(userId, learningItemIds);
 
   const rawName =
     pgUser?.display_name ||
@@ -109,7 +113,10 @@ export async function getGlobalStore() {
         ultima_revision: ymd(competency.ultima_revision),
         created_at: iso(competency.created_at),
         updated_at: iso(competency.updated_at),
-        learningItems: learningItemsByCompetency.get(competency.id) ?? [],
+        learningItems: (learningItemsByCompetency.get(competency.id) ?? []).map((learningItem: CompetencyLearningItem) => ({
+          ...learningItem,
+          user_status: learningItemStatusById.get(learningItem.id) ?? null,
+        })),
       })),
     })),
     hackathons: hackathons.map((h) => ({
