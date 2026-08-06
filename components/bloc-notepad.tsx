@@ -87,9 +87,11 @@ export function BlocNotepad() {
   const [mobileSheet, setMobileSheet] = useState<MobileSheetId>(null);
   const [menuNoteId, setMenuNoteId] = useState<string | null>(null);
   const [titleEditing, setTitleEditing] = useState(false);
+  const [phantomId, setPhantomId] = useState<string | null>(null);
   const notesRef = useRef<BlocNote[]>([]);
   const trashedRef = useRef<BlocTrashedNote[]>([]);
   const activeIdRef = useRef("");
+  const phantomIdRef = useRef<string | null>(null);
   const dbSyncEnabledRef = useRef(false);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
@@ -106,6 +108,10 @@ export function BlocNotepad() {
   useEffect(() => {
     activeIdRef.current = activeId;
   }, [activeId]);
+
+  useEffect(() => {
+    phantomIdRef.current = phantomId;
+  }, [phantomId]);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)");
@@ -141,12 +147,14 @@ export function BlocNotepad() {
     const parsed = raw ? safeJson(raw) : null;
     const savedNotes = normalizeBlocNotes(parsed);
     const savedTrash = normalizeBlocTrashed(parsed);
-    const initialNotes = savedNotes.length ? savedNotes : [createBlocNote({ title: defaultTitle })];
+    const isPhantom = savedNotes.length === 0;
+    const initialNotes = isPhantom ? [createBlocNote({ title: defaultTitle })] : savedNotes;
 
     setSettings(normalizeBlocSettings(rawSettings ? safeJson(rawSettings) : null));
     setNotes(initialNotes);
     setTrashedNotes(savedTrash);
     setActiveId(initialNotes[0].id);
+    setPhantomId(isPhantom ? initialNotes[0].id : null);
     setLoaded(true);
   }, []);
 
@@ -161,13 +169,21 @@ export function BlocNotepad() {
         let result = await fetchBlocNotes();
         if (cancelled) return;
         if (!result.migrated) {
-          result = await migrateLocalBlocNotes(notesRef.current, trashedRef.current);
+          const localNotesToMigrate = notesRef.current.filter((note) => note.id !== phantomIdRef.current);
+          result = await migrateLocalBlocNotes(localNotesToMigrate, trashedRef.current);
           if (cancelled) return;
         }
-        const nextNotes = result.notes.length ? result.notes : [createBlocNote({ title: defaultTitle })];
-        setNotes(nextNotes);
         setTrashedNotes(result.trashedNotes);
-        setActiveId((current) => (nextNotes.some((note) => note.id === current) ? current : nextNotes[0].id));
+        if (result.notes.length) {
+          setNotes(result.notes);
+          setPhantomId(null);
+          setActiveId((current) => (result.notes.some((note) => note.id === current) ? current : result.notes[0].id));
+        } else {
+          const fresh = createBlocNote({ title: defaultTitle });
+          setNotes([fresh]);
+          setPhantomId(fresh.id);
+          setActiveId(fresh.id);
+        }
         dbSyncEnabledRef.current = true;
       } catch {
         // Sin conexion a la base de datos: seguimos con localStorage solamente.
@@ -214,11 +230,20 @@ export function BlocNotepad() {
 
   const activeNote = useMemo(() => notes.find((note) => note.id === activeId) ?? null, [activeId, notes]);
 
+  // La nota "phantom" (creada solo para que el editor tenga algo a lo que
+  // escribir cuando el usuario no tiene ninguna nota real todavia) no debe
+  // contarse como una nota: no aparece en las listas ni se sube a la BD
+  // hasta que el usuario escriba algo real en ella.
+  const visibleNotes = useMemo(
+    () => (phantomId ? notes.filter((note) => note.id !== phantomId) : notes),
+    [notes, phantomId],
+  );
+
   const tabNotes = useMemo(() => {
-    if (listTab === "favoritas") return notes.filter((note) => note.favorite);
-    if (listTab === "recientes") return [...notes].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-    return notes;
-  }, [notes, listTab]);
+    if (listTab === "favoritas") return visibleNotes.filter((note) => note.favorite);
+    if (listTab === "recientes") return [...visibleNotes].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    return visibleNotes;
+  }, [visibleNotes, listTab]);
 
   const filteredNotes = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -226,7 +251,7 @@ export function BlocNotepad() {
     return tabNotes.filter((note) => `${note.title} ${note.contentText}`.toLowerCase().includes(query));
   }, [tabNotes, searchTerm]);
 
-  const favoritesCount = useMemo(() => notes.filter((note) => note.favorite).length, [notes]);
+  const favoritesCount = useMemo(() => visibleNotes.filter((note) => note.favorite).length, [visibleNotes]);
 
   const fontClass = { sm: "text-sm", base: "text-base", lg: "text-lg" }[settings.fontSize];
   const wordCount = countWords(activeNote?.contentText ?? "");
@@ -237,8 +262,34 @@ export function BlocNotepad() {
     localStorage.setItem(blocSettingsKey, JSON.stringify(next));
   }
 
+  // Convierte la nota "phantom" en una nota real la primera vez que hay algo
+  // que merezca guardarse: la inserta en la BD (una unica vez, con los datos
+  // ya actualizados) y devuelve true si acaba de promoverla (para que el
+  // llamador no lance ademas un updateDb sobre una fila que aun no existe).
+  function promotePhantomIfNeeded(
+    id: string,
+    overrides: Partial<Pick<BlocNote, "title" | "contentHtml" | "contentText" | "favorite">> = {},
+    force = false,
+  ): boolean {
+    if (phantomIdRef.current !== id) return false;
+    const base = notesRef.current.find((note) => note.id === id);
+    if (!base) return false;
+    const title = overrides.title ?? base.title;
+    const contentText = overrides.contentText ?? base.contentText;
+    const isBlank = (title.trim() === "" || title === defaultTitle) && contentText.trim() === "";
+    if (isBlank && !force) return false;
+    setPhantomId(null);
+    if (dbSyncEnabledRef.current) {
+      const contentHtml = overrides.contentHtml ?? base.contentHtml;
+      const favorite = overrides.favorite ?? base.favorite;
+      void insertDb("bloc_notes", { id, title, content_html: contentHtml, content_text: contentText, is_favorite: favorite, deleted_at: null }, []);
+    }
+    return true;
+  }
+
   function renameActiveNote(title: string) {
     if (!activeNote) return;
+    promotePhantomIfNeeded(activeNote.id, { title });
     const updatedAt = nowIso();
     setNotes((current) => current.map((note) => (note.id === activeNote.id ? { ...note, title, updated_at: updatedAt } : note)));
   }
@@ -247,8 +298,9 @@ export function BlocNotepad() {
     const target = notes.find((note) => note.id === id);
     if (!target) return;
     const nextFavorite = !target.favorite;
+    const promoted = promotePhantomIfNeeded(id, { favorite: nextFavorite }, true);
     setNotes((current) => current.map((note) => (note.id === id ? { ...note, favorite: nextFavorite } : note)));
-    if (dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { is_favorite: nextFavorite }, []);
+    if (!promoted && dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { is_favorite: nextFavorite }, []);
   }
 
   function recordEditorContent() {
@@ -259,6 +311,8 @@ export function BlocNotepad() {
     const updatedAt = nowIso();
     const contentHtml = sanitizeEditorHtml(editorRef.current.innerHTML);
     const contentText = rawText.trim().length === 0 ? "" : rawText;
+
+    promotePhantomIfNeeded(activeNote.id, { contentHtml, contentText });
 
     setNotes((current) =>
       current.map((note) =>
@@ -308,6 +362,15 @@ export function BlocNotepad() {
   }
 
   function deleteNote(id: string) {
+    if (id === phantomId) {
+      // Nunca se llego a guardar: no tiene sentido mandarla a la papelera.
+      const fresh = createBlocNote({ title: defaultTitle });
+      setNotes((current) => current.map((note) => (note.id === id ? fresh : note)));
+      setPhantomId(fresh.id);
+      setActiveId(fresh.id);
+      return;
+    }
+
     const target = notes.find((note) => note.id === id);
     if (!target) return;
 
@@ -317,6 +380,7 @@ export function BlocNotepad() {
     if (next.length === 0) {
       const fresh = createBlocNote({ title: defaultTitle });
       setNotes([fresh]);
+      setPhantomId(fresh.id);
       setActiveId(fresh.id);
     } else {
       setNotes(next);
@@ -524,7 +588,7 @@ export function BlocNotepad() {
           ))}
           {filteredNotes.length === 0 && (
             <div className="w-full rounded-xl border border-dashed p-4 text-center text-sm text-[#6b6f72]">
-              No hay notas con esa búsqueda.
+              {emptyListMessage(listTab, searchTerm)}
             </div>
           )}
         </div>
@@ -926,7 +990,7 @@ export function BlocNotepad() {
             {filteredNotes.length === 0 && (
               <div className="al-bloc-list-empty">
                 <Image src="/assets/bloc/bloc-empty-illustration.png" alt="" width={480} height={343} className="al-bloc-list-empty-img" />
-                <p>{listTab === "favoritas" ? "Aún no tienes notas favoritas." : "No hay notas con esa búsqueda."}</p>
+                <p>{emptyListMessage(listTab, searchTerm)}</p>
               </div>
             )}
           </div>
@@ -1190,6 +1254,12 @@ function TrashSheet({
       </div>
     </>
   );
+}
+
+function emptyListMessage(listTab: ListTab, searchTerm: string): string {
+  if (searchTerm.trim()) return "No hay notas con esa búsqueda.";
+  if (listTab === "favoritas") return "Aún no tienes notas favoritas.";
+  return "Aún no tienes notas. Empieza a escribir a la izquierda.";
 }
 
 function formatBlocNoteCardDate(value: string) {
