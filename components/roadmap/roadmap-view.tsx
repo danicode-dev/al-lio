@@ -39,12 +39,12 @@ export function RoadmapView({ cycleName, modules }: { cycleName: string; modules
   const avanceCompleted = avanceSkills.filter((skill) => skill.status === "completado").length;
   const avancePercent = avanceTotal > 0 ? Math.round((avanceCompleted / avanceTotal) * 100) : 0;
 
-  const visibleModules = useMemo(() => {
-    let list = modules;
-    if (onlyMandatory) list = list.filter((mod) => mod.skills.some((skill) => skill.obligatoria));
-    if (hideCompleted) list = list.filter((mod) => moduleCompletion(mod, onlyMandatory).percent < 100);
+  function ordenarModulos(list: RoadmapModule[]) {
+    let filtered = list;
+    if (onlyMandatory) filtered = filtered.filter((mod) => mod.skills.some((skill) => skill.obligatoria));
+    if (hideCompleted) filtered = filtered.filter((mod) => moduleCompletion(mod, onlyMandatory).percent < 100);
 
-    const sorted = [...list];
+    const sorted = [...filtered];
     if (prioritizePending) {
       sorted.sort((a, b) => {
         const aDone = moduleCompletion(a, onlyMandatory).percent === 100 ? 1 : 0;
@@ -56,7 +56,46 @@ export function RoadmapView({ cycleName, modules }: { cycleName: string; modules
       sorted.sort((a, b) => a.ordenGlobal - b.ordenGlobal);
     }
     return sorted;
-  }, [modules, onlyMandatory, hideCompleted, prioritizePending]);
+  }
+
+  // Asignaturas propias del ciclo primero (ej. Bases de Datos, Programacion),
+  // los modulos transversales compartidos por varias familias de ciclo (ej.
+  // Ingles, PRE) van despues — asi el alumno no las ve mezcladas.
+  const modulosPropios = ordenarModulos(modules.filter((mod) => !mod.esComun));
+  const modulosComunes = ordenarModulos(modules.filter((mod) => mod.esComun));
+
+  function renderGrid(list: RoadmapModule[]) {
+    return (
+      <div className="al-roadmap-grid">
+        {list.map((mod) => {
+          const completion = moduleCompletion(mod, onlyMandatory);
+          const meta = ETAPA_META[mod.etapa];
+          const hasMandatoryPending = mod.skills.some((skill) => skill.obligatoria && skill.status !== "completado");
+          return (
+            <Link key={mod.codigo} href={`/roadmap/${encodeURIComponent(mod.codigo)}`} className="al-roadmap-tile">
+              <div className="al-roadmap-tile-top">
+                <span className="al-roadmap-etapa-dot" style={{ background: meta.color }} />
+                <span className="al-roadmap-tile-code">{mod.codigo !== "sin-modulo" ? mod.codigo : "—"} · {meta.label}</span>
+              </div>
+              <p className="al-roadmap-tile-title">{mod.nombre}</p>
+              <div className="al-roadmap-tile-bar-track">
+                <div
+                  className="al-roadmap-tile-bar-fill"
+                  style={{ width: `${completion.percent}%`, background: completion.percent === 100 ? "#1f7a4d" : "#E15D2D" }}
+                />
+              </div>
+              <div className="al-roadmap-tile-footer">
+                <span>{completion.completed}/{completion.total}</span>
+                {hasMandatoryPending && !onlyMandatory && (
+                  <span className="al-roadmap-tile-mandatory-badge">Obligatorio pendiente</span>
+                )}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -102,6 +141,9 @@ export function RoadmapView({ cycleName, modules }: { cycleName: string; modules
         }
         .al-roadmap-toggle:hover { border-color: #d8d1c2; }
         .al-roadmap-toggle-active { border-color: transparent; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; }
+
+        .al-roadmap-section { margin-bottom: 24px; }
+        .al-roadmap-section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #6b6f72; margin: 0 0 14px 0; }
 
         .al-roadmap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
         .al-roadmap-tile {
@@ -238,37 +280,23 @@ export function RoadmapView({ cycleName, modules }: { cycleName: string; modules
             </div>
           </div>
 
-          {visibleModules.length === 0 ? (
+          {modulosPropios.length === 0 && modulosComunes.length === 0 ? (
             <div className="al-roadmap-empty">No hay módulos que coincidan con estos filtros.</div>
           ) : (
-            <div className="al-roadmap-grid">
-              {visibleModules.map((mod) => {
-                const completion = moduleCompletion(mod, onlyMandatory);
-                const meta = ETAPA_META[mod.etapa];
-                const hasMandatoryPending = mod.skills.some((skill) => skill.obligatoria && skill.status !== "completado");
-                return (
-                  <Link key={mod.codigo} href={`/roadmap/${encodeURIComponent(mod.codigo)}`} className="al-roadmap-tile">
-                    <div className="al-roadmap-tile-top">
-                      <span className="al-roadmap-etapa-dot" style={{ background: meta.color }} />
-                      <span className="al-roadmap-tile-code">{mod.codigo !== "sin-modulo" ? mod.codigo : "—"} · {meta.label}</span>
-                    </div>
-                    <p className="al-roadmap-tile-title">{mod.nombre}</p>
-                    <div className="al-roadmap-tile-bar-track">
-                      <div
-                        className="al-roadmap-tile-bar-fill"
-                        style={{ width: `${completion.percent}%`, background: completion.percent === 100 ? "#1f7a4d" : "#E15D2D" }}
-                      />
-                    </div>
-                    <div className="al-roadmap-tile-footer">
-                      <span>{completion.completed}/{completion.total}</span>
-                      {hasMandatoryPending && !onlyMandatory && (
-                        <span className="al-roadmap-tile-mandatory-badge">Obligatorio pendiente</span>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+            <>
+              {modulosPropios.length > 0 && (
+                <div className="al-roadmap-section">
+                  <p className="al-roadmap-section-title">Asignaturas de tu ciclo</p>
+                  {renderGrid(modulosPropios)}
+                </div>
+              )}
+              {modulosComunes.length > 0 && (
+                <div className="al-roadmap-section">
+                  <p className="al-roadmap-section-title">Módulos comunes a todos los ciclos</p>
+                  {renderGrid(modulosComunes)}
+                </div>
+              )}
+            </>
           )}
         </>
       )}

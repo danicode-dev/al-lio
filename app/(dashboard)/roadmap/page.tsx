@@ -5,6 +5,7 @@ import {
   getActiveFpCycles,
   getCycleSkills,
   getLearningItemsForCompetencies,
+  getSharedModuleCodes,
   getUserContentStatesForItems,
 } from "@/lib/db/repositories/fp_catalog";
 import { buildRoadmapModules, type RoadmapSkillStatus } from "@/lib/fp/roadmap";
@@ -19,7 +20,11 @@ export default async function RoadmapPage() {
   const profile = await getProfileByUser(session.uid);
   if (!profile?.cycle_code || !profile.cycle_group) notFound();
 
-  const [cycleSkills, cycles] = await Promise.all([getCycleSkills(profile.cycle_code), getActiveFpCycles()]);
+  const [cycleSkills, cycles, sharedModuleCodes] = await Promise.all([
+    getCycleSkills(profile.cycle_code),
+    getActiveFpCycles(),
+    getSharedModuleCodes(),
+  ]);
   const cycleName = cycles.find((cycle) => cycle.code === profile.cycle_code)?.name ?? profile.cycle_code;
 
   const skillIds = cycleSkills.map((skill) => skill.id);
@@ -46,7 +51,7 @@ export default async function RoadmapPage() {
     else statusBySkillId.set(skill.id, "pendiente");
   }
 
-  const modules = buildRoadmapModules(cycleSkills, statusBySkillId);
+  const modules = buildRoadmapModules(cycleSkills, statusBySkillId, sharedModuleCodes);
 
   return <RoadmapView cycleName={cycleName} modules={modules} />;
 }

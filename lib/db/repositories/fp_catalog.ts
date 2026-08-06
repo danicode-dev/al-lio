@@ -111,6 +111,24 @@ export async function getCycleSkills(cycleCode: FpCycleCode): Promise<CycleSkill
   return res.rows;
 }
 
+// Un modulo es "comun" cuando su codigo aparece en 2+ familias de ciclo
+// (cycle_group) distintas, no solo en 2+ ciclos: DAM y DAW comparten
+// modulos tecnicos (Bases de Datos, Programacion...) porque son la MISMA
+// familia (DEV), y eso sigue siendo una asignatura propia del ciclo. Lo
+// realmente transversal (Ingles, Digitalizacion, PRE...) aparece en
+// familias distintas (DEV, AF, TSAF, MP a la vez).
+export async function getSharedModuleCodes(): Promise<Set<string>> {
+  const res = await query<{ modulo_codigo: string }>(
+    `SELECT cs.modulo_codigo
+     FROM public.fp_cycle_skills cs
+     INNER JOIN public.fp_cycles cy ON cy.code = cs.cycle_code
+     WHERE cs.modulo_codigo IS NOT NULL
+     GROUP BY cs.modulo_codigo
+     HAVING COUNT(DISTINCT cy.group_code) >= 2`
+  );
+  return new Set(res.rows.map((row) => row.modulo_codigo));
+}
+
 // content_item_id + link fields se apilan sobre la habilidad canonica
 // (DbFpSkill). El nombre RequiredCompetency se mantiene en el lado
 // cliente porque asi es como ya se llama en el resto de la app.

@@ -18,6 +18,7 @@ export type RoadmapModule = {
   etapa: FpCompetencyEtapa;
   ordenGlobal: number;
   skills: RoadmapSkill[];
+  esComun: boolean;
 };
 
 const ETAPA_ORDER: FpCompetencyEtapa[] = [
@@ -34,7 +35,8 @@ const ETAPA_ORDER: FpCompetencyEtapa[] = [
 // es cuando el alumno empieza a tocarlo.
 export function buildRoadmapModules(
   cycleSkills: CycleSkill[],
-  statusBySkillId: Map<string, RoadmapSkillStatus>
+  statusBySkillId: Map<string, RoadmapSkillStatus>,
+  sharedModuleCodes: Set<string>
 ): RoadmapModule[] {
   const byModule = new Map<string, RoadmapModule>();
 
@@ -44,7 +46,14 @@ export function buildRoadmapModules(
 
     let mod = byModule.get(codigo);
     if (!mod) {
-      mod = { codigo, nombre, etapa: cs.etapa, ordenGlobal: cs.orden_global, skills: [] };
+      mod = {
+        codigo,
+        nombre,
+        etapa: cs.etapa,
+        ordenGlobal: cs.orden_global,
+        skills: [],
+        esComun: sharedModuleCodes.has(codigo),
+      };
       byModule.set(codigo, mod);
     } else {
       if (ETAPA_ORDER.indexOf(cs.etapa) < ETAPA_ORDER.indexOf(mod.etapa)) mod.etapa = cs.etapa;
