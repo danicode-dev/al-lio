@@ -130,21 +130,15 @@ export type FpCompetencyEtapa =
   | "3_empleabilidad"
   | "4_proyecto";
 
-export type FpItemCompetencyRelation = "requiere" | "desarrolla" | "apoya" | "demuestra";
+export type FpItemCompetencyRelation = "requiere" | "ensena" | "demuestra";
 
-export interface DbFpCompetency {
+// Catalogo canonico de habilidades: una fila por habilidad de verdad, sin
+// duplicar por ciclo (ej. "Git" es una unica fila aunque la necesiten DAW
+// y DAM). Que ciclos la necesitan y donde encaja va en DbFpCycleSkill.
+export interface DbFpSkill {
   id: string;
-  cycle_code: FpCycleCode;
-  orden_global: number;
-  etapa: FpCompetencyEtapa;
-  bloque: string | null;
-  modulo_codigo: string | null;
-  modulo_nombre: string | null;
   titulo: string;
   descripcion: string | null;
-  nivel_objetivo: number | null;
-  obligatoria_roadmap_base: boolean;
-  basico_antes_de_empezar: boolean;
   horas_estimadas: number | null;
   criterios_superacion: string | null;
   evidencia_minima: string | null;
@@ -158,20 +152,28 @@ export interface DbFpCompetency {
   updated_at: string;
 }
 
-export interface DbFpCompetencyRelation {
-  competencia_origen_id: string;
-  competencia_destino_id: string;
+// Donde vive una habilidad dentro del itinerario de un ciclo concreto. Una
+// habilidad compartida entre ciclos tiene una fila por cada ciclo que la
+// necesita, todas con el mismo skill_id.
+export interface DbFpCycleSkill {
   cycle_code: FpCycleCode;
-  tipo_relacion: string;
-  obligatoria: boolean;
-  motivo: string | null;
+  skill_id: string;
+  orden_global: number;
+  etapa: FpCompetencyEtapa;
+  bloque: string | null;
+  modulo_codigo: string | null;
+  modulo_nombre: string | null;
+  nivel_objetivo: number | null;
+  obligatoria_roadmap_base: boolean;
+  basico_antes_de_empezar: boolean;
+  prerrequisito_texto: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface DbFpItemCompetency {
   content_item_id: string;
-  competencia_id: string;
+  skill_id: string;
   tipo_relacion: FpItemCompetencyRelation;
   orden_preparacion: number | null;
   nivel_minimo_recomendado: number | null;

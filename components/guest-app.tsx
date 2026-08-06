@@ -141,7 +141,7 @@ type Course = {
 };
 
 type RequiredCompetencyLearningItem = {
-  competencia_id: string;
+  skill_id: string;
   id: string;
   id_slug: string;
   title: string;
@@ -152,12 +152,15 @@ type RequiredCompetencyLearningItem = {
   user_status?: string | null;
 };
 
+// Habilidad (antes "competencia") exigida por un hackathon/evento. Es la
+// habilidad canonica, la misma independientemente de en que ciclo se haya
+// enlazado — por eso no lleva etapa/nivel_objetivo, que son propiedades
+// de como esa habilidad encaja en el itinerario de UN ciclo concreto, no
+// de la habilidad en si.
 type RequiredCompetency = {
   id: string;
   titulo: string;
   descripcion?: string;
-  etapa: string;
-  nivel_objetivo?: number;
   horas_estimadas?: number;
   evidencia_minima?: string;
   obligatoria_para_item: boolean;

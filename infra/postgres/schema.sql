@@ -399,11 +399,44 @@ create table if not exists public.fp_user_content_state (
   primary key (user_id, content_item_id)
 );
 
--- FP competency roadmap (official curriculum, converted into an ordered,
--- prerequisite-linked list of competencies per cycle).
-create table if not exists public.fp_competencies (
-  id                       text primary key,
+-- Modelo de habilidades FP (reemplaza al antiguo fp_competencies, que
+-- duplicaba cada competencia una vez por ciclo aunque fuera literalmente
+-- la misma -- ej. "Git" existia como fila DAW-... y otra fila DAM-... sin
+-- ninguna relacion entre ambas). Ahora la habilidad es unica y cycle_skills
+-- es quien decide que ciclos la necesitan y donde encaja en su itinerario.
+--
+-- fp_competencies / fp_competency_relations quedan retirados: el grafo de
+-- prerrequisitos nunca se llego a usar desde la app (solo vivia en el
+-- esquema), asi que en vez de mantenerlo se sustituye por un texto simple
+-- y legible (fp_cycle_skills.prerrequisito_texto) que el alumno puede leer
+-- pero que no exige mantener relaciones.
+drop table if exists public.fp_item_competencies cascade;
+drop table if exists public.fp_competency_relations cascade;
+drop table if exists public.fp_competencies cascade;
+
+create table if not exists public.fp_skills (
+  id                    text primary key,
+  titulo                text not null,
+  descripcion           text,
+  horas_estimadas       integer,
+  criterios_superacion  text,
+  evidencia_minima      text,
+  umbral_superacion     text,
+  aplicable_a           text,
+  fuente_titulo_url     text,
+  fuente_curriculo_url  text,
+  tipo_criterio         text,
+  ultima_revision       date,
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now()
+);
+
+-- Donde vive cada habilidad dentro del itinerario de un ciclo concreto.
+-- Una habilidad compartida entre ciclos (ej. Git en DAW y DAM) tiene una
+-- fila por cada ciclo que la necesita, todas apuntando al mismo skill_id.
+create table if not exists public.fp_cycle_skills (
   cycle_code               text not null references public.fp_cycles(code),
+  skill_id                 text not null references public.fp_skills(id) on delete cascade,
   orden_global             integer not null,
   etapa                    text not null check (etapa in (
     '0_antes_de_empezar','1_fundamentos','2_aplicacion','3_empleabilidad','4_proyecto'
@@ -411,47 +444,26 @@ create table if not exists public.fp_competencies (
   bloque                   text,
   modulo_codigo            text,
   modulo_nombre            text,
-  titulo                   text not null,
-  descripcion              text,
   nivel_objetivo           smallint,
   obligatoria_roadmap_base boolean not null default true,
   basico_antes_de_empezar  boolean not null default false,
-  horas_estimadas          integer,
-  criterios_superacion     text,
-  evidencia_minima         text,
-  umbral_superacion        text,
-  aplicable_a              text,
-  fuente_titulo_url        text,
-  fuente_curriculo_url     text,
-  tipo_criterio            text,
-  ultima_revision          date,
+  prerrequisito_texto      text,
   created_at               timestamptz not null default now(),
-  updated_at               timestamptz not null default now()
-);
-
-create table if not exists public.fp_competency_relations (
-  competencia_origen_id  text not null references public.fp_competencies(id) on delete cascade,
-  competencia_destino_id text not null references public.fp_competencies(id) on delete cascade,
-  cycle_code             text not null references public.fp_cycles(code),
-  tipo_relacion          text not null default 'prerrequisito',
-  obligatoria            boolean not null default true,
-  motivo                 text,
-  created_at             timestamptz not null default now(),
-  updated_at             timestamptz not null default now(),
-  primary key (competencia_origen_id, competencia_destino_id)
+  updated_at               timestamptz not null default now(),
+  primary key (cycle_code, skill_id)
 );
 
 create table if not exists public.fp_item_competencies (
   content_item_id          uuid not null references public.fp_content_items(id) on delete cascade,
-  competencia_id           text not null references public.fp_competencies(id) on delete cascade,
-  tipo_relacion            text not null check (tipo_relacion in ('requiere','desarrolla','apoya','demuestra')),
+  skill_id                 text not null references public.fp_skills(id) on delete cascade,
+  tipo_relacion            text not null check (tipo_relacion in ('requiere','ensena','demuestra')),
   orden_preparacion        integer,
   nivel_minimo_recomendado smallint,
   obligatoria_para_item    boolean not null default false,
   motivo_relacion          text,
   created_at               timestamptz not null default now(),
   updated_at               timestamptz not null default now(),
-  primary key (content_item_id, competencia_id, tipo_relacion)
+  primary key (content_item_id, skill_id, tipo_relacion)
 );
 
 -- Timestamped notes a user takes while watching a resource's video inside
@@ -552,9 +564,8 @@ create index if not exists fp_content_items_source_year_idx on public.fp_content
 create index if not exists fp_content_cycle_fit_cycle_idx   on public.fp_content_cycle_fit(cycle_group, cycle_code, priority, fit_score);
 create index if not exists fp_content_cycle_fit_year_idx    on public.fp_content_cycle_fit(audience_year);
 create index if not exists fp_user_content_state_user_idx   on public.fp_user_content_state(user_id, status, is_favorite);
-create index if not exists fp_competencies_cycle_idx        on public.fp_competencies(cycle_code, etapa, orden_global);
-create index if not exists fp_competency_relations_dest_idx on public.fp_competency_relations(competencia_destino_id);
-create index if not exists fp_item_competencies_comp_idx    on public.fp_item_competencies(competencia_id, tipo_relacion);
+create index if not exists fp_cycle_skills_cycle_idx        on public.fp_cycle_skills(cycle_code, etapa, orden_global);
+create index if not exists fp_item_competencies_skill_idx   on public.fp_item_competencies(skill_id, tipo_relacion);
 create index if not exists fp_resource_notes_user_item_idx  on public.fp_resource_notes(user_id, content_item_id, timestamp_seconds);
 create index if not exists tasks_user_due_idx               on public.tasks(user_id, due_date, status);
 create index if not exists bloc_notes_user_idx              on public.bloc_notes(user_id, deleted_at, updated_at);
@@ -570,7 +581,7 @@ begin
     'users','profiles','sources','quick_searches','opportunities',
     'hackathons','courses','tasks','bloc_notes','reminders','quick_links',
     'fp_cycles','fp_content_items','fp_content_cycle_fit','fp_user_content_state',
-    'fp_competencies','fp_competency_relations','fp_item_competencies','fp_resource_notes'
+    'fp_skills','fp_cycle_skills','fp_item_competencies','fp_resource_notes'
   ]
   loop
     execute format(
