@@ -14,6 +14,7 @@ const WRITABLE_TABLES = new Set<string>([
   "profiles",
   "sources",
   "quick_searches",
+  "bloc_notes",
 ]);
 
 function assertTable(table: string): void {
