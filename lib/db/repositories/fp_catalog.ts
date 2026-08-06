@@ -3,6 +3,7 @@ import { query } from "@/lib/db/pool";
 import type {
   DbFpContentItem,
   DbFpCycle,
+  DbFpCycleSkill,
   DbFpSkill,
   DbFpUserContentState,
   DbProfile,
@@ -88,6 +89,25 @@ export async function getFpContentForProfile(
     values
   );
 
+  return res.rows;
+}
+
+// Todas las habilidades de un ciclo, ordenadas por su posicion en el
+// itinerario completo (no solo las exigidas por un hackathon concreto).
+// Es la base tanto del Roadmap como de la ruta de un hackathon.
+export type CycleSkill = DbFpSkill & Omit<DbFpCycleSkill, "skill_id" | "created_at" | "updated_at">;
+
+export async function getCycleSkills(cycleCode: FpCycleCode): Promise<CycleSkill[]> {
+  const res = await query<CycleSkill>(
+    `SELECT skill.*, cs.cycle_code, cs.orden_global, cs.etapa, cs.bloque, cs.modulo_codigo,
+            cs.modulo_nombre, cs.nivel_objetivo, cs.obligatoria_roadmap_base,
+            cs.basico_antes_de_empezar, cs.prerrequisito_texto
+     FROM public.fp_cycle_skills cs
+     INNER JOIN public.fp_skills skill ON skill.id = cs.skill_id
+     WHERE cs.cycle_code = $1
+     ORDER BY cs.orden_global ASC`,
+    [cycleCode]
+  );
   return res.rows;
 }
 

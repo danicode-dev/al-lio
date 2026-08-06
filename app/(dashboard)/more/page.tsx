@@ -9,6 +9,7 @@ import {
   FolderKanban,
   CalendarDays,
   Link as LinkIcon,
+  Route,
   Settings,
   Compass,
   UserCircle,
@@ -23,6 +24,14 @@ const SECTIONS = [
     cardBg: "bg-blue-50 dark:bg-blue-950/40",
     iconBg: "bg-blue-100 dark:bg-blue-900/50",
     iconColor: "text-blue-500",
+  },
+  {
+    href: "/roadmap",
+    label: "Roadmap",
+    Icon: Route,
+    cardBg: "bg-cyan-50 dark:bg-cyan-950/40",
+    iconBg: "bg-cyan-100 dark:bg-cyan-900/50",
+    iconColor: "text-cyan-500",
   },
   {
     href: "/tasks",
