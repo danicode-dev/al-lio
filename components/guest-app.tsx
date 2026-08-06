@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import React, { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlarmClock,
   Bell,
+  Bookmark,
+  BookOpen,
   Briefcase,
   Building2,
   CalendarDays,
@@ -29,7 +31,9 @@ import {
   SlidersHorizontal,
   Target,
   Trash2,
+  Trophy,
   X,
+  Youtube,
 } from "lucide-react";
 import { DndContext, useDraggable, useDroppable, MouseSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
@@ -44,6 +48,7 @@ import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplin
 import { insertDb, updateDb, deleteDb } from "@/lib/db";
 import { toast } from "sonner";
 import { TechOpportunitiesSection, type TechOpportunityTaskTarget } from "@/components/tech-opportunities-section";
+import { toggleFavoriteAction, markResourceStatusAction } from "@/lib/fp/resource-notes-actions";
 import { BlocNotepad } from "@/components/bloc-notepad";
 import type { TechOpportunity } from "@/lib/tech-opportunity-types";
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
@@ -144,6 +149,7 @@ type RequiredCompetencyLearningItem = {
   source_url: string;
   video_url: string | null;
   tipo_relacion: string;
+  user_status?: string | null;
 };
 
 type RequiredCompetency = {
@@ -181,6 +187,9 @@ type FpCatalogItem = {
   notes?: string;
   priority: "Alta" | "Media" | "Baja";
   requiredCompetencies?: RequiredCompetency[];
+  is_favorite?: boolean;
+  user_status?: string | null;
+  user_completed_at?: string | null;
   created_at: string;
 };
 
@@ -211,6 +220,7 @@ type Hackathon = {
   notes?: string;
   sourceTable?: "hackathons" | "tech_opportunities" | "fp_content_items";
   requiredCompetencies?: RequiredCompetency[];
+  is_favorite?: boolean;
   created_at: string;
 };
 
@@ -434,6 +444,8 @@ export type ReturnTypeActions = {
   addCompany: (data: Omit<Company, "id" | "created_at" | "link_status"> & { link_status?: Company["link_status"] }) => void;
   updateCompany: (id: string, data: Partial<Company>) => void;
   addLink: (data: Omit<QuickLink, "id" | "created_at">) => void;
+  toggleFpFavorite: (idSlug: string, nextValue: boolean) => void;
+  markLearningItemDone: (idSlug: string) => void;
   reset: () => void;
 };
 
@@ -594,6 +606,39 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       } catch {
         toast.error("Error al guardar el enlace");
       }
+    },
+    toggleFpFavorite: (idSlug: string, nextValue: boolean) => {
+      setStore((current) => ({
+        ...current,
+        fpContent: current.fpContent.map((item) => (item.id_slug === idSlug ? { ...item, is_favorite: nextValue } : item)),
+      }));
+      toggleFavoriteAction(idSlug, nextValue).then((result) => {
+        if (result.error) {
+          setStore((current) => ({
+            ...current,
+            fpContent: current.fpContent.map((item) => (item.id_slug === idSlug ? { ...item, is_favorite: !nextValue } : item)),
+          }));
+          toast.error("No se pudo guardar");
+        }
+      });
+    },
+    markLearningItemDone: (idSlug: string) => {
+      const patchLearningItems = (fpContent: FpCatalogItem[], status: string | null) => fpContent.map((item) => ({
+        ...item,
+        requiredCompetencies: item.requiredCompetencies?.map((competency) => ({
+          ...competency,
+          learningItems: competency.learningItems.map((learningItem) =>
+            learningItem.id_slug === idSlug ? { ...learningItem, user_status: status } : learningItem
+          ),
+        })),
+      }));
+      setStore((current) => ({ ...current, fpContent: patchLearningItems(current.fpContent, "completed") }));
+      markResourceStatusAction(idSlug, "completed").then((result) => {
+        if (result.error) {
+          setStore((current) => ({ ...current, fpContent: patchLearningItems(current.fpContent, null) }));
+          toast.error("No se pudo guardar");
+        }
+      });
     },
     reset: () => setStore({ ...emptyStore, hackathons: seedHackathons }),
   };
@@ -812,7 +857,6 @@ function NotificationBell({ store, actions }: { store: Store; actions: ReturnTyp
 }
 
 export function GuestApp({ view }: { view: View }) {
-  const router = useRouter();
   const { store, actions } = useStore();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
 
@@ -821,9 +865,6 @@ export function GuestApp({ view }: { view: View }) {
       {view !== "dashboard" && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => router.back()} aria-label="Volver atrás" className="h-10 w-10 shrink-0 rounded-full">
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
             <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
               {({
                 work: "Trabajo",
@@ -2989,16 +3030,16 @@ function Tasks({ store, actions }: { store: Store; actions: ReturnTypeActions })
 
 
 function courseStatusClass(status: string) {
-  if (status === "empezado") return "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300";
+  if (status === "empezado") return "al-course-chip-terracotta";
   if (status === "terminado") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
-  if (status === "pausado") return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  if (status === "pausado") return "al-course-chip-amber";
   if (status === "descartado") return "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300";
   return "";
 }
 
 function hackathonStatusClass(status: string) {
   if (status === "inscripcion_abierta") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
-  if (status === "realizado") return "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300";
+  if (status === "realizado") return "border-slate-400/30 bg-slate-400/10 text-slate-600 dark:text-slate-300";
   if (status === "descartado") return "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300";
   if (status === "revisar_futura_edicion") return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
   return "";
@@ -3066,21 +3107,21 @@ function FilterCalendar({
               className={cn(
                 "relative flex flex-col items-center py-0.5 text-[11px] leading-5 transition-colors",
                 !cell.inMonth && "text-muted-foreground/40",
-                isSelected && "rounded bg-primary text-primary-foreground",
-                isToday && !isSelected && "font-bold text-primary",
+                isSelected && "al-filter-day-selected rounded",
+                isToday && !isSelected && "al-filter-day-today font-bold",
                 !isSelected && cell.inMonth && "cursor-pointer rounded hover:bg-muted",
               )}
             >
               {cell.date.getDate()}
               {hasItem && !isSelected && (
-                <span className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary/60" />
+                <span className="al-filter-dot absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full" />
               )}
             </button>
           );
         })}
       </div>
       <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-        <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary/60" />
+        <span className="al-filter-dot inline-block h-1.5 w-1.5 rounded-full" />
         con cursos
       </div>
     </div>
@@ -3107,10 +3148,10 @@ function MonthChips({
         onClick={() => onSelect("")}
         className={cn(
           "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors hover:bg-muted",
-          !monthFilter && "border-primary bg-primary text-primary-foreground"
+          !monthFilter && "border-transparent bg-[linear-gradient(180deg,#F06A37_0%,#E15D2D_100%)] text-white"
         )}
       >
-        TODOS <span className={cn("font-normal", !monthFilter && "text-primary-foreground/70")}>{totalCount}</span>
+        TODOS <span className={cn("font-normal", !monthFilter && "text-white/70")}>{totalCount}</span>
       </button>
       {Array.from(monthGroups.entries()).map(([month, count]) => {
         const [y, m] = month.split("-");
@@ -3125,26 +3166,13 @@ function MonthChips({
             onClick={() => onSelect(isSelected ? "" : month)}
             className={cn(
               "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors hover:bg-muted",
-              isSelected && "border-primary bg-primary text-primary-foreground"
+              isSelected && "border-transparent bg-[linear-gradient(180deg,#F06A37_0%,#E15D2D_100%)] text-white"
             )}
           >
-            {label} <span className={cn("font-normal", isSelected && "text-primary-foreground/70")}>{count}</span>
+            {label} <span className={cn("font-normal", isSelected && "text-white/70")}>{count}</span>
           </button>
         );
       })}
-    </div>
-  );
-}
-
-function KpiRow({ items }: { items: [string, number, string][] }) {
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {items.map(([label, value, cls]) => (
-        <Card key={label} className="p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
-          <p className={cn("mt-1 text-2xl font-bold leading-none tabular-nums", cls)}>{value}</p>
-        </Card>
-      ))}
     </div>
   );
 }
@@ -3153,7 +3181,19 @@ function ViewToggle({ value, onChange }: { value: "grid" | "lista"; onChange: (v
   return (
     <div className="flex shrink-0 items-center rounded-md border bg-card p-0.5 gap-0.5">
       {(["grid", "lista"] as const).map((v) => (
-        <Button key={v} type="button" size="sm" variant={value === v ? "default" : "ghost"} className="h-6 px-2 text-[11px]" onClick={() => onChange(v)}>
+        <Button
+          key={v}
+          type="button"
+          size="sm"
+          variant="ghost"
+          className={cn(
+            "h-6 px-2 text-[11px]",
+            value === v
+              ? "bg-[linear-gradient(180deg,#F06A37_0%,#E15D2D_100%)] text-white hover:bg-[linear-gradient(180deg,#F06A37_0%,#E15D2D_100%)]"
+              : "text-[#333029]"
+          )}
+          onClick={() => onChange(v)}
+        >
           {v === "grid" ? "Grid" : "Lista"}
         </Button>
       ))}
@@ -3173,24 +3213,42 @@ function FilterPanel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="w-full shrink-0 space-y-5 lg:w-60">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold">{title}</span>
-        {activeCount > 0 && (
-          <button type="button" onClick={onClear} className="text-xs text-muted-foreground hover:text-foreground">
-            Limpiar
-          </button>
-        )}
+    <div className="w-full shrink-0 lg:w-64">
+      <style>{`
+        .al-filter-panel { background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+        .al-filter-head { display: flex; align-items: center; justify-content: space-between; }
+        .al-filter-title { font-size: 13px; font-weight: 700; color: #111111; }
+        .al-filter-clear { font-size: 11.5px; font-weight: 600; color: #9a958a; }
+        .al-filter-clear:hover { color: #c94f21; }
+        .al-filter-section { padding-top: 14px; border-top: 1px solid #f0ece2; }
+        .al-filter-section:first-child { padding-top: 0; border-top: none; }
+        .al-filter-section-label { margin-bottom: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9a958a; }
+        .al-filter-chip { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 999px; border: 1px solid #ece7dc; background: white; color: #333029; padding: 3px 10px; font-size: 11.5px; font-weight: 600; transition: border-color 0.15s, color 0.15s; }
+        .al-filter-chip:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+        .al-filter-chip-active, .al-filter-chip-active:hover { border-color: transparent; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; }
+        .al-filter-day-selected, .al-filter-day-selected:hover { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; }
+        .al-filter-day-today { color: #c94f21; }
+        .al-filter-dot { background: #E15D2D; }
+      `}</style>
+      <div className="al-filter-panel">
+        <div className="al-filter-head">
+          <span className="al-filter-title">{title}</span>
+          {activeCount > 0 && (
+            <button type="button" onClick={onClear} className="al-filter-clear">
+              Limpiar
+            </button>
+          )}
+        </div>
+        {children}
       </div>
-      {children}
     </div>
   );
 }
 
 function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+    <div className="al-filter-section">
+      <p className="al-filter-section-label">{label}</p>
       {children}
     </div>
   );
@@ -3206,17 +3264,14 @@ function FilterChips({ options, value, onChange }: { options: [string, string][]
     );
   }
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex flex-wrap gap-1.5">
       {options.map(([v, l]) => (
         <button
           key={v}
           type="button"
           title={l}
           onClick={() => onChange(value === v && v !== "" ? "" : v)}
-          className={cn(
-            "max-w-[130px] truncate rounded-full border px-2.5 py-0.5 text-xs transition-colors hover:bg-muted",
-            value === v && "border-primary bg-primary text-primary-foreground"
-          )}
+          className={cn("al-filter-chip", value === v && "al-filter-chip-active")}
         >
           {l}
         </button>
@@ -3323,134 +3378,191 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-48 flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar título, entidad, tag..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9 text-sm" />
-        </div>
-        <div className="flex items-center gap-0.5 rounded-md border bg-card p-0.5">
-          {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
-            <Button key={id} type="button" size="sm" variant={viewTab === id ? "default" : "ghost"} className="h-7 px-3 text-xs" onClick={() => { setViewTab(id); clearAll(); }}>
-              {label}
-            </Button>
-          ))}
-        </div>
-        <Button type="button" size="sm" variant={showFilters ? "default" : "outline"} className="gap-1.5" onClick={() => setShowFilters((v) => !v)}>
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
-        </Button>
-      </div>
-
-      <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
-
-      <div className="flex flex-col gap-5 lg:flex-row">
-        <div className="min-w-0 flex-1 space-y-4">
-          <KpiRow items={[
-            ["Total", tabBase.length, ""],
-            ["Empezados", kpiEmpezados, "text-blue-600 dark:text-blue-400"],
-            ["Pendientes", kpiPendientes, "text-amber-600 dark:text-amber-400"],
-            ["Próx. inicio", kpiProx, "text-emerald-600 dark:text-emerald-400"],
-          ]} />
-
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground">
-              Mostrando {filtered.length} {filtered.length === 1 ? "curso" : "cursos"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
-            </p>
-            <ViewToggle value={viewMode} onChange={setViewMode} />
+    <>
+      <style>{`
+        .al-course-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+        .al-course-search { position: relative; flex: 1; min-width: 220px; }
+        .al-course-search input { padding-left: 36px; height: 40px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 13px; }
+        .al-course-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #9a958a; }
+        .al-course-tabs { display: flex; align-items: center; gap: 2px; border-radius: 12px; border: 1px solid #ece7dc; background: white; padding: 3px; }
+        .al-course-tab { height: 32px; padding: 0 12px; border-radius: 9px; font-size: 12.5px; font-weight: 600; color: #6b6f72; background: transparent; border: none; cursor: pointer; transition: background 0.15s, color 0.15s; }
+        .al-course-tab.al-course-tab-active { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; box-shadow: 0 6px 14px rgba(225, 93, 45, 0.25); }
+        .al-course-filter-btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 12.5px; font-weight: 600; color: #333029; cursor: pointer; }
+        .al-course-filter-btn.al-course-filter-btn-active { background: #fbe7dd; border-color: rgba(225, 93, 45, 0.3); color: #c94f21; }
+        .al-course-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        @media (min-width: 640px) { .al-course-stats { grid-template-columns: repeat(4, 1fr); } }
+        .al-course-stat-card { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid #ece7dc; border-radius: 18px; padding: 14px 16px; box-shadow: 0 8px 20px rgba(17, 17, 17, 0.04); }
+        .al-course-stat-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
+        .al-course-stat-value { font-size: 22px; font-weight: 800; line-height: 1; color: #111111; }
+        .al-course-stat-label { font-size: 11px; font-weight: 600; color: #6b6f72; margin-top: 3px; }
+        .al-course-chip-terracotta { border-color: rgba(225, 93, 45, 0.3) !important; background: #fbe7dd !important; color: #c94f21 !important; }
+        .al-course-chip-amber { border-color: rgba(180, 121, 31, 0.3) !important; background: #fdf1dd !important; color: #8a5c14 !important; }
+        .al-course-chip-green { border-color: rgba(31, 122, 77, 0.3) !important; background: #e7f5ee !important; color: #1f7a4d !important; }
+        .al-course-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .al-course-count-text { font-size: 12px; color: #6b6f72; }
+        .al-course-grid { display: grid; gap: 12px; }
+        .al-course-grid-2 { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+        .al-course-card { position: relative; display: flex; flex-direction: column; gap: 8px; background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 13px; }
+        .al-course-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+        .al-course-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; }
+        .al-course-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; }
+        .al-course-card-meta { font-size: 11px; color: #6b6f72; }
+        .al-course-card-desc { font-size: 11.5px; color: #4b4740; line-height: 1.4; }
+        .al-course-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
+        .al-course-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
+        .al-course-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+        .al-course-empty { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .al-course-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
+        .al-course-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
+        .al-course-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
+        .al-course-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; }
+      `}</style>
+      <div className="space-y-4">
+        <div className="al-course-toolbar">
+          <div className="al-course-search">
+            <Search />
+            <Input placeholder="Buscar título, entidad, tag..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           </div>
+          <div className="al-course-tabs">
+            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
+              <button key={id} type="button" className={cn("al-course-tab", viewTab === id && "al-course-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className={cn("al-course-filter-btn", showFilters && "al-course-filter-btn-active")} onClick={() => setShowFilters((v) => !v)}>
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
+          </button>
+        </div>
 
-          <div className={cn(viewMode === "grid" ? "grid gap-4 sm:grid-cols-2" : "space-y-3")}>
-            {filtered.length ? filtered.map((item) => {
-              const tags = splitTags(item.tags);
-              const startDate = item.fecha_inicio || item.start_at;
-              const endDate = item.fecha_fin || item.deadline_at;
-              const place = [item.localidad, item.provincia].filter(Boolean).join(" / ");
-              const url = item.fuente_url || item.url;
-              return (
-                <Card key={item.id} className="flex flex-col gap-3 p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-semibold leading-snug">{item.title}</p>
-                      {(item.entidad || item.platform) && <p className="mt-0.5 text-xs text-muted-foreground">{item.entidad || item.platform}</p>}
+        <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
+
+        <div className="flex flex-col gap-5 lg:flex-row">
+          <div className="min-w-0 flex-1 space-y-4">
+            <div className="al-course-stats">
+              <div className="al-course-stat-card">
+                <span className="al-course-stat-icon" style={{ background: "#fbe7dd", color: "#E15D2D" }}><BookOpen className="h-4.5 w-4.5" /></span>
+                <div><p className="al-course-stat-value">{tabBase.length}</p><p className="al-course-stat-label">Total</p></div>
+              </div>
+              <div className="al-course-stat-card">
+                <span className="al-course-stat-icon" style={{ background: "#e7f5ee", color: "#1f7a4d" }}><CheckCircle2 className="h-4.5 w-4.5" /></span>
+                <div><p className="al-course-stat-value">{kpiEmpezados}</p><p className="al-course-stat-label">Empezados</p></div>
+              </div>
+              <div className="al-course-stat-card">
+                <span className="al-course-stat-icon" style={{ background: "#fdf1dd", color: "#b4791f" }}><Clock className="h-4.5 w-4.5" /></span>
+                <div><p className="al-course-stat-value">{kpiPendientes}</p><p className="al-course-stat-label">Pendientes</p></div>
+              </div>
+              <div className="al-course-stat-card">
+                <span className="al-course-stat-icon" style={{ background: "#f3ece1", color: "#6b6f72" }}><AlarmClock className="h-4.5 w-4.5" /></span>
+                <div><p className="al-course-stat-value">{kpiProx}</p><p className="al-course-stat-label">Próx. inicio</p></div>
+              </div>
+            </div>
+
+            <div className="al-course-count-row">
+              <p className="al-course-count-text">
+                Mostrando {filtered.length} {filtered.length === 1 ? "curso" : "cursos"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
+              </p>
+              <ViewToggle value={viewMode} onChange={setViewMode} />
+            </div>
+
+            {filtered.length ? (
+              <div className={cn("al-course-grid", viewMode === "grid" ? "al-course-grid-2" : "")}>
+                {filtered.map((item) => {
+                  const startDate = item.fecha_inicio || item.start_at;
+                  const endDate = item.fecha_fin || item.deadline_at;
+                  const place = [item.localidad, item.provincia].filter(Boolean).join(" / ");
+                  const url = item.fuente_url || item.url;
+                  return (
+                    <div key={item.id} className="al-course-card">
+                      <div className="al-course-card-top">
+                        <div className="min-w-0">
+                          <p className="al-course-card-title">{item.title}</p>
+                          {(item.entidad || item.platform) && <p className="al-course-card-org">{item.entidad || item.platform}</p>}
+                        </div>
+                        <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
+                      </div>
+                      {(startDate || endDate) && (
+                        <p className="al-course-card-meta">
+                          {startDate ? formatDateLabel(startDate) : "—"}{endDate ? ` → ${formatDateLabel(endDate)}` : ""}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-1.5">
+                        {place && <ChipTag icon="pin">{place}</ChipTag>}
+                        {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
+                        {item.prioridad && <ChipTag className={coursePriorityClass(item.prioridad)}>{priorityText(item.prioridad)}</ChipTag>}
+                      </div>
+                      {item.requisitos_resumen && <p className="al-course-card-desc line-clamp-1">{item.requisitos_resumen}</p>}
+                      <div className="al-course-card-actions">
+                        {url && <a href={url} target="_blank" rel="noreferrer" className="al-course-btn"><ExternalLink className="h-3.5 w-3.5" />Abrir</a>}
+                        {!isCourseArchived(item) && (
+                          <button type="button" className="al-course-btn" onClick={() => completeCourseItem(item, actions)}>
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Terminado
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
-                  </div>
-                  {(startDate || endDate) && (
-                    <p className="text-xs text-muted-foreground">
-                      {startDate ? formatDateLabel(startDate) : "—"}{endDate ? ` → ${formatDateLabel(endDate)}` : ""}
-                    </p>
-                  )}
-                  <div className="flex flex-wrap gap-1.5">
-                    {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
-                    {place && <ChipTag icon="pin">{place}</ChipTag>}
-                    {item.horas_totales ? <ChipTag>{item.horas_totales}h</ChipTag> : null}
-                    {item.prioridad && <ChipTag className={genericPriorityClass(item.prioridad)}>{priorityText(item.prioridad)}</ChipTag>}
-                    {item.coste ? <ChipTag>{item.coste}</ChipTag> : null}
-                    {item.encaje_daw_1_5 ? <ChipTag>DAW {item.encaje_daw_1_5}/5</ChipTag> : null}
-                    {item.certificacion_tipo && <ChipTag>{item.certificacion_tipo}</ChipTag>}
-                    {item.practicas_empresa === true && <ChipTag>Prácticas</ChipTag>}
-                    {tags.map((tag) => <ChipTag key={tag}>{tag}</ChipTag>)}
-                  </div>
-                  {item.requisitos_resumen && <p className="text-xs italic text-muted-foreground line-clamp-2">{item.requisitos_resumen}</p>}
-                  <div className="mt-auto flex flex-wrap gap-1.5">
-                    {url && <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs"><a href={url} target="_blank" rel="noreferrer">Abrir</a></Button>}
-                    {!isCourseArchived(item) && (
-                      <Button type="button" size="sm" variant="outline" className="h-7 px-2.5 text-xs" onClick={() => completeCourseItem(item, actions)}>
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        Terminado
-                      </Button>
-                    )}
-                  </div>
-                </Card>
-              );
-            }) : (
-              <div className={cn(viewMode === "grid" && "sm:col-span-2")}>
-                <EmptyText>{search || activeFilterCount > 0 ? "No hay cursos con estos filtros." : "No hay cursos en esta vista."}</EmptyText>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="al-course-empty">
+                <span className="al-course-empty-icon"><BookOpen className="h-6 w-6" /></span>
+                <p className="al-course-empty-title">Sin resultados</p>
+                <p className="al-course-empty-desc">{search || activeFilterCount > 0 ? "Ningún curso coincide con tu búsqueda o filtros." : "No hay cursos en esta vista todavía."}</p>
+                {(search || activeFilterCount > 0) && <button type="button" className="al-course-empty-btn" onClick={clearAll}>Quitar filtros</button>}
               </div>
             )}
           </div>
-        </div>
 
-        {showFilters && (
-          <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
-            <FilterSection label="Calendario">
-              <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
-            </FilterSection>
-            <FilterSection label="Estado">
-              <FilterChips
-                options={[["", "Todos"], ["pendiente", "Pendiente"], ["empezado", "Activo"], ["pausado", "Pausado"]]}
-                value={estadoFilter}
-                onChange={setEstadoFilter}
-              />
-            </FilterSection>
-            {modalidades.length > 0 && (
-              <FilterSection label="Modalidad">
+          {showFilters && (
+            <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
+              <FilterSection label="Calendario">
+                <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
+              </FilterSection>
+              <FilterSection label="Estado">
                 <FilterChips
-                  options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
-                  value={modalidadFilter}
-                  onChange={setModalidadFilter}
+                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["empezado", "Activo"], ["pausado", "Pausado"]]}
+                  value={estadoFilter}
+                  onChange={setEstadoFilter}
                 />
               </FilterSection>
-            )}
-            <FilterSection label="Prioridad">
-              <FilterChips
-                options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
-                value={prioridadFilter}
-                onChange={setPrioridadFilter}
-              />
-            </FilterSection>
-            <FilterSection label="Solo">
-              <label className="flex cursor-pointer items-center gap-2 text-xs">
-                <input type="checkbox" checked={soloGratuitos} onChange={(e) => setSoloGratuitos(e.target.checked)} className="rounded" />
-                Gratuitos
-              </label>
-            </FilterSection>
-          </FilterPanel>
-        )}
+              {modalidades.length > 0 && (
+                <FilterSection label="Modalidad">
+                  <FilterChips
+                    options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
+                    value={modalidadFilter}
+                    onChange={setModalidadFilter}
+                  />
+                </FilterSection>
+              )}
+              <FilterSection label="Prioridad">
+                <FilterChips
+                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
+                  value={prioridadFilter}
+                  onChange={setPrioridadFilter}
+                />
+              </FilterSection>
+              <FilterSection label="Solo">
+                <label className="flex cursor-pointer items-center gap-2 text-xs">
+                  <input type="checkbox" checked={soloGratuitos} onChange={(e) => setSoloGratuitos(e.target.checked)} className="rounded" />
+                  Gratuitos
+                </label>
+              </FilterSection>
+            </FilterPanel>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
+}
+
+function coursePriorityClass(value?: string): string {
+  const priority = normalizePriorityText(value);
+  if (priority.includes("alta")) return "al-course-chip-terracotta";
+  if (priority.includes("baja")) return "al-course-chip-green";
+  return "al-course-chip-amber";
 }
 
 function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
@@ -3554,231 +3666,474 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setProvinciaFilter(""); setModalidadFilter(""); setPrioridadFilter(""); setSoloInscripcionAbierta(false); setSearchInput(""); setSearch("");
   }
 
+  const featuredHackathon = useMemo(() => {
+    const open = activos.filter((h) => h.status === "inscripcion_abierta");
+    const pool = open.length > 0 ? open : activos;
+    if (pool.length === 0) return null;
+    return [...pool].sort((a, b) => (a.start_at || "9999-99-99").localeCompare(b.start_at || "9999-99-99"))[0];
+  }, [activos]);
+  const featuredProgress = featuredHackathon ? hackathonAptitudeProgress(featuredHackathon) : null;
+  const featuredHasRuta = featuredHackathon ? !!(featuredHackathon.id_slug && hackathonHasRutaVideo(featuredHackathon)) : false;
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-48 flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar nombre, organizador, tag..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="pl-9 text-sm" />
-        </div>
-        <div className="flex items-center gap-0.5 rounded-md border bg-card p-0.5">
-          {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
-            <Button key={id} type="button" size="sm" variant={viewTab === id ? "default" : "ghost"} className="h-7 px-3 text-xs" onClick={() => { setViewTab(id); clearAll(); }}>
-              {label}
-            </Button>
-          ))}
-        </div>
-        <Button type="button" size="sm" variant={showFilters ? "default" : "outline"} className="gap-1.5" onClick={() => setShowFilters((v) => !v)}>
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
-        </Button>
-      </div>
-
-      <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
-
-      <div className="flex flex-col gap-5 lg:flex-row">
-        <div className="min-w-0 flex-1 space-y-4">
-          <KpiRow items={[
-            ["Total", tabBase.length, ""],
-            ["Inscripción abierta", kpiAbiertos, "text-emerald-600 dark:text-emerald-400"],
-            ["Pendientes", kpiPendientes, "text-amber-600 dark:text-amber-400"],
-            ["Próx. inicio", kpiProx, "text-blue-600 dark:text-blue-400"],
-          ]} />
-
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground">
-              Mostrando {filtered.length} {filtered.length === 1 ? "hackathon" : "hackathons"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
-            </p>
-            <ViewToggle value={viewMode} onChange={setViewMode} />
+    <>
+      <style>{`
+        .al-hack-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+        .al-hack-search { position: relative; flex: 1; min-width: 220px; }
+        .al-hack-search input { padding-left: 36px; height: 40px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 13px; }
+        .al-hack-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #9a958a; }
+        .al-hack-tabs { display: flex; align-items: center; gap: 2px; border-radius: 12px; border: 1px solid #ece7dc; background: white; padding: 3px; }
+        .al-hack-tab { height: 32px; padding: 0 12px; border-radius: 9px; font-size: 12.5px; font-weight: 600; color: #6b6f72; background: transparent; border: none; cursor: pointer; transition: background 0.15s, color 0.15s; }
+        .al-hack-tab.al-hack-tab-active { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; box-shadow: 0 6px 14px rgba(225, 93, 45, 0.25); }
+        .al-hack-filter-btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 12.5px; font-weight: 600; color: #333029; cursor: pointer; }
+        .al-hack-filter-btn.al-hack-filter-btn-active { background: #fbe7dd; border-color: rgba(225, 93, 45, 0.3); color: #c94f21; }
+        .al-hack-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        @media (min-width: 640px) { .al-hack-stats { grid-template-columns: repeat(4, 1fr); } }
+        .al-hack-stat-card { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid #ece7dc; border-radius: 18px; padding: 14px 16px; box-shadow: 0 8px 20px rgba(17, 17, 17, 0.04); }
+        .al-hack-stat-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
+        .al-hack-stat-value { font-size: 22px; font-weight: 800; line-height: 1; color: #111111; }
+        .al-hack-stat-label { font-size: 11px; font-weight: 600; color: #6b6f72; margin-top: 3px; }
+        .al-hack-chip-terracotta { border-color: rgba(225, 93, 45, 0.3) !important; background: #fbe7dd !important; color: #c94f21 !important; }
+        .al-hack-chip-amber { border-color: rgba(180, 121, 31, 0.3) !important; background: #fdf1dd !important; color: #8a5c14 !important; }
+        .al-hack-chip-green { border-color: rgba(31, 122, 77, 0.3) !important; background: #e7f5ee !important; color: #1f7a4d !important; }
+        .al-hack-hero { position: relative; overflow: hidden; border-radius: 22px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); color: #111111; padding: clamp(18px, 3vw, 26px); display: flex; flex-direction: column; gap: 18px; }
+        @media (min-width: 900px) { .al-hack-hero { flex-direction: row; align-items: stretch; } }
+        .al-hack-hero-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+        .al-hack-hero-kicker { display: inline-flex; align-items: center; gap: 6px; width: fit-content; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #c94f21; }
+        .al-hack-hero-kicker-dot { width: 6px; height: 6px; border-radius: 999px; background: #4C9A6E; box-shadow: 0 0 0 3px rgba(76, 154, 110, 0.25); }
+        .al-hack-hero-title { font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; color: #111111; }
+        .al-hack-hero-org { font-size: 12.5px; color: #6b6f72; }
+        .al-hack-hero-meta { font-size: 12.5px; color: #4b4740; }
+        .al-hack-hero-desc { font-size: 13px; color: #4b4740; line-height: 1.5; max-width: 56ch; }
+        .al-hack-hero-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+        .al-hack-hero-btn-primary { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 16px; border-radius: 12px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 13px; font-weight: 700; box-shadow: 0 10px 24px rgba(225, 93, 45, 0.28); border: none; cursor: pointer; }
+        .al-hack-hero-btn-ghost { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-radius: 12px; background: white; color: #333029; font-size: 13px; font-weight: 600; border: 1px solid #ece7dc; cursor: pointer; }
+        .al-hack-hero-side { width: 100%; background: #faf8f4; border: 1px solid #ece7dc; border-radius: 16px; padding: 16px; }
+        @media (min-width: 900px) { .al-hack-hero-side { width: 220px; flex-shrink: 0; } }
+        .al-hack-hero-side-label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: #6b6f72; text-transform: uppercase; letter-spacing: 0.05em; }
+        .al-hack-hero-side-value { font-size: 12.5px; font-weight: 700; color: #c94f21; }
+        .al-hack-hero-progress-bar { margin-top: 10px; height: 8px; border-radius: 999px; background: #f3ece1; overflow: hidden; }
+        .al-hack-hero-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #F06A37, #E15D2D); transition: width 0.3s ease; }
+        .al-hack-hero-side-hint { margin-top: 10px; font-size: 11.5px; color: #6b6f72; line-height: 1.4; }
+        .al-hack-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .al-hack-count-text { font-size: 12px; color: #6b6f72; }
+        .al-hack-grid { display: grid; gap: 12px; }
+        .al-hack-grid-2 { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+        .al-hack-card { position: relative; display: flex; flex-direction: column; gap: 8px; background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 13px; }
+        .al-hack-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+        .al-hack-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; }
+        .al-hack-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; }
+        .al-hack-bookmark { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .al-hack-bookmark.al-hack-bookmark-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
+        .al-hack-card-meta { font-size: 11px; color: #6b6f72; }
+        .al-hack-card-desc { font-size: 11.5px; color: #4b4740; line-height: 1.4; }
+        .al-hack-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
+        .al-hack-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; }
+        .al-hack-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+        .al-hack-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
+        .al-hack-empty-wrap { display: grid; gap: 14px; grid-template-columns: 1fr; }
+        @media (min-width: 640px) { .al-hack-empty-wrap.al-hack-empty-two { grid-template-columns: 1fr 1fr; } }
+        .al-hack-empty { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .al-hack-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
+        .al-hack-empty-illustration { width: 100%; max-width: 280px; height: auto; }
+        .al-hack-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
+        .al-hack-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
+        .al-hack-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; }
+      `}</style>
+      <div className="space-y-4">
+        <div className="al-hack-toolbar">
+          <div className="al-hack-search">
+            <Search />
+            <Input placeholder="Buscar nombre, organizador, tema, aptitud..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           </div>
+          <div className="al-hack-tabs">
+            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
+              <button key={id} type="button" className={cn("al-hack-tab", viewTab === id && "al-hack-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className={cn("al-hack-filter-btn", showFilters && "al-hack-filter-btn-active")} onClick={() => setShowFilters((v) => !v)}>
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
+          </button>
+        </div>
 
-          <div className={cn(viewMode === "grid" ? "grid gap-4 sm:grid-cols-2" : "space-y-3")}>
-            {filtered.length ? filtered.map((item) => {
-              const tags = splitTags(item.tags);
-              const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
-              const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
-              const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
-              const hasRuta = item.id_slug && hackathonHasRutaVideo(item);
-              return (
-                <Card key={item.id} className="flex flex-col gap-3 p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-semibold leading-snug">{item.name}</p>
-                      {item.organizer && <p className="mt-0.5 text-xs text-muted-foreground">{item.organizer}</p>}
-                    </div>
-                    <Badge className={cn("shrink-0", hackathonStatusClass(item.status))}>{hackathonStatusLabel(item.status)}</Badge>
-                  </div>
-                  {(item.start_at || item.end_at) && (
-                    <p className="text-xs text-muted-foreground">
-                      {item.start_at ? formatDateLabel(item.start_at) : "—"}{item.end_at ? ` → ${formatDateLabel(item.end_at)}` : ""}
-                      {inscripcionFin && <span className="ml-2 opacity-70">· Inscripción hasta {formatDateLabel(inscripcionFin)}</span>}
+        <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
+
+        <div className="flex flex-col gap-5 lg:flex-row">
+          <div className="min-w-0 flex-1 space-y-4">
+            <div className="al-hack-stats">
+              <div className="al-hack-stat-card">
+                <span className="al-hack-stat-icon" style={{ background: "#fbe7dd", color: "#E15D2D" }}><Trophy className="h-4.5 w-4.5" /></span>
+                <div><p className="al-hack-stat-value">{tabBase.length}</p><p className="al-hack-stat-label">Total</p></div>
+              </div>
+              <div className="al-hack-stat-card">
+                <span className="al-hack-stat-icon" style={{ background: "#e7f5ee", color: "#1f7a4d" }}><CheckCircle2 className="h-4.5 w-4.5" /></span>
+                <div><p className="al-hack-stat-value">{kpiAbiertos}</p><p className="al-hack-stat-label">Inscripción abierta</p></div>
+              </div>
+              <div className="al-hack-stat-card">
+                <span className="al-hack-stat-icon" style={{ background: "#fdf1dd", color: "#b4791f" }}><Clock className="h-4.5 w-4.5" /></span>
+                <div><p className="al-hack-stat-value">{kpiPendientes}</p><p className="al-hack-stat-label">Pendientes</p></div>
+              </div>
+              <div className="al-hack-stat-card">
+                <span className="al-hack-stat-icon" style={{ background: "#f3ece1", color: "#6b6f72" }}><AlarmClock className="h-4.5 w-4.5" /></span>
+                <div><p className="al-hack-stat-value">{kpiProx}</p><p className="al-hack-stat-label">Próx. inicio</p></div>
+              </div>
+            </div>
+
+            {featuredHackathon && (
+              <div className="al-hack-hero">
+                <div className="al-hack-hero-main">
+                  <span className="al-hack-hero-kicker"><span className="al-hack-hero-kicker-dot" />Hackatón futuro</span>
+                  <p className="al-hack-hero-title">{featuredHackathon.name}</p>
+                  {featuredHackathon.organizer && <p className="al-hack-hero-org">{featuredHackathon.organizer}</p>}
+                  {(featuredHackathon.start_at || featuredHackathon.end_at) && (
+                    <p className="al-hack-hero-meta">
+                      {featuredHackathon.start_at ? formatDateLabel(featuredHackathon.start_at) : "—"}
+                      {featuredHackathon.end_at ? ` → ${formatDateLabel(featuredHackathon.end_at)}` : ""}
                     </p>
                   )}
-                  <div className="flex flex-wrap gap-1.5">
-                    {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
-                    {place && <ChipTag icon="pin">{place}</ChipTag>}
-                    {item.priority && <ChipTag className={genericPriorityClass(item.priority)}>{priorityText(item.priority)}</ChipTag>}
-                    {item.certificacion_o_premio && <ChipTag>{item.certificacion_o_premio}</ChipTag>}
-                    {item.encaje_daw_1_5 ? <ChipTag>DAW {item.encaje_daw_1_5}/5</ChipTag> : null}
-                    {item.practicas_empresa === true && <ChipTag>Prácticas</ChipTag>}
-                    {item.status === "inscripcion_abierta" && <ChipTag className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Inscripción abierta</ChipTag>}
-                    {tags.map((tag) => <ChipTag key={tag}>{tag}</ChipTag>)}
+                  {featuredHackathon.notes && <p className="al-hack-hero-desc">{featuredHackathon.notes}</p>}
+                  <div className="al-hack-hero-actions">
+                    {featuredHasRuta ? (
+                      <Link href={`/ruta/${featuredHackathon.id_slug}`} className="al-hack-hero-btn-primary">
+                        <PlayCircle className="h-4 w-4" />Entrar al hackatón
+                      </Link>
+                    ) : featuredHackathon.url ? (
+                      <a href={featuredHackathon.url} target="_blank" rel="noreferrer" className="al-hack-hero-btn-primary">
+                        <ExternalLink className="h-4 w-4" />Entrar al hackatón
+                      </a>
+                    ) : null}
+                    {featuredHackathon.requiredCompetencies && featuredHackathon.requiredCompetencies.length > 0 && (
+                      <button type="button" className="al-hack-hero-btn-ghost" onClick={() => setRequirementsItem(featuredHackathon)}>
+                        <ListChecks className="h-4 w-4" />Aptitudes mínimas
+                      </button>
+                    )}
                   </div>
-                  {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] font-medium text-muted-foreground">Aptitudes:</span>
-                      {item.requiredCompetencies.filter((c) => c.obligatoria_para_item).slice(0, 3).map((competency) => (
-                        <ChipTag key={competency.id} className="border-primary/25 bg-primary/5 text-primary">
-                          {competency.titulo}
-                        </ChipTag>
-                      ))}
-                      {item.requiredCompetencies.length > 3 && (
-                        <span className="text-[11px] text-muted-foreground">+{item.requiredCompetencies.length - 3} más</span>
-                      )}
+                </div>
+                {featuredProgress && featuredProgress.total > 0 && (
+                  <div className="al-hack-hero-side">
+                    <div className="al-hack-hero-side-label">
+                      <span>Tu progreso</span>
+                      <span className="al-hack-hero-side-value">{featuredProgress.done}/{featuredProgress.total} completadas</span>
                     </div>
-                  )}
-                  {item.notes && <p className="text-xs italic text-muted-foreground line-clamp-2">{item.notes}</p>}
-                  <div className="mt-auto flex flex-wrap gap-1.5">
-                    {hasRuta ? (
-                      <Button asChild size="sm" variant="outline" className="h-7 gap-1 px-2.5 text-xs">
-                        <Link href={`/ruta/${item.id_slug}`}>
-                          <PlayCircle className="h-3.5 w-3.5" />
-                          Abrir ruta
-                        </Link>
-                      </Button>
-                    ) : (
-                      item.url && (
-                        <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs">
-                          <a href={item.url} target="_blank" rel="noreferrer">Abrir web</a>
-                        </Button>
-                      )
-                    )}
-                    {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
-                      <Button type="button" size="sm" variant="outline" className="h-7 px-2.5 text-xs" onClick={() => setRequirementsItem(item)}>
-                        <ListChecks className="h-3.5 w-3.5" />
-                        Ver requisitos
-                      </Button>
-                    )}
-                    <Button type="button" size="sm" variant="outline" className="h-7 px-2.5 text-xs" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Hackathon" })}>Crear tarea</Button>
-                    {!isHackathonArchived(item) && (
-                      <Button type="button" size="sm" variant="ghost" className="h-7 px-2.5 text-xs" onClick={() => completeHackathonItem(item, actions)}>
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        Realizado
-                      </Button>
-                    )}
-                    {!readOnlyTechItem && item.status === "revisar_futura_edicion" && <Button type="button" size="sm" variant="ghost" className="h-7 px-2.5 text-xs" onClick={() => actions.updateHackathon(item.id, { status: "pendiente" })}>Revisado</Button>}
+                    <div className="al-hack-hero-progress-bar">
+                      <div className="al-hack-hero-progress-fill" style={{ width: `${Math.round((featuredProgress.done / featuredProgress.total) * 100)}%` }} />
+                    </div>
+                    <p className="al-hack-hero-side-hint">Aptitudes imprescindibles que ya has completado en tu ruta de aprendizaje.</p>
                   </div>
-                </Card>
-              );
-            }) : (
-              <div className={cn(viewMode === "grid" && "sm:col-span-2")}>
-                <EmptyText>{search || activeFilterCount > 0 ? "No hay hackathons con estos filtros." : "No hay hackathons en esta vista."}</EmptyText>
+                )}
               </div>
             )}
+
+            <div className="al-hack-count-row">
+              <p className="al-hack-count-text">
+                Mostrando {filtered.length} {filtered.length === 1 ? "hackathon" : "hackathons"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
+              </p>
+              <ViewToggle value={viewMode} onChange={setViewMode} />
+            </div>
+
+            {filtered.length ? (
+              <div className={cn("al-hack-grid", viewMode === "grid" ? "al-hack-grid-2" : "")}>
+                {filtered.map((item) => {
+                  const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
+                  const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
+                  const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
+                  const hasRuta = item.id_slug && hackathonHasRutaVideo(item);
+                  const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
+                  return (
+                    <div key={item.id} className="al-hack-card">
+                      <div className="al-hack-card-top">
+                        <div className="min-w-0">
+                          <p className="al-hack-card-title">{item.name}</p>
+                          {item.organizer && <p className="al-hack-card-org">{item.organizer}</p>}
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <Badge className={cn("shrink-0", hackathonStatusClass(item.status))}>{hackathonStatusLabel(item.status)}</Badge>
+                          {canFavorite && (
+                            <button
+                              type="button"
+                              className={cn("al-hack-bookmark", item.is_favorite && "al-hack-bookmark-active")}
+                              aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
+                              onClick={() => actions.toggleFpFavorite(item.id_slug!, !item.is_favorite)}
+                            >
+                              <Bookmark className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {(item.start_at || item.end_at) && (
+                        <p className="al-hack-card-meta">
+                          {item.start_at ? formatDateLabel(item.start_at) : "—"}{item.end_at ? ` → ${formatDateLabel(item.end_at)}` : ""}
+                          {inscripcionFin && <span className="ml-2 opacity-70">· Inscripción hasta {formatDateLabel(inscripcionFin)}</span>}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-1.5">
+                        {place && <ChipTag icon="pin">{place}</ChipTag>}
+                        {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
+                        {item.priority && <ChipTag className={hackPriorityClass(item.priority)}>{priorityText(item.priority)}</ChipTag>}
+                      </div>
+                      {item.notes && <p className="al-hack-card-desc line-clamp-1">{item.notes}</p>}
+                      <div className="al-hack-card-actions">
+                        {hasRuta ? (
+                          <Link href={`/ruta/${item.id_slug}`} className="al-hack-btn al-hack-btn-primary">
+                            <PlayCircle className="h-3.5 w-3.5" />Abrir ruta
+                          </Link>
+                        ) : (
+                          item.url && (
+                            <a href={item.url} target="_blank" rel="noreferrer" className="al-hack-btn">
+                              <ExternalLink className="h-3.5 w-3.5" />Abrir web
+                            </a>
+                          )
+                        )}
+                        {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
+                          <button type="button" className="al-hack-btn" onClick={() => setRequirementsItem(item)}>
+                            <ListChecks className="h-3.5 w-3.5" />Ver detalles
+                          </button>
+                        )}
+                        <button type="button" className="al-hack-btn" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Hackathon" })}>
+                          <Plus className="h-3.5 w-3.5" />Crear tarea
+                        </button>
+                        {!isHackathonArchived(item) && (
+                          <button type="button" className="al-hack-btn" onClick={() => completeHackathonItem(item, actions)}>
+                            <CheckCircle2 className="h-3.5 w-3.5" />Realizado
+                          </button>
+                        )}
+                        {!readOnlyTechItem && item.status === "revisar_futura_edicion" && (
+                          <button type="button" className="al-hack-btn" onClick={() => actions.updateHackathon(item.id, { status: "pendiente" })}>Revisado</button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <HackathonsEmptyState variant={search || activeFilterCount > 0 ? "sin_resultados" : viewTab === "activos" ? "sin_activos" : "sin_datos"} onClearFilters={clearAll} />
+            )}
           </div>
+
+          {showFilters && (
+            <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
+              <FilterSection label="Calendario">
+                <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
+              </FilterSection>
+              <FilterSection label="Estado">
+                <FilterChips
+                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["inscripcion_abierta", "Activo"]]}
+                  value={estadoFilter}
+                  onChange={setEstadoFilter}
+                />
+              </FilterSection>
+              {modalidades.length > 0 && (
+                <FilterSection label="Modalidad">
+                  <FilterChips
+                    options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
+                    value={modalidadFilter}
+                    onChange={setModalidadFilter}
+                  />
+                </FilterSection>
+              )}
+              {provincias.length > 0 && (
+                <FilterSection label="Provincia">
+                  <FilterChips
+                    options={[["", "Todas"], ...provincias.map((p): [string, string] => [p, p])]}
+                    value={provinciaFilter}
+                    onChange={setProvinciaFilter}
+                  />
+                </FilterSection>
+              )}
+              <FilterSection label="Prioridad">
+                <FilterChips
+                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
+                  value={prioridadFilter}
+                  onChange={setPrioridadFilter}
+                />
+              </FilterSection>
+              <FilterSection label="Solo">
+                <label className="flex cursor-pointer items-center gap-2 text-xs">
+                  <input type="checkbox" checked={soloInscripcionAbierta} onChange={(e) => setSoloInscripcionAbierta(e.target.checked)} className="rounded" />
+                  Inscripción abierta
+                </label>
+              </FilterSection>
+            </FilterPanel>
+          )}
         </div>
 
-        {showFilters && (
-          <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
-            <FilterSection label="Calendario">
-              <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
-            </FilterSection>
-            <FilterSection label="Estado">
-              <FilterChips
-                options={[["", "Todos"], ["pendiente", "Pendiente"], ["inscripcion_abierta", "Activo"]]}
-                value={estadoFilter}
-                onChange={setEstadoFilter}
-              />
-            </FilterSection>
-            {modalidades.length > 0 && (
-              <FilterSection label="Modalidad">
-                <FilterChips
-                  options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
-                  value={modalidadFilter}
-                  onChange={setModalidadFilter}
-                />
-              </FilterSection>
-            )}
-            {provincias.length > 0 && (
-              <FilterSection label="Provincia">
-                <FilterChips
-                  options={[["", "Todas"], ...provincias.map((p): [string, string] => [p, p])]}
-                  value={provinciaFilter}
-                  onChange={setProvinciaFilter}
-                />
-              </FilterSection>
-            )}
-            <FilterSection label="Prioridad">
-              <FilterChips
-                options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
-                value={prioridadFilter}
-                onChange={setPrioridadFilter}
-              />
-            </FilterSection>
-            <FilterSection label="Solo">
-              <label className="flex cursor-pointer items-center gap-2 text-xs">
-                <input type="checkbox" checked={soloInscripcionAbierta} onChange={(e) => setSoloInscripcionAbierta(e.target.checked)} className="rounded" />
-                Inscripción abierta
-              </label>
-            </FilterSection>
-          </FilterPanel>
-        )}
+        <HackathonRequirementsModal item={requirementsItem} actions={actions} onClose={() => setRequirementsItem(null)} />
       </div>
+    </>
+  );
+}
 
-      <HackathonRequirementsModal item={requirementsItem} onClose={() => setRequirementsItem(null)} />
+function HackathonsEmptyState({ variant, onClearFilters }: { variant: "sin_resultados" | "sin_activos" | "sin_datos"; onClearFilters: () => void }) {
+  if (variant === "sin_resultados") {
+    return (
+      <div className="al-hack-empty-wrap">
+        <div className="al-hack-empty">
+          <span className="al-hack-empty-icon"><Search className="h-6 w-6" /></span>
+          <p className="al-hack-empty-title">Sin resultados</p>
+          <p className="al-hack-empty-desc">Ningún hackathon coincide con tu búsqueda o filtros.</p>
+          <button type="button" className="al-hack-empty-btn" onClick={onClearFilters}>Quitar filtros</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="al-hack-empty-wrap al-hack-empty-two">
+      <div className="al-hack-empty">
+        <Image src="/assets/hackathons/hackathons-empty-sin-datos.png" alt="" width={900} height={295} sizes="280px" className="al-hack-empty-illustration" />
+        <p className="al-hack-empty-title">¡Sin hackatones disponibles!</p>
+        <p className="al-hack-empty-desc">Vuelve pronto para nuevos eventos de programación.</p>
+      </div>
+      <div className="al-hack-empty">
+        <Image src="/assets/hackathons/hackathons-empty-sin-activos.png" alt="" width={900} height={295} sizes="280px" className="al-hack-empty-illustration" />
+        <p className="al-hack-empty-title">¡Aún no te has inscrito!</p>
+        <p className="al-hack-empty-desc">Busca un hackatón y demuestra tus habilidades.</p>
+      </div>
     </div>
   );
 }
 
-function HackathonRequirementsModal({ item, onClose }: { item: Hackathon | null; onClose: () => void }) {
-  if (!item) return null;
-
-  const competencies = item.requiredCompetencies ?? [];
+function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackathon | null; actions: ReturnTypeActions; onClose: () => void }) {
+  const competencies = item?.requiredCompetencies ?? [];
   const obligatorias = competencies.filter((competency) => competency.obligatoria_para_item);
   const recomendadas = competencies.filter((competency) => !competency.obligatoria_para_item);
+  const steps = [...obligatorias, ...recomendadas];
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    setStepIndex(0);
+  }, [item?.id]);
+
+  useEffect(() => {
+    if (!item) return;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
+    document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
+    };
+  }, [item]);
+
+  if (!item) return null;
+
   const hasRuta = hackathonHasRutaVideo(item);
+  const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
+  const safeIndex = steps.length > 0 ? Math.min(stepIndex, steps.length - 1) : 0;
+  const currentStep = steps[safeIndex] ?? null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/55 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6" role="dialog" aria-modal="true">
-      <div className="max-h-[92svh] w-full overflow-hidden rounded-t-lg border bg-background shadow-2xl sm:max-w-lg sm:rounded-lg">
-        <div className="flex items-center justify-between gap-3 border-b p-4">
-          <div className="min-w-0">
-            <h2 className="truncate text-lg font-semibold">Aptitudes para {item.name}</h2>
-            <p className="text-xs text-muted-foreground">Lo que conviene dominar antes de presentarte.</p>
+      <style>{`
+        .al-modal-shell { background: white; border-radius: 22px 22px 0 0; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
+        @media (min-width: 640px) { .al-modal-shell { border-radius: 22px; } }
+        .al-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #f0ece2; flex-shrink: 0; }
+        .al-modal-head-icon { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; flex-shrink: 0; }
+        .al-modal-title { font-size: 18px; font-weight: 700; color: #111111; line-height: 24px; letter-spacing: -0.02em; }
+        .al-modal-subtitle { font-size: 11.5px; color: #6b6f72; margin-top: 2px; }
+        .al-modal-close { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; flex-shrink: 0; }
+        .al-modal-step-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px; }
+        .al-modal-step-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+        .al-modal-step-badge { display: inline-flex; align-items: center; height: 22px; padding: 0 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
+        .al-modal-step-badge-oblig { background: #e7f5ee; color: #1f7a4d; }
+        .al-modal-step-badge-reco { background: #fdf1dd; color: #b4791f; }
+        .al-modal-step-count { font-size: 11px; font-weight: 600; color: #9a958a; }
+        .al-modal-step-card { border: 1px solid #ece7dc; border-radius: 16px; padding: 16px; }
+        .al-modal-step-card-head { display: flex; align-items: flex-start; gap: 10px; }
+        .al-modal-req-check { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; flex-shrink: 0; margin-top: 1px; }
+        .al-modal-req-check-done { background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
+        .al-modal-req-check-pending { border: 2px solid #e4dfd5; color: transparent; }
+        .al-modal-req-title { font-size: 14.5px; font-weight: 700; color: #111111; line-height: 1.35; }
+        .al-modal-req-desc { font-size: 12.5px; color: #4b4740; margin-top: 8px; line-height: 1.55; }
+        .al-modal-req-actions { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .al-modal-req-btn { display: inline-flex; align-items: center; gap: 5px; height: 29px; padding: 0 10px; border-radius: 8px; border: 1px solid #ece7dc; background: white; font-size: 11px; font-weight: 600; color: #333029; text-decoration: none; cursor: pointer; }
+        .al-modal-req-btn-video { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
+        .al-modal-mark-done { margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 9px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 700; background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
+        .al-modal-mark-done-active { background: #e7f5ee; color: #1f7a4d; cursor: default; }
+        .al-modal-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 18px; border-top: 1px solid #f0ece2; flex-shrink: 0; }
+        .al-modal-nav-btn { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 11px; border-radius: 9px; border: 1px solid #ece7dc; background: white; font-size: 11.5px; font-weight: 600; color: #333029; cursor: pointer; }
+        .al-modal-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .al-modal-dots { display: flex; align-items: center; gap: 5px; }
+        .al-modal-dot { width: 6px; height: 6px; border-radius: 999px; background: #e4dfd5; }
+        .al-modal-dot-done { background: #a9d6bc; }
+        .al-modal-dot-active { width: 16px; background: linear-gradient(90deg, #F06A37, #E15D2D); }
+        .al-modal-footer { border-top: 1px solid #f0ece2; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+        .al-modal-footer-row { display: flex; gap: 8px; }
+        .al-modal-btn-primary { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 42px; border-radius: 13px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 13px; font-weight: 700; box-shadow: 0 10px 24px rgba(225,93,45,0.25); border: none; cursor: pointer; text-decoration: none; flex-direction: column; line-height: 1.25; }
+        .al-modal-btn-primary small { font-weight: 500; font-size: 10.5px; opacity: 0.85; }
+        .al-modal-btn-secondary { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 16px; border-radius: 13px; border: 1px solid #ece7dc; background: white; color: #333029; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+        .al-modal-footer-hint { text-align: center; font-size: 10.5px; color: #9a958a; }
+      `}</style>
+      <div className="al-modal-shell max-h-[92svh] w-full overflow-hidden sm:max-w-lg">
+        <div className="al-modal-head">
+          <span className="al-modal-head-icon">
+            <Image src="/assets/hackathons/hackathons-modal-checklist-icon.png" alt="" width={160} height={160} className="h-full w-full object-contain" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="al-modal-title line-clamp-2">Requisitos para {item.name}</h2>
+            <p className="al-modal-subtitle">Todo lo que conviene dominar antes de presentarte.</p>
           </div>
-          <Button type="button" size="icon" variant="ghost" onClick={onClose} aria-label="Cerrar">
+          <button type="button" className="al-modal-close" onClick={onClose} aria-label="Cerrar">
             <X className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
-        <div className="max-h-[calc(92svh-73px)] space-y-5 overflow-y-auto p-4">
-          {obligatorias.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Imprescindibles</p>
-              {obligatorias.map((competency) => (
-                <CompetencyRequirement key={competency.id} competency={competency} hackathonSlug={item.id_slug} />
-              ))}
+        {currentStep ? (
+          <>
+            <div className="al-modal-step-scroll">
+              <div className="al-modal-step-top">
+                <span className={cn("al-modal-step-badge", currentStep.obligatoria_para_item ? "al-modal-step-badge-oblig" : "al-modal-step-badge-reco")}>
+                  {currentStep.obligatoria_para_item ? "Imprescindible" : "Recomendada"}
+                </span>
+                <span className="al-modal-step-count">Paso {safeIndex + 1} de {steps.length}</span>
+              </div>
+              <CompetencyRequirement competency={currentStep} hackathonSlug={item.id_slug} actions={actions} />
             </div>
-          )}
-          {recomendadas.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recomendadas</p>
-              {recomendadas.map((competency) => (
-                <CompetencyRequirement key={competency.id} competency={competency} hackathonSlug={item.id_slug} />
-              ))}
+            <div className="al-modal-nav">
+              <button type="button" className="al-modal-nav-btn" onClick={() => setStepIndex((i) => Math.max(0, i - 1))} disabled={safeIndex === 0}>
+                <ChevronLeft className="h-3.5 w-3.5" />Anterior
+              </button>
+              <div className="al-modal-dots">
+                {steps.map((step, i) => (
+                  <span key={step.id} className={cn("al-modal-dot", i === safeIndex && "al-modal-dot-active", i !== safeIndex && isCompetencyDone(step) && "al-modal-dot-done")} />
+                ))}
+              </div>
+              <button type="button" className="al-modal-nav-btn" onClick={() => setStepIndex((i) => Math.min(steps.length - 1, i + 1))} disabled={safeIndex === steps.length - 1}>
+                Siguiente<ChevronRight className="h-3.5 w-3.5" />
+              </button>
             </div>
-          )}
-          {competencies.length === 0 && <EmptyText>No hay aptitudes registradas todavía para este hackathon.</EmptyText>}
-        </div>
-        {hasRuta && item.id_slug && (
-          <div className="border-t p-4">
-            <Button asChild className="w-full gap-1.5">
-              <Link href={`/ruta/${item.id_slug}`}>
-                <PlayCircle className="h-4 w-4" />
-                Abrir ruta completa
-              </Link>
-            </Button>
+          </>
+        ) : (
+          <div className="al-modal-step-scroll">
+            <EmptyText>No hay aptitudes registradas todavía para este hackathon.</EmptyText>
           </div>
         )}
+        <div className="al-modal-footer">
+          <div className="al-modal-footer-row">
+            {hasRuta && item.id_slug ? (
+              <Link href={`/ruta/${item.id_slug}`} className="al-modal-btn-primary">
+                <span>Abrir ruta completa</span>
+                <small>Ver pasos, links y recursos</small>
+              </Link>
+            ) : (
+              <span className="al-modal-btn-primary" style={{ opacity: 0.5, cursor: "not-allowed" }}>
+                <span>Ruta todavía sin vídeo</span>
+              </span>
+            )}
+            {canFavorite && (
+              <button type="button" className="al-modal-btn-secondary" onClick={() => actions.toggleFpFavorite(item.id_slug!, !item.is_favorite)}>
+                <Bookmark className="h-4 w-4" fill={item.is_favorite ? "currentColor" : "none"} />
+                {item.is_favorite ? "Guardado" : "Guardar para después"}
+              </button>
+            )}
+          </div>
+          <p className="al-modal-footer-hint">Parte del aprendizaje se queda en AL-LÍO. Tú eliges dónde estudiar.</p>
+        </div>
       </div>
     </div>
   );
@@ -3790,31 +4145,68 @@ function hackathonHasRutaVideo(item: Hackathon): boolean {
   );
 }
 
-function CompetencyRequirement({ competency, hackathonSlug }: { competency: RequiredCompetency; hackathonSlug?: string }) {
+function isCompetencyDone(competency: RequiredCompetency): boolean {
+  return competency.learningItems.some((learningItem) => learningItem.user_status === "completed");
+}
+
+function hackathonAptitudeProgress(item: Hackathon): { done: number; total: number } {
+  const obligatorias = (item.requiredCompetencies ?? []).filter((c) => c.obligatoria_para_item);
+  return { done: obligatorias.filter(isCompetencyDone).length, total: obligatorias.length };
+}
+
+function hackPriorityClass(value?: string): string {
+  const priority = normalizePriorityText(value);
+  if (priority.includes("alta")) return "al-hack-chip-terracotta";
+  if (priority.includes("baja")) return "al-hack-chip-green";
+  return "al-hack-chip-amber";
+}
+
+function CompetencyRequirement({ competency, hackathonSlug, actions }: { competency: RequiredCompetency; hackathonSlug?: string; actions: ReturnTypeActions }) {
+  const done = isCompetencyDone(competency);
+  const videoItem = competency.learningItems.find((li) => li.video_url);
+  const docItems = competency.learningItems.filter((li) => !li.video_url);
+
+  function markDone() {
+    for (const learningItem of competency.learningItems) {
+      actions.markLearningItemDone(learningItem.id_slug);
+    }
+  }
+
   return (
-    <div className="rounded-md border p-3">
-      <p className="text-sm font-medium">{competency.titulo}</p>
-      {competency.descripcion && <p className="mt-1 text-xs text-muted-foreground">{competency.descripcion}</p>}
-      {competency.learningItems.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {competency.learningItems.map((learningItem) =>
-            learningItem.video_url && hackathonSlug ? (
-              <Button key={learningItem.id} asChild size="sm" variant="outline" className="h-6 gap-1 px-2 text-[11px]">
-                <Link href={`/ruta/${hackathonSlug}?paso=${competency.id}`}>
-                  <PlayCircle className="h-3 w-3" />
-                  {learningItem.title}
-                </Link>
-              </Button>
-            ) : (
-              <Button key={learningItem.id} asChild size="sm" variant="outline" className="h-6 gap-1 px-2 text-[11px]">
-                <a href={learningItem.source_url} target="_blank" rel="noreferrer">
-                  <ExternalLink className="h-3 w-3" />
-                  {learningItem.title}
-                </a>
-              </Button>
-            )
+    <div className="al-modal-step-card">
+      <div className="al-modal-step-card-head">
+        <span className={cn("al-modal-req-check", done ? "al-modal-req-check-done" : "al-modal-req-check-pending")}>
+          <Check className="h-3.5 w-3.5" />
+        </span>
+        <p className="al-modal-req-title">{competency.titulo}</p>
+      </div>
+      {competency.descripcion && <p className="al-modal-req-desc">{competency.descripcion}</p>}
+      {(videoItem || docItems.length > 0) && (
+        <div className="al-modal-req-actions">
+          {videoItem && hackathonSlug && (
+            <Link href={`/ruta/${hackathonSlug}?paso=${competency.id}`} className="al-modal-req-btn al-modal-req-btn-video">
+              <Youtube className="h-3 w-3" />
+              YouTube en la app
+            </Link>
           )}
+          {docItems.map((learningItem) => (
+            <a key={learningItem.id} href={learningItem.source_url} target="_blank" rel="noreferrer" className="al-modal-req-btn">
+              <ExternalLink className="h-3 w-3" />
+              {learningItem.title}
+            </a>
+          ))}
         </div>
+      )}
+      {competency.learningItems.length > 0 && (
+        done ? (
+          <span className="al-modal-mark-done al-modal-mark-done-active">
+            <CheckCircle2 className="h-3.5 w-3.5" />Marcado como hecho
+          </span>
+        ) : (
+          <button type="button" className="al-modal-mark-done" onClick={markDone}>
+            <Check className="h-3.5 w-3.5" />Marcar como hecho
+          </button>
+        )
       )}
     </div>
   );
@@ -4290,6 +4682,7 @@ function fpItemToHackathon(item: FpCatalogItem): Hackathon {
     notes: fpItemNotes(item),
     sourceTable: "fp_content_items",
     requiredCompetencies: item.requiredCompetencies,
+    is_favorite: item.is_favorite ?? false,
     created_at: item.created_at,
   };
 }
@@ -4486,10 +4879,6 @@ function val(form: FormData, key: string) {
   return String(form.get(key) ?? "").trim();
 }
 
-function splitTags(value?: string | string[]) {
-  const raw = Array.isArray(value) ? value : String(value || "").split("|");
-  return raw.map((tag) => tag.trim()).filter(Boolean).slice(0, 8);
-}
 
 function normalizePriorityText(value?: string) {
   return String(value || "media").trim().toLowerCase();
@@ -4502,12 +4891,6 @@ function priorityText(value?: string) {
   return "Media";
 }
 
-function genericPriorityClass(value?: string) {
-  const priority = normalizePriorityText(value);
-  if (priority.includes("alta")) return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
-  if (priority.includes("baja")) return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
-  return "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300";
-}
 
 
 function toTaskBucket(value?: string): TaskBucket {

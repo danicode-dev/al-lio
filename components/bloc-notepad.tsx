@@ -8,15 +8,14 @@ import {
   AlignRight,
   Bold,
   CalendarDays,
-  CheckCircle2,
   CheckSquare,
   Clock,
   Copy,
   Download,
-  FilePlus2,
   FileText,
   Files,
   Highlighter,
+  Image as ImageIcon,
   Italic,
   Link2,
   List,
@@ -27,8 +26,9 @@ import {
   Pencil,
   Plus,
   Redo2,
+  RotateCcw,
   Search,
-  SlidersHorizontal,
+  Star,
   Trash2,
   Type,
   Underline,
@@ -37,7 +37,6 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 
@@ -46,9 +45,12 @@ type BlocNote = {
   title: string;
   contentHtml: string;
   contentText: string;
+  favorite: boolean;
   created_at: string;
   updated_at: string;
 };
+
+type BlocTrashedNote = BlocNote & { deleted_at: string };
 
 type BlocSettings = {
   fontSize: "sm" | "base" | "lg";
@@ -60,15 +62,21 @@ const legacyBlocKey = "techlife.bloc.D1OS.v1";
 const blocSettingsKey = "d1os:notepad:settings:v1";
 const legacyBlocSettingsKey = "techlife.bloc.settings.D1OS.v1";
 const defaultTitle = "Documento sin titulo";
+const maxImageBytes = 1_500_000;
 
+type ListTab = "todas" | "recientes" | "favoritas";
 type MobileSheetId = "format" | "insert" | "export" | "more" | "settings" | null;
 
 export function BlocNotepad() {
   const [notes, setNotes] = useState<BlocNote[]>([]);
+  const [trashedNotes, setTrashedNotes] = useState<BlocTrashedNote[]>([]);
   const [activeId, setActiveId] = useState("");
   const [settings, setSettings] = useState<BlocSettings>({ fontSize: "base", defaultTitle });
   const [searchTerm, setSearchTerm] = useState("");
+  const [listTab, setListTab] = useState<ListTab>("todas");
   const [showSettings, setShowSettings] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
+  const [showMoreTools, setShowMoreTools] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [saveState, setSaveState] = useState<"saved" | "saving">("saved");
   const [notice, setNotice] = useState("");
@@ -77,13 +85,19 @@ export function BlocNotepad() {
   const [menuNoteId, setMenuNoteId] = useState<string | null>(null);
   const [titleEditing, setTitleEditing] = useState(false);
   const notesRef = useRef<BlocNote[]>([]);
+  const trashedRef = useRef<BlocTrashedNote[]>([]);
   const activeIdRef = useRef("");
   const editorRef = useRef<HTMLDivElement | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     notesRef.current = notes;
   }, [notes]);
+
+  useEffect(() => {
+    trashedRef.current = trashedNotes;
+  }, [trashedNotes]);
 
   useEffect(() => {
     activeIdRef.current = activeId;
@@ -120,11 +134,14 @@ export function BlocNotepad() {
   useEffect(() => {
     const raw = localStorage.getItem(blocKey) ?? localStorage.getItem(legacyBlocKey);
     const rawSettings = localStorage.getItem(blocSettingsKey) ?? localStorage.getItem(legacyBlocSettingsKey);
-    const savedNotes = normalizeBlocNotes(raw ? safeJson(raw) : null);
+    const parsed = raw ? safeJson(raw) : null;
+    const savedNotes = normalizeBlocNotes(parsed);
+    const savedTrash = normalizeBlocTrashed(parsed);
     const initialNotes = savedNotes.length ? savedNotes : [createBlocNote({ title: defaultTitle })];
 
     setSettings(normalizeBlocSettings(rawSettings ? safeJson(rawSettings) : null));
     setNotes(initialNotes);
+    setTrashedNotes(savedTrash);
     setActiveId(initialNotes[0].id);
     setLoaded(true);
   }, []);
@@ -132,7 +149,7 @@ export function BlocNotepad() {
   useEffect(() => {
     return () => {
       if (notesRef.current.length) {
-        localStorage.setItem(blocKey, JSON.stringify({ version: 1, notes: notesRef.current }));
+        localStorage.setItem(blocKey, JSON.stringify({ version: 2, notes: notesRef.current, trashedNotes: trashedRef.current }));
       }
     };
   }, []);
@@ -141,11 +158,11 @@ export function BlocNotepad() {
     if (!loaded || notes.length === 0) return;
     setSaveState("saving");
     const timeoutId = window.setTimeout(() => {
-      localStorage.setItem(blocKey, JSON.stringify({ version: 1, notes }));
+      localStorage.setItem(blocKey, JSON.stringify({ version: 2, notes, trashedNotes }));
       setSaveState("saved");
     }, 450);
     return () => window.clearTimeout(timeoutId);
-  }, [loaded, notes]);
+  }, [loaded, notes, trashedNotes]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -160,11 +177,20 @@ export function BlocNotepad() {
   }, [notice]);
 
   const activeNote = useMemo(() => notes.find((note) => note.id === activeId) ?? null, [activeId, notes]);
+
+  const tabNotes = useMemo(() => {
+    if (listTab === "favoritas") return notes.filter((note) => note.favorite);
+    if (listTab === "recientes") return [...notes].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    return notes;
+  }, [notes, listTab]);
+
   const filteredNotes = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    if (!query) return notes;
-    return notes.filter((note) => `${note.title} ${note.contentText}`.toLowerCase().includes(query));
-  }, [notes, searchTerm]);
+    if (!query) return tabNotes;
+    return tabNotes.filter((note) => `${note.title} ${note.contentText}`.toLowerCase().includes(query));
+  }, [tabNotes, searchTerm]);
+
+  const favoritesCount = useMemo(() => notes.filter((note) => note.favorite).length, [notes]);
 
   const fontClass = { sm: "text-sm", base: "text-base", lg: "text-lg" }[settings.fontSize];
   const wordCount = countWords(activeNote?.contentText ?? "");
@@ -179,6 +205,10 @@ export function BlocNotepad() {
     if (!activeNote) return;
     const updatedAt = nowIso();
     setNotes((current) => current.map((note) => (note.id === activeNote.id ? { ...note, title, updated_at: updatedAt } : note)));
+  }
+
+  function toggleFavorite(id: string) {
+    setNotes((current) => current.map((note) => (note.id === id ? { ...note, favorite: !note.favorite, updated_at: note.updated_at } : note)));
   }
 
   function recordEditorContent() {
@@ -214,6 +244,7 @@ export function BlocNotepad() {
     setNotes((current) => [note, ...current]);
     setActiveId(note.id);
     setSearchTerm("");
+    setListTab("todas");
     setNotice("Nota creada");
   }
 
@@ -233,9 +264,10 @@ export function BlocNotepad() {
   function deleteNote(id: string) {
     const target = notes.find((note) => note.id === id);
     if (!target) return;
-    if (!window.confirm(`Eliminar "${target.title || defaultTitle}"?`)) return;
 
     const next = notes.filter((note) => note.id !== id);
+    setTrashedNotes((current) => [{ ...target, deleted_at: nowIso() }, ...current]);
+
     if (next.length === 0) {
       const fresh = createBlocNote({ title: defaultTitle });
       setNotes([fresh]);
@@ -244,7 +276,33 @@ export function BlocNotepad() {
       setNotes(next);
       if (activeId === id) setActiveId(next[0].id);
     }
-    setNotice("Nota eliminada");
+    setNotice("Nota movida a la papelera");
+  }
+
+  function restoreNote(id: string) {
+    const target = trashedNotes.find((note) => note.id === id);
+    if (!target) return;
+    const restored: BlocNote = {
+      id: target.id,
+      title: target.title,
+      contentHtml: target.contentHtml,
+      contentText: target.contentText,
+      favorite: target.favorite,
+      created_at: target.created_at,
+      updated_at: target.updated_at,
+    };
+    setTrashedNotes((current) => current.filter((note) => note.id !== id));
+    setNotes((current) => [restored, ...current]);
+    setActiveId(restored.id);
+    setNotice("Nota restaurada");
+  }
+
+  function purgeNote(id: string) {
+    const target = trashedNotes.find((note) => note.id === id);
+    if (!target) return;
+    if (!window.confirm(`Eliminar definitivamente "${target.title || defaultTitle}"? No se puede deshacer.`)) return;
+    setTrashedNotes((current) => current.filter((note) => note.id !== id));
+    setNotice("Nota eliminada definitivamente");
   }
 
   function handlePaste(event: React.ClipboardEvent<HTMLDivElement>) {
@@ -345,6 +403,31 @@ export function BlocNotepad() {
     reader.readAsText(file);
   }
 
+  function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setNotice("Solo imágenes");
+      input.value = "";
+      return;
+    }
+    if (file.size > maxImageBytes) {
+      setNotice("Imagen demasiado grande (máx 1.5MB)");
+      input.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result ?? "");
+      if (dataUrl) runEditorCommand("insertImage", dataUrl);
+      input.value = "";
+    };
+    reader.readAsDataURL(file);
+  }
+
   if (!loaded) {
     return (
       <div className="flex h-64 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
@@ -358,9 +441,10 @@ export function BlocNotepad() {
 
     return (
       <div className="relative">
+        <style>{blocBrandCss}</style>
         <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="al-bloc-search relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a958a]" />
             <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
@@ -368,25 +452,12 @@ export function BlocNotepad() {
               className="h-11 rounded-xl pl-9"
             />
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="h-11 w-11 shrink-0 rounded-xl"
-            onClick={() => setMobileSheet("settings")}
-            aria-label="Ajustes del bloc"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            className="h-11 w-11 shrink-0 rounded-xl"
-            onClick={createNote}
-            aria-label="Nueva nota"
-          >
+          <button type="button" className="al-bloc-icon-btn h-11 w-11 rounded-xl" onClick={() => setMobileSheet("settings")} aria-label="Ajustes del bloc">
+            <MoreVertical className="h-4 w-4" />
+          </button>
+          <button type="button" className="al-bloc-primary-btn h-11 w-11 rounded-xl px-0" onClick={createNote} aria-label="Nueva nota">
             <Plus className="h-5 w-5" />
-          </Button>
+          </button>
         </div>
 
         <div className="mt-3 flex snap-x gap-3 overflow-x-auto pb-2">
@@ -400,13 +471,13 @@ export function BlocNotepad() {
             />
           ))}
           {filteredNotes.length === 0 && (
-            <div className="w-full rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
+            <div className="w-full rounded-xl border border-dashed p-4 text-center text-sm text-[#6b6f72]">
               No hay notas con esa búsqueda.
             </div>
           )}
         </div>
 
-        <section className="mt-3 overflow-hidden rounded-2xl border-2 border-primary/25 bg-card shadow-sm">
+        <section className="al-bloc-editor-shell mt-3 overflow-hidden rounded-2xl">
           <div className="flex items-start justify-between gap-2 px-4 pt-4">
             {titleEditing ? (
               <Input
@@ -420,25 +491,20 @@ export function BlocNotepad() {
               />
             ) : (
               <div className="flex min-w-0 items-center gap-1">
-                <h2 className="truncate text-2xl font-bold leading-tight">{activeNote?.title || defaultTitle}</h2>
-                <button
-                  type="button"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
-                  onClick={() => setTitleEditing(true)}
-                  aria-label="Editar título"
-                >
+                <h2 className="truncate text-2xl font-bold leading-tight text-[#111111]">{activeNote?.title || defaultTitle}</h2>
+                <button type="button" className="al-bloc-icon-btn-ghost flex h-11 w-11 shrink-0 items-center justify-center" onClick={() => setTitleEditing(true)} aria-label="Editar título">
                   <Pencil className="h-4 w-4" />
                 </button>
               </div>
             )}
-            <span className="mt-1 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
-              {saveState === "saving" ? "Guardando..." : (
-                <>
-                  Guardado automáticamente
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                </>
-              )}
-            </span>
+            <button
+              type="button"
+              className="al-bloc-icon-btn-ghost mt-1 flex h-9 w-9 shrink-0 items-center justify-center"
+              onClick={() => activeNote && toggleFavorite(activeNote.id)}
+              aria-label="Favorita"
+            >
+              <Star className={cn("h-4.5 w-4.5", activeNote?.favorite && "al-bloc-star-active")} fill={activeNote?.favorite ? "currentColor" : "none"} />
+            </button>
           </div>
 
           <div
@@ -455,16 +521,13 @@ export function BlocNotepad() {
             onPaste={handlePaste}
             onKeyDown={handleEditorKeyDown}
             className={cn(
-              "empty:before:pointer-events-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]",
+              "al-bloc-content empty:before:pointer-events-none empty:before:text-[#9a958a] empty:before:content-[attr(data-placeholder)]",
               "min-h-[45dvh] max-h-[58dvh] overflow-y-auto px-4 py-4 leading-7 outline-none",
-              "[&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground",
-              "[&_h1]:text-3xl [&_h1]:font-semibold [&_h2]:text-2xl [&_h2]:font-semibold [&_h3]:text-xl [&_h3]:font-semibold",
-              "[&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6",
               fontClass,
             )}
           />
 
-          <div className="flex items-stretch border-t">
+          <div className="al-bloc-mobile-toolbar flex items-stretch">
             <MobileToolbarButton label="Formato" onClick={() => setMobileSheet("format")}>
               <Type className="h-4 w-4" />
             </MobileToolbarButton>
@@ -474,30 +537,26 @@ export function BlocNotepad() {
             <MobileToolbarButton label="Exportar" onClick={() => setMobileSheet("export")}>
               <Download className="h-4 w-4" />
             </MobileToolbarButton>
-            <button
-              type="button"
-              className="flex w-14 items-center justify-center border-l text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              onClick={() => setMobileSheet("more")}
-              aria-label="Más opciones"
-            >
+            <button type="button" className="al-bloc-mobile-toolbar-more flex w-14 items-center justify-center" onClick={() => setMobileSheet("more")} aria-label="Más opciones">
               <MoreVertical className="h-5 w-5" />
             </button>
           </div>
         </section>
 
-        <p className="mt-3 flex flex-wrap items-center justify-center gap-x-2 text-center text-xs text-muted-foreground">
-          <span className="inline-block h-2 w-2 rounded-full bg-primary" />
+        <p className="mt-3 flex flex-wrap items-center justify-center gap-x-2 text-center text-xs text-[#6b6f72]">
+          <span className="al-bloc-save-dot inline-block h-2 w-2 rounded-full" />
           <span>{saveState === "saving" ? "Guardando..." : "Guardado automáticamente"}</span>
           <span>· Última edición: {activeNote ? formatBlocEditedTime(activeNote.updated_at) : "--:--"}</span>
           <span>· {wordCount} palabras</span>
-          {notice && <span className="text-primary">· {notice}</span>}
+          {notice && <span className="font-semibold text-[#c94f21]">· {notice}</span>}
         </p>
 
         <input ref={uploadInputRef} type="file" accept=".txt,.md,text/plain,text/markdown" className="hidden" onChange={handleUpload} />
+        <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
 
         {mobileSheet === "format" && (
           <MobileSheet title="Formato" onClose={() => setMobileSheet(null)}>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Estilo de texto</p>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[#9a958a]">Estilo de texto</p>
             <div className="grid grid-cols-3 gap-2">
               <MobileSheetTile label="Negrita" onClick={() => runEditorCommand("bold")}><Bold className="h-4 w-4" /></MobileSheetTile>
               <MobileSheetTile label="Cursiva" onClick={() => runEditorCommand("italic")}><Italic className="h-4 w-4" /></MobileSheetTile>
@@ -506,7 +565,7 @@ export function BlocNotepad() {
               <MobileSheetTile label="Numerada" onClick={() => runEditorCommand("insertOrderedList")}><ListOrdered className="h-4 w-4" /></MobileSheetTile>
               <MobileSheetTile label="Enlace" onClick={createLink}><Link2 className="h-4 w-4" /></MobileSheetTile>
             </div>
-            <p className="mb-2 mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">Estilo de párrafo</p>
+            <p className="mb-2 mt-4 text-xs font-medium uppercase tracking-wide text-[#9a958a]">Estilo de párrafo</p>
             <div className="grid grid-cols-3 gap-2">
               <MobileSheetTile label="Normal" onClick={() => setParagraphBlock("P")}><span className="text-sm font-semibold">P</span></MobileSheetTile>
               <MobileSheetTile label="Título 1" onClick={() => setParagraphBlock("H1")}><span className="text-sm font-semibold">H1</span></MobileSheetTile>
@@ -514,25 +573,24 @@ export function BlocNotepad() {
               <MobileSheetTile label="Título 3" onClick={() => setParagraphBlock("H3")}><span className="text-sm font-semibold">H3</span></MobileSheetTile>
               <MobileSheetTile label="Cita" onClick={() => setParagraphBlock("BLOCKQUOTE")}><span className="text-sm font-semibold">&ldquo;&rdquo;</span></MobileSheetTile>
             </div>
-            <p className="mb-2 mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">Alineación</p>
+            <p className="mb-2 mt-4 text-xs font-medium uppercase tracking-wide text-[#9a958a]">Alineación</p>
             <div className="grid grid-cols-4 gap-2">
               <MobileSheetTile label="Izquierda" onClick={() => runEditorCommand("justifyLeft")}><AlignLeft className="h-4 w-4" /></MobileSheetTile>
               <MobileSheetTile label="Centro" onClick={() => runEditorCommand("justifyCenter")}><AlignCenter className="h-4 w-4" /></MobileSheetTile>
               <MobileSheetTile label="Derecha" onClick={() => runEditorCommand("justifyRight")}><AlignRight className="h-4 w-4" /></MobileSheetTile>
               <MobileSheetTile label="Justificar" onClick={() => runEditorCommand("justifyFull")}><AlignJustify className="h-4 w-4" /></MobileSheetTile>
             </div>
-            <p className="mb-2 mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">Tamaño del editor</p>
+            <p className="mb-2 mt-4 text-xs font-medium uppercase tracking-wide text-[#9a958a]">Tamaño del editor</p>
             <div className="grid grid-cols-3 gap-2">
               {(["sm", "base", "lg"] as const).map((fontSize) => (
-                <Button
+                <button
                   key={fontSize}
                   type="button"
-                  variant={settings.fontSize === fontSize ? "default" : "outline"}
-                  className="h-11 rounded-xl"
+                  className={cn("al-bloc-size-btn h-11 rounded-xl", settings.fontSize === fontSize && "al-bloc-size-btn-active")}
                   onClick={() => persistSettings({ ...settings, fontSize })}
                 >
                   {fontSize === "sm" ? "S" : fontSize === "base" ? "M" : "L"}
-                </Button>
+                </button>
               ))}
             </div>
           </MobileSheet>
@@ -546,6 +604,7 @@ export function BlocNotepad() {
               <MobileSheetRow label="Separador" onClick={() => { insertItem("divider"); setMobileSheet(null); }}><Minus className="h-4 w-4" /></MobileSheetRow>
               <MobileSheetRow label="Checklist" onClick={() => { insertItem("check"); setMobileSheet(null); }}><CheckSquare className="h-4 w-4" /></MobileSheetRow>
               <MobileSheetRow label="Enlace" onClick={() => { setMobileSheet(null); createLink(); }}><Link2 className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Imagen" onClick={() => { setMobileSheet(null); imageInputRef.current?.click(); }}><ImageIcon className="h-4 w-4" /></MobileSheetRow>
               <MobileSheetRow label="Subir documento (TXT/MD)" onClick={() => { setMobileSheet(null); uploadInputRef.current?.click(); }}><Upload className="h-4 w-4" /></MobileSheetRow>
             </div>
           </MobileSheet>
@@ -570,7 +629,8 @@ export function BlocNotepad() {
               <MobileSheetRow label="Copiar texto" onClick={() => { void copyActiveNote(); setMobileSheet(null); }}><Copy className="h-4 w-4" /></MobileSheetRow>
               <MobileSheetRow label="Exportar PDF" onClick={() => { exportActivePdf(); setMobileSheet(null); }}><FileText className="h-4 w-4" /></MobileSheetRow>
               <MobileSheetRow label="Exportar Word" onClick={() => { exportActiveWord(); setMobileSheet(null); }}><FileText className="h-4 w-4" /></MobileSheetRow>
-              <MobileSheetRow label="Ajustes" onClick={() => setMobileSheet("settings")}><SlidersHorizontal className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Papelera" onClick={() => { setMobileSheet(null); setShowTrash(true); }}><Trash2 className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label="Ajustes" onClick={() => setMobileSheet("settings")}><SlidersIcon /></MobileSheetRow>
               <MobileSheetRow
                 label="Eliminar nota"
                 destructive
@@ -584,21 +644,20 @@ export function BlocNotepad() {
 
         {mobileSheet === "settings" && (
           <MobileSheet title="Ajustes" onClose={() => setMobileSheet(null)}>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Tamaño del editor</p>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[#9a958a]">Tamaño del editor</p>
             <div className="grid grid-cols-3 gap-2">
               {(["sm", "base", "lg"] as const).map((fontSize) => (
-                <Button
+                <button
                   key={fontSize}
                   type="button"
-                  variant={settings.fontSize === fontSize ? "default" : "outline"}
-                  className="h-11 rounded-xl"
+                  className={cn("al-bloc-size-btn h-11 rounded-xl", settings.fontSize === fontSize && "al-bloc-size-btn-active")}
                   onClick={() => persistSettings({ ...settings, fontSize })}
                 >
                   {fontSize === "sm" ? "S" : fontSize === "base" ? "M" : "L"}
-                </Button>
+                </button>
               ))}
             </div>
-            <p className="mb-1.5 mt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">Título por defecto</p>
+            <p className="mb-1.5 mt-4 text-xs font-medium uppercase tracking-wide text-[#9a958a]">Título por defecto</p>
             <Input
               value={settings.defaultTitle}
               onChange={(event) => persistSettings({ ...settings, defaultTitle: event.target.value })}
@@ -614,6 +673,9 @@ export function BlocNotepad() {
               <MobileSheetRow label="Abrir" onClick={() => { setActiveId(menuNote.id); setTitleEditing(false); setMenuNoteId(null); }}><FileText className="h-4 w-4" /></MobileSheetRow>
               <MobileSheetRow label="Renombrar" onClick={() => { setActiveId(menuNote.id); setTitleEditing(true); setMenuNoteId(null); }}><Pencil className="h-4 w-4" /></MobileSheetRow>
               <MobileSheetRow label="Duplicar" onClick={() => { duplicateNote(menuNote); setMenuNoteId(null); }}><Files className="h-4 w-4" /></MobileSheetRow>
+              <MobileSheetRow label={menuNote.favorite ? "Quitar de favoritas" : "Marcar favorita"} onClick={() => { toggleFavorite(menuNote.id); setMenuNoteId(null); }}>
+                <Star className="h-4 w-4" fill={menuNote.favorite ? "currentColor" : "none"} />
+              </MobileSheetRow>
               <MobileSheetRow
                 label="Eliminar"
                 destructive
@@ -624,120 +686,34 @@ export function BlocNotepad() {
             </div>
           </MobileSheet>
         )}
+
+        {showTrash && (
+          <TrashSheet trashedNotes={trashedNotes} onClose={() => setShowTrash(false)} onRestore={restoreNote} onPurge={purgeNote} />
+        )}
       </div>
     );
   }
 
   return (
     <div className="relative">
-      <div className="grid gap-4 xl:grid-cols-[270px_minmax(0,1fr)]">
-        <aside className="flex min-h-[520px] flex-col rounded-lg border bg-card p-3">
-          <Button type="button" className="w-full justify-start" onClick={createNote}>
-            <FilePlus2 className="h-4 w-4" />
-            Nueva Nota
-          </Button>
-
-          <div className="relative mt-3">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Buscar notas..."
-              className="h-9 pl-9"
-            />
-          </div>
-
-          <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-            <span>Notas</span>
-            <span>{notes.length}</span>
-          </div>
-
-          <div className="mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
-            {filteredNotes.map((note) => (
-              <div key={note.id} className="group flex items-start gap-1">
-                <button
-                  type="button"
-                  className={cn(
-                    "min-w-0 flex-1 rounded-md px-3 py-2 text-left transition-colors",
-                    note.id === activeId ? "bg-primary text-primary-foreground" : "hover:bg-muted",
-                  )}
-                  onClick={() => setActiveId(note.id)}
-                >
-                  <span className="block truncate text-sm font-medium">{note.title || defaultTitle}</span>
-                  <span className={cn("mt-1 block truncate text-xs", note.id === activeId ? "text-primary-foreground/75" : "text-muted-foreground")}>
-                    {formatBlocNoteMeta(note)}
-                  </span>
-                </button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 shrink-0 text-muted-foreground opacity-100 hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100"
-                  onClick={() => deleteNote(note.id)}
-                  aria-label="Eliminar nota"
-                  title="Eliminar nota"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ))}
-            {filteredNotes.length === 0 && (
-              <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-                No hay notas con esa busqueda.
-              </div>
-            )}
-          </div>
-
-          <div className="mt-3 border-t pt-3">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start text-xs text-muted-foreground"
-              onClick={() => setShowSettings((value) => !value)}
-            >
-              {showSettings ? "Cerrar ajustes" : "Ajustes"}
-            </Button>
-            {showSettings && (
-              <div className="mt-3 space-y-4">
-                <div>
-                  <p className="mb-2 text-xs text-muted-foreground">Tamano del editor</p>
-                  <div className="grid grid-cols-3 gap-1">
-                    {(["sm", "base", "lg"] as const).map((fontSize) => (
-                      <Button
-                        key={fontSize}
-                        type="button"
-                        size="sm"
-                        variant={settings.fontSize === fontSize ? "default" : "outline"}
-                        onClick={() => persistSettings({ ...settings, fontSize })}
-                      >
-                        {fontSize === "sm" ? "S" : fontSize === "base" ? "M" : "L"}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="mb-1.5 text-xs text-muted-foreground">Titulo por defecto</p>
-                  <Input
-                    value={settings.defaultTitle}
-                    onChange={(event) => persistSettings({ ...settings, defaultTitle: event.target.value })}
-                    placeholder={defaultTitle}
-                    className="h-8 text-sm"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </aside>
-
-        <div className="min-w-0 overflow-hidden rounded-lg border bg-card">
-          <div className="border-b bg-background/70 p-3">
+      <style>{blocBrandCss}</style>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="al-bloc-editor-shell min-w-0 overflow-hidden rounded-2xl">
+          <div className="al-bloc-title-row flex items-center gap-2 px-5 py-4">
             <Input
               value={activeNote?.title ?? ""}
               onChange={(event) => renameActiveNote(event.target.value)}
               placeholder={defaultTitle}
-              className="h-11 border-input bg-card text-base font-semibold sm:text-lg"
+              className="al-bloc-title-input h-auto flex-1 border-none bg-transparent px-0 text-xl font-bold shadow-none focus-visible:ring-0"
             />
+            <button
+              type="button"
+              className="al-bloc-icon-btn-ghost flex h-9 w-9 shrink-0 items-center justify-center"
+              onClick={() => activeNote && toggleFavorite(activeNote.id)}
+              aria-label="Favorita"
+            >
+              <Star className={cn("h-5 w-5", activeNote?.favorite && "al-bloc-star-active")} fill={activeNote?.favorite ? "currentColor" : "none"} />
+            </button>
           </div>
 
           <BlocEditorToolbar
@@ -747,12 +723,13 @@ export function BlocNotepad() {
             onHighlight={(color) => runEditorCommand("backColor", color)}
             onInsert={insertItem}
             onLink={createLink}
-            onUploadClick={() => uploadInputRef.current?.click()}
-            onExportPdf={exportActivePdf}
-            onExportWord={exportActiveWord}
+            onImageClick={() => imageInputRef.current?.click()}
+            onDownload={downloadActiveNote}
+            showMore={showMoreTools}
+            onToggleMore={() => setShowMoreTools((value) => !value)}
           />
 
-          <div className="bg-background">
+          <div className="al-bloc-content-wrap">
             <div
               ref={attachEditor}
               role="textbox"
@@ -767,55 +744,161 @@ export function BlocNotepad() {
               onPaste={handlePaste}
               onKeyDown={handleEditorKeyDown}
               className={cn(
-                "empty:before:pointer-events-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]",
-                "min-h-[430px] max-h-[62vh] overflow-y-auto px-5 py-4 leading-7 outline-none sm:min-h-[520px] sm:px-8 sm:py-6",
-                "[&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground",
-                "[&_h1]:text-3xl [&_h1]:font-semibold [&_h2]:text-2xl [&_h2]:font-semibold [&_h3]:text-xl [&_h3]:font-semibold",
-                "[&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6",
+                "al-bloc-content empty:before:pointer-events-none empty:before:text-[#9a958a] empty:before:content-[attr(data-placeholder)]",
+                "min-h-[430px] max-h-[62vh] overflow-y-auto px-8 py-6 leading-7 outline-none",
                 fontClass,
               )}
             />
           </div>
 
-          <div className="flex flex-col gap-3 border-t bg-background/70 px-4 py-3 text-xs text-muted-foreground lg:flex-row lg:items-center lg:justify-between">
+          <div className="al-bloc-footer flex flex-col gap-3 px-4 py-3 text-xs lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
-              <span>{saveState === "saving" ? "Guardando..." : "Guardado automaticamente"}</span>
-              <span> · Ultima edicion: {activeNote ? formatBlocEditedTime(activeNote.updated_at) : "--:--"}</span>
-              {notice && <span className="ml-2 text-primary">{notice}</span>}
+              <span className="al-bloc-save-dot mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" />
+              <span>{saveState === "saving" ? "Guardando..." : "Guardado automáticamente"}</span>
+              <span> · Última edición: {activeNote ? formatBlocEditedTime(activeNote.updated_at) : "--:--"}</span>
+              {notice && <span className="ml-2 font-semibold text-[#c94f21]">{notice}</span>}
             </div>
-            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <div className="flex flex-wrap items-center gap-3 sm:justify-end">
               <span>Palabras: {wordCount}</span>
               <span>Caracteres: {charCount}</span>
               <div className="ml-0 flex items-center gap-1 sm:ml-2">
-                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => duplicateNote()} aria-label="Duplicar nota" title="Duplicar nota">
+                <Select
+                  defaultValue=""
+                  className="al-bloc-export-select h-8 w-[100px] text-xs"
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (value === "pdf") exportActivePdf();
+                    if (value === "word") exportActiveWord();
+                    if (value === "txt") downloadActiveNote();
+                    event.currentTarget.value = "";
+                  }}
+                >
+                  <option value="">Exportar</option>
+                  <option value="pdf">PDF</option>
+                  <option value="word">Word</option>
+                  <option value="txt">TXT</option>
+                </Select>
+                <button type="button" className="al-bloc-icon-btn-ghost flex h-8 w-8 items-center justify-center" onClick={() => duplicateNote()} aria-label="Duplicar nota" title="Duplicar nota">
                   <Files className="h-4 w-4" />
-                </Button>
-                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={copyActiveNote} aria-label="Copiar texto" title="Copiar texto">
+                </button>
+                <button type="button" className="al-bloc-icon-btn-ghost flex h-8 w-8 items-center justify-center" onClick={copyActiveNote} aria-label="Copiar texto" title="Copiar texto">
                   <Copy className="h-4 w-4" />
-                </Button>
-                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={downloadActiveNote} aria-label="Descargar TXT" title="Descargar TXT">
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={exportActivePdf} aria-label="Exportar PDF" title="Exportar PDF">
-                  PDF
-                </Button>
-                <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={exportActiveWord} aria-label="Exportar Word" title="Exportar Word">
-                  Word
-                </Button>
-                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive" onClick={() => activeNote && deleteNote(activeNote.id)} aria-label="Eliminar nota" title="Eliminar nota">
+                </button>
+                <button type="button" className="al-bloc-icon-btn-ghost al-bloc-icon-btn-danger flex h-8 w-8 items-center justify-center" onClick={() => activeNote && deleteNote(activeNote.id)} aria-label="Eliminar nota" title="Eliminar nota">
                   <Trash2 className="h-4 w-4" />
-                </Button>
+                </button>
               </div>
             </div>
           </div>
         </div>
+
+        <aside className="al-bloc-sidebar flex min-h-[520px] flex-col rounded-2xl">
+          <button type="button" className="al-bloc-primary-btn flex w-full items-center justify-center gap-2" onClick={createNote}>
+            <Plus className="h-4 w-4" />
+            Nueva nota
+          </button>
+
+          <div className="mt-3 flex items-center gap-2">
+            <div className="al-bloc-search relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9a958a]" />
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Buscar notas..."
+                className="h-9 pl-9 text-sm"
+              />
+            </div>
+            <button type="button" className={cn("al-bloc-icon-btn h-9 w-9 shrink-0", showSettings && "al-bloc-icon-btn-active")} onClick={() => setShowSettings((value) => !value)} aria-label="Ajustes del bloc">
+              <SlidersIcon />
+            </button>
+          </div>
+
+          <div className="al-bloc-tabs mt-3">
+            {([["todas", "Todas"], ["recientes", "Recientes"], ["favoritas", "Favoritas"]] as const).map(([id, label]) => (
+              <button key={id} type="button" className={cn("al-bloc-tab", listTab === id && "al-bloc-tab-active")} onClick={() => setListTab(id)}>
+                {label}{id === "favoritas" && favoritesCount > 0 ? ` ${favoritesCount}` : ""}
+              </button>
+            ))}
+          </div>
+
+          {showSettings && (
+            <div className="al-bloc-settings-panel mt-3 space-y-3">
+              <div>
+                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#9a958a]">Tamaño del editor</p>
+                <div className="grid grid-cols-3 gap-1">
+                  {(["sm", "base", "lg"] as const).map((fontSize) => (
+                    <button
+                      key={fontSize}
+                      type="button"
+                      className={cn("al-bloc-size-btn h-7 rounded-md text-xs", settings.fontSize === fontSize && "al-bloc-size-btn-active")}
+                      onClick={() => persistSettings({ ...settings, fontSize })}
+                    >
+                      {fontSize === "sm" ? "S" : fontSize === "base" ? "M" : "L"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#9a958a]">Título por defecto</p>
+                <Input value={settings.defaultTitle} onChange={(event) => persistSettings({ ...settings, defaultTitle: event.target.value })} placeholder={defaultTitle} className="h-8 text-xs" />
+              </div>
+            </div>
+          )}
+
+          <div className="mt-3 min-h-0 flex-1 space-y-1 overflow-y-auto pr-0.5">
+            {filteredNotes.map((note) => (
+              <div key={note.id} className="al-bloc-note-row group">
+                <button type="button" className={cn("al-bloc-note-card", note.id === activeId && "al-bloc-note-card-active")} onClick={() => setActiveId(note.id)}>
+                  <div className="flex items-start justify-between gap-1">
+                    <span className="block truncate text-sm font-semibold">{note.title || defaultTitle}</span>
+                    {note.favorite && <Star className="al-bloc-note-card-star h-3.5 w-3.5 shrink-0" fill="currentColor" />}
+                  </div>
+                  <span className="al-bloc-note-card-meta mt-1 block truncate text-xs">
+                    {countWords(note.contentText)} palabras · {formatBlocNoteCardDate(note.updated_at)}
+                  </span>
+                </button>
+                <button type="button" className="al-bloc-note-row-delete" onClick={() => deleteNote(note.id)} aria-label="Eliminar nota" title="Eliminar nota">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            {filteredNotes.length === 0 && (
+              <div className="rounded-lg border border-dashed border-[#ece7dc] p-3 text-sm text-[#6b6f72]">
+                {listTab === "favoritas" ? "Aún no tienes notas favoritas." : "No hay notas con esa búsqueda."}
+              </div>
+            )}
+          </div>
+
+          <button type="button" className="al-bloc-trash-link mt-3 flex items-center justify-between border-t pt-3 text-xs font-semibold" onClick={() => setShowTrash(true)}>
+            <span className="flex items-center gap-1.5"><Trash2 className="h-3.5 w-3.5" />Ver papelera</span>
+            {trashedNotes.length > 0 && <span className="al-bloc-trash-count">{trashedNotes.length}</span>}
+          </button>
+        </aside>
       </div>
 
       <input ref={uploadInputRef} type="file" accept=".txt,.md,text/plain,text/markdown" className="hidden" onChange={handleUpload} />
-      <Button type="button" className="fixed bottom-24 right-5 z-30 h-14 w-14 rounded-full shadow-lg md:bottom-8" size="icon" onClick={createNote} aria-label="Nueva nota" title="Nueva nota">
-        <Plus className="h-6 w-6" />
-      </Button>
+      <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+
+      {showTrash && (
+        <TrashSheet trashedNotes={trashedNotes} onClose={() => setShowTrash(false)} onRestore={restoreNote} onPurge={purgeNote} />
+      )}
     </div>
+  );
+}
+
+function SlidersIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="21" x2="14" y1="4" y2="4" />
+      <line x1="10" x2="3" y1="4" y2="4" />
+      <line x1="21" x2="12" y1="12" y2="12" />
+      <line x1="8" x2="3" y1="12" y2="12" />
+      <line x1="21" x2="16" y1="20" y2="20" />
+      <line x1="12" x2="3" y1="20" y2="20" />
+      <line x1="14" x2="14" y1="2" y2="6" />
+      <line x1="8" x2="8" y1="10" y2="14" />
+      <line x1="16" x2="16" y1="18" y2="22" />
+    </svg>
   );
 }
 
@@ -826,9 +909,10 @@ function BlocEditorToolbar({
   onHighlight,
   onInsert,
   onLink,
-  onUploadClick,
-  onExportPdf,
-  onExportWord,
+  onImageClick,
+  onDownload,
+  showMore,
+  onToggleMore,
 }: {
   onCommand: (command: string, value?: string) => void;
   onBlockChange: (value: string) => void;
@@ -836,84 +920,82 @@ function BlocEditorToolbar({
   onHighlight: (value: string) => void;
   onInsert: (value: string) => void;
   onLink: () => void;
-  onUploadClick: () => void;
-  onExportPdf: () => void;
-  onExportWord: () => void;
+  onImageClick: () => void;
+  onDownload: () => void;
+  showMore: boolean;
+  onToggleMore: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-1.5 border-b bg-card px-2 py-2">
-      <BlocToolbarGroup>
+    <div className="al-bloc-toolbar">
+      <div className="flex flex-wrap items-center gap-1 px-2 py-2">
         <BlocToolButton label="Deshacer" onClick={() => onCommand("undo")}><Undo2 className="h-4 w-4" /></BlocToolButton>
         <BlocToolButton label="Rehacer" onClick={() => onCommand("redo")}><Redo2 className="h-4 w-4" /></BlocToolButton>
-      </BlocToolbarGroup>
-      <BlocToolbarGroup>
-        <Select defaultValue="Arial" className="h-8 w-[104px] text-sm" onChange={(event) => onCommand("fontName", event.target.value)}>
+        <span className="al-bloc-toolbar-divider" />
+        <Select defaultValue="Inter" className="al-bloc-toolbar-select h-8 w-[104px] text-xs" onChange={(event) => onCommand("fontName", event.target.value)}>
+          <option value="Inter">Inter</option>
           <option value="Arial">Arial</option>
           <option value="Georgia">Georgia</option>
           <option value="Times New Roman">Times</option>
           <option value="Courier New">Mono</option>
         </Select>
-        <Select defaultValue="P" className="h-8 w-[108px] text-sm" onChange={(event) => onBlockChange(event.target.value)}>
-          <option value="P">Normal</option>
-          <option value="H1">Titulo 1</option>
-          <option value="H2">Titulo 2</option>
-          <option value="H3">Titulo 3</option>
-          <option value="BLOCKQUOTE">Cita</option>
-        </Select>
-      </BlocToolbarGroup>
-      <BlocToolbarGroup>
-        <BlocToolButton label="Reducir tamano" onClick={() => onCommand("fontSize", "2")}><Type className="h-3.5 w-3.5" /></BlocToolButton>
-        <BlocToolButton label="Tamano normal" onClick={() => onCommand("fontSize", "3")}><span className="text-sm font-semibold">16</span></BlocToolButton>
-        <BlocToolButton label="Aumentar tamano" onClick={() => onCommand("fontSize", "5")}><Type className="h-4 w-4" /></BlocToolButton>
-      </BlocToolbarGroup>
-      <BlocToolbarGroup>
+        <div className="al-bloc-size-group">
+          <BlocToolButton label="Reducir tamaño" onClick={() => onCommand("fontSize", "2")}><Type className="h-3 w-3" /></BlocToolButton>
+          <BlocToolButton label="Aumentar tamaño" onClick={() => onCommand("fontSize", "5")}><Type className="h-4 w-4" /></BlocToolButton>
+        </div>
+        <span className="al-bloc-toolbar-divider" />
         <BlocToolButton label="Negrita" onClick={() => onCommand("bold")}><Bold className="h-4 w-4" /></BlocToolButton>
         <BlocToolButton label="Cursiva" onClick={() => onCommand("italic")}><Italic className="h-4 w-4" /></BlocToolButton>
         <BlocToolButton label="Subrayado" onClick={() => onCommand("underline")}><Underline className="h-4 w-4" /></BlocToolButton>
+        <span className="al-bloc-toolbar-divider" />
+        <BlocToolButton label="Alinear izquierda" onClick={() => onCommand("justifyLeft")}><AlignLeft className="h-4 w-4" /></BlocToolButton>
+        <BlocToolButton label="Alinear centro" onClick={() => onCommand("justifyCenter")}><AlignCenter className="h-4 w-4" /></BlocToolButton>
+        <BlocToolButton label="Alinear derecha" onClick={() => onCommand("justifyRight")}><AlignRight className="h-4 w-4" /></BlocToolButton>
         <BlocToolButton label="Lista" onClick={() => onCommand("insertUnorderedList")}><List className="h-4 w-4" /></BlocToolButton>
-        <BlocToolButton label="Lista numerada" onClick={() => onCommand("insertOrderedList")}><ListOrdered className="h-4 w-4" /></BlocToolButton>
-        <BlocToolButton label="Enlace" onClick={onLink}><Link2 className="h-4 w-4" /></BlocToolButton>
-        <label className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" title="Color de texto" aria-label="Color de texto">
-          <Palette className="h-4 w-4" />
-          <input type="color" className="sr-only" onChange={(event) => onColor(event.target.value)} />
-        </label>
-        <label className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" title="Resaltar" aria-label="Resaltar">
-          <Highlighter className="h-4 w-4" />
-          <input type="color" className="sr-only" defaultValue="#fff3a3" onChange={(event) => onHighlight(event.target.value)} />
-        </label>
-      </BlocToolbarGroup>
-      <BlocToolbarGroup>
-        <Select defaultValue="" className="h-8 w-[108px] text-sm" onChange={(event) => { onInsert(event.target.value); event.currentTarget.value = ""; }}>
+        <span className="al-bloc-toolbar-divider" />
+        <Select defaultValue="" className="al-bloc-toolbar-select h-8 w-[100px] text-xs" onChange={(event) => { onInsert(event.target.value); event.currentTarget.value = ""; }}>
           <option value="">Insertar</option>
           <option value="date">Fecha</option>
           <option value="time">Hora</option>
           <option value="divider">Separador</option>
           <option value="check">Checklist</option>
         </Select>
-        <BlocToolButton label="Alinear izquierda" onClick={() => onCommand("justifyLeft")}><AlignLeft className="h-4 w-4" /></BlocToolButton>
-        <BlocToolButton label="Alinear centro" onClick={() => onCommand("justifyCenter")}><AlignCenter className="h-4 w-4" /></BlocToolButton>
-        <BlocToolButton label="Alinear derecha" onClick={() => onCommand("justifyRight")}><AlignRight className="h-4 w-4" /></BlocToolButton>
-        <BlocToolButton label="Justificar" onClick={() => onCommand("justifyFull")}><AlignJustify className="h-4 w-4" /></BlocToolButton>
-      </BlocToolbarGroup>
-      <BlocToolbarGroup>
-        <BlocToolButton label="Subir Doc" onClick={onUploadClick}><Upload className="h-4 w-4" /></BlocToolButton>
-        <BlocToolButton label="Exportar PDF" onClick={onExportPdf}><Download className="h-4 w-4" /><span className="text-[11px] font-semibold">PDF</span></BlocToolButton>
-        <BlocToolButton label="Exportar Word" onClick={onExportWord}><FileText className="h-4 w-4" /><span className="text-[11px] font-semibold">Word</span></BlocToolButton>
-      </BlocToolbarGroup>
+        <BlocToolButton label="Enlace" onClick={onLink}><Link2 className="h-4 w-4" /></BlocToolButton>
+        <BlocToolButton label="Imagen" onClick={onImageClick}><ImageIcon className="h-4 w-4" /></BlocToolButton>
+        <BlocToolButton label="Descargar TXT" onClick={onDownload}><Download className="h-4 w-4" /></BlocToolButton>
+        <span className="al-bloc-toolbar-divider" />
+        <BlocToolButton label="Más herramientas" onClick={onToggleMore}><MoreVertical className="h-4 w-4" /></BlocToolButton>
+      </div>
+      {showMore && (
+        <div className="al-bloc-toolbar-more flex flex-wrap items-center gap-1 px-2 pb-2">
+          <Select defaultValue="P" className="al-bloc-toolbar-select h-8 w-[104px] text-xs" onChange={(event) => onBlockChange(event.target.value)}>
+            <option value="P">Normal</option>
+            <option value="H1">Título 1</option>
+            <option value="H2">Título 2</option>
+            <option value="H3">Título 3</option>
+            <option value="BLOCKQUOTE">Cita</option>
+          </Select>
+          <BlocToolButton label="Lista numerada" onClick={() => onCommand("insertOrderedList")}><ListOrdered className="h-4 w-4" /></BlocToolButton>
+          <BlocToolButton label="Justificar" onClick={() => onCommand("justifyFull")}><AlignJustify className="h-4 w-4" /></BlocToolButton>
+          <label className="al-bloc-tool-btn inline-flex h-8 w-8 cursor-pointer items-center justify-center" title="Color de texto" aria-label="Color de texto">
+            <Palette className="h-4 w-4" />
+            <input type="color" className="sr-only" onChange={(event) => onColor(event.target.value)} />
+          </label>
+          <label className="al-bloc-tool-btn inline-flex h-8 w-8 cursor-pointer items-center justify-center" title="Resaltar" aria-label="Resaltar">
+            <Highlighter className="h-4 w-4" />
+            <input type="color" className="sr-only" defaultValue="#fff3a3" onChange={(event) => onHighlight(event.target.value)} />
+          </label>
+        </div>
+      )}
     </div>
   );
 }
 
 function BlocToolButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
   return (
-    <Button type="button" variant="ghost" size="sm" className="h-8 min-w-8 shrink-0 px-2 text-muted-foreground hover:text-foreground" onClick={onClick} aria-label={label} title={label}>
+    <button type="button" className="al-bloc-tool-btn" onClick={onClick} aria-label={label} title={label}>
       {children}
-    </Button>
+    </button>
   );
-}
-
-function BlocToolbarGroup({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-wrap items-center gap-1 rounded-md border bg-background/60 p-1">{children}</div>;
 }
 
 function MobileNoteCard({
@@ -928,31 +1010,17 @@ function MobileNoteCard({
   onMenu: () => void;
 }) {
   return (
-    <div
-      className={cn(
-        "relative w-36 shrink-0 snap-start rounded-2xl border p-3 transition-colors",
-        active ? "border-primary bg-primary text-primary-foreground shadow-md" : "border-border bg-card hover:bg-muted/50",
-      )}
-    >
+    <div className={cn("al-bloc-mobile-card relative w-36 shrink-0 snap-start rounded-2xl p-3", active && "al-bloc-mobile-card-active")}>
       <button type="button" className="block w-full text-left" onClick={onSelect}>
-        <FileText className={cn("h-5 w-5", active ? "text-primary-foreground" : "text-muted-foreground")} />
+        <div className="flex items-center justify-between">
+          <FileText className="h-5 w-5" />
+          {note.favorite && <Star className="h-3.5 w-3.5" fill="currentColor" />}
+        </div>
         <span className="mt-2 block truncate text-sm font-semibold">{note.title || defaultTitle}</span>
-        <span className={cn("mt-0.5 block text-xs", active ? "text-primary-foreground/75" : "text-muted-foreground")}>
-          {countWords(note.contentText)} palabras
-        </span>
-        <span className={cn("block text-xs", active ? "text-primary-foreground/75" : "text-muted-foreground")}>
-          {formatBlocNoteCardDate(note.updated_at)}
-        </span>
+        <span className="al-bloc-mobile-card-meta mt-0.5 block text-xs">{countWords(note.contentText)} palabras</span>
+        <span className="al-bloc-mobile-card-meta block text-xs">{formatBlocNoteCardDate(note.updated_at)}</span>
       </button>
-      <button
-        type="button"
-        className={cn(
-          "absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full transition-colors",
-          active ? "text-primary-foreground/80 hover:bg-white/15" : "text-muted-foreground hover:bg-muted",
-        )}
-        onClick={(event) => { event.stopPropagation(); onMenu(); }}
-        aria-label={`Opciones de ${note.title || defaultTitle}`}
-      >
+      <button type="button" className="al-bloc-mobile-card-menu absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full" onClick={(event) => { event.stopPropagation(); onMenu(); }} aria-label={`Opciones de ${note.title || defaultTitle}`}>
         <MoreVertical className="h-4 w-4" />
       </button>
     </div>
@@ -961,12 +1029,7 @@ function MobileNoteCard({
 
 function MobileToolbarButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
-      type="button"
-      className="flex h-12 flex-1 items-center justify-center gap-2 text-sm font-medium text-muted-foreground transition-colors first:border-l-0 hover:bg-muted hover:text-foreground [&+&]:border-l"
-      onClick={onClick}
-      aria-label={label}
-    >
+    <button type="button" className="al-bloc-mobile-toolbar-btn flex h-12 flex-1 items-center justify-center gap-2 text-sm font-medium" onClick={onClick} aria-label={label}>
       {children}
       {label}
     </button>
@@ -977,21 +1040,11 @@ function MobileSheet({ title, onClose, children }: { title: string; onClose: () 
   return (
     <>
       <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className="fixed inset-x-0 bottom-0 z-[71] max-h-[80dvh] overflow-y-auto rounded-t-2xl border-t bg-background pb-safe shadow-2xl"
-      >
-        <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-muted-foreground/20" />
+      <div role="dialog" aria-modal="true" aria-label={title} className="al-bloc-sheet fixed inset-x-0 bottom-0 z-[71] max-h-[80dvh] overflow-y-auto rounded-t-2xl pb-safe">
+        <div className="al-bloc-sheet-handle mx-auto mt-3 h-1 w-10 rounded-full" />
         <div className="flex items-center justify-between px-5 py-3">
-          <h3 className="truncate text-base font-semibold">{title}</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
+          <h3 className="truncate text-base font-semibold text-[#111111]">{title}</h3>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="al-bloc-icon-btn-ghost flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -1013,14 +1066,7 @@ function MobileSheetRow({
   children: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      className={cn(
-        "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition-colors",
-        destructive ? "text-destructive hover:bg-destructive/10" : "hover:bg-muted",
-      )}
-      onClick={onClick}
-    >
+    <button type="button" className={cn("al-bloc-sheet-row flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium", destructive && "al-bloc-sheet-row-danger")} onClick={onClick}>
       {children}
       {label}
     </button>
@@ -1029,15 +1075,58 @@ function MobileSheetRow({
 
 function MobileSheetTile({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
-      type="button"
-      className="flex h-14 flex-col items-center justify-center gap-1 rounded-xl border text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      onClick={onClick}
-      aria-label={label}
-    >
+    <button type="button" className="al-bloc-sheet-tile flex h-14 flex-col items-center justify-center gap-1 rounded-xl text-xs font-medium" onClick={onClick} aria-label={label}>
       {children}
       {label}
     </button>
+  );
+}
+
+function TrashSheet({
+  trashedNotes,
+  onClose,
+  onRestore,
+  onPurge,
+}: {
+  trashedNotes: BlocTrashedNote[];
+  onClose: () => void;
+  onRestore: (id: string) => void;
+  onPurge: (id: string) => void;
+}) {
+  return (
+    <>
+      <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div role="dialog" aria-modal="true" aria-label="Papelera" className="al-bloc-trash-modal fixed inset-0 z-[71] flex items-center justify-center p-4">
+        <div className="al-bloc-trash-panel w-full max-w-md rounded-2xl" onClick={(event) => event.stopPropagation()}>
+          <div className="flex items-center justify-between px-5 py-4">
+            <h3 className="text-base font-bold text-[#111111]">Papelera</h3>
+            <button type="button" onClick={onClose} aria-label="Cerrar" className="al-bloc-icon-btn-ghost flex h-8 w-8 items-center justify-center rounded-full">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="max-h-[50vh] space-y-1.5 overflow-y-auto px-4 pb-4">
+            {trashedNotes.length === 0 && <p className="px-1 py-6 text-center text-sm text-[#6b6f72]">La papelera está vacía.</p>}
+            {trashedNotes.map((note) => (
+              <div key={note.id} className="al-bloc-trash-row flex items-center justify-between gap-2 rounded-xl px-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[#111111]">{note.title || defaultTitle}</p>
+                  <p className="text-xs text-[#9a958a]">Eliminada {formatBlocNoteCardDate(note.deleted_at)}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button type="button" className="al-bloc-icon-btn-ghost flex h-8 w-8 items-center justify-center" onClick={() => onRestore(note.id)} aria-label="Restaurar" title="Restaurar">
+                    <RotateCcw className="h-3.5 w-3.5" />
+                  </button>
+                  <button type="button" className="al-bloc-icon-btn-ghost al-bloc-icon-btn-danger flex h-8 w-8 items-center justify-center" onClick={() => onPurge(note.id)} aria-label="Eliminar definitivamente" title="Eliminar definitivamente">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="al-bloc-trash-footer px-5 py-3 text-center text-[11px]">Las notas eliminadas se quedan aquí hasta que las restaures o las borres para siempre.</p>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -1060,6 +1149,7 @@ function createBlocNote({ title, contentHtml = "", contentText = "" }: { title: 
     title,
     contentHtml,
     contentText,
+    favorite: false,
     created_at: now,
     updated_at: now,
   };
@@ -1085,10 +1175,24 @@ function normalizeBlocNotes(value: unknown): BlocNote[] {
         title,
         contentHtml,
         contentText,
+        favorite: item.favorite === true,
         created_at: stringValue(item.created_at) || updated,
         updated_at: updated,
       };
     });
+}
+
+function normalizeBlocTrashed(value: unknown): BlocTrashedNote[] {
+  const rawTrashed = isRecord(value) && Array.isArray(value.trashedNotes) ? value.trashedNotes : [];
+  return rawTrashed
+    .filter(isRecord)
+    .map((item) => {
+      const notes = normalizeBlocNotes([item]);
+      const base = notes[0];
+      if (!base) return null;
+      return { ...base, deleted_at: stringValue(item.deleted_at) || base.updated_at };
+    })
+    .filter((note): note is BlocTrashedNote => note !== null);
 }
 
 function normalizeBlocSettings(value: unknown): BlocSettings {
@@ -1122,7 +1226,7 @@ function htmlToText(html: string) {
 }
 
 function getEditorText(element: HTMLElement) {
-  return (element.innerText || element.textContent || "").replace(/\u00a0/g, " ").replace(/\n+$/g, "");
+  return (element.innerText || element.textContent || "").replace(/ /g, " ").replace(/\n+$/g, "");
 }
 
 function sanitizeEditorHtml(html: string) {
@@ -1152,10 +1256,6 @@ function sanitizeEditorHtml(html: string) {
 
 function countWords(text: string) {
   return text.trim().split(/\s+/).filter(Boolean).length;
-}
-
-function formatBlocNoteMeta(note: BlocNote) {
-  return `${countWords(note.contentText)} palabras · ${formatBlocEditedTime(note.updated_at)}`;
 }
 
 function formatBlocEditedTime(value: string) {
@@ -1204,7 +1304,7 @@ function downloadWordFile(filename: string, title: string, html: string) {
   <div>${sanitizeEditorHtml(html)}</div>
 </body>
 </html>`;
-  const blob = new Blob(["\ufeff", documentHtml], { type: "application/msword;charset=utf-8" });
+  const blob = new Blob(["﻿", documentHtml], { type: "application/msword;charset=utf-8" });
   downloadBlob(filename, blob);
 }
 
@@ -1339,3 +1439,82 @@ function makeId() {
 function nowIso() {
   return new Date().toISOString();
 }
+
+const blocBrandCss = `
+  .al-bloc-editor-shell { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); display: flex; flex-direction: column; }
+  .al-bloc-title-row { border-bottom: 1px solid #f0ece2; }
+  .al-bloc-title-input { color: #111111; }
+  .al-bloc-title-input::placeholder { color: #9a958a; }
+  .al-bloc-toolbar { border-bottom: 1px solid #f0ece2; background: #faf8f4; }
+  .al-bloc-toolbar-more { border-top: 1px solid #f0ece2; }
+  .al-bloc-toolbar-divider { width: 1px; height: 20px; background: #ece7dc; margin: 0 2px; flex-shrink: 0; }
+  .al-bloc-tool-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; min-width: 32px; padding: 0 7px; border-radius: 8px; border: none; background: transparent; color: #6b6f72; cursor: pointer; }
+  .al-bloc-tool-btn:hover { background: white; color: #c94f21; }
+  .al-bloc-size-group { display: inline-flex; align-items: center; gap: 1px; }
+  .al-bloc-toolbar-select { border: 1px solid #ece7dc; border-radius: 8px; background: white; color: #333029; }
+  .al-bloc-content-wrap { background: white; }
+  .al-bloc-content { color: #333029; }
+  .al-bloc-content a { color: #c94f21; text-decoration: underline; }
+  .al-bloc-content blockquote { border-left: 3px solid #ece7dc; padding-left: 14px; color: #6b6f72; }
+  .al-bloc-content h1 { font-size: 1.7em; font-weight: 700; color: #111111; }
+  .al-bloc-content h2 { font-size: 1.4em; font-weight: 700; color: #111111; }
+  .al-bloc-content h3 { font-size: 1.15em; font-weight: 700; color: #111111; }
+  .al-bloc-content ol { list-style: decimal; padding-left: 24px; }
+  .al-bloc-content ul { list-style: disc; padding-left: 24px; }
+  .al-bloc-content img { max-width: 100%; border-radius: 8px; margin: 6px 0; }
+  .al-bloc-footer { border-top: 1px solid #f0ece2; background: #faf8f4; color: #6b6f72; }
+  .al-bloc-save-dot { background: #4C9A6E; }
+  .al-bloc-export-select { border: 1px solid #ece7dc; border-radius: 8px; background: white; color: #333029; }
+  .al-bloc-icon-btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; }
+  .al-bloc-icon-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+  .al-bloc-icon-btn-active { background: #fbe7dd; border-color: rgba(225, 93, 45, 0.3); color: #c94f21; }
+  .al-bloc-icon-btn-ghost { border-radius: 9px; border: none; background: transparent; color: #6b6f72; cursor: pointer; }
+  .al-bloc-icon-btn-ghost:hover { background: #f3ece1; color: #111111; }
+  .al-bloc-icon-btn-danger:hover { background: #fbe2df; color: #c23a2e; }
+  .al-bloc-star-active { color: #E15D2D; }
+  .al-bloc-primary-btn { height: 40px; border-radius: 12px; border: none; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 22px rgba(225, 93, 45, 0.25); }
+  .al-bloc-search input { border: 1px solid #ece7dc; border-radius: 10px; background: white; }
+  .al-bloc-sidebar { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); padding: 14px; }
+  .al-bloc-tabs { display: flex; align-items: center; gap: 2px; border-radius: 11px; border: 1px solid #ece7dc; background: #faf8f4; padding: 3px; }
+  .al-bloc-tab { flex: 1; height: 28px; border-radius: 8px; font-size: 11px; font-weight: 600; color: #6b6f72; background: transparent; border: none; cursor: pointer; }
+  .al-bloc-tab-active { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; box-shadow: 0 4px 10px rgba(225, 93, 45, 0.25); }
+  .al-bloc-settings-panel { border: 1px solid #ece7dc; border-radius: 12px; background: #faf8f4; padding: 10px; }
+  .al-bloc-size-btn { border: 1px solid #ece7dc; border-radius: 7px; background: white; color: #333029; font-weight: 600; cursor: pointer; }
+  .al-bloc-size-btn-active { border-color: transparent; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; }
+  .al-bloc-note-row { display: flex; align-items: stretch; gap: 2px; }
+  .al-bloc-note-card { min-width: 0; flex: 1; border-radius: 10px; padding: 8px 10px; text-align: left; background: transparent; border: none; cursor: pointer; color: #333029; }
+  .al-bloc-note-card:hover { background: #faf8f4; }
+  .al-bloc-note-card-active { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; }
+  .al-bloc-note-card-meta { color: #9a958a; }
+  .al-bloc-note-card-active .al-bloc-note-card-meta { color: rgba(255,255,255,0.75); }
+  .al-bloc-note-card-star { color: #ffe3ba; }
+  .al-bloc-note-card:not(.al-bloc-note-card-active) .al-bloc-note-card-star { color: #E15D2D; }
+  .al-bloc-note-row-delete { display: flex; align-items: center; justify-content: center; width: 30px; border-radius: 9px; border: none; background: transparent; color: #9a958a; cursor: pointer; opacity: 0; }
+  .group:hover .al-bloc-note-row-delete { opacity: 1; }
+  .al-bloc-note-row-delete:hover { background: #fbe2df; color: #c23a2e; }
+  .al-bloc-trash-link { border-top: 1px solid #f0ece2; color: #6b6f72; background: none; border-left: none; border-right: none; border-bottom: none; cursor: pointer; }
+  .al-bloc-trash-link:hover { color: #c94f21; }
+  .al-bloc-trash-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #fbe7dd; color: #c94f21; font-size: 10.5px; font-weight: 700; }
+  .al-bloc-trash-modal { background: rgba(17,17,17,0.35); }
+  .al-bloc-trash-panel { background: white; box-shadow: 0 24px 60px rgba(17,17,17,0.18); }
+  .al-bloc-trash-row { background: #faf8f4; border: 1px solid #f0ece2; }
+  .al-bloc-trash-footer { border-top: 1px solid #f0ece2; color: #9a958a; }
+  .al-bloc-save-dot { background: #4C9A6E; }
+  .al-bloc-mobile-toolbar { border-top: 1px solid #f0ece2; }
+  .al-bloc-mobile-toolbar-btn { color: #6b6f72; background: none; border: none; }
+  .al-bloc-mobile-toolbar-btn:hover { background: #faf8f4; color: #c94f21; }
+  .al-bloc-mobile-toolbar-more { border-left: 1px solid #f0ece2; color: #6b6f72; background: none; border-top: none; border-right: none; border-bottom: none; }
+  .al-bloc-mobile-card { border: 2px solid #ece7dc; background: white; color: #333029; }
+  .al-bloc-mobile-card-active { border-color: transparent; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; box-shadow: 0 10px 22px rgba(225,93,45,0.25); }
+  .al-bloc-mobile-card-meta { color: #9a958a; }
+  .al-bloc-mobile-card-active .al-bloc-mobile-card-meta { color: rgba(255,255,255,0.75); }
+  .al-bloc-mobile-card-menu { color: inherit; opacity: 0.75; background: none; border: none; }
+  .al-bloc-sheet { background: white; border-top: 1px solid #ece7dc; box-shadow: 0 -12px 32px rgba(17,17,17,0.12); }
+  .al-bloc-sheet-handle { background: #ece7dc; }
+  .al-bloc-sheet-row { color: #333029; background: none; border: none; }
+  .al-bloc-sheet-row:hover { background: #faf8f4; }
+  .al-bloc-sheet-row-danger { color: #c23a2e; }
+  .al-bloc-sheet-row-danger:hover { background: #fbe2df; }
+  .al-bloc-sheet-tile { border: 1px solid #ece7dc; color: #6b6f72; background: white; }
+  .al-bloc-sheet-tile:hover { background: #faf8f4; color: #111111; }
+`;
