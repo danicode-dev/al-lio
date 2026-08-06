@@ -15,23 +15,13 @@ const ALLOWED_ETAPAS = new Set([
   "3_empleabilidad",
   "4_proyecto",
 ]);
-const ALLOWED_ITEM_RELACION = new Set(["requiere", "desarrolla", "apoya", "demuestra"]);
+const ALLOWED_ITEM_RELACION = new Set(["requiere", "ensena", "demuestra"]);
 
-const ROADMAP_COLUMNS = [
-  "competencia_id",
-  "ciclo_siglas",
-  "orden_global",
-  "etapa",
-  "bloque",
-  "modulo_codigo",
-  "modulo_nombre",
+const SKILLS_COLUMNS = [
+  "skill_id",
   "titulo",
   "descripcion",
-  "nivel_objetivo",
-  "obligatoria_roadmap_base",
-  "basico_antes_de_empezar",
   "horas_estimadas",
-  "prerrequisitos_ids",
   "criterios_superacion",
   "evidencia_minima",
   "umbral_superacion",
@@ -42,20 +32,24 @@ const ROADMAP_COLUMNS = [
   "ultima_revision",
 ];
 
-const RELACIONES_COLUMNS = [
+const CICLO_HABILIDADES_COLUMNS = [
   "ciclo_siglas",
-  "competencia_origen_id",
-  "competencia_destino_id",
-  "tipo_relacion",
-  "obligatoria",
-  "motivo",
-  "ultima_revision",
+  "skill_id",
+  "orden_global",
+  "etapa",
+  "bloque",
+  "modulo_codigo",
+  "modulo_nombre",
+  "nivel_objetivo",
+  "obligatoria_roadmap_base",
+  "basico_antes_de_empezar",
+  "prerrequisito_texto",
 ];
 
 const ITEM_COMPETENCIAS_COLUMNS = [
   "item_id_slug",
   "ciclo_siglas",
-  "competencia_id",
+  "skill_id",
   "tipo_relacion",
   "orden_preparacion",
   "nivel_minimo_recomendado",
@@ -166,52 +160,50 @@ function main() {
   const errors = [];
   const warnings = [];
 
-  const roadmapRows = readRecords(
-    join(COMPETENCIAS_DIR, "roadmap_competencias.csv"),
-    "roadmap_competencias.csv",
-    ROADMAP_COLUMNS,
+  const skillsRows = readRecords(
+    join(COMPETENCIAS_DIR, "habilidades.csv"),
+    "habilidades.csv",
+    SKILLS_COLUMNS,
     errors
   );
-  const competencyIds = new Set();
-  for (const { rowNumber, record } of roadmapRows) {
-    if (!record.competencia_id || !record.ciclo_siglas || !record.titulo || !record.etapa) {
-      addError(errors, "roadmap_competencias.csv", rowNumber, "competencia_id, ciclo_siglas, titulo and etapa are required");
+  const skillIds = new Set();
+  for (const { rowNumber, record } of skillsRows) {
+    if (!record.skill_id || !record.titulo) {
+      addError(errors, "habilidades.csv", rowNumber, "skill_id and titulo are required");
       continue;
     }
-    if (competencyIds.has(record.competencia_id)) {
-      addError(errors, "roadmap_competencias.csv", rowNumber, `duplicate competencia_id: ${record.competencia_id}`);
+    if (skillIds.has(record.skill_id)) {
+      addError(errors, "habilidades.csv", rowNumber, `duplicate skill_id: ${record.skill_id}`);
     } else {
-      competencyIds.add(record.competencia_id);
-    }
-    if (!ALLOWED_CYCLES.has(record.ciclo_siglas)) {
-      addError(errors, "roadmap_competencias.csv", rowNumber, `unknown ciclo_siglas: ${record.ciclo_siglas}`);
-    }
-    if (!ALLOWED_ETAPAS.has(record.etapa)) {
-      addError(errors, "roadmap_competencias.csv", rowNumber, `unknown etapa: ${record.etapa}`);
-    }
-    if (!Number.isInteger(Number.parseInt(record.orden_global, 10))) {
-      addError(errors, "roadmap_competencias.csv", rowNumber, "orden_global must be an integer");
+      skillIds.add(record.skill_id);
     }
   }
 
-  const relacionesRows = readRecords(
-    join(COMPETENCIAS_DIR, "relaciones_competencias.csv"),
-    "relaciones_competencias.csv",
-    RELACIONES_COLUMNS,
+  const cycleSkillRows = readRecords(
+    join(COMPETENCIAS_DIR, "ciclo_habilidades.csv"),
+    "ciclo_habilidades.csv",
+    CICLO_HABILIDADES_COLUMNS,
     errors
   );
-  for (const { rowNumber, record } of relacionesRows) {
+  const seenCycleSkill = new Set();
+  for (const { rowNumber, record } of cycleSkillRows) {
     if (!ALLOWED_CYCLES.has(record.ciclo_siglas)) {
-      addError(errors, "relaciones_competencias.csv", rowNumber, `unknown ciclo_siglas: ${record.ciclo_siglas}`);
+      addError(errors, "ciclo_habilidades.csv", rowNumber, `unknown ciclo_siglas: ${record.ciclo_siglas}`);
     }
-    if (record.competencia_origen_id === record.competencia_destino_id) {
-      addError(errors, "relaciones_competencias.csv", rowNumber, "competencia_origen_id and competencia_destino_id cannot be the same");
+    if (!ALLOWED_ETAPAS.has(record.etapa)) {
+      addError(errors, "ciclo_habilidades.csv", rowNumber, `unknown etapa: ${record.etapa}`);
     }
-    if (!competencyIds.has(record.competencia_origen_id)) {
-      addError(errors, "relaciones_competencias.csv", rowNumber, `competencia_origen_id not found in roadmap: ${record.competencia_origen_id}`);
+    if (!Number.isInteger(Number.parseInt(record.orden_global, 10))) {
+      addError(errors, "ciclo_habilidades.csv", rowNumber, "orden_global must be an integer");
     }
-    if (!competencyIds.has(record.competencia_destino_id)) {
-      addError(errors, "relaciones_competencias.csv", rowNumber, `competencia_destino_id not found in roadmap: ${record.competencia_destino_id}`);
+    if (!skillIds.has(record.skill_id)) {
+      addError(errors, "ciclo_habilidades.csv", rowNumber, `skill_id not found in habilidades.csv: ${record.skill_id}`);
+    }
+    const key = `${record.ciclo_siglas}|${record.skill_id}`;
+    if (seenCycleSkill.has(key)) {
+      addError(errors, "ciclo_habilidades.csv", rowNumber, `duplicate (ciclo_siglas, skill_id): ${key}`);
+    } else {
+      seenCycleSkill.add(key);
     }
   }
 
@@ -230,8 +222,8 @@ function main() {
     if (!ALLOWED_ITEM_RELACION.has(record.tipo_relacion)) {
       addError(errors, "item_competencias.csv", rowNumber, `unknown tipo_relacion: ${record.tipo_relacion}`);
     }
-    if (!competencyIds.has(record.competencia_id)) {
-      addError(errors, "item_competencias.csv", rowNumber, `competencia_id not found in roadmap: ${record.competencia_id}`);
+    if (!skillIds.has(record.skill_id)) {
+      addError(errors, "item_competencias.csv", rowNumber, `skill_id not found in habilidades.csv: ${record.skill_id}`);
     }
     if (!catalogIds.has(record.item_id_slug)) {
       orphanItems++;
@@ -255,8 +247,8 @@ function main() {
   }
 
   console.log("OK: FP competencies CSV validation completed.");
-  console.log(`Competencies: ${competencyIds.size}`);
-  console.log(`Relations: ${relacionesRows.length}`);
+  console.log(`Skills: ${skillIds.size}`);
+  console.log(`Cycle placements: ${cycleSkillRows.length}`);
   console.log(`Item links: ${itemRows.length} (orphan item_id_slug: ${orphanItems})`);
 }
 

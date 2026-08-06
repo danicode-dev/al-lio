@@ -1,0 +1,168 @@
+ciclo_siglas,skill_id,orden_global,etapa,bloque,modulo_codigo,modulo_nombre,nivel_objetivo,obligatoria_roadmap_base,basico_antes_de_empezar,prerrequisito_texto
+DAW,BAS-001,1,0_antes_de_empezar,Competencia digital básica,PRE,Preparación previa,0,sí,sí,
+DAM,BAS-001,1,0_antes_de_empezar,Competencia digital básica,PRE,Preparación previa,0,sí,sí,
+DAW,BAS-002,2,0_antes_de_empezar,Competencia digital básica,PRE,Preparación previa,0,sí,sí,"Antes de esto conviene saber: Gestionar archivos, carpetas y copias de seguridad."
+DAM,BAS-002,2,0_antes_de_empezar,Competencia digital básica,PRE,Preparación previa,0,sí,sí,"Antes de esto conviene saber: Gestionar archivos, carpetas y copias de seguridad."
+DAW,BAS-003,3,0_antes_de_empezar,Pensamiento lógico,PRE,Preparación previa,0,sí,sí,
+DAM,BAS-003,3,0_antes_de_empezar,Pensamiento lógico,PRE,Preparación previa,0,sí,sí,
+DAW,BAS-004,4,0_antes_de_empezar,Fundamentos de Internet,PRE,Preparación previa,0,sí,sí,Antes de esto conviene saber: Resolver problemas mediante algoritmos simples.
+DAM,BAS-004,4,0_antes_de_empezar,Fundamentos de Internet,PRE,Preparación previa,0,sí,sí,Antes de esto conviene saber: Resolver problemas mediante algoritmos simples.
+DAW,BAS-005,5,0_antes_de_empezar,Método de estudio técnico,PRE,Preparación previa,0,sí,sí,
+DAM,BAS-005,5,0_antes_de_empezar,Método de estudio técnico,PRE,Preparación previa,0,sí,sí,
+DAW,SI-001,6,1_fundamentos,Sistemas informáticos,0483,Sistemas informáticos,1,sí,no,"Antes de esto conviene saber: Gestionar archivos, carpetas y copias de seguridad; Usar terminal y comandos esenciales."
+DAM,SI-001,6,1_fundamentos,Sistemas informáticos,0483,Sistemas informáticos,1,sí,no,"Antes de esto conviene saber: Gestionar archivos, carpetas y copias de seguridad; Usar terminal y comandos esenciales."
+DAW,SI-002,7,1_fundamentos,Sistemas informáticos,0483,Sistemas informáticos,1,sí,no,Antes de esto conviene saber: Instalar y configurar un sistema de trabajo; Comprender cómo funciona una aplicación conectada.
+DAM,SI-002,7,1_fundamentos,Sistemas informáticos,0483,Sistemas informáticos,1,sí,no,Antes de esto conviene saber: Instalar y configurar un sistema de trabajo; Comprender cómo funciona una aplicación conectada.
+DAW,BD-001,8,1_fundamentos,Bases de datos,0484,Bases de Datos,1,sí,no,Antes de esto conviene saber: Resolver problemas mediante algoritmos simples.
+DAM,BD-001,8,1_fundamentos,Bases de datos,0484,Bases de Datos,1,sí,no,Antes de esto conviene saber: Resolver problemas mediante algoritmos simples.
+DAW,BD-002,9,1_fundamentos,Bases de datos,0484,Bases de Datos,1,sí,no,Antes de esto conviene saber: Modelar datos relacionales.
+DAM,BD-002,9,1_fundamentos,Bases de datos,0484,Bases de Datos,1,sí,no,Antes de esto conviene saber: Modelar datos relacionales.
+DAW,BD-003,10,1_fundamentos,Bases de datos,0484,Bases de Datos,2,sí,no,Antes de esto conviene saber: Crear y consultar una base de datos con SQL; Aplicar red y seguridad básica.
+DAM,BD-003,10,1_fundamentos,Bases de datos,0484,Bases de Datos,2,sí,no,Antes de esto conviene saber: Crear y consultar una base de datos con SQL; Aplicar red y seguridad básica.
+DAW,PRO-001,11,1_fundamentos,Programación,0485,Programación,1,sí,no,Antes de esto conviene saber: Resolver problemas mediante algoritmos simples.
+DAM,PRO-001,11,1_fundamentos,Programación,0485,Programación,1,sí,no,Antes de esto conviene saber: Resolver problemas mediante algoritmos simples.
+DAW,PRO-002,12,1_fundamentos,Programación,0485,Programación,1,sí,no,"Antes de esto conviene saber: Programar con variables, decisiones y bucles."
+DAM,PRO-002,12,1_fundamentos,Programación,0485,Programación,1,sí,no,"Antes de esto conviene saber: Programar con variables, decisiones y bucles."
+DAW,PRO-003,13,1_fundamentos,Programación,0485,Programación,2,sí,no,Antes de esto conviene saber: Diseñar funciones y trabajar con colecciones.
+DAM,PRO-003,13,1_fundamentos,Programación,0485,Programación,2,sí,no,Antes de esto conviene saber: Diseñar funciones y trabajar con colecciones.
+DAW,PRO-004,14,1_fundamentos,Programación,0485,Programación,2,sí,no,Antes de esto conviene saber: Aplicar programación orientada a objetos.
+DAM,PRO-004,14,1_fundamentos,Programación,0485,Programación,2,sí,no,Antes de esto conviene saber: Aplicar programación orientada a objetos.
+DAW,LM-001,15,1_fundamentos,Lenguajes de marcas,0373,Lenguajes de marcas y sistemas de gestión de información,1,sí,no,Antes de esto conviene saber: Comprender cómo funciona una aplicación conectada.
+DAM,LM-001,15,1_fundamentos,Lenguajes de marcas,0373,Lenguajes de marcas y sistemas de gestión de información,1,sí,no,Antes de esto conviene saber: Comprender cómo funciona una aplicación conectada.
+DAW,LM-002,16,1_fundamentos,Lenguajes de marcas,0373,Lenguajes de marcas y sistemas de gestión de información,1,sí,no,Antes de esto conviene saber: Estructurar información con lenguajes de marcas.
+DAM,LM-002,16,1_fundamentos,Lenguajes de marcas,0373,Lenguajes de marcas y sistemas de gestión de información,1,sí,no,Antes de esto conviene saber: Estructurar información con lenguajes de marcas.
+DAW,ED-001,17,1_fundamentos,Entornos de desarrollo,0487,Entornos de desarrollo,1,sí,no,"Antes de esto conviene saber: Gestionar archivos, carpetas y copias de seguridad."
+DAM,ED-001,17,1_fundamentos,Entornos de desarrollo,0487,Entornos de desarrollo,1,sí,no,"Antes de esto conviene saber: Gestionar archivos, carpetas y copias de seguridad."
+DAW,ED-002,18,1_fundamentos,Entornos de desarrollo,0487,Entornos de desarrollo,2,sí,no,"Antes de esto conviene saber: Usar Git y un flujo de trabajo colaborativo; Gestionar errores, ficheros y pruebas."
+DAM,ED-002,18,1_fundamentos,Entornos de desarrollo,0487,Entornos de desarrollo,2,sí,no,"Antes de esto conviene saber: Usar Git y un flujo de trabajo colaborativo; Gestionar errores, ficheros y pruebas."
+DAW,DIG-001,19,2_aplicacion,Digitalización,1665,Digitalización aplicada a los sectores productivos,1,sí,no,Antes de esto conviene saber: Comprender cómo funciona una aplicación conectada.
+DAM,DIG-001,19,2_aplicacion,Digitalización,1665,Digitalización aplicada a los sectores productivos,1,sí,no,Antes de esto conviene saber: Comprender cómo funciona una aplicación conectada.
+DAW,SUS-001,20,2_aplicacion,Sostenibilidad,1708,Sostenibilidad aplicada al sistema productivo,1,sí,no,Antes de esto conviene saber: Instalar y configurar un sistema de trabajo.
+DAM,SUS-001,20,2_aplicacion,Sostenibilidad,1708,Sostenibilidad aplicada al sistema productivo,1,sí,no,Antes de esto conviene saber: Instalar y configurar un sistema de trabajo.
+DAW,ENG-001,21,2_aplicacion,Inglés profesional,0179,Inglés profesional (GS),1,sí,no,Antes de esto conviene saber: Documentar errores y aprender mediante práctica.
+DAM,ENG-001,21,2_aplicacion,Inglés profesional,0179,Inglés profesional (GS),1,sí,no,Antes de esto conviene saber: Documentar errores y aprender mediante práctica.
+DAW,EMP-001,22,3_empleabilidad,Empleabilidad,1709|1710,Itinerario personal para la empleabilidad I y II,2,sí,no,Antes de esto conviene saber: Usar Git y un flujo de trabajo colaborativo; Documentar errores y aprender mediante práctica.
+DAM,EMP-001,22,3_empleabilidad,Empleabilidad,1709|1710,Itinerario personal para la empleabilidad I y II,2,sí,no,Antes de esto conviene saber: Usar Git y un flujo de trabajo colaborativo; Documentar errores y aprender mediante práctica.
+DAW,PRJ-001,23,4_proyecto,Proyecto intermodular,PROY,Proyecto intermodular,3,sí,no,"Antes de esto conviene saber: Depurar, automatizar y mantener calidad; Crear y consultar una base de datos con SQL; Gestionar errores, ficheros y pruebas."
+DAM,PRJ-001,23,4_proyecto,Proyecto intermodular,PROY,Proyecto intermodular,3,sí,no,"Antes de esto conviene saber: Depurar, automatizar y mantener calidad; Crear y consultar una base de datos con SQL; Gestionar errores, ficheros y pruebas."
+DAW,PRJ-002,24,4_proyecto,Proyecto intermodular,PROY,Proyecto intermodular,3,sí,no,Antes de esto conviene saber: Planificar y entregar un proyecto integrador; Preparar perfil profesional y candidatura.
+DAM,PRJ-002,24,4_proyecto,Proyecto intermodular,PROY,Proyecto intermodular,3,sí,no,Antes de esto conviene saber: Planificar y entregar un proyecto integrador; Preparar perfil profesional y candidatura.
+DAW,DAW-CLI-001,25,2_aplicacion,Desarrollo web cliente,0612,Desarrollo web en entorno cliente,2,sí,no,Antes de esto conviene saber: Diseñar funciones y trabajar con colecciones; Presentar información de forma responsive.
+DAW,DAW-CLI-002,26,2_aplicacion,Desarrollo web cliente,0612,Desarrollo web en entorno cliente,2,sí,no,Antes de esto conviene saber: Programar interacción con JavaScript en el navegador; Comprender cómo funciona una aplicación conectada.
+DAW,DAW-CLI-003,27,2_aplicacion,Desarrollo web cliente,0612,Desarrollo web en entorno cliente,3,sí,no,"Antes de esto conviene saber: Consumir APIs y gestionar asincronía; Depurar, automatizar y mantener calidad."
+DAW,DAW-SRV-001,28,2_aplicacion,Desarrollo web servidor,0613,Desarrollo web en entorno servidor,2,sí,no,Antes de esto conviene saber: Aplicar programación orientada a objetos; Crear y consultar una base de datos con SQL; Comprender cómo funciona una aplicación conectada.
+DAW,DAW-SRV-002,29,2_aplicacion,Desarrollo web servidor,0613,Desarrollo web en entorno servidor,3,sí,no,"Antes de esto conviene saber: Crear rutas, validación y lógica de servidor; Aplicar red y seguridad básica."
+DAW,DAW-SRV-003,30,2_aplicacion,Desarrollo web servidor,0613,Desarrollo web en entorno servidor,3,sí,no,"Antes de esto conviene saber: Crear rutas, validación y lógica de servidor; Mantener integridad, transacciones y acceso seguro."
+DAW,DAW-DEP-001,31,2_aplicacion,Despliegue,0614,Despliegue de aplicaciones web,3,sí,no,"Antes de esto conviene saber: Crear rutas, validación y lógica de servidor; Aplicar red y seguridad básica."
+DAW,DAW-DEP-002,32,2_aplicacion,Despliegue,0614,Despliegue de aplicaciones web,3,sí,no,"Antes de esto conviene saber: Desplegar una aplicación web con configuración segura; Depurar, automatizar y mantener calidad."
+DAW,DAW-UI-001,33,2_aplicacion,Diseño de interfaces,0615,Diseño de interfaces WEB,2,sí,no,Antes de esto conviene saber: Presentar información de forma responsive.
+DAW,DAW-UI-002,34,2_aplicacion,Diseño de interfaces,0615,Diseño de interfaces WEB,2,sí,no,Antes de esto conviene saber: Estructurar información con lenguajes de marcas; Diseñar experiencias usables y coherentes.
+DAW,DAW-UI-003,35,2_aplicacion,Diseño de interfaces,0615,Diseño de interfaces WEB,3,sí,no,Antes de esto conviene saber: Consumir APIs y gestionar asincronía; Aplicar accesibilidad web verificable.
+DAM,DAM-AD-001,25,2_aplicacion,Acceso a datos,0486,Acceso a datos,2,sí,no,"Antes de esto conviene saber: Mantener integridad, transacciones y acceso seguro; Aplicar programación orientada a objetos."
+DAM,DAM-AD-002,26,2_aplicacion,Acceso a datos,0486,Acceso a datos,3,sí,no,"Antes de esto conviene saber: Conectar aplicaciones a bases de datos; Depurar, automatizar y mantener calidad."
+DAM,DAM-UI-001,27,2_aplicacion,Desarrollo de interfaces,0488,Desarrollo de interfaces,2,sí,no,"Antes de esto conviene saber: Aplicar programación orientada a objetos; Depurar, automatizar y mantener calidad."
+DAM,DAM-UI-002,28,2_aplicacion,Desarrollo de interfaces,0488,Desarrollo de interfaces,3,sí,no,Antes de esto conviene saber: Construir interfaces de escritorio o multiplataforma.
+DAM,DAM-MOB-001,29,2_aplicacion,Programación móvil,0489,Programación multimedia y dispositivos móviles,3,sí,no,Antes de esto conviene saber: Aplicar programación orientada a objetos; Construir interfaces de escritorio o multiplataforma.
+DAM,DAM-MOB-002,30,2_aplicacion,Programación móvil,0489,Programación multimedia y dispositivos móviles,3,sí,no,Antes de esto conviene saber: Crear una aplicación móvil con navegación y estado; Conectar aplicaciones a bases de datos; Aplicar red y seguridad básica.
+DAM,DAM-SP-001,31,2_aplicacion,Servicios y procesos,0490,Programación de servicios y procesos,3,sí,no,"Antes de esto conviene saber: Gestionar errores, ficheros y pruebas; Instalar y configurar un sistema de trabajo."
+DAM,DAM-SP-002,32,2_aplicacion,Servicios y procesos,0490,Programación de servicios y procesos,3,sí,no,Antes de esto conviene saber: Programar procesos concurrentes de forma segura; Comprender cómo funciona una aplicación conectada; Aplicar red y seguridad básica.
+DAM,DAM-ERP-001,33,2_aplicacion,Gestión empresarial,0491,Sistemas de gestión empresarial,2,sí,no,"Antes de esto conviene saber: Modelar datos relacionales; Analizar digitalización, datos e IA de forma responsable."
+DAM,DAM-ERP-002,34,2_aplicacion,Gestión empresarial,0491,Sistemas de gestión empresarial,3,sí,no,Antes de esto conviene saber: Comprender e implantar procesos ERP y CRM; Gestionar persistencia avanzada y migraciones; Usar Git y un flujo de trabajo colaborativo.
+DAM,DAM-ARC-001,35,4_proyecto,Arquitectura de aplicación,PROY,Proyecto intermodular,3,sí,no,"Antes de esto conviene saber: Gestionar persistencia avanzada y migraciones; Aplicar usabilidad, accesibilidad y empaquetado; Crear servicios de red y comunicación entre aplicaciones."
+TSAF,TSAF-BAS-001,1,0_antes_de_empezar,Competencia digital básica,PRE,Preparación previa,0,sí,sí,
+TSAF,TSAF-BAS-002,2,0_antes_de_empezar,Ciencias básicas,PRE,Preparación previa,0,sí,sí,
+TSAF,TSAF-BAS-003,3,0_antes_de_empezar,Ciencias básicas,PRE,Preparación previa,0,sí,sí,Antes de esto conviene saber: Reconocer anatomía y movimientos fundamentales.
+TSAF,TSAF-BAS-004,4,0_antes_de_empezar,Comunicación,PRE,Preparación previa,0,sí,sí,
+TSAF,TSAF-BAS-005,5,0_antes_de_empezar,Seguridad profesional,PRE,Preparación previa,0,sí,sí,
+TSAF,TSAF-VAL-001,6,1_fundamentos,Valoración física,1136,Valoración de la condición física e intervención en accidentes,1,sí,no,"Antes de esto conviene saber: Comprender respuestas básicas al ejercicio; Distinguir alcance profesional, derivación y consentimiento."
+TSAF,TSAF-VAL-002,7,1_fundamentos,Valoración física,1136,Valoración de la condición física e intervención en accidentes,1,sí,no,Antes de esto conviene saber: Realizar entrevista inicial y cribado básico; Reconocer anatomía y movimientos fundamentales.
+TSAF,TSAF-VAL-003,8,1_fundamentos,Valoración física,1136,Valoración de la condición física e intervención en accidentes,2,sí,no,"Antes de esto conviene saber: Aplicar pruebas básicas de condición física; Organizar archivos, formularios y hojas de cálculo."
+TSAF,TSAF-AUX-001,9,1_fundamentos,Primeros auxilios,1136,Valoración de la condición física e intervención en accidentes,1,sí,no,"Antes de esto conviene saber: Distinguir alcance profesional, derivación y consentimiento."
+TSAF,TSAF-AUX-002,10,1_fundamentos,Primeros auxilios,1136,Valoración de la condición física e intervención en accidentes,1,sí,no,Antes de esto conviene saber: Actuar ante una emergencia y activar ayuda.
+TSAF,TSAF-FIT-001,11,1_fundamentos,Fitness en sala,1148,Fitness en sala de entrenamiento polivalente,1,sí,no,Antes de esto conviene saber: Reconocer anatomía y movimientos fundamentales; Realizar entrevista inicial y cribado básico.
+TSAF,TSAF-FIT-002,12,1_fundamentos,Fitness en sala,1148,Fitness en sala de entrenamiento polivalente,2,sí,no,Antes de esto conviene saber: Aplicar pruebas básicas de condición física; Seleccionar ejercicios y enseñar técnica.
+TSAF,TSAF-FIT-003,13,2_aplicacion,Fitness en sala,1148,Fitness en sala de entrenamiento polivalente,2,sí,no,"Antes de esto conviene saber: Programar fuerza, resistencia y movilidad; Comunicar instrucciones de forma clara y segura."
+TSAF,TSAF-MUS-001,14,1_fundamentos,Actividades con soporte musical,1149,Actividades básicas de acondicionamiento físico con soporte musical,1,sí,no,Antes de esto conviene saber: Comprender respuestas básicas al ejercicio; Comunicar instrucciones de forma clara y segura.
+TSAF,TSAF-MUS-002,15,2_aplicacion,Actividades con soporte musical,1149|1150,Actividades básicas y especializadas con soporte musical,2,sí,no,"Antes de esto conviene saber: Comprender ritmo, frase musical y estructura de sesión; Seleccionar ejercicios y enseñar técnica."
+TSAF,TSAF-MUS-003,16,2_aplicacion,Actividades con soporte musical,1150,Actividades especializadas de acondicionamiento físico con soporte musical,2,sí,no,Antes de esto conviene saber: Diseñar coreografías por niveles; Comunicar instrucciones de forma clara y segura.
+TSAF,TSAF-AQU-001,17,1_fundamentos,Acondicionamiento acuático,1151,Acondicionamiento físico en el agua,1,sí,no,Antes de esto conviene saber: Comprender respuestas básicas al ejercicio; Actuar ante una emergencia y activar ayuda.
+TSAF,TSAF-AQU-002,18,2_aplicacion,Acondicionamiento acuático,1151,Acondicionamiento físico en el agua,2,sí,no,Antes de esto conviene saber: Aplicar propiedades del medio acuático al ejercicio; Realizar entrevista inicial y cribado básico.
+TSAF,TSAF-HID-001,19,2_aplicacion,Hidrocinesia,1152,Técnicas de hidrocinesia,2,sí,no,"Antes de esto conviene saber: Aplicar propiedades del medio acuático al ejercicio; Distinguir alcance profesional, derivación y consentimiento."
+TSAF,TSAF-POS-001,20,2_aplicacion,Control postural,1153,"Control postural, bienestar y mantenimiento funcional",2,sí,no,Antes de esto conviene saber: Reconocer anatomía y movimientos fundamentales; Realizar entrevista inicial y cribado básico.
+TSAF,TSAF-POS-002,21,2_aplicacion,Control postural,1153,"Control postural, bienestar y mantenimiento funcional",2,sí,no,"Antes de esto conviene saber: Analizar patrones posturales y funcionales sin diagnosticar; Programar fuerza, resistencia y movilidad."
+TSAF,TSAF-ESP-001,22,2_aplicacion,Poblaciones y adaptación,1153,"Control postural, bienestar y mantenimiento funcional",2,sí,no,"Antes de esto conviene saber: Realizar entrevista inicial y cribado básico; Seleccionar ejercicios y enseñar técnica; Distinguir alcance profesional, derivación y consentimiento."
+TSAF,TSAF-SOC-001,23,2_aplicacion,Habilidades sociales,0017,Habilidades sociales,2,sí,no,Antes de esto conviene saber: Comunicar instrucciones de forma clara y segura.
+TSAF,TSAF-GES-001,24,2_aplicacion,Gestión de servicios,1148|0017,Fitness en sala y habilidades sociales,2,sí,no,Antes de esto conviene saber: Actuar ante una emergencia y activar ayuda; Adaptar actividad a personas mayores y colectivos diversos.
+TSAF,TSAF-GES-002,25,3_empleabilidad,Eventos y promoción,PROY,Proyecto intermodular,3,sí,no,"Antes de esto conviene saber: Organizar recursos, calidad y seguridad de una instalación; Gestionar comunicación, motivación y conflictos."
+TSAF,TSAF-DIG-001,26,2_aplicacion,Digitalización,1665,Digitalización aplicada a los sectores productivos,2,sí,no,"Antes de esto conviene saber: Organizar archivos, formularios y hojas de cálculo; Registrar y analizar evolución."
+TSAF,TSAF-SUS-001,27,2_aplicacion,Sostenibilidad,1708,Sostenibilidad aplicada al sistema productivo,1,sí,no,
+TSAF,TSAF-ENG-001,28,2_aplicacion,Inglés profesional,0179,Inglés profesional (GS),1,sí,no,Antes de esto conviene saber: Comunicar instrucciones de forma clara y segura.
+TSAF,TSAF-EMP-001,29,3_empleabilidad,Empleabilidad,1709|1710,Itinerario personal para la empleabilidad I y II,2,sí,no,"Antes de esto conviene saber: Gestionar comunicación, motivación y conflictos; Dirigir y adaptar una sesión individual."
+TSAF,TSAF-PRJ-001,30,4_proyecto,Proyecto intermodular,1154,Proyecto intermodular de Acondicionamiento físico,3,sí,no,"Antes de esto conviene saber: Registrar y analizar evolución; Programar fuerza, resistencia y movilidad; Organizar recursos, calidad y seguridad de una instalación; Gestionar comunicación, motivación y conflictos."
+TSAF,TSAF-PRJ-002,31,4_proyecto,Proyecto intermodular,1154,Proyecto intermodular de Acondicionamiento físico,3,sí,no,Antes de esto conviene saber: Crear un programa integral de acondicionamiento físico; Preparar candidatura profesional en fitness y deporte.
+MP,MP-BAS-001,1,0_antes_de_empezar,Competencia digital básica,PRE,Preparación previa,0,sí,sí,
+MP,MP-BAS-002,2,0_antes_de_empezar,Comunicación,PRE,Preparación previa,0,sí,sí,
+MP,MP-BAS-003,3,0_antes_de_empezar,Cálculo y datos,PRE,Preparación previa,0,sí,sí,
+MP,MP-BAS-004,4,0_antes_de_empezar,Pensamiento crítico,PRE,Preparación previa,0,sí,sí,
+MP,MP-BAS-005,5,0_antes_de_empezar,Negocio,PRE,Preparación previa,0,sí,sí,Antes de esto conviene saber: Redactar mensajes claros y orientados a una acción.
+MP,MP-FIN-001,6,1_fundamentos,Gestión económica,0623,Gestión económica y financiera de la empresa,1,sí,no,"Antes de esto conviene saber: Calcular porcentajes, costes y métricas básicas; Comprender cliente, problema y modelo de negocio."
+MP,MP-FIN-002,7,2_aplicacion,Gestión económica,0623,Gestión económica y financiera de la empresa,2,sí,no,"Antes de esto conviene saber: Interpretar costes, presupuestos y viabilidad."
+MP,MP-POL-001,8,1_fundamentos,Estrategia,0930,Políticas de marketing,1,sí,no,"Antes de esto conviene saber: Evaluar fuentes y diferenciar dato, opinión e hipótesis; Comprender cliente, problema y modelo de negocio."
+MP,MP-POL-002,9,1_fundamentos,Estrategia,0930,Políticas de marketing,1,sí,no,"Antes de esto conviene saber: Analizar mercado, competencia y situación."
+MP,MP-POL-003,10,1_fundamentos,Estrategia,0930,Políticas de marketing,2,sí,no,"Antes de esto conviene saber: Definir segmentación, posicionamiento y propuesta; Interpretar costes, presupuestos y viabilidad."
+MP,MP-INV-001,11,1_fundamentos,Investigación comercial,1010,Investigación comercial,1,sí,no,"Antes de esto conviene saber: Evaluar fuentes y diferenciar dato, opinión e hipótesis; Analizar mercado, competencia y situación."
+MP,MP-INV-002,12,1_fundamentos,Investigación comercial,1010,Investigación comercial,1,sí,no,Antes de esto conviene saber: Diseñar una investigación de mercado.
+MP,MP-CAM-001,13,2_aplicacion,Trabajo de campo,1011,Trabajo de campo en la investigación comercial,2,sí,no,Antes de esto conviene saber: Diseñar cuestionarios y muestras.
+MP,MP-DAT-001,14,2_aplicacion,Análisis de datos,1010|1011,Investigación comercial y trabajo de campo,2,sí,no,"Antes de esto conviene saber: Diseñar cuestionarios y muestras; Calcular porcentajes, costes y métricas básicas."
+MP,MP-CLI-001,15,1_fundamentos,Atención al cliente,1110,"Atención al cliente, consumidor y usuario",1,sí,no,Antes de esto conviene saber: Redactar mensajes claros y orientados a una acción.
+MP,MP-CRM-001,16,2_aplicacion,Relación con clientes,1110|0931,Atención al cliente y marketing digital,2,sí,no,"Antes de esto conviene saber: Atender consultas, quejas y reclamaciones; Organizar archivos, cuentas y activos de una campaña."
+MP,MP-DIG-001,17,1_fundamentos,Marketing digital,0931,Marketing digital,2,sí,no,"Antes de esto conviene saber: Construir un plan de marketing medible; Organizar archivos, cuentas y activos de una campaña."
+MP,MP-DIG-002,18,2_aplicacion,Marketing digital,0931,Marketing digital,2,sí,no,"Antes de esto conviene saber: Planificar presencia web y conversión; Definir segmentación, posicionamiento y propuesta."
+MP,MP-DIG-003,19,2_aplicacion,Marketing digital,0931,Marketing digital,2,sí,no,"Antes de esto conviene saber: Gestionar contactos, leads y consentimiento en CRM; Redactar mensajes claros y orientados a una acción."
+MP,MP-DIG-004,20,2_aplicacion,Marketing digital,0931,Marketing digital,2,sí,no,Antes de esto conviene saber: Construir un plan de marketing medible; Evaluar inversión y retorno de marketing.
+MP,MP-DIG-005,21,2_aplicacion,Marketing digital,0931,Marketing digital,3,sí,no,"Antes de esto conviene saber: Planificar presencia web y conversión; Limpiar, analizar y visualizar datos."
+MP,MP-DIS-001,22,1_fundamentos,Material de comunicación,1007,Diseño y elaboración de material de comunicación,1,sí,no,Antes de esto conviene saber: Redactar mensajes claros y orientados a una acción.
+MP,MP-DIS-002,23,2_aplicacion,Material de comunicación,1007,Diseño y elaboración de material de comunicación,2,sí,no,Antes de esto conviene saber: Crear identidad visual y piezas coherentes; Redactar mensajes claros y orientados a una acción.
+MP,MP-MED-001,24,2_aplicacion,Medios,1008,Medios y soportes de comunicación,2,sí,no,"Antes de esto conviene saber: Construir un plan de marketing medible; Interpretar costes, presupuestos y viabilidad."
+MP,MP-RRPP-001,25,2_aplicacion,Relaciones públicas,1009,Relaciones públicas y organización de eventos de marketing,2,sí,no,"Antes de esto conviene saber: Definir segmentación, posicionamiento y propuesta; Redactar mensajes claros y orientados a una acción."
+MP,MP-EVT-001,26,2_aplicacion,Eventos,1009,Relaciones públicas y organización de eventos de marketing,2,sí,no,"Antes de esto conviene saber: Planificar relaciones públicas y comunicación institucional; Interpretar costes, presupuestos y viabilidad."
+MP,MP-LAN-001,27,2_aplicacion,Lanzamiento,1109,Lanzamiento de productos y servicios,3,sí,no,Antes de esto conviene saber: Construir un plan de marketing medible; Planificar publicidad digital; Construir un plan de medios.
+MP,MP-LEG-001,28,2_aplicacion,Legal y ética,0931|1007|1110,"Marketing digital, material y atención",2,sí,no,"Antes de esto conviene saber: Evaluar fuentes y diferenciar dato, opinión e hipótesis."
+MP,MP-DIGI-001,29,2_aplicacion,Digitalización,1665,Digitalización aplicada a los sectores productivos,2,sí,no,"Antes de esto conviene saber: Gestionar contactos, leads y consentimiento en CRM; Medir adquisición, conversión y rendimiento."
+MP,MP-SUS-001,30,2_aplicacion,Sostenibilidad,1708,Sostenibilidad aplicada al sistema productivo,1,sí,no,
+MP,MP-ENG-001,31,2_aplicacion,Inglés profesional,0179,Inglés profesional (GS),1,sí,no,Antes de esto conviene saber: Redactar mensajes claros y orientados a una acción.
+MP,MP-EMP-001,32,3_empleabilidad,Empleabilidad,1709|1710,Itinerario personal para la empleabilidad I y II,2,sí,no,"Antes de esto conviene saber: Limpiar, analizar y visualizar datos; Crear identidad visual y piezas coherentes; Construir un plan de marketing medible."
+MP,MP-PRJ-001,33,4_proyecto,Proyecto intermodular,1012,Proyecto Intermodular de Marketing y Publicidad,3,sí,no,"Antes de esto conviene saber: Construir un plan de marketing medible; Limpiar, analizar y visualizar datos; Medir adquisición, conversión y rendimiento; Crear identidad visual y piezas coherentes; Aplicar privacidad, propiedad intelectual y publicidad responsable."
+MP,MP-PRJ-002,34,4_proyecto,Proyecto intermodular,1012,Proyecto Intermodular de Marketing y Publicidad,3,sí,no,Antes de esto conviene saber: Crear una campaña integrada de principio a fin; Construir portfolio y candidatura de marketing.
+AF,AF-BAS-001,1,0_antes_de_empezar,Competencia digital básica,PRE,Preparación previa,0,sí,sí,
+AF,AF-BAS-002,2,0_antes_de_empezar,Ofimática,PRE,Preparación previa,0,sí,sí,
+AF,AF-BAS-003,3,0_antes_de_empezar,Cálculo básico,PRE,Preparación previa,0,sí,sí,
+AF,AF-BAS-004,4,0_antes_de_empezar,Comunicación,PRE,Preparación previa,0,sí,sí,
+AF,AF-BAS-005,5,0_antes_de_empezar,Seguridad y confidencialidad,PRE,Preparación previa,0,sí,sí,Antes de esto conviene saber: Organizar archivos y documentación administrativa.
+AF,AF-JUR-001,6,1_fundamentos,Documentación jurídica,0647,Gestión de la documentación jurídica y empresarial,1,sí,no,Antes de esto conviene saber: Redactar correos y comunicaciones profesionales.
+AF,AF-JUR-002,7,1_fundamentos,Documentación jurídica,0647,Gestión de la documentación jurídica y empresarial,1,sí,no,Antes de esto conviene saber: Distinguir formas jurídicas y órganos de la empresa; Organizar archivos y documentación administrativa.
+AF,AF-RRHH-001,8,1_fundamentos,RRHH y RSC,0648,Recursos humanos y responsabilidad social corporativa,1,sí,no,Antes de esto conviene saber: Redactar correos y comunicaciones profesionales.
+AF,AF-RRHH-002,9,2_aplicacion,RRHH y RSC,0648,Recursos humanos y responsabilidad social corporativa,2,sí,no,"Antes de esto conviene saber: Analizar organización, puestos y selección; Proteger datos, credenciales y documentación."
+AF,AF-OFI-001,10,1_fundamentos,Ofimática,0649,Ofimática y proceso de la información,1,sí,no,Antes de esto conviene saber: Escribir con precisión y usar funciones básicas de Office.
+AF,AF-OFI-002,11,1_fundamentos,Ofimática,0649,Ofimática y proceso de la información,1,sí,no,"Antes de esto conviene saber: Operar con porcentajes, reglas de tres e importes; Escribir con precisión y usar funciones básicas de Office."
+AF,AF-OFI-003,12,2_aplicacion,Ofimática,0649,Ofimática y proceso de la información,2,sí,no,Antes de esto conviene saber: Usar Excel para gestión administrativa.
+AF,AF-COM-001,13,1_fundamentos,Actividad comercial,0650,Proceso integral de la actividad comercial,1,sí,no,"Antes de esto conviene saber: Operar con porcentajes, reglas de tres e importes; Organizar archivos y documentación administrativa."
+AF,AF-COM-002,14,1_fundamentos,Actividad comercial,0650,Proceso integral de la actividad comercial,1,sí,no,"Antes de esto conviene saber: Gestionar compras, ventas, facturas y cobros."
+AF,AF-CLI-001,15,1_fundamentos,Comunicación y atención,0651,Comunicación y atención al cliente,1,sí,no,Antes de esto conviene saber: Redactar correos y comunicaciones profesionales.
+AF,AF-CLI-002,16,2_aplicacion,Comunicación y atención,0651,Comunicación y atención al cliente,2,sí,no,"Antes de esto conviene saber: Atender y registrar consultas, quejas y reclamaciones; Organizar archivos y documentación administrativa; Proteger datos, credenciales y documentación."
+AF,AF-LAB-001,17,2_aplicacion,Gestión laboral,0652,Gestión de recursos humanos,2,sí,no,"Antes de esto conviene saber: Analizar organización, puestos y selección; Preparar trámites de constitución y documentación oficial."
+AF,AF-LAB-002,18,2_aplicacion,Gestión laboral,0652,Gestión de recursos humanos,2,sí,no,"Antes de esto conviene saber: Interpretar contratos, jornada y documentación laboral; Operar con porcentajes, reglas de tres e importes."
+AF,AF-FIN-001,19,2_aplicacion,Gestión financiera,0653,Gestión financiera,2,sí,no,"Antes de esto conviene saber: Operar con porcentajes, reglas de tres e importes; Usar Excel para gestión administrativa."
+AF,AF-FIN-002,20,2_aplicacion,Gestión financiera,0653,Gestión financiera,2,sí,no,"Antes de esto conviene saber: Aplicar cálculo financiero; Gestionar compras, ventas, facturas y cobros."
+AF,AF-CON-001,21,2_aplicacion,Contabilidad y fiscalidad,0654,Contabilidad y fiscalidad,2,sí,no,Antes de esto conviene saber: Registrar el ciclo contable básico.
+AF,AF-CON-002,22,2_aplicacion,Contabilidad y fiscalidad,0654,Contabilidad y fiscalidad,2,sí,no,"Antes de esto conviene saber: Completar el ciclo contable; Gestionar compras, ventas, facturas y cobros."
+AF,AF-LOG-001,23,2_aplicacion,Logística y compras,0655,Gestión logística y comercial,2,sí,no,"Antes de esto conviene saber: Gestionar compras, ventas, facturas y cobros; Usar Excel para gestión administrativa."
+AF,AF-LOG-002,24,2_aplicacion,Logística y compras,0655,Gestión logística y comercial,2,sí,no,"Antes de esto conviene saber: Planificar aprovisionamiento e inventario; Atender y registrar consultas, quejas y reclamaciones."
+AF,AF-BI-001,25,2_aplicacion,Datos y reporting,1665,Digitalización aplicada a los sectores productivos,2,sí,no,"Antes de esto conviene saber: Automatizar limpieza y consolidación de datos; Gestionar tesorería, financiación y riesgo."
+AF,AF-DIG-001,26,2_aplicacion,Digitalización,1665,Digitalización aplicada a los sectores productivos,2,sí,no,"Antes de esto conviene saber: Automatizar limpieza y consolidación de datos; Proteger datos, credenciales y documentación."
+AF,AF-SUS-001,27,2_aplicacion,Sostenibilidad,1708,Sostenibilidad aplicada al sistema productivo,1,sí,no,
+AF,AF-ENG-001,28,2_aplicacion,Inglés profesional,0179,Inglés profesional (GS),1,sí,no,Antes de esto conviene saber: Redactar correos y comunicaciones profesionales.
+AF,AF-EMP-001,29,3_empleabilidad,Empleabilidad,1709|1710,Itinerario personal para la empleabilidad I y II,2,sí,no,"Antes de esto conviene saber: Usar Excel para gestión administrativa; Atender y registrar consultas, quejas y reclamaciones; Gestionar compras, ventas, facturas y cobros."
+AF,AF-SIM-001,30,3_empleabilidad,Simulación empresarial,0656,Simulación empresarial,3,sí,no,"Antes de esto conviene saber: Preparar trámites de constitución y documentación oficial; Calcular y revisar una nómina; Gestionar obligaciones fiscales básicas; Gestionar tesorería, financiación y riesgo; Planificar aprovisionamiento e inventario."
+AF,AF-PRJ-001,31,4_proyecto,Proyecto intermodular,0657,Proyecto Intermodular de Administración y Finanzas,3,sí,no,Antes de esto conviene saber: Gestionar una empresa simulada de forma integrada; Crear cuadros de mando administrativos y financieros; Automatizar procesos administrativos con control.
+AF,AF-PRJ-002,32,4_proyecto,Proyecto intermodular,0657,Proyecto Intermodular de Administración y Finanzas,3,sí,no,Antes de esto conviene saber: Diseñar una solución administrativa integral; Preparar candidatura administrativa.

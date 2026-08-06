@@ -102,26 +102,16 @@ function readCsv(fileName) {
   return dataRows.map((fields) => Object.fromEntries(headers.map((header, index) => [header, fields[index] ?? ""])));
 }
 
-async function upsertCompetency(client, raw) {
+async function upsertSkill(client, raw) {
   await client.query(
-    `INSERT INTO public.fp_competencies
-       (id, cycle_code, orden_global, etapa, bloque, modulo_codigo, modulo_nombre, titulo, descripcion,
-        nivel_objetivo, obligatoria_roadmap_base, basico_antes_de_empezar, horas_estimadas,
-        criterios_superacion, evidencia_minima, umbral_superacion, aplicable_a,
-        fuente_titulo_url, fuente_curriculo_url, tipo_criterio, ultima_revision)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+    `INSERT INTO public.fp_skills
+       (id, titulo, descripcion, horas_estimadas, criterios_superacion, evidencia_minima,
+        umbral_superacion, aplicable_a, fuente_titulo_url, fuente_curriculo_url,
+        tipo_criterio, ultima_revision)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
      ON CONFLICT (id) DO UPDATE SET
-       cycle_code = excluded.cycle_code,
-       orden_global = excluded.orden_global,
-       etapa = excluded.etapa,
-       bloque = excluded.bloque,
-       modulo_codigo = excluded.modulo_codigo,
-       modulo_nombre = excluded.modulo_nombre,
        titulo = excluded.titulo,
        descripcion = excluded.descripcion,
-       nivel_objetivo = excluded.nivel_objetivo,
-       obligatoria_roadmap_base = excluded.obligatoria_roadmap_base,
-       basico_antes_de_empezar = excluded.basico_antes_de_empezar,
        horas_estimadas = excluded.horas_estimadas,
        criterios_superacion = excluded.criterios_superacion,
        evidencia_minima = excluded.evidencia_minima,
@@ -133,18 +123,9 @@ async function upsertCompetency(client, raw) {
        ultima_revision = excluded.ultima_revision,
        updated_at = now()`,
     [
-      raw.competencia_id,
-      raw.ciclo_siglas,
-      toInt(raw.orden_global),
-      raw.etapa,
-      nullify(raw.bloque),
-      nullify(raw.modulo_codigo),
-      nullify(raw.modulo_nombre),
+      raw.skill_id,
       raw.titulo,
       nullify(raw.descripcion),
-      toInt(raw.nivel_objetivo),
-      toBool(raw.obligatoria_roadmap_base),
-      toBool(raw.basico_antes_de_empezar),
       toInt(raw.horas_estimadas),
       nullify(raw.criterios_superacion),
       nullify(raw.evidencia_minima),
@@ -158,24 +139,35 @@ async function upsertCompetency(client, raw) {
   );
 }
 
-async function upsertRelation(client, raw) {
+async function upsertCycleSkill(client, raw) {
   await client.query(
-    `INSERT INTO public.fp_competency_relations
-       (competencia_origen_id, competencia_destino_id, cycle_code, tipo_relacion, obligatoria, motivo)
-     VALUES ($1,$2,$3,$4,$5,$6)
-     ON CONFLICT (competencia_origen_id, competencia_destino_id) DO UPDATE SET
-       cycle_code = excluded.cycle_code,
-       tipo_relacion = excluded.tipo_relacion,
-       obligatoria = excluded.obligatoria,
-       motivo = excluded.motivo,
+    `INSERT INTO public.fp_cycle_skills
+       (cycle_code, skill_id, orden_global, etapa, bloque, modulo_codigo, modulo_nombre,
+        nivel_objetivo, obligatoria_roadmap_base, basico_antes_de_empezar, prerrequisito_texto)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+     ON CONFLICT (cycle_code, skill_id) DO UPDATE SET
+       orden_global = excluded.orden_global,
+       etapa = excluded.etapa,
+       bloque = excluded.bloque,
+       modulo_codigo = excluded.modulo_codigo,
+       modulo_nombre = excluded.modulo_nombre,
+       nivel_objetivo = excluded.nivel_objetivo,
+       obligatoria_roadmap_base = excluded.obligatoria_roadmap_base,
+       basico_antes_de_empezar = excluded.basico_antes_de_empezar,
+       prerrequisito_texto = excluded.prerrequisito_texto,
        updated_at = now()`,
     [
-      raw.competencia_origen_id,
-      raw.competencia_destino_id,
       raw.ciclo_siglas,
-      raw.tipo_relacion || "prerrequisito",
-      toBool(raw.obligatoria),
-      nullify(raw.motivo),
+      raw.skill_id,
+      toInt(raw.orden_global),
+      raw.etapa,
+      nullify(raw.bloque),
+      nullify(raw.modulo_codigo),
+      nullify(raw.modulo_nombre),
+      toInt(raw.nivel_objetivo),
+      toBool(raw.obligatoria_roadmap_base),
+      toBool(raw.basico_antes_de_empezar),
+      nullify(raw.prerrequisito_texto),
     ]
   );
 }
@@ -183,10 +175,10 @@ async function upsertRelation(client, raw) {
 async function upsertItemCompetency(client, contentItemId, raw) {
   await client.query(
     `INSERT INTO public.fp_item_competencies
-       (content_item_id, competencia_id, tipo_relacion, orden_preparacion, nivel_minimo_recomendado,
+       (content_item_id, skill_id, tipo_relacion, orden_preparacion, nivel_minimo_recomendado,
         obligatoria_para_item, motivo_relacion)
      VALUES ($1,$2,$3,$4,$5,$6,$7)
-     ON CONFLICT (content_item_id, competencia_id, tipo_relacion) DO UPDATE SET
+     ON CONFLICT (content_item_id, skill_id, tipo_relacion) DO UPDATE SET
        orden_preparacion = excluded.orden_preparacion,
        nivel_minimo_recomendado = excluded.nivel_minimo_recomendado,
        obligatoria_para_item = excluded.obligatoria_para_item,
@@ -194,7 +186,7 @@ async function upsertItemCompetency(client, contentItemId, raw) {
        updated_at = now()`,
     [
       contentItemId,
-      raw.competencia_id,
+      raw.skill_id,
       raw.tipo_relacion,
       toInt(raw.orden_preparacion),
       toInt(raw.nivel_minimo_recomendado),
@@ -213,8 +205,8 @@ async function main() {
     process.exit(1);
   }
 
-  const competencies = readCsv("roadmap_competencias.csv");
-  const relations = readCsv("relaciones_competencias.csv");
+  const skills = readCsv("habilidades.csv");
+  const cycleSkills = readCsv("ciclo_habilidades.csv");
   const itemLinks = readCsv("item_competencias.csv");
 
   const client = new pg.Client({ connectionString: databaseUrl });
@@ -223,12 +215,12 @@ async function main() {
   try {
     await client.query("BEGIN");
 
-    for (const raw of competencies) {
-      await upsertCompetency(client, raw);
+    for (const raw of skills) {
+      await upsertSkill(client, raw);
     }
 
-    for (const raw of relations) {
-      await upsertRelation(client, raw);
+    for (const raw of cycleSkills) {
+      await upsertCycleSkill(client, raw);
     }
 
     const idLookup = await client.query("SELECT id, id_slug FROM public.fp_content_items");
@@ -248,9 +240,9 @@ async function main() {
 
     await client.query("COMMIT");
 
-    console.log("OK: FP competencies imported.");
-    console.log(`Competencies: ${competencies.length}`);
-    console.log(`Relations: ${relations.length}`);
+    console.log("OK: FP skills imported.");
+    console.log(`Skills: ${skills.length}`);
+    console.log(`Cycle placements: ${cycleSkills.length}`);
     console.log(`Item links imported: ${linked}`);
     if (orphans.length > 0) {
       const uniqueOrphans = [...new Set(orphans)];
