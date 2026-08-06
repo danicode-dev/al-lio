@@ -485,6 +485,22 @@ create table if not exists public.tasks (
   updated_at     timestamptz not null default now()
 );
 
+-- Notas del Bloc. La copia local en localStorage se mantiene como cache/
+-- respaldo instantaneo; esta tabla es la fuente de verdad para poder
+-- recuperar las notas desde cualquier dispositivo. Borrado es blando
+-- (deleted_at) para poder ofrecer una papelera con restaurar.
+create table if not exists public.bloc_notes (
+  id           uuid        primary key default gen_random_uuid(),
+  user_id      uuid        not null references public.users(id) on delete cascade,
+  title        text        not null default 'Documento sin titulo',
+  content_html text        not null default '',
+  content_text text        not null default '',
+  is_favorite  boolean     not null default false,
+  deleted_at   timestamptz,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
 -- ── Tabla reminders ──────────────────────────────────────────────────────────
 create table if not exists public.reminders (
   id           uuid        primary key default gen_random_uuid(),
@@ -541,6 +557,7 @@ create index if not exists fp_competency_relations_dest_idx on public.fp_compete
 create index if not exists fp_item_competencies_comp_idx    on public.fp_item_competencies(competencia_id, tipo_relacion);
 create index if not exists fp_resource_notes_user_item_idx  on public.fp_resource_notes(user_id, content_item_id, timestamp_seconds);
 create index if not exists tasks_user_due_idx               on public.tasks(user_id, due_date, status);
+create index if not exists bloc_notes_user_idx              on public.bloc_notes(user_id, deleted_at, updated_at);
 create index if not exists reminders_user_remind_idx        on public.reminders(user_id, remind_at);
 create index if not exists quick_links_user_favorite_idx    on public.quick_links(user_id, is_favorite);
 
@@ -551,7 +568,7 @@ declare
 begin
   foreach t in array array[
     'users','profiles','sources','quick_searches','opportunities',
-    'hackathons','courses','tasks','reminders','quick_links',
+    'hackathons','courses','tasks','bloc_notes','reminders','quick_links',
     'fp_cycles','fp_content_items','fp_content_cycle_fit','fp_user_content_state',
     'fp_competencies','fp_competency_relations','fp_item_competencies','fp_resource_notes'
   ]

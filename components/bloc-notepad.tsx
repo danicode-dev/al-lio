@@ -36,9 +36,12 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { insertDb, updateDb, deleteDb } from "@/lib/db";
+import { fetchBlocNotes, migrateLocalBlocNotes } from "@/lib/bloc/notes-actions";
 
 type BlocNote = {
   id: string;
@@ -84,9 +87,12 @@ export function BlocNotepad() {
   const [mobileSheet, setMobileSheet] = useState<MobileSheetId>(null);
   const [menuNoteId, setMenuNoteId] = useState<string | null>(null);
   const [titleEditing, setTitleEditing] = useState(false);
+  const [phantomId, setPhantomId] = useState<string | null>(null);
   const notesRef = useRef<BlocNote[]>([]);
   const trashedRef = useRef<BlocTrashedNote[]>([]);
   const activeIdRef = useRef("");
+  const phantomIdRef = useRef<string | null>(null);
+  const dbSyncEnabledRef = useRef(false);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
@@ -102,6 +108,10 @@ export function BlocNotepad() {
   useEffect(() => {
     activeIdRef.current = activeId;
   }, [activeId]);
+
+  useEffect(() => {
+    phantomIdRef.current = phantomId;
+  }, [phantomId]);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)");
@@ -137,13 +147,49 @@ export function BlocNotepad() {
     const parsed = raw ? safeJson(raw) : null;
     const savedNotes = normalizeBlocNotes(parsed);
     const savedTrash = normalizeBlocTrashed(parsed);
-    const initialNotes = savedNotes.length ? savedNotes : [createBlocNote({ title: defaultTitle })];
+    const isPhantom = savedNotes.length === 0;
+    const initialNotes = isPhantom ? [createBlocNote({ title: defaultTitle })] : savedNotes;
 
     setSettings(normalizeBlocSettings(rawSettings ? safeJson(rawSettings) : null));
     setNotes(initialNotes);
     setTrashedNotes(savedTrash);
     setActiveId(initialNotes[0].id);
+    setPhantomId(isPhantom ? initialNotes[0].id : null);
     setLoaded(true);
+  }, []);
+
+  // Sincroniza con la base de datos: si el usuario ya tiene notas guardadas
+  // en el servidor, esas mandan. Si no tiene ninguna todavia, sube lo que
+  // haya en localStorage una sola vez. Si algo falla (sin conexion, etc.)
+  // la app se queda funcionando solo con localStorage, como hasta ahora.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        let result = await fetchBlocNotes();
+        if (cancelled) return;
+        if (!result.migrated) {
+          const localNotesToMigrate = notesRef.current.filter((note) => note.id !== phantomIdRef.current);
+          result = await migrateLocalBlocNotes(localNotesToMigrate, trashedRef.current);
+          if (cancelled) return;
+        }
+        setTrashedNotes(result.trashedNotes);
+        if (result.notes.length) {
+          setNotes(result.notes);
+          setPhantomId(null);
+          setActiveId((current) => (result.notes.some((note) => note.id === current) ? current : result.notes[0].id));
+        } else {
+          const fresh = createBlocNote({ title: defaultTitle });
+          setNotes([fresh]);
+          setPhantomId(fresh.id);
+          setActiveId(fresh.id);
+        }
+        dbSyncEnabledRef.current = true;
+      } catch {
+        // Sin conexion a la base de datos: seguimos con localStorage solamente.
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -160,6 +206,12 @@ export function BlocNotepad() {
     const timeoutId = window.setTimeout(() => {
       localStorage.setItem(blocKey, JSON.stringify({ version: 2, notes, trashedNotes }));
       setSaveState("saved");
+      if (dbSyncEnabledRef.current) {
+        const current = notes.find((note) => note.id === activeIdRef.current);
+        if (current) {
+          void updateDb("bloc_notes", current.id, { title: current.title, content_html: current.contentHtml, content_text: current.contentText }, []);
+        }
+      }
     }, 450);
     return () => window.clearTimeout(timeoutId);
   }, [loaded, notes, trashedNotes]);
@@ -178,11 +230,20 @@ export function BlocNotepad() {
 
   const activeNote = useMemo(() => notes.find((note) => note.id === activeId) ?? null, [activeId, notes]);
 
+  // La nota "phantom" (creada solo para que el editor tenga algo a lo que
+  // escribir cuando el usuario no tiene ninguna nota real todavia) no debe
+  // contarse como una nota: no aparece en las listas ni se sube a la BD
+  // hasta que el usuario escriba algo real en ella.
+  const visibleNotes = useMemo(
+    () => (phantomId ? notes.filter((note) => note.id !== phantomId) : notes),
+    [notes, phantomId],
+  );
+
   const tabNotes = useMemo(() => {
-    if (listTab === "favoritas") return notes.filter((note) => note.favorite);
-    if (listTab === "recientes") return [...notes].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-    return notes;
-  }, [notes, listTab]);
+    if (listTab === "favoritas") return visibleNotes.filter((note) => note.favorite);
+    if (listTab === "recientes") return [...visibleNotes].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    return visibleNotes;
+  }, [visibleNotes, listTab]);
 
   const filteredNotes = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -190,7 +251,7 @@ export function BlocNotepad() {
     return tabNotes.filter((note) => `${note.title} ${note.contentText}`.toLowerCase().includes(query));
   }, [tabNotes, searchTerm]);
 
-  const favoritesCount = useMemo(() => notes.filter((note) => note.favorite).length, [notes]);
+  const favoritesCount = useMemo(() => visibleNotes.filter((note) => note.favorite).length, [visibleNotes]);
 
   const fontClass = { sm: "text-sm", base: "text-base", lg: "text-lg" }[settings.fontSize];
   const wordCount = countWords(activeNote?.contentText ?? "");
@@ -201,14 +262,45 @@ export function BlocNotepad() {
     localStorage.setItem(blocSettingsKey, JSON.stringify(next));
   }
 
+  // Convierte la nota "phantom" en una nota real la primera vez que hay algo
+  // que merezca guardarse: la inserta en la BD (una unica vez, con los datos
+  // ya actualizados) y devuelve true si acaba de promoverla (para que el
+  // llamador no lance ademas un updateDb sobre una fila que aun no existe).
+  function promotePhantomIfNeeded(
+    id: string,
+    overrides: Partial<Pick<BlocNote, "title" | "contentHtml" | "contentText" | "favorite">> = {},
+    force = false,
+  ): boolean {
+    if (phantomIdRef.current !== id) return false;
+    const base = notesRef.current.find((note) => note.id === id);
+    if (!base) return false;
+    const title = overrides.title ?? base.title;
+    const contentText = overrides.contentText ?? base.contentText;
+    const isBlank = (title.trim() === "" || title === defaultTitle) && contentText.trim() === "";
+    if (isBlank && !force) return false;
+    setPhantomId(null);
+    if (dbSyncEnabledRef.current) {
+      const contentHtml = overrides.contentHtml ?? base.contentHtml;
+      const favorite = overrides.favorite ?? base.favorite;
+      void insertDb("bloc_notes", { id, title, content_html: contentHtml, content_text: contentText, is_favorite: favorite, deleted_at: null }, []);
+    }
+    return true;
+  }
+
   function renameActiveNote(title: string) {
     if (!activeNote) return;
+    promotePhantomIfNeeded(activeNote.id, { title });
     const updatedAt = nowIso();
     setNotes((current) => current.map((note) => (note.id === activeNote.id ? { ...note, title, updated_at: updatedAt } : note)));
   }
 
   function toggleFavorite(id: string) {
-    setNotes((current) => current.map((note) => (note.id === id ? { ...note, favorite: !note.favorite, updated_at: note.updated_at } : note)));
+    const target = notes.find((note) => note.id === id);
+    if (!target) return;
+    const nextFavorite = !target.favorite;
+    const promoted = promotePhantomIfNeeded(id, { favorite: nextFavorite }, true);
+    setNotes((current) => current.map((note) => (note.id === id ? { ...note, favorite: nextFavorite } : note)));
+    if (!promoted && dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { is_favorite: nextFavorite }, []);
   }
 
   function recordEditorContent() {
@@ -219,6 +311,8 @@ export function BlocNotepad() {
     const updatedAt = nowIso();
     const contentHtml = sanitizeEditorHtml(editorRef.current.innerHTML);
     const contentText = rawText.trim().length === 0 ? "" : rawText;
+
+    promotePhantomIfNeeded(activeNote.id, { contentHtml, contentText });
 
     setNotes((current) =>
       current.map((note) =>
@@ -246,6 +340,9 @@ export function BlocNotepad() {
     setSearchTerm("");
     setListTab("todas");
     setNotice("Nota creada");
+    if (dbSyncEnabledRef.current) {
+      void insertDb("bloc_notes", { id: note.id, title: note.title, content_html: note.contentHtml, content_text: note.contentText, is_favorite: false, deleted_at: null }, []);
+    }
   }
 
   function duplicateNote(note = activeNote) {
@@ -259,9 +356,21 @@ export function BlocNotepad() {
     setActiveId(copy.id);
     setSearchTerm("");
     setNotice("Nota duplicada");
+    if (dbSyncEnabledRef.current) {
+      void insertDb("bloc_notes", { id: copy.id, title: copy.title, content_html: copy.contentHtml, content_text: copy.contentText, is_favorite: false, deleted_at: null }, []);
+    }
   }
 
   function deleteNote(id: string) {
+    if (id === phantomId) {
+      // Nunca se llego a guardar: no tiene sentido mandarla a la papelera.
+      const fresh = createBlocNote({ title: defaultTitle });
+      setNotes((current) => current.map((note) => (note.id === id ? fresh : note)));
+      setPhantomId(fresh.id);
+      setActiveId(fresh.id);
+      return;
+    }
+
     const target = notes.find((note) => note.id === id);
     if (!target) return;
 
@@ -271,12 +380,14 @@ export function BlocNotepad() {
     if (next.length === 0) {
       const fresh = createBlocNote({ title: defaultTitle });
       setNotes([fresh]);
+      setPhantomId(fresh.id);
       setActiveId(fresh.id);
     } else {
       setNotes(next);
       if (activeId === id) setActiveId(next[0].id);
     }
     setNotice("Nota movida a la papelera");
+    if (dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { deleted_at: nowIso() }, []);
   }
 
   function restoreNote(id: string) {
@@ -295,6 +406,7 @@ export function BlocNotepad() {
     setNotes((current) => [restored, ...current]);
     setActiveId(restored.id);
     setNotice("Nota restaurada");
+    if (dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { deleted_at: null }, []);
   }
 
   function purgeNote(id: string) {
@@ -303,6 +415,7 @@ export function BlocNotepad() {
     if (!window.confirm(`Eliminar definitivamente "${target.title || defaultTitle}"? No se puede deshacer.`)) return;
     setTrashedNotes((current) => current.filter((note) => note.id !== id));
     setNotice("Nota eliminada definitivamente");
+    if (dbSyncEnabledRef.current) void deleteDb("bloc_notes", id, []);
   }
 
   function handlePaste(event: React.ClipboardEvent<HTMLDivElement>) {
@@ -399,6 +512,9 @@ export function BlocNotepad() {
       setSearchTerm("");
       setNotice("Documento subido");
       input.value = "";
+      if (dbSyncEnabledRef.current) {
+        void insertDb("bloc_notes", { id: note.id, title: note.title, content_html: note.contentHtml, content_text: note.contentText, is_favorite: false, deleted_at: null }, []);
+      }
     };
     reader.readAsText(file);
   }
@@ -472,7 +588,7 @@ export function BlocNotepad() {
           ))}
           {filteredNotes.length === 0 && (
             <div className="w-full rounded-xl border border-dashed p-4 text-center text-sm text-[#6b6f72]">
-              No hay notas con esa búsqueda.
+              {emptyListMessage(listTab, searchTerm)}
             </div>
           )}
         </div>
@@ -730,6 +846,15 @@ export function BlocNotepad() {
           />
 
           <div className="al-bloc-content-wrap">
+            {wordCount === 0 && (
+              <Image
+                src="/assets/bloc/bloc-empty-illustration.png"
+                alt=""
+                width={480}
+                height={343}
+                className="al-bloc-content-watermark"
+              />
+            )}
             <div
               ref={attachEditor}
               role="textbox"
@@ -793,8 +918,8 @@ export function BlocNotepad() {
         </div>
 
         <aside className="al-bloc-sidebar flex min-h-[520px] flex-col rounded-2xl">
-          <button type="button" className="al-bloc-primary-btn flex w-full items-center justify-center gap-2" onClick={createNote}>
-            <Plus className="h-4 w-4" />
+          <button type="button" className="al-bloc-primary-btn al-bloc-primary-btn-compact flex w-full items-center justify-center gap-1.5" onClick={createNote}>
+            <Plus className="h-3.5 w-3.5" />
             Nueva nota
           </button>
 
@@ -863,8 +988,9 @@ export function BlocNotepad() {
               </div>
             ))}
             {filteredNotes.length === 0 && (
-              <div className="rounded-lg border border-dashed border-[#ece7dc] p-3 text-sm text-[#6b6f72]">
-                {listTab === "favoritas" ? "Aún no tienes notas favoritas." : "No hay notas con esa búsqueda."}
+              <div className="al-bloc-list-empty">
+                <Image src="/assets/bloc/bloc-empty-illustration.png" alt="" width={480} height={343} className="al-bloc-list-empty-img" />
+                <p>{emptyListMessage(listTab, searchTerm)}</p>
               </div>
             )}
           </div>
@@ -1128,6 +1254,12 @@ function TrashSheet({
       </div>
     </>
   );
+}
+
+function emptyListMessage(listTab: ListTab, searchTerm: string): string {
+  if (searchTerm.trim()) return "No hay notas con esa búsqueda.";
+  if (listTab === "favoritas") return "Aún no tienes notas favoritas.";
+  return "Aún no tienes notas. Empieza a escribir a la izquierda.";
 }
 
 function formatBlocNoteCardDate(value: string) {
@@ -1452,8 +1584,9 @@ const blocBrandCss = `
   .al-bloc-tool-btn:hover { background: white; color: #c94f21; }
   .al-bloc-size-group { display: inline-flex; align-items: center; gap: 1px; }
   .al-bloc-toolbar-select { border: 1px solid #ece7dc; border-radius: 8px; background: white; color: #333029; }
-  .al-bloc-content-wrap { background: white; }
-  .al-bloc-content { color: #333029; }
+  .al-bloc-content-wrap { position: relative; background: white; }
+  .al-bloc-content-watermark { position: absolute; z-index: 0; right: 24px; bottom: 12px; width: 220px; height: auto; opacity: 0.55; pointer-events: none; user-select: none; }
+  .al-bloc-content { position: relative; z-index: 1; color: #333029; }
   .al-bloc-content a { color: #c94f21; text-decoration: underline; }
   .al-bloc-content blockquote { border-left: 3px solid #ece7dc; padding-left: 14px; color: #6b6f72; }
   .al-bloc-content h1 { font-size: 1.7em; font-weight: 700; color: #111111; }
@@ -1473,6 +1606,10 @@ const blocBrandCss = `
   .al-bloc-icon-btn-danger:hover { background: #fbe2df; color: #c23a2e; }
   .al-bloc-star-active { color: #E15D2D; }
   .al-bloc-primary-btn { height: 40px; border-radius: 12px; border: none; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 22px rgba(225, 93, 45, 0.25); }
+  .al-bloc-primary-btn-compact { height: 34px; border-radius: 10px; font-size: 12px; box-shadow: 0 6px 14px rgba(225, 93, 45, 0.22); }
+  .al-bloc-list-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 8px; text-align: center; border-radius: 12px; border: 1px dashed #ece7dc; }
+  .al-bloc-list-empty-img { width: 96px; height: auto; opacity: 0.85; }
+  .al-bloc-list-empty p { font-size: 12px; color: #6b6f72; margin: 0; }
   .al-bloc-search input { border: 1px solid #ece7dc; border-radius: 10px; background: white; }
   .al-bloc-sidebar { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); padding: 14px; }
   .al-bloc-tabs { display: flex; align-items: center; gap: 2px; border-radius: 11px; border: 1px solid #ece7dc; background: #faf8f4; padding: 3px; }
