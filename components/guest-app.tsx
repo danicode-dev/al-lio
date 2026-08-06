@@ -1227,58 +1227,38 @@ function TaskBoard({ store, actions, limit, variant = "full", compact: compactPr
 }
 
 const taskSectionStyles: Record<TaskBucket, {
-  border: string;
-  headerBg: string;
   iconBg: string;
-  countBadge: string;
-  plusBtn: string;
-  checkbox: string;
-  checkboxDone: string;
-  bar: string;
-  footerBg: string;
-  footerText: string;
+  iconColor: string;
+  countBg: string;
+  countColor: string;
+  barColor: string;
   subtitle: (active: number) => string;
   footerLabel: (active: number) => string;
 }> = {
   diario: {
-    border: "border-blue-200/70 dark:border-blue-900/50",
-    headerBg: "bg-blue-50/80 dark:bg-blue-950/30",
-    iconBg: "bg-blue-500",
-    countBadge: "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200",
-    plusBtn: "bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/60 dark:text-blue-300 dark:hover:bg-blue-900",
-    checkbox: "border-blue-300 hover:border-blue-400 dark:border-blue-700",
-    checkboxDone: "border-blue-500 bg-blue-500",
-    bar: "bg-blue-500",
-    footerBg: "bg-blue-50/60 dark:bg-blue-950/20",
-    footerText: "text-blue-700 dark:text-blue-300",
+    iconBg: "#e6eefc",
+    iconColor: "#2f5fac",
+    countBg: "#e6eefc",
+    countColor: "#2f5fac",
+    barColor: "linear-gradient(180deg, #5B8DEF, #2f5fac)",
     subtitle: (active) => `Hoy · ${active} ${active === 1 ? "pendiente" : "pendientes"}`,
     footerLabel: () => "Progreso diario",
   },
   urgente: {
-    border: "border-orange-200/70 dark:border-orange-900/50",
-    headerBg: "bg-orange-50/80 dark:bg-orange-950/30",
-    iconBg: "bg-orange-500",
-    countBadge: "bg-orange-100 text-orange-700 dark:bg-orange-900/60 dark:text-orange-200",
-    plusBtn: "bg-orange-100 text-orange-600 hover:bg-orange-200 dark:bg-orange-900/60 dark:text-orange-300 dark:hover:bg-orange-900",
-    checkbox: "border-orange-300 hover:border-orange-400 dark:border-orange-700",
-    checkboxDone: "border-orange-500 bg-orange-500",
-    bar: "bg-orange-500",
-    footerBg: "bg-orange-50/60 dark:bg-orange-950/20",
-    footerText: "text-orange-700 dark:text-orange-300",
+    iconBg: "#fdf1dd",
+    iconColor: "#b4791f",
+    countBg: "#fdf1dd",
+    countColor: "#b4791f",
+    barColor: "linear-gradient(180deg, #F06A37, #E15D2D)",
     subtitle: () => "Tareas por resolver",
     footerLabel: (active) => `${active} ${active === 1 ? "pendiente" : "pendientes"}`,
   },
   semanal: {
-    border: "border-emerald-200/70 dark:border-emerald-900/50",
-    headerBg: "bg-emerald-50/80 dark:bg-emerald-950/30",
-    iconBg: "bg-emerald-500",
-    countBadge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-200",
-    plusBtn: "bg-emerald-100 text-emerald-600 hover:bg-emerald-200 dark:bg-emerald-900/60 dark:text-emerald-300 dark:hover:bg-emerald-900",
-    checkbox: "border-emerald-300 hover:border-emerald-400 dark:border-emerald-700",
-    checkboxDone: "border-emerald-500 bg-emerald-500",
-    bar: "bg-emerald-500",
-    footerBg: "bg-emerald-50/60 dark:bg-emerald-950/20",
-    footerText: "text-emerald-700 dark:text-emerald-300",
+    iconBg: "#e7f5ee",
+    iconColor: "#1f7a4d",
+    countBg: "#e7f5ee",
+    countColor: "#1f7a4d",
+    barColor: "linear-gradient(180deg, #4C9A6E, #1f7a4d)",
     subtitle: () => "Plan de la semana",
     footerLabel: () => "Progreso semanal",
   },
@@ -1317,31 +1297,22 @@ function TaskSectionCard({
   const progressPct = total ? Math.round((completedTasks.length / total) * 100) : 0;
 
   return (
-    <section
-      ref={setDropRef}
-      className={cn(
-        "overflow-hidden rounded-2xl border bg-card shadow-sm transition-shadow",
-        style.border,
-        isOver && "ring-2 ring-inset ring-primary/40",
-      )}
-    >
-      <div className={cn("flex items-center gap-3 px-4 py-3.5", style.headerBg)}>
-        <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm", style.iconBg)}>
+    <section ref={setDropRef} className={cn("al-tasks-card transition-shadow", isOver && "ring-2 ring-inset ring-primary/40")}>
+      <div className="al-tasks-card-head">
+        <span className="al-tasks-card-icon" style={{ background: style.iconColor }}>
           <Icon className="h-5 w-5" />
-        </div>
+        </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="truncate text-lg font-bold leading-tight">{bucket.title}</h3>
-            <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold", style.countBadge)}>{tasks.length}</span>
+          <div className="al-tasks-card-title-row">
+            <h3 className="al-tasks-card-title truncate">{bucket.title}</h3>
+            <span className="al-tasks-card-count" style={{ background: style.countBg, color: style.countColor }}>{tasks.length}</span>
           </div>
-          <p className="text-xs text-muted-foreground">{style.subtitle(tasks.length)}</p>
+          <p className="al-tasks-card-subtitle">{style.subtitle(tasks.length)}</p>
         </div>
         <button
           type="button"
-          className={cn(
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            style.plusBtn,
-          )}
+          className="al-tasks-card-add"
+          style={{ background: style.iconColor }}
           onClick={() => setAddOpen(true)}
           aria-label={`Añadir tarea a ${bucket.title}`}
         >
@@ -1350,37 +1321,34 @@ function TaskSectionCard({
       </div>
 
       {addOpen && (
-        <div className="border-t px-3 py-3">
+        <div className="border-t border-[#f0ece2] px-3 py-3">
           <QuickTaskForm bucket={bucket.id} actions={actions} open={addOpen} onOpenChange={setAddOpen} />
         </div>
       )}
 
-      <div className="divide-y border-t">
+      <div>
         {tasks.map((task) => (
-          <TaskItemRow key={task.id} task={task} accent={style} actions={actions} onOpen={() => onOpenTask(task)} />
+          <TaskItemRow key={task.id} task={task} actions={actions} onOpen={() => onOpenTask(task)} />
         ))}
-        {completedTasks.map((task) => (
-          <TaskItemRow key={task.id} task={task} accent={style} actions={actions} onOpen={() => onOpenTask(task)} />
-        ))}
-        {total === 0 && !addOpen && (
-          <div className="flex items-center justify-between gap-3 px-4 py-5">
-            <p className="text-sm text-muted-foreground">No hay tareas en {bucket.title.toLowerCase()}.</p>
-            <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => setAddOpen(true)}>
-              <Plus className="h-3.5 w-3.5" />
-              Añadir
-            </Button>
+        {tasks.length === 0 && !addOpen && (
+          <div className="al-tasks-empty">
+            <span className="al-tasks-empty-icon" style={{ background: style.iconBg }}>
+              <Icon className="h-6 w-6" style={{ color: style.iconColor }} />
+            </span>
+            <p className="al-tasks-empty-title">No hay tareas en {bucket.title.toLowerCase()}</p>
+            <p className="al-tasks-empty-desc">Añade una nueva tarea y empieza a avanzar.</p>
           </div>
         )}
       </div>
 
-      <div className={cn("flex items-center justify-between gap-3 border-t px-4 py-2.5 text-xs", style.footerBg)}>
-        <span className={cn("font-medium", style.footerText)}>{style.footerLabel(tasks.length)}</span>
+      <div className="al-tasks-card-footer">
+        <span className="al-tasks-card-footer-label">{style.footerLabel(tasks.length)}</span>
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">
+          <span className="text-[11px] text-muted-foreground">
             {completedTasks.length ? `${completedTasks.length} de ${total} completadas` : "0 completadas"}
           </span>
-          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
-            <div className={cn("h-full rounded-full transition-all", style.bar)} style={{ width: `${progressPct}%` }} />
+          <div className="al-tasks-progress-track">
+            <div className="al-tasks-progress-fill" style={{ width: `${progressPct}%`, background: style.barColor }} />
           </div>
         </div>
       </div>
@@ -1390,12 +1358,10 @@ function TaskSectionCard({
 
 function TaskItemRow({
   task,
-  accent,
   actions,
   onOpen,
 }: {
   task: Task;
-  accent: (typeof taskSectionStyles)[TaskBucket];
   actions: ReturnTypeActions;
   onOpen: () => void;
 }) {
@@ -1426,25 +1392,22 @@ function TaskItemRow({
     <article
       ref={setDragRef}
       style={{ ...dragStyle, touchAction: "manipulation" }}
-      className={cn("relative flex select-none items-center gap-3 bg-card px-4 py-3", isDragging && "z-50 opacity-60 shadow-lg")}
+      className={cn("al-tasks-row relative select-none", isDragging && "z-50 opacity-60 shadow-lg")}
       {...listeners}
     >
       <button
         type="button"
-        className={cn(
-          "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          completed ? accent.checkboxDone : accent.checkbox,
-        )}
+        className={cn("al-tasks-checkbox", completed && "al-tasks-checkbox-done")}
         onClick={toggleCompleted}
         aria-label={completed ? "Marcar como pendiente" : "Completar tarea"}
       >
-        {completed && <Check className="h-4 w-4 text-white" strokeWidth={3} />}
+        {completed && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
       </button>
 
       <button type="button" className="min-w-0 flex-1 cursor-pointer text-left" onClick={onOpen}>
-        <p className={cn("break-words font-medium leading-snug", completed && "text-muted-foreground line-through")}>{task.title}</p>
+        <p className={cn("al-tasks-row-title break-words", completed && "al-tasks-row-title-done")}>{task.title}</p>
         {!completed && (task.due_at || task.reminder_at || task.status === "en_progreso" || task.status === "pospuesta") && (
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground">
+          <p className="al-tasks-row-meta flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
             {task.due_at && (
               <span className="inline-flex items-center gap-1">
                 <Clock className="h-3 w-3" />
@@ -1461,7 +1424,7 @@ function TaskItemRow({
             )}
           </p>
         )}
-        {completed && <p className="mt-0.5 text-xs text-muted-foreground">Completada</p>}
+        {completed && <p className="al-tasks-row-meta">Completada</p>}
       </button>
 
       {completed ? (
@@ -1631,25 +1594,40 @@ function QuickTaskForm({
     );
   }
 
+  if (compact) {
+    return (
+      <FieldForm action={submit}>
+        <div className="rounded-md border bg-background p-2 shadow-sm">
+          <div className="space-y-2">
+            <Input name="title" placeholder="Nueva tarea" required autoFocus />
+            <Select name="priority" defaultValue={bucket === "urgente" ? "alta" : "media"} className="h-8 text-xs">
+              {taskPriorities.map((priority) => <option key={priority} value={priority}>{priorityLabel(priority)}</option>)}
+            </Select>
+            <div className="flex gap-2">
+              <Button type="submit" size="sm">Crear</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+            </div>
+          </div>
+        </div>
+      </FieldForm>
+    );
+  }
+
   return (
     <FieldForm action={submit}>
-      <div className="rounded-md border bg-background p-2 shadow-sm">
-        <div className="space-y-2">
-          <Input name="title" placeholder={compact ? "Nueva tarea" : "Titulo de la tarea"} required autoFocus />
-          {!compact && <Textarea name="description" placeholder="Descripcion breve" rows={3} />}
-          <Select name="priority" defaultValue={bucket === "urgente" ? "alta" : "media"} className="h-8 text-xs">
-            {taskPriorities.map((priority) => <option key={priority} value={priority}>{priorityLabel(priority)}</option>)}
-          </Select>
-          {!compact && (
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <Input name="due_at" type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
-              <Input name="reminder_at" type="datetime-local" />
-            </div>
-          )}
-          <div className="flex gap-2">
-            <Button type="submit" size="sm">Crear</Button>
-            <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-          </div>
+      <div className="al-tasks-form space-y-2">
+        <Input name="title" placeholder="Titulo de la tarea" required autoFocus />
+        <Textarea name="description" placeholder="Descripcion breve" rows={3} />
+        <Select name="priority" defaultValue={bucket === "urgente" ? "alta" : "media"} className="h-8 text-xs">
+          {taskPriorities.map((priority) => <option key={priority} value={priority}>{priorityLabel(priority)}</option>)}
+        </Select>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <Input name="due_at" type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
+          <Input name="reminder_at" type="datetime-local" />
+        </div>
+        <div className="flex gap-2">
+          <button type="submit" className="al-tasks-form-btn-primary">Crear</button>
+          <button type="button" className="al-tasks-form-btn-ghost" onClick={() => setOpen(false)}>Cancelar</button>
         </div>
       </div>
     </FieldForm>
@@ -1781,6 +1759,21 @@ function TaskDetailDialog({ task, actions, onClose }: { task: Task | null; actio
     setReminderAt(task.reminder_at || "");
   }, [task]);
 
+  useEffect(() => {
+    if (!task) return;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
+    document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
+    };
+  }, [task]);
+
   if (!task) return null;
   const currentTask = task;
 
@@ -1791,18 +1784,19 @@ function TaskDetailDialog({ task, actions, onClose }: { task: Task | null; actio
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/55 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6" role="dialog" aria-modal="true">
-      <div className="max-h-[92svh] w-full overflow-hidden rounded-t-lg border bg-background shadow-2xl sm:max-w-3xl sm:rounded-lg">
-        <div className="flex items-center justify-between gap-3 border-b p-4">
-          <h2 className="truncate text-lg font-semibold">Detalle de tarea</h2>
-          <Button type="button" size="icon" variant="ghost" onClick={onClose} aria-label="Cerrar"><X className="h-4 w-4" /></Button>
+    <div className="al-tasks-detail-overlay" role="dialog" aria-modal="true">
+      <style>{tasksBrandCss}</style>
+      <div className="al-tasks-detail-shell">
+        <div className="al-tasks-detail-head">
+          <h2 className="al-tasks-detail-title truncate">Detalle de tarea</h2>
+          <button type="button" className="al-tasks-detail-close" onClick={onClose} aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
-        <div className="grid max-h-[calc(92svh-73px)] overflow-y-auto md:grid-cols-[1fr_260px]">
-          <div className="space-y-4 p-4">
+        <div className="al-tasks-detail-body">
+          <div className="al-tasks-detail-main">
             <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Titulo" />
             <Textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Descripcion" rows={7} />
           </div>
-          <aside className="space-y-3 border-t bg-muted/30 p-4 md:border-l md:border-t-0">
+          <aside className="al-tasks-detail-aside">
             <Select value={bucket} onChange={(event) => setBucket(event.target.value as TaskBucket)}>
               {taskBuckets.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
             </Select>
@@ -1811,9 +1805,9 @@ function TaskDetailDialog({ task, actions, onClose }: { task: Task | null; actio
             </Select>
             <Input type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
             <Input type="datetime-local" value={reminderAt} onChange={(event) => setReminderAt(event.target.value)} />
-            <Button type="button" className="w-full" onClick={save}>Guardar</Button>
-            <Button type="button" variant="outline" className="w-full" onClick={() => { actions.updateTask(currentTask.id, { status: "completada", completed_at: nowIso() }); onClose(); }}>Marcar hecho</Button>
-            <Button type="button" variant="ghost" className="w-full text-destructive hover:text-destructive" onClick={() => { actions.deleteTask(currentTask.id); onClose(); }}>Eliminar</Button>
+            <button type="button" className="al-tasks-detail-btn-primary" onClick={save}>Guardar</button>
+            <button type="button" className="al-tasks-detail-btn-outline" onClick={() => { actions.updateTask(currentTask.id, { status: "completada", completed_at: nowIso() }); onClose(); }}>Marcar hecho</button>
+            <button type="button" className="al-tasks-detail-btn-danger" onClick={() => { actions.deleteTask(currentTask.id); onClose(); }}>Eliminar</button>
           </aside>
         </div>
       </div>
@@ -3001,31 +2995,269 @@ const CandidaturaCard = memo(function CandidaturaCard({
 });
 
 function Tasks({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
-  const completed = store.tasks.filter((item) => item.status === "completada").sort((a, b) => String(b.completed_at).localeCompare(String(a.completed_at)));
-
   return (
     <div className="space-y-5">
+      <style>{tasksBrandCss}</style>
       <p className="-mt-4 text-sm text-muted-foreground">Organiza tu trabajo y mantén el foco.</p>
-      <div className="space-y-6">
-        <TaskBoard store={store} actions={actions} variant="full" />
-        {completed.length ? (
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold">Realizadas</h3>
-            {completed.slice(0, 12).map((task) => (
-              <Row
-                key={task.id}
-                title={task.title}
-                meta={`Completada ${formatLongDate(task.completed_at)}${task.description ? ` - ${task.description}` : ""}`}
-                badge="completada"
-                actions={<Button type="button" size="sm" variant="outline" onClick={() => actions.updateTask(task.id, { status: "pendiente", completed_at: "" })}>Reabrir</Button>}
-              />
-            ))}
-          </div>
-        ) : null}
+      <TasksStatRow tasks={store.tasks} />
+      <TaskBoard store={store} actions={actions} variant="full" />
+      <div className="al-tasks-bottom">
+        <TasksActivityPanel tasks={store.tasks} />
+        <TasksCompletedPanel tasks={store.tasks} actions={actions} />
+        <TasksPerformancePanel tasks={store.tasks} />
       </div>
     </div>
   );
 }
+
+function TasksStatRow({ tasks }: { tasks: Task[] }) {
+  const doneToday = completedTasksOn(tasks, new Date()).length;
+  const pending = activeTasks(tasks).length;
+  const doneWeek = completedThisWeek(tasks);
+  const streak = taskStreakDays(tasks);
+
+  return (
+    <div className="al-tasks-stats">
+      <div className="al-tasks-stat-card">
+        <span className="al-tasks-stat-icon" style={{ background: "#e7f5ee", color: "#1f7a4d" }}><CheckCircle2 className="h-4.5 w-4.5" /></span>
+        <div><p className="al-tasks-stat-value">{doneToday}</p><p className="al-tasks-stat-label">Completadas hoy</p></div>
+      </div>
+      <div className="al-tasks-stat-card">
+        <span className="al-tasks-stat-icon" style={{ background: "#fdf1dd", color: "#b4791f" }}><Clock className="h-4.5 w-4.5" /></span>
+        <div><p className="al-tasks-stat-value">{pending}</p><p className="al-tasks-stat-label">Pendientes</p></div>
+      </div>
+      <div className="al-tasks-stat-card">
+        <span className="al-tasks-stat-icon" style={{ background: "#e6eefc", color: "#2f5fac" }}><CalendarDays className="h-4.5 w-4.5" /></span>
+        <div><p className="al-tasks-stat-value">{doneWeek}</p><p className="al-tasks-stat-label">Completadas esta semana</p></div>
+      </div>
+      <div className="al-tasks-stat-card">
+        <span className="al-tasks-stat-icon" style={{ background: "#fbe7dd", color: "#E15D2D" }}><Flame className="h-4.5 w-4.5" /></span>
+        <div><p className="al-tasks-stat-value">{streak}</p><p className="al-tasks-stat-label">Racha actual (días)</p></div>
+      </div>
+    </div>
+  );
+}
+
+function TasksActivityPanel({ tasks }: { tasks: Task[] }) {
+  const items = recentTaskActivity(tasks, 6);
+  return (
+    <div className="al-tasks-panel">
+      <div className="al-tasks-panel-head">
+        <span className="al-tasks-panel-title"><RefreshCw className="h-4 w-4 text-[#9a958a]" />Actividad reciente</span>
+      </div>
+      {items.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Todavía no has completado ninguna tarea.</p>
+      ) : (
+        <div>
+          {items.map((task) => (
+            <div key={task.id} className="al-tasks-activity-row">
+              <span className="al-tasks-activity-dot" />
+              <div className="min-w-0">
+                <p className="al-tasks-activity-text truncate">Completaste &ldquo;{task.title}&rdquo;</p>
+                <p className="al-tasks-activity-time">{formatLongDate(task.completed_at)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TasksCompletedPanel({ tasks, actions }: { tasks: Task[]; actions: ReturnTypeActions }) {
+  const [tab, setTab] = useState<"todas" | "diarias" | "semanales">("todas");
+  const completedAll = useMemo(
+    () => tasks.filter((task) => task.status === "completada").sort((a, b) => String(b.completed_at).localeCompare(String(a.completed_at))),
+    [tasks],
+  );
+  const filtered = useMemo(() => {
+    if (tab === "diarias") return completedAll.filter((task) => toTaskBucket(task.category) === "diario");
+    if (tab === "semanales") return completedAll.filter((task) => toTaskBucket(task.category) === "semanal");
+    return completedAll;
+  }, [completedAll, tab]);
+
+  return (
+    <div className="al-tasks-panel">
+      <div className="al-tasks-panel-head">
+        <span className="al-tasks-panel-title"><ListChecks className="h-4 w-4 text-[#9a958a]" />Completadas</span>
+        <div className="al-tasks-tabs">
+          {([["todas", "Todas"], ["diarias", "Diarias"], ["semanales", "Semanales"]] as const).map(([id, label]) => (
+            <button key={id} type="button" className={cn("al-tasks-tab", tab === id && "al-tasks-tab-active")} onClick={() => setTab(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {filtered.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No hay tareas completadas todavía.</p>
+      ) : (
+        <div className="max-h-72 overflow-y-auto pr-0.5">
+          {filtered.slice(0, 20).map((task) => (
+            <div key={task.id} className="al-tasks-completed-row">
+              <div className="min-w-0">
+                <p className="al-tasks-completed-title truncate">{task.title}</p>
+                <p className="al-tasks-completed-meta">
+                  {toTaskBucket(task.category) === "diario" ? "Diaria" : toTaskBucket(task.category) === "semanal" ? "Semanal" : "Pendiente"} · {formatLongDate(task.completed_at)}
+                </p>
+              </div>
+              <button type="button" className="al-tasks-reopen-btn" onClick={() => actions.updateTask(task.id, { status: "pendiente", completed_at: "" })}>
+                Reabrir
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TasksPerformancePanel({ tasks }: { tasks: Task[] }) {
+  const streak = taskStreakDays(tasks);
+  const days = last7DaysActivity(tasks);
+  const maxCount = Math.max(1, ...days.map((day) => day.count));
+  const rate = todayCompletionRate(tasks);
+
+  return (
+    <div className="al-tasks-panel">
+      <div className="al-tasks-panel-head">
+        <span className="al-tasks-panel-title"><Target className="h-4 w-4 text-[#9a958a]" />Rendimiento</span>
+      </div>
+      <div className="al-tasks-streak">
+        <span className="al-tasks-streak-icon"><Flame className="h-4.5 w-4.5 text-white" /></span>
+        <div>
+          <p className="al-tasks-streak-value">{streak} {streak === 1 ? "día" : "días"}</p>
+          <p className="al-tasks-streak-label">Racha actual</p>
+        </div>
+      </div>
+      <div className="al-tasks-chart">
+        {days.map((day) => (
+          <div key={day.key} className="al-tasks-chart-col">
+            <div className="al-tasks-chart-bar-track">
+              <div
+                className={cn("al-tasks-chart-bar", day.count > 0 && "al-tasks-chart-bar-active")}
+                style={{ height: `${Math.max(6, Math.round((day.count / maxCount) * 100))}%` }}
+              />
+            </div>
+            <span className="al-tasks-chart-label">{day.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="al-tasks-rate">
+        <span className="al-tasks-rate-ring" style={{ background: `conic-gradient(#1f7a4d ${rate.pct}%, #f0ece2 0)` }}>
+          <span className="al-tasks-rate-ring-inner">{rate.pct}%</span>
+        </span>
+        <div>
+          <p className="al-tasks-rate-title">Tasa de completadas</p>
+          <p className="al-tasks-rate-desc">{rate.done} de {rate.total || 0} hoy</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const tasksBrandCss = `
+  .al-tasks-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (min-width: 780px) { .al-tasks-stats { grid-template-columns: repeat(4, 1fr); } }
+  .al-tasks-stat-card { display: flex; align-items: center; gap: 10px; background: white; border: 1px solid #ece7dc; border-radius: 16px; padding: 14px 16px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); }
+  .al-tasks-stat-icon { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; }
+  .al-tasks-stat-value { font-size: 20px; font-weight: 800; color: #111111; line-height: 1.1; }
+  .al-tasks-stat-label { font-size: 11.5px; color: #6b6f72; margin-top: 1px; }
+
+  .al-tasks-card { background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); }
+  .al-tasks-card-head { border-radius: 18px 18px 0 0; }
+  .al-tasks-card-head { display: flex; align-items: center; gap: 12px; padding: 16px; }
+  .al-tasks-card-icon { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 13px; color: white; flex-shrink: 0; }
+  .al-tasks-card-title-row { display: flex; align-items: center; gap: 8px; }
+  .al-tasks-card-title { font-size: 16px; font-weight: 700; color: #111111; }
+  .al-tasks-card-count { border-radius: 999px; padding: 1px 8px; font-size: 11.5px; font-weight: 700; }
+  .al-tasks-card-subtitle { font-size: 11.5px; color: #6b6f72; margin-top: 1px; }
+  .al-tasks-card-add { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 999px; border: none; cursor: pointer; flex-shrink: 0; color: white; margin-left: auto; }
+
+  .al-tasks-row { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-top: 1px solid #f0ece2; }
+  .al-tasks-checkbox { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 8px; border: 2px solid #e4dfd5; flex-shrink: 0; cursor: pointer; background: white; }
+  .al-tasks-checkbox-done { border-color: transparent; background: linear-gradient(180deg, #4C9A6E, #1f7a4d); }
+  .al-tasks-row-title { font-size: 13.5px; font-weight: 600; color: #333029; line-height: 1.3; }
+  .al-tasks-row-title-done { color: #9a958a; text-decoration: line-through; }
+  .al-tasks-row-meta { font-size: 11px; color: #9a958a; margin-top: 2px; }
+
+  .al-tasks-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 26px 16px; text-align: center; }
+  .al-tasks-empty-icon { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+  .al-tasks-empty-title { font-size: 13px; font-weight: 700; color: #333029; }
+  .al-tasks-empty-desc { font-size: 11.5px; color: #9a958a; }
+
+  .al-tasks-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; border-top: 1px solid #f0ece2; }
+  .al-tasks-card-footer-label { font-size: 11px; font-weight: 700; color: #6b6f72; }
+  .al-tasks-progress-track { width: 76px; height: 6px; border-radius: 999px; background: #f0ece2; overflow: hidden; }
+  .al-tasks-progress-fill { height: 100%; border-radius: 999px; }
+
+  .al-tasks-bottom { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 1180px) { .al-tasks-bottom { grid-template-columns: 1.15fr 1fr 0.85fr; } }
+  .al-tasks-panel { background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 16px; }
+  .al-tasks-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+  .al-tasks-panel-title { font-size: 14.5px; font-weight: 700; color: #111111; display: flex; align-items: center; gap: 7px; }
+
+  .al-tasks-activity-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-top: 1px solid #f0ece2; }
+  .al-tasks-activity-row:first-child { border-top: none; padding-top: 0; }
+  .al-tasks-activity-dot { width: 7px; height: 7px; border-radius: 999px; background: #4C9A6E; margin-top: 5px; flex-shrink: 0; }
+  .al-tasks-activity-text { font-size: 12.5px; color: #333029; line-height: 1.4; }
+  .al-tasks-activity-time { font-size: 10.5px; color: #9a958a; margin-top: 1px; }
+
+  .al-tasks-tabs { display: inline-flex; align-items: center; gap: 2px; background: #f5f2ea; border-radius: 10px; padding: 2px; }
+  .al-tasks-tab { border: none; background: transparent; border-radius: 8px; padding: 4px 10px; font-size: 11px; font-weight: 700; color: #6b6f72; cursor: pointer; }
+  .al-tasks-tab-active { background: white; color: #c94f21; box-shadow: 0 1px 3px rgba(17,17,17,0.08); }
+
+  .al-tasks-completed-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 0; border-top: 1px solid #f0ece2; }
+  .al-tasks-completed-row:first-child { border-top: none; padding-top: 0; }
+  .al-tasks-completed-title { font-size: 12.5px; font-weight: 600; color: #333029; }
+  .al-tasks-completed-meta { font-size: 10.5px; color: #9a958a; margin-top: 1px; }
+  .al-tasks-reopen-btn { flex-shrink: 0; font-size: 11px; font-weight: 700; color: #c94f21; background: #fbe7dd; border: none; border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+
+  .al-tasks-streak { display: flex; align-items: center; gap: 10px; padding: 10px; background: #fdf1dd; border-radius: 14px; }
+  .al-tasks-streak-icon { width: 34px; height: 34px; border-radius: 10px; background: #f7b955; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .al-tasks-streak-value { font-size: 17px; font-weight: 800; color: #111111; line-height: 1.1; }
+  .al-tasks-streak-label { font-size: 10.5px; color: #9a958a; }
+
+  .al-tasks-chart { display: flex; align-items: flex-end; justify-content: space-between; gap: 4px; height: 64px; margin-top: 12px; }
+  .al-tasks-chart-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .al-tasks-chart-bar-track { width: 100%; height: 48px; display: flex; align-items: flex-end; }
+  .al-tasks-chart-bar { width: 100%; border-radius: 4px; background: #f0ece2; }
+  .al-tasks-chart-bar-active { background: linear-gradient(180deg, #F06A37, #E15D2D); }
+  .al-tasks-chart-label { font-size: 9.5px; font-weight: 700; color: #9a958a; }
+
+  .al-tasks-rate { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+  .al-tasks-rate-ring { width: 54px; height: 54px; border-radius: 999px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .al-tasks-rate-ring-inner { width: 40px; height: 40px; border-radius: 999px; background: white; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 800; color: #1f7a4d; }
+  .al-tasks-rate-title { font-size: 11.5px; font-weight: 700; color: #333029; }
+  .al-tasks-rate-desc { font-size: 10.5px; color: #9a958a; margin-top: 1px; }
+
+  .al-tasks-form { border: 1px solid #ece7dc; border-radius: 12px; padding: 10px; background: #faf8f4; }
+  .al-tasks-form input, .al-tasks-form textarea, .al-tasks-form select { border-color: #ece7dc; font-size: 12.5px; }
+  .al-tasks-form input:focus-visible, .al-tasks-form textarea:focus-visible, .al-tasks-form select:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(225, 93, 45, 0.25); border-color: #E15D2D; }
+  .al-tasks-form-btn-primary { height: 32px; padding: 0 14px; border-radius: 9px; border: none; background: linear-gradient(180deg, #F06A37, #E15D2D); color: white; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .al-tasks-form-btn-ghost { height: 32px; padding: 0 12px; border-radius: 9px; border: none; background: transparent; color: #6b6f72; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .al-tasks-form-btn-ghost:hover { background: #f0ece2; }
+
+  .al-tasks-detail-overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(17, 17, 17, 0.55); backdrop-filter: blur(2px); padding: 0; }
+  @media (min-width: 640px) { .al-tasks-detail-overlay { align-items: center; padding: 24px; } }
+  .al-tasks-detail-shell { width: 100%; max-height: 92svh; overflow: hidden; background: white; border-radius: 22px 22px 0 0; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
+  @media (min-width: 640px) { .al-tasks-detail-shell { border-radius: 22px; max-width: 46rem; } }
+  .al-tasks-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #f0ece2; flex-shrink: 0; }
+  .al-tasks-detail-title { font-size: 16px; font-weight: 700; color: #111111; }
+  .al-tasks-detail-close { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; flex-shrink: 0; }
+  .al-tasks-detail-body { display: grid; overflow-y: auto; }
+  @media (min-width: 768px) { .al-tasks-detail-body { grid-template-columns: 1fr 260px; } }
+  .al-tasks-detail-main { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+  .al-tasks-detail-main input, .al-tasks-detail-main textarea { border: 1px solid #ece7dc; border-radius: 10px; }
+  .al-tasks-detail-main input:focus-visible, .al-tasks-detail-main textarea:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(225, 93, 45, 0.25); border-color: #E15D2D; }
+  .al-tasks-detail-aside { padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; background: #faf8f4; border-top: 1px solid #f0ece2; }
+  @media (min-width: 768px) { .al-tasks-detail-aside { border-top: none; border-left: 1px solid #f0ece2; } }
+  .al-tasks-detail-aside select, .al-tasks-detail-aside input { border: 1px solid #ece7dc; border-radius: 10px; background: white; }
+  .al-tasks-detail-aside select:focus-visible, .al-tasks-detail-aside input:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(225, 93, 45, 0.25); border-color: #E15D2D; }
+  .al-tasks-detail-btn-primary { height: 40px; border-radius: 11px; border: none; background: linear-gradient(180deg, #F06A37, #E15D2D); color: white; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .al-tasks-detail-btn-outline { height: 40px; border-radius: 11px; border: 1px solid #ece7dc; background: white; color: #333029; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .al-tasks-detail-btn-danger { height: 36px; border-radius: 11px; border: none; background: transparent; color: #c0392b; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .al-tasks-detail-btn-danger:hover { background: rgba(192, 57, 43, 0.08); }
+`;
 
 
 
@@ -3590,7 +3822,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
-  const [requirementsItem, setRequirementsItem] = useState<Hackathon | null>(null);
+  const [requirementsItemId, setRequirementsItemId] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
@@ -3682,6 +3914,15 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   const featuredProgress = featuredHackathon ? hackathonAptitudeProgress(featuredHackathon) : null;
   const featuredHasRuta = featuredHackathon ? !!(featuredHackathon.id_slug && hackathonHasRutaVideo(featuredHackathon)) : false;
 
+  // Se busca en vivo sobre allHackathons (en vez de guardar el objeto tal
+  // cual al abrir el modal) para que marcar un requisito como hecho se vea
+  // reflejado al instante dentro del modal, sin tener que cerrarlo y
+  // volver a abrirlo.
+  const requirementsItem = useMemo(
+    () => (requirementsItemId ? allHackathons.find((h) => h.id === requirementsItemId) ?? null : null),
+    [requirementsItemId, allHackathons]
+  );
+
   return (
     <>
       <style>{`
@@ -3707,7 +3948,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         @media (min-width: 900px) { .al-hack-hero { flex-direction: row; align-items: stretch; } }
         .al-hack-hero-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
         .al-hack-hero-kicker { display: inline-flex; align-items: center; gap: 6px; width: fit-content; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #c94f21; }
-        .al-hack-hero-kicker-dot { width: 6px; height: 6px; border-radius: 999px; background: #4C9A6E; box-shadow: 0 0 0 3px rgba(76, 154, 110, 0.25); }
         .al-hack-hero-title { font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; color: #111111; }
         .al-hack-hero-org { font-size: 12.5px; color: #6b6f72; }
         .al-hack-hero-meta { font-size: 12.5px; color: #4b4740; }
@@ -3717,8 +3957,8 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-hero-btn-ghost { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-radius: 12px; background: white; color: #333029; font-size: 13px; font-weight: 600; border: 1px solid #ece7dc; cursor: pointer; }
         .al-hack-hero-side { width: 100%; background: #faf8f4; border: 1px solid #ece7dc; border-radius: 16px; padding: 16px; }
         @media (min-width: 900px) { .al-hack-hero-side { width: 220px; flex-shrink: 0; } }
-        .al-hack-hero-side-label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: #6b6f72; text-transform: uppercase; letter-spacing: 0.05em; }
-        .al-hack-hero-side-value { font-size: 12.5px; font-weight: 700; color: #c94f21; }
+        .al-hack-hero-side-label { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; font-size: 11px; font-weight: 700; color: #6b6f72; text-transform: uppercase; letter-spacing: 0.05em; }
+        .al-hack-hero-side-value { font-size: 14px; font-weight: 700; color: #c94f21; }
         .al-hack-hero-progress-bar { margin-top: 10px; height: 8px; border-radius: 999px; background: #f3ece1; overflow: hidden; }
         .al-hack-hero-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #F06A37, #E15D2D); transition: width 0.3s ease; }
         .al-hack-hero-side-hint { margin-top: 10px; font-size: 11.5px; color: #6b6f72; line-height: 1.4; }
@@ -3792,7 +4032,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             {featuredHackathon && (
               <div className="al-hack-hero">
                 <div className="al-hack-hero-main">
-                  <span className="al-hack-hero-kicker"><span className="al-hack-hero-kicker-dot" />Hackatón futuro</span>
+                  <span className="al-hack-hero-kicker">Hackatón futuro</span>
                   <p className="al-hack-hero-title">{featuredHackathon.name}</p>
                   {featuredHackathon.organizer && <p className="al-hack-hero-org">{featuredHackathon.organizer}</p>}
                   {(featuredHackathon.start_at || featuredHackathon.end_at) && (
@@ -3813,7 +4053,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                       </a>
                     ) : null}
                     {featuredHackathon.requiredCompetencies && featuredHackathon.requiredCompetencies.length > 0 && (
-                      <button type="button" className="al-hack-hero-btn-ghost" onClick={() => setRequirementsItem(featuredHackathon)}>
+                      <button type="button" className="al-hack-hero-btn-ghost" onClick={() => setRequirementsItemId(featuredHackathon.id)}>
                         <ListChecks className="h-4 w-4" />Aptitudes mínimas
                       </button>
                     )}
@@ -3895,7 +4135,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                           )
                         )}
                         {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
-                          <button type="button" className="al-hack-btn" onClick={() => setRequirementsItem(item)}>
+                          <button type="button" className="al-hack-btn" onClick={() => setRequirementsItemId(item.id)}>
                             <ListChecks className="h-3.5 w-3.5" />Ver detalles
                           </button>
                         )}
@@ -3967,7 +4207,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
           )}
         </div>
 
-        <HackathonRequirementsModal item={requirementsItem} actions={actions} onClose={() => setRequirementsItem(null)} />
+        <HackathonRequirementsModal item={requirementsItem} actions={actions} onClose={() => setRequirementsItemId(null)} />
       </div>
     </>
   );
@@ -4099,7 +4339,12 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
                 </span>
                 <span className="al-modal-step-count">Paso {safeIndex + 1} de {steps.length}</span>
               </div>
-              <CompetencyRequirement competency={currentStep} hackathonSlug={item.id_slug} actions={actions} />
+              <CompetencyRequirement
+                competency={currentStep}
+                hackathonSlug={item.id_slug}
+                actions={actions}
+                onMarkDone={() => setStepIndex((i) => Math.min(steps.length - 1, i + 1))}
+              />
             </div>
             <div className="al-modal-nav">
               <button type="button" className="al-modal-nav-btn" onClick={() => setStepIndex((i) => Math.max(0, i - 1))} disabled={safeIndex === 0}>
@@ -4168,7 +4413,17 @@ function hackPriorityClass(value?: string): string {
   return "al-hack-chip-amber";
 }
 
-function CompetencyRequirement({ competency, hackathonSlug, actions }: { competency: RequiredCompetency; hackathonSlug?: string; actions: ReturnTypeActions }) {
+function CompetencyRequirement({
+  competency,
+  hackathonSlug,
+  actions,
+  onMarkDone,
+}: {
+  competency: RequiredCompetency;
+  hackathonSlug?: string;
+  actions: ReturnTypeActions;
+  onMarkDone?: () => void;
+}) {
   const done = isCompetencyDone(competency);
   const videoItem = competency.learningItems.find((li) => li.video_url);
   const docItems = competency.learningItems.filter((li) => !li.video_url);
@@ -4177,6 +4432,7 @@ function CompetencyRequirement({ competency, hackathonSlug, actions }: { compete
     for (const learningItem of competency.learningItems) {
       actions.markLearningItemDone(learningItem.id_slug);
     }
+    onMarkDone?.();
   }
 
   return (
@@ -4973,6 +5229,69 @@ function sortTasksByPriority(a: Task, b: Task) {
 
 function tasksForBucket(tasks: Task[], bucket: TaskBucket) {
   return activeTasks(tasks).filter((task) => toTaskBucket(task.category) === bucket).sort(sortTasksByPriority);
+}
+
+function startOfDayTs(date: Date): number {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy.getTime();
+}
+
+function completedTasksOn(tasks: Task[], date: Date): Task[] {
+  const dayStart = startOfDayTs(date);
+  const dayEnd = dayStart + 86400000;
+  return tasks.filter((task) => {
+    if (task.status !== "completada" || !task.completed_at) return false;
+    const ts = new Date(task.completed_at).getTime();
+    return Number.isFinite(ts) && ts >= dayStart && ts < dayEnd;
+  });
+}
+
+function taskStreakDays(tasks: Task[]): number {
+  const cursor = new Date();
+  // Si hoy todavia no se ha completado nada, se cuenta desde ayer para no
+  // romper la racha nada mas entrar por la mañana.
+  if (completedTasksOn(tasks, cursor).length === 0) cursor.setDate(cursor.getDate() - 1);
+  let streak = 0;
+  while (completedTasksOn(tasks, cursor).length > 0) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function last7DaysActivity(tasks: Task[]): { key: string; label: string; count: number; isToday: boolean }[] {
+  const labels = ["D", "L", "M", "X", "J", "V", "S"];
+  const days: { key: string; label: string; count: number; isToday: boolean }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push({ key: dateKey(d.toISOString()), label: labels[d.getDay()], count: completedTasksOn(tasks, d).length, isToday: i === 0 });
+  }
+  return days;
+}
+
+function completedThisWeek(tasks: Task[]): number {
+  const weekStart = startOfDayTs(new Date()) - 6 * 86400000;
+  return tasks.filter((task) => {
+    if (task.status !== "completada" || !task.completed_at) return false;
+    const ts = new Date(task.completed_at).getTime();
+    return Number.isFinite(ts) && ts >= weekStart;
+  }).length;
+}
+
+function todayCompletionRate(tasks: Task[]): { done: number; total: number; pct: number } {
+  const done = completedTasksOn(tasks, new Date()).length;
+  const pending = tasksForBucket(tasks, "diario").length;
+  const total = done + pending;
+  return { done, total, pct: total > 0 ? Math.round((done / total) * 100) : 0 };
+}
+
+function recentTaskActivity(tasks: Task[], limit = 6): Task[] {
+  return tasks
+    .filter((task) => task.status === "completada" && task.completed_at)
+    .sort((a, b) => String(b.completed_at).localeCompare(String(a.completed_at)))
+    .slice(0, limit);
 }
 
 function getTaskPriority(task: Pick<Task, "priority">): TaskPriority {
