@@ -36,9 +36,12 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { insertDb, updateDb, deleteDb } from "@/lib/db";
+import { fetchBlocNotes, migrateLocalBlocNotes } from "@/lib/bloc/notes-actions";
 
 type BlocNote = {
   id: string;
@@ -87,6 +90,7 @@ export function BlocNotepad() {
   const notesRef = useRef<BlocNote[]>([]);
   const trashedRef = useRef<BlocTrashedNote[]>([]);
   const activeIdRef = useRef("");
+  const dbSyncEnabledRef = useRef(false);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
@@ -146,6 +150,32 @@ export function BlocNotepad() {
     setLoaded(true);
   }, []);
 
+  // Sincroniza con la base de datos: si el usuario ya tiene notas guardadas
+  // en el servidor, esas mandan. Si no tiene ninguna todavia, sube lo que
+  // haya en localStorage una sola vez. Si algo falla (sin conexion, etc.)
+  // la app se queda funcionando solo con localStorage, como hasta ahora.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        let result = await fetchBlocNotes();
+        if (cancelled) return;
+        if (!result.migrated) {
+          result = await migrateLocalBlocNotes(notesRef.current, trashedRef.current);
+          if (cancelled) return;
+        }
+        const nextNotes = result.notes.length ? result.notes : [createBlocNote({ title: defaultTitle })];
+        setNotes(nextNotes);
+        setTrashedNotes(result.trashedNotes);
+        setActiveId((current) => (nextNotes.some((note) => note.id === current) ? current : nextNotes[0].id));
+        dbSyncEnabledRef.current = true;
+      } catch {
+        // Sin conexion a la base de datos: seguimos con localStorage solamente.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   useEffect(() => {
     return () => {
       if (notesRef.current.length) {
@@ -160,6 +190,12 @@ export function BlocNotepad() {
     const timeoutId = window.setTimeout(() => {
       localStorage.setItem(blocKey, JSON.stringify({ version: 2, notes, trashedNotes }));
       setSaveState("saved");
+      if (dbSyncEnabledRef.current) {
+        const current = notes.find((note) => note.id === activeIdRef.current);
+        if (current) {
+          void updateDb("bloc_notes", current.id, { title: current.title, content_html: current.contentHtml, content_text: current.contentText }, []);
+        }
+      }
     }, 450);
     return () => window.clearTimeout(timeoutId);
   }, [loaded, notes, trashedNotes]);
@@ -208,7 +244,11 @@ export function BlocNotepad() {
   }
 
   function toggleFavorite(id: string) {
-    setNotes((current) => current.map((note) => (note.id === id ? { ...note, favorite: !note.favorite, updated_at: note.updated_at } : note)));
+    const target = notes.find((note) => note.id === id);
+    if (!target) return;
+    const nextFavorite = !target.favorite;
+    setNotes((current) => current.map((note) => (note.id === id ? { ...note, favorite: nextFavorite } : note)));
+    if (dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { is_favorite: nextFavorite }, []);
   }
 
   function recordEditorContent() {
@@ -246,6 +286,9 @@ export function BlocNotepad() {
     setSearchTerm("");
     setListTab("todas");
     setNotice("Nota creada");
+    if (dbSyncEnabledRef.current) {
+      void insertDb("bloc_notes", { id: note.id, title: note.title, content_html: note.contentHtml, content_text: note.contentText, is_favorite: false, deleted_at: null }, []);
+    }
   }
 
   function duplicateNote(note = activeNote) {
@@ -259,6 +302,9 @@ export function BlocNotepad() {
     setActiveId(copy.id);
     setSearchTerm("");
     setNotice("Nota duplicada");
+    if (dbSyncEnabledRef.current) {
+      void insertDb("bloc_notes", { id: copy.id, title: copy.title, content_html: copy.contentHtml, content_text: copy.contentText, is_favorite: false, deleted_at: null }, []);
+    }
   }
 
   function deleteNote(id: string) {
@@ -277,6 +323,7 @@ export function BlocNotepad() {
       if (activeId === id) setActiveId(next[0].id);
     }
     setNotice("Nota movida a la papelera");
+    if (dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { deleted_at: nowIso() }, []);
   }
 
   function restoreNote(id: string) {
@@ -295,6 +342,7 @@ export function BlocNotepad() {
     setNotes((current) => [restored, ...current]);
     setActiveId(restored.id);
     setNotice("Nota restaurada");
+    if (dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { deleted_at: null }, []);
   }
 
   function purgeNote(id: string) {
@@ -303,6 +351,7 @@ export function BlocNotepad() {
     if (!window.confirm(`Eliminar definitivamente "${target.title || defaultTitle}"? No se puede deshacer.`)) return;
     setTrashedNotes((current) => current.filter((note) => note.id !== id));
     setNotice("Nota eliminada definitivamente");
+    if (dbSyncEnabledRef.current) void deleteDb("bloc_notes", id, []);
   }
 
   function handlePaste(event: React.ClipboardEvent<HTMLDivElement>) {
@@ -399,6 +448,9 @@ export function BlocNotepad() {
       setSearchTerm("");
       setNotice("Documento subido");
       input.value = "";
+      if (dbSyncEnabledRef.current) {
+        void insertDb("bloc_notes", { id: note.id, title: note.title, content_html: note.contentHtml, content_text: note.contentText, is_favorite: false, deleted_at: null }, []);
+      }
     };
     reader.readAsText(file);
   }
@@ -730,6 +782,15 @@ export function BlocNotepad() {
           />
 
           <div className="al-bloc-content-wrap">
+            {wordCount === 0 && (
+              <Image
+                src="/assets/bloc/bloc-empty-illustration.png"
+                alt=""
+                width={480}
+                height={343}
+                className="al-bloc-content-watermark"
+              />
+            )}
             <div
               ref={attachEditor}
               role="textbox"
@@ -793,8 +854,8 @@ export function BlocNotepad() {
         </div>
 
         <aside className="al-bloc-sidebar flex min-h-[520px] flex-col rounded-2xl">
-          <button type="button" className="al-bloc-primary-btn flex w-full items-center justify-center gap-2" onClick={createNote}>
-            <Plus className="h-4 w-4" />
+          <button type="button" className="al-bloc-primary-btn al-bloc-primary-btn-compact flex w-full items-center justify-center gap-1.5" onClick={createNote}>
+            <Plus className="h-3.5 w-3.5" />
             Nueva nota
           </button>
 
@@ -863,8 +924,9 @@ export function BlocNotepad() {
               </div>
             ))}
             {filteredNotes.length === 0 && (
-              <div className="rounded-lg border border-dashed border-[#ece7dc] p-3 text-sm text-[#6b6f72]">
-                {listTab === "favoritas" ? "Aún no tienes notas favoritas." : "No hay notas con esa búsqueda."}
+              <div className="al-bloc-list-empty">
+                <Image src="/assets/bloc/bloc-empty-illustration.png" alt="" width={480} height={343} className="al-bloc-list-empty-img" />
+                <p>{listTab === "favoritas" ? "Aún no tienes notas favoritas." : "No hay notas con esa búsqueda."}</p>
               </div>
             )}
           </div>
@@ -1452,8 +1514,9 @@ const blocBrandCss = `
   .al-bloc-tool-btn:hover { background: white; color: #c94f21; }
   .al-bloc-size-group { display: inline-flex; align-items: center; gap: 1px; }
   .al-bloc-toolbar-select { border: 1px solid #ece7dc; border-radius: 8px; background: white; color: #333029; }
-  .al-bloc-content-wrap { background: white; }
-  .al-bloc-content { color: #333029; }
+  .al-bloc-content-wrap { position: relative; background: white; }
+  .al-bloc-content-watermark { position: absolute; z-index: 0; right: 24px; bottom: 12px; width: 220px; height: auto; opacity: 0.55; pointer-events: none; user-select: none; }
+  .al-bloc-content { position: relative; z-index: 1; color: #333029; }
   .al-bloc-content a { color: #c94f21; text-decoration: underline; }
   .al-bloc-content blockquote { border-left: 3px solid #ece7dc; padding-left: 14px; color: #6b6f72; }
   .al-bloc-content h1 { font-size: 1.7em; font-weight: 700; color: #111111; }
@@ -1473,6 +1536,10 @@ const blocBrandCss = `
   .al-bloc-icon-btn-danger:hover { background: #fbe2df; color: #c23a2e; }
   .al-bloc-star-active { color: #E15D2D; }
   .al-bloc-primary-btn { height: 40px; border-radius: 12px; border: none; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 22px rgba(225, 93, 45, 0.25); }
+  .al-bloc-primary-btn-compact { height: 34px; border-radius: 10px; font-size: 12px; box-shadow: 0 6px 14px rgba(225, 93, 45, 0.22); }
+  .al-bloc-list-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 8px; text-align: center; border-radius: 12px; border: 1px dashed #ece7dc; }
+  .al-bloc-list-empty-img { width: 96px; height: auto; opacity: 0.85; }
+  .al-bloc-list-empty p { font-size: 12px; color: #6b6f72; margin: 0; }
   .al-bloc-search input { border: 1px solid #ece7dc; border-radius: 10px; background: white; }
   .al-bloc-sidebar { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); padding: 14px; }
   .al-bloc-tabs { display: flex; align-items: center; gap: 2px; border-radius: 11px; border: 1px solid #ece7dc; background: #faf8f4; padding: 3px; }

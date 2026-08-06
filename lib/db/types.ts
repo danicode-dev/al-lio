@@ -328,6 +328,18 @@ export interface DbTask {
   updated_at: string;
 }
 
+export interface DbBlocNote {
+  id: string;
+  user_id: string;
+  title: string;
+  content_html: string;
+  content_text: string;
+  is_favorite: boolean;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DbReminder {
   id: string;
   user_id: string;

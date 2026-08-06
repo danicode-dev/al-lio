@@ -3413,6 +3413,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
         .al-course-empty { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
         .al-course-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
+        .al-course-empty-illustration { width: 100%; max-width: 280px; height: auto; }
         .al-course-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
         .al-course-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
         .al-course-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; }
@@ -3505,6 +3506,12 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                     </div>
                   );
                 })}
+              </div>
+            ) : viewTab === "archivados" && !search && activeFilterCount === 0 ? (
+              <div className="al-course-empty">
+                <Image src="/assets/cursos/cursos-empty-archivados.png" alt="" width={480} height={294} className="al-course-empty-illustration" />
+                <p className="al-course-empty-title">No tienes cursos archivados</p>
+                <p className="al-course-empty-desc">Cuando archives un curso aparecerá aquí.</p>
               </div>
             ) : (
               <div className="al-course-empty">
