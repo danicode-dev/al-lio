@@ -940,10 +940,7 @@ function Dashboard({ store, actions }: { store: Store; actions: ReturnTypeAction
     <>
       <TodoOverview store={store} actions={actions} />
       <DashboardOperationalFeed store={store} actions={actions} />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <TaskCalendar store={store} />
-        <QuickLinksSection />
-      </div>
+      <TaskCalendar store={store} />
       <TechOpportunitiesSection
         initialItems={activeTechOpportunities}
         onAddTask={addTechOpportunityTask}
@@ -2173,63 +2170,6 @@ const QuickJobSearchCard = memo(function QuickJobSearchCard({ platform, expanded
     </div>
   );
 });
-
-const quickLinkGroups = [
-  {
-    group: "Webs rapidas",
-    links: [
-      { label: "GitHub", href: "https://github.com/danicode-dev" },
-      { label: "Portfolio", href: "https://danicode-dev.github.io/PORTFOLIO/" },
-      { label: "LinkedIn", href: "https://www.linkedin.com/" },
-      { label: "Trello", href: "https://trello.com/" },
-      { label: "Slack", href: "https://slack.com/" },
-      { label: "Supabase", href: "https://supabase.com/" },
-      { label: "Vercel", href: "https://vercel.com/" },
-    ],
-  },
-  {
-    group: "IA y diseno",
-    links: [
-      { label: "ChatGPT", href: "https://chatgpt.com/" },
-      { label: "Claude", href: "https://claude.ai/" },
-      { label: "Banana AI", href: "https://labs.google/fx/tools/image-fx" },
-      { label: "Claude Design", href: "https://claude.ai/new" },
-      { label: "Google Stitch", href: "https://stitch.withgoogle.com/" },
-    ],
-  },
-] as const;
-
-function QuickLinksSection() {
-  return (
-    <Card className="p-4">
-      <div className="mb-3">
-        <h2 className="text-base font-semibold">Accesos rapidos</h2>
-        <p className="text-sm text-muted-foreground">Links y herramientas que uso a diario.</p>
-      </div>
-      <div className="grid gap-0 sm:grid-cols-2 sm:divide-x divide-border">
-        {quickLinkGroups.map((group) => (
-          <div key={group.group} className="py-1 sm:px-4 first:sm:pl-0 last:sm:pr-0">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{group.group}</p>
-            <div className="flex flex-col">
-              {group.links.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  target={link.href.startsWith("http") ? "_blank" : undefined}
-                  rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-muted hover:text-primary"
-                >
-                  <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-}
 
 const PORTAL_DOMAINS: Record<JobPlatform, string> = {
   LinkedIn: "linkedin.com",
