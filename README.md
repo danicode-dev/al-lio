@@ -41,7 +41,7 @@ El proyecto nació como herramienta personal y se está preparando como versión
 - Docker Compose.
 - Caddy.
 
-El runtime actual no usa Supabase Auth ni Supabase Database. La documentación histórica de Supabase y migración está archivada en `docs/archive/`.
+El runtime actual no usa Supabase Auth ni Supabase Database.
 
 ## Instalación Local
 
@@ -160,10 +160,9 @@ Guía operativa:
 
 - `docs/README.md` - índice de documentación actual.
 - `docs/01_PRODUCT_SPEC.md` - especificación de producto vigente.
-- `docs/03_ARCHITECTURE_AND_STACK.md` - arquitectura actual.
+- `docs/02_ARCHITECTURE_AND_STACK.md` - arquitectura actual.
 - `docs/DEPLOY_VPS.md` - despliegue VPS.
 - `docs/PROJECT_STRUCTURE.md` - estructura del repositorio.
-- `docs/archive/` - documentación histórica que no debe tomarse como fuente actual.
 
 Alias ASCII usado en algunos scripts y checks: `Al-Lio`.
 

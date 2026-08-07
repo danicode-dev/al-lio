@@ -1,21 +1,19 @@
 # Documentación
 
-Esta carpeta separa documentación vigente de documentación histórica.
+Esta carpeta contiene la documentación vigente del proyecto. No incluye
+planes, auditorías o migraciones ya completadas — esas quedan fuera del
+repositorio una vez terminadas, para que lo que hay aquí sea siempre el
+estado real y actual.
 
-## Fuente Actual
+## Índice
 
 - `../README.md` - portada del proyecto y setup rápido.
 - `01_PRODUCT_SPEC.md` - estado funcional y alcance actual.
-- `03_ARCHITECTURE_AND_STACK.md` - arquitectura runtime vigente.
-- `06_INTEGRATIONS_AND_DEEPLINKS.md` - criterio de integraciones y enlaces externos.
-- `07_SEED_HACKATHONS.md` - referencia de hackathons semilla.
+- `02_ARCHITECTURE_AND_STACK.md` - arquitectura runtime vigente.
+- `03_INTEGRATIONS_AND_DEEPLINKS.md` - criterio de integraciones y enlaces externos.
+- `04_SEED_HACKATHONS.md` - referencia de hackathons semilla.
 - `DEPLOY_VPS.md` - operación en VPS.
 - `PROJECT_STRUCTURE.md` - mapa del repositorio.
-
-## Archivo Histórico
-
-- `archive/` contiene planes, auditorías y migraciones anteriores.
-- Los documentos archivados pueden ser útiles para entender decisiones pasadas, pero no deben presentarse como estado actual.
 
 ## Criterio
 
