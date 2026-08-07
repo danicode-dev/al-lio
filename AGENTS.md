@@ -50,7 +50,7 @@ Runtime data lives in self-managed PostgreSQL.
 - Local sandbox: `npm run postgres:sandbox:up`.
 - Schema setup: `npm run postgres:setup`.
 
-The CSV importer reads `csv/oportunidades_tech_supabase_combinado.csv` and upserts into `public.tech_opportunities` by `id_slug`. The filename is historical; the current destination is PostgreSQL.
+The CSV importer reads `csv/oportunidades_tech_combinado.csv` and upserts into `public.tech_opportunities` by `id_slug`.
 
 ## Documentation Rule
 

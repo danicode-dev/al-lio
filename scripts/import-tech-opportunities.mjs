@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
-const CSV_PATH = join(ROOT, "csv", "oportunidades_tech_supabase_combinado.csv");
+const CSV_PATH = join(ROOT, "csv", "oportunidades_tech_combinado.csv");
 
 function loadEnvLocal() {
   for (const file of [".env.local", ".env"]) {
