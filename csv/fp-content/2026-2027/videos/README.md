@@ -49,7 +49,7 @@ pise una fila valida).
 por ChatGPT a partir de los prompts en `PROMPT_DEV.md` / `PROMPT_AF.md` /
 `PROMPT_MP.md` / `PROMPT_TSAF.md` (no committeados, son prompts de trabajo,
 no datos del catalogo). Los 4 JSON crudos estan archivados en
-`source-2026-08-06-chatgpt/` para trazabilidad.
+`source-2026-08-06-video-candidates/` para trazabilidad.
 
 **Primer intento (revertido el mismo dia):** cruzar cada candidato contra el
 recurso pendiente por coincidencia directa de `id_slug` (si el JSON de
@@ -84,7 +84,7 @@ origen.
 ### Origen 2026-08-05 (curacion estricta, superado por el lote 2026-08-06)
 
 Las filas actuales de `recursos_video.csv` vienen de
-`source-2026-08-05-curado/` (`AL_LIO_ROADMAPS_FP_YOUTUBE_CURADO_2026_08_05.zip`),
+`archive/source-2026-08-05-curado/` (`AL_LIO_ROADMAPS_FP_YOUTUBE_CURADO_2026_08_05.zip`),
 que sustituye a la entrega del 2026-08-04. Un video solo entra en
 `recursos_video.csv` si pasa los 5 filtros de `auditoria_youtube_estricta_todos_ciclos.csv`
 (duracion >=45 min, >=300.000 visitas en ese video concreto, relacion
@@ -103,7 +103,7 @@ aparecen en `PENDIENTES_VIDEO.md`.
 
 ### Origen anterior (2026-08-04, superado)
 
-`source-2026-08-04/` (`AL_LIO_ROADMAPS_FP_YOUTUBE_2026_08_04.zip`) fue
+`archive/source-2026-08-04/` (`AL_LIO_ROADMAPS_FP_YOUTUBE_2026_08_04.zip`) fue
 la primera entrega: 47 videos/playlists reales verificados manualmente
 (canales oficiales, fabricantes, organismos publicos y creadores
 profesionales reconocidos), pero sin verificar duracion ni visitas por
@@ -126,11 +126,11 @@ etiquetada su competencia principal en la importacion de competencias
 original) — pendiente de revisar caso a caso si hace falta.
 
 Extension futura pendiente: usar `items_competencias_videos_youtube.csv`
-(en `source-2026-08-04/`) para mostrar el video **especifico de cada
+(en `archive/source-2026-08-04/`) para mostrar el video **especifico de cada
 competencia** con su tramo de inicio/fin exacto, en vez de un unico video
 por recurso. Requiere ampliar `fp_item_competencies` con columnas de
 video/tramo y que `/ruta/[slug]` acepte un tramo opcional.
 
-`cola_revision_videos_parciales.csv` (tambien en `source-2026-08-04/`)
+`cola_revision_videos_parciales.csv` (tambien en `archive/source-2026-08-04/`)
 es el backlog editorial de competencias con cobertura solo parcial —
 util para priorizar que videos sustituir mas adelante.

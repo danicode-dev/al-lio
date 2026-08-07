@@ -21,9 +21,6 @@ const requiredFiles = [
   "docs/DEPLOY_VPS.md",
   "docs/PROJECT_STRUCTURE.md",
   "docs/archive/README.md",
-  "docs/archive/proyecto escalada.md",
-  "docs/archive/pasos seguidos el dia 2504.md",
-  "docs/archive/context/OPORTUNIDADES_TECH_CSV_PARA_CODEX.md",
   "README.md",
 ];
 
