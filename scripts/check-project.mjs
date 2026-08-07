@@ -15,12 +15,11 @@ const requiredFiles = [
   "CLAUDE.md",
   "docs/README.md",
   "docs/01_PRODUCT_SPEC.md",
-  "docs/03_ARCHITECTURE_AND_STACK.md",
-  "docs/06_INTEGRATIONS_AND_DEEPLINKS.md",
-  "docs/07_SEED_HACKATHONS.md",
+  "docs/02_ARCHITECTURE_AND_STACK.md",
+  "docs/03_INTEGRATIONS_AND_DEEPLINKS.md",
+  "docs/04_SEED_HACKATHONS.md",
   "docs/DEPLOY_VPS.md",
   "docs/PROJECT_STRUCTURE.md",
-  "docs/archive/README.md",
   "README.md",
 ];
 

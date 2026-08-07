@@ -12,7 +12,7 @@
 - Integraciones: Google Calendar, fuentes de noticias, deep links y APIs de oportunidades cuando hay claves.
 - Deploy: VPS con Docker Compose y Caddy.
 
-Supabase ya no es la base de datos ni el sistema de autenticación en runtime. Los documentos de migración se conservan en `docs/archive/` como contexto histórico.
+Supabase ya no es la base de datos ni el sistema de autenticación en runtime.
 
 ## Capas Principales
 

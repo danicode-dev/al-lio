@@ -54,4 +54,4 @@ The CSV importer reads `csv/oportunidades_tech_combinado.csv` and upserts into `
 
 ## Documentation Rule
 
-Active documentation must not describe Supabase Auth, Supabase Database, Vercel, Aidraft, TechLife, or D1OS as the current product/runtime. Historical notes belong in `docs/archive/`.
+Active documentation must not describe Supabase Auth, Supabase Database, Vercel, Aidraft, TechLife, or D1OS as the current product/runtime. Update or remove a document rather than keeping stale history in the repository.

@@ -1,6 +1,6 @@
 /**
  * al-lio PostgreSQL — establece password_hash en public.users para un usuario existente.
- * Prerequisito de Fase 6 (auth propia). No ejecutar automáticamente.
+ * Utilidad manual de administración; no forma parte del pipeline automático.
  *
  * Variables obligatorias:
  *   DATABASE_URL                              — URL de conexión PostgreSQL
@@ -9,7 +9,6 @@
  *   AL_LIO_USER_PASSWORD                      — contraseña nueva en texto plano
  *
  * No imprime la contraseña ni DATABASE_URL.
- * No ejecutar contra producción hasta que Fase 6 esté lista.
  *
  * Uso:
  *   DATABASE_URL=postgresql://... \

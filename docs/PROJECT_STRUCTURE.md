@@ -17,14 +17,13 @@
 ## Operaciones
 
 - `infra/` - Dockerfile, Docker Compose, Caddy y PostgreSQL.
-- `scripts/` - validaciones, importadores, migraciones y utilidades operativas.
+- `scripts/` - validaciones, importadores y utilidades operativas.
 - `.env.example` - plantilla local.
 - `.env.production.example` - plantilla de producción.
 - `AGENTS.md` - guía operativa para agentes.
 - `CLAUDE.md` - entrada específica para Claude.
 - `README.md` - portada humana del proyecto.
 - `docs/` - documentación activa.
-- `docs/archive/` - documentación histórica.
 
 ## No Committing
 
@@ -41,4 +40,4 @@ No subir:
 
 ## Regla De Limpieza
 
-Si un documento describe Supabase, Vercel, Aidraft o TechLife como estado actual, debe moverse a `docs/archive/` o actualizarse antes de aparecer enlazado desde README.
+Si un documento describe Supabase, Vercel, Aidraft o TechLife como estado actual, debe actualizarse o retirarse del repositorio antes de aparecer enlazado desde README.
