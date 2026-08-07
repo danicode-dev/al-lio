@@ -14,7 +14,7 @@ import {
   Compass,
   UserCircle,
 } from "lucide-react";
-import { LogoutButton } from "@/components/logout-button";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 const SECTIONS = [
   {

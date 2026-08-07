@@ -17,8 +17,8 @@ function requireIncludes(file, content, expected) {
 }
 
 const schema = read("infra/postgres/schema.sql");
-const guestApp = read("components/guest-app.tsx");
-const actions = read("lib/actions.ts");
+const guestApp = read("src/components/guest-app.tsx");
+const actions = read("src/lib/actions.ts");
 
 const requiredTables = [
   "tasks",
@@ -86,11 +86,11 @@ for (const column of ["cycle_code", "cycle_group", "academic_year", "interests",
   requireIncludes("infra/postgres/schema.sql", schema, column);
 }
 
-requireIncludes("components/guest-app.tsx", guestApp, 'type TaskPriority = "alta" | "media" | "baja" | "critica"');
-requireIncludes("components/guest-app.tsx", guestApp, 'return normalized === "critica" ? "alta" : normalized');
-requireIncludes("components/guest-app.tsx", guestApp, "getDisplayCourses(store.courses, store.techOpportunities)");
-requireIncludes("components/guest-app.tsx", guestApp, "getDisplayHackathons(store.hackathons, store.techOpportunities)");
-requireIncludes("components/guest-app.tsx", guestApp, "...store.techOpportunities.flatMap(techOpportunityToCalendarEvents)");
+requireIncludes("src/components/guest-app.tsx", guestApp, 'type TaskPriority = "alta" | "media" | "baja" | "critica"');
+requireIncludes("src/components/guest-app.tsx", guestApp, 'return normalized === "critica" ? "alta" : normalized');
+requireIncludes("src/components/guest-app.tsx", guestApp, "getDisplayCourses(store.courses, store.techOpportunities)");
+requireIncludes("src/components/guest-app.tsx", guestApp, "getDisplayHackathons(store.hackathons, store.techOpportunities)");
+requireIncludes("src/components/guest-app.tsx", guestApp, "...store.techOpportunities.flatMap(techOpportunityToCalendarEvents)");
 
 if (actions.includes('revalidatePath("/dashboard")') || guestApp.includes('revalidatePath("/dashboard")')) {
   fail('No debe existir revalidatePath("/dashboard"); rompe foco y refresca el layout completo');

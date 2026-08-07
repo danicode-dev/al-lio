@@ -40,7 +40,7 @@ if (existsSync(nextConfigPath)) {
 }
 
 console.log("\n── Health endpoint ──");
-check("app/api/health/route.ts existe", existsSync(join(root, "app/api/health/route.ts")));
+check("src/app/api/health/route.ts existe", existsSync(join(root, "src/app/api/health/route.ts")));
 
 console.log("\n── Variables de entorno (plantilla) ──");
 const envExamplePath = join(root, ".env.production.example");

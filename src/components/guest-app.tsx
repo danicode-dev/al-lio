@@ -49,8 +49,8 @@ import { insertDb, updateDb, deleteDb } from "@/lib/db";
 import { toast } from "sonner";
 import { TechOpportunitiesSection, type TechOpportunityTaskTarget } from "@/components/tech-opportunities-section";
 import { toggleFavoriteAction, markResourceStatusAction } from "@/lib/fp/resource-notes-actions";
-import { BlocNotepad } from "@/components/bloc-notepad";
-import type { TechOpportunity } from "@/lib/tech-opportunity-types";
+import { BlocNotepad } from "@/components/bloc/bloc-notepad";
+import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
 import { APPLICATION_STATUSES, STATUS_LABELS, STATUS_COLORS } from "@/lib/job-radar/types";
 

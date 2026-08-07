@@ -1,6 +1,6 @@
 "use client";
 
-import type { TechOpportunity } from "@/lib/tech-opportunity-types";
+import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 
 let _cache: { data: TechOpportunity[]; at: number } | null = null;
 const CACHE_TTL_MS = 5 * 60 * 1000;
