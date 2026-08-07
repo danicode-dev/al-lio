@@ -4,14 +4,13 @@ import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import {
   getFpContentItemBySlug,
   getRequiredCompetenciesForItems,
-  getLearningItemsForCompetencies,
   getUserContentState,
-  getUserContentStatesForItems,
 } from "@/lib/db/repositories/fp_catalog";
 import { getResourceNotes } from "@/lib/db/repositories/fp_resource_notes";
+import { buildRutaPathSteps } from "@/lib/fp/ruta-path";
 import { FP_APTITUDE_GATED_TYPES } from "@/lib/data";
 import { RutaView } from "@/components/ruta/ruta-view";
-import { RutaPathView, type RutaPathStep } from "@/components/ruta/ruta-path-view";
+import { RutaPathView } from "@/components/ruta/ruta-path-view";
 
 export const dynamic = "force-dynamic";
 
@@ -45,58 +44,20 @@ export default async function RutaPage({
       return (a.orden_preparacion ?? 999) - (b.orden_preparacion ?? 999);
     });
 
-    const competencyIds = orderedCompetencies.map((competency) => competency.id);
-    const learningByCompetency = await getLearningItemsForCompetencies(competencyIds, profile.cycle_group);
-
-    const stepsRaw = orderedCompetencies.map((competency) => {
-      const learningItems = learningByCompetency.get(competency.id) ?? [];
-      const primaryItem = learningItems.find((learningItem) => learningItem.video_url) ?? null;
-      const otherItems = learningItems.filter((learningItem) => learningItem.id_slug !== primaryItem?.id_slug);
-      return { competency, primaryItem, otherItems };
-    });
-
-    const primaryContentIds = stepsRaw
-      .map((step) => step.primaryItem?.id)
-      .filter((id): id is string => Boolean(id));
-
-    const [statusMap, notesArrays] = await Promise.all([
-      getUserContentStatesForItems(session.uid, primaryContentIds),
-      Promise.all(primaryContentIds.map((id) => getResourceNotes(session.uid, id))),
-    ]);
-    const notesByContentId = new Map(primaryContentIds.map((id, index) => [id, notesArrays[index]]));
-
-    const steps: RutaPathStep[] = stepsRaw.map(({ competency, primaryItem, otherItems }) => ({
-      competencyId: competency.id,
-      title: competency.titulo,
-      description: competency.descripcion,
-      obligatoria: competency.obligatoria_para_item,
-      primary: primaryItem
-        ? {
-            idSlug: primaryItem.id_slug,
-            videoUrl: primaryItem.video_url as string,
-            sourceUrl: primaryItem.source_url,
-            resourceTitle: primaryItem.title,
-          }
-        : null,
-      otherResources: otherItems.map((otherItem) => ({
-        idSlug: otherItem.id_slug,
-        title: otherItem.title,
-        sourceUrl: otherItem.source_url,
+    const steps = await buildRutaPathSteps(
+      session.uid,
+      orderedCompetencies.map((competency) => ({
+        id: competency.id,
+        titulo: competency.titulo,
+        descripcion: competency.descripcion,
+        obligatoria: competency.obligatoria_para_item,
       })),
-      initialStatus: primaryItem ? statusMap.get(primaryItem.id) ?? null : null,
-      initialNotes: primaryItem
-        ? (notesByContentId.get(primaryItem.id) ?? []).map((note) => ({
-            id: note.id,
-            timestampSeconds: note.timestamp_seconds,
-            body: note.body,
-            createdAt: note.created_at,
-          }))
-        : [],
-    }));
+      profile.cycle_group
+    );
 
     const requestedIndex = paso ? steps.findIndex((step) => step.competencyId === paso) : 0;
 
-    return <RutaPathView hackathonTitle={item.title} steps={steps} initialStepIndex={requestedIndex >= 0 ? requestedIndex : 0} />;
+    return <RutaPathView pageTitle={item.title} steps={steps} initialStepIndex={requestedIndex >= 0 ? requestedIndex : 0} />;
   }
 
   if (!item.video_url) notFound();

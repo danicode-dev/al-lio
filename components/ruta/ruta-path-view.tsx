@@ -33,11 +33,11 @@ export type RutaPathStep = {
 };
 
 export function RutaPathView({
-  hackathonTitle,
+  pageTitle,
   steps,
   initialStepIndex,
 }: {
-  hackathonTitle: string;
+  pageTitle: string;
   steps: RutaPathStep[];
   initialStepIndex: number;
 }) {
@@ -376,7 +376,7 @@ export function RutaPathView({
 
       <div className="al-path-header">
         <div>
-          <h1 className="al-path-title">{hackathonTitle}</h1>
+          <h1 className="al-path-title">{pageTitle}</h1>
           <span className="al-path-badge">Ruta de preparación</span>
         </div>
         {trackableCount > 0 && (

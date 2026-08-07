@@ -3,6 +3,7 @@ import { query } from "@/lib/db/pool";
 import type {
   DbFpContentItem,
   DbFpCycle,
+  DbFpCycleSkill,
   DbFpSkill,
   DbFpUserContentState,
   DbProfile,
@@ -89,6 +90,43 @@ export async function getFpContentForProfile(
   );
 
   return res.rows;
+}
+
+// Todas las habilidades de un ciclo, ordenadas por su posicion en el
+// itinerario completo (no solo las exigidas por un hackathon concreto).
+// Es la base tanto del Roadmap como de la ruta de un hackathon.
+export type CycleSkill = DbFpSkill & Omit<DbFpCycleSkill, "skill_id" | "created_at" | "updated_at">;
+
+export async function getCycleSkills(cycleCode: FpCycleCode): Promise<CycleSkill[]> {
+  const res = await query<CycleSkill>(
+    `SELECT skill.*, cs.cycle_code, cs.orden_global, cs.etapa, cs.bloque, cs.modulo_codigo,
+            cs.modulo_nombre, cs.nivel_objetivo, cs.obligatoria_roadmap_base,
+            cs.basico_antes_de_empezar, cs.prerrequisito_texto
+     FROM public.fp_cycle_skills cs
+     INNER JOIN public.fp_skills skill ON skill.id = cs.skill_id
+     WHERE cs.cycle_code = $1
+     ORDER BY cs.orden_global ASC`,
+    [cycleCode]
+  );
+  return res.rows;
+}
+
+// Un modulo es "comun" cuando su codigo aparece en 2+ familias de ciclo
+// (cycle_group) distintas, no solo en 2+ ciclos: DAM y DAW comparten
+// modulos tecnicos (Bases de Datos, Programacion...) porque son la MISMA
+// familia (DEV), y eso sigue siendo una asignatura propia del ciclo. Lo
+// realmente transversal (Ingles, Digitalizacion, PRE...) aparece en
+// familias distintas (DEV, AF, TSAF, MP a la vez).
+export async function getSharedModuleCodes(): Promise<Set<string>> {
+  const res = await query<{ modulo_codigo: string }>(
+    `SELECT cs.modulo_codigo
+     FROM public.fp_cycle_skills cs
+     INNER JOIN public.fp_cycles cy ON cy.code = cs.cycle_code
+     WHERE cs.modulo_codigo IS NOT NULL
+     GROUP BY cs.modulo_codigo
+     HAVING COUNT(DISTINCT cy.group_code) >= 2`
+  );
+  return new Set(res.rows.map((row) => row.modulo_codigo));
 }
 
 // content_item_id + link fields se apilan sobre la habilidad canonica

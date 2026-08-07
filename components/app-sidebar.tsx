@@ -14,6 +14,7 @@ import {
   LinkIcon,
   ListTodo,
   Newspaper,
+  Route,
   Settings,
   LogOut,
   UserCircle,
@@ -28,6 +29,7 @@ const SIDEBAR_KEY = "al-lio.sidebar.collapsed.v1";
 
 const items = [
   { href: "/dashboard", label: "Inicio", icon: Home },
+  { href: "/roadmap", label: "Roadmap", icon: Route },
   { href: "/tasks", label: "Tareas", icon: ListTodo },
   { href: "/bloc", label: "Bloc", icon: BookOpen },
   { href: "/noticias", label: "Noticias", icon: Newspaper },
