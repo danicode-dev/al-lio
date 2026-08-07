@@ -2,11 +2,13 @@
 
 ## Aplicación
 
-- `app/` - rutas App Router, layouts y route handlers.
-- `components/` - componentes React y vistas de producto.
-- `lib/` - autenticación, acceso a datos, integraciones, noticias y utilidades.
-- `middleware.ts` - protección de rutas y sesión.
-- `public/` - assets públicos servidos por Next.js.
+Código de la aplicación bajo `src/` (convención oficial de Next.js):
+
+- `src/app/` - rutas App Router, layouts y route handlers.
+- `src/components/` - componentes React y vistas de producto.
+- `src/lib/` - autenticación, acceso a datos, integraciones, noticias y utilidades.
+- `src/middleware.ts` - protección de rutas y sesión.
+- `public/` - assets públicos servidos por Next.js (fuera de `src/`, también por convención de Next.js).
 
 ## Datos
 

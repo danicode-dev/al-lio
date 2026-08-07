@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, ExternalLink, ListPlus, MapPin, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { getTechOpportunities, type TechOpportunity } from "@/lib/tech-opportunities";
+import { getTechOpportunities, type TechOpportunity } from "@/lib/tech-opportunities/tech-opportunities";
 
 type FilterId = "todos" | "cursos" | "hackathons" | "alta" | "granada" | "online";
 export type TechOpportunityTaskTarget = "diario" | "pendiente" | "semanal";

@@ -3,10 +3,10 @@ import { join } from "path";
 
 const root = process.cwd();
 const requiredFiles = [
-  "app/page.tsx",
-  "app/layout.tsx",
-  "app/globals.css",
-  "components/guest-app.tsx",
+  "src/app/page.tsx",
+  "src/app/layout.tsx",
+  "src/app/globals.css",
+  "src/components/guest-app.tsx",
   "public/data/empresas_tech_granada.md",
   "csv/oportunidades_tech_combinado.csv",
   "scripts/import-tech-opportunities.mjs",
@@ -66,16 +66,16 @@ for (const text of ["AL-LÍO", "npm run verify:startup", "docs/README.md"]) {
   }
 }
 
-const guestApp = readFileSync(join(root, "components/guest-app.tsx"), "utf8");
+const guestApp = readFileSync(join(root, "src/components/guest-app.tsx"), "utf8");
 for (const text of ["techlife.bloc.D1OS.v1", "techlife.app.settings.D1OS.v1", "misma hora", "progress_notes", "techOpportunities"]) {
   if (!guestApp.includes(text)) {
     fail(`components/guest-app.tsx deberia contener: ${text}`);
   }
 }
 
-const actions = readFileSync(join(root, "lib/actions.ts"), "utf8");
+const actions = readFileSync(join(root, "src/lib/actions.ts"), "utf8");
 if (actions.includes('revalidatePath("/dashboard")')) {
-  fail('lib/actions.ts no debe revalidar "/dashboard"; rompe foco y refresca el layout completo');
+  fail('src/lib/actions.ts no debe revalidar "/dashboard"; rompe foco y refresca el layout completo');
 }
 
 const companiesMd = readFileSync(join(root, "public/data/empresas_tech_granada.md"), "utf8");

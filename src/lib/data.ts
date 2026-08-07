@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import type { TechOpportunity } from "@/lib/tech-opportunity-types";
+import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 import { getSession } from "@/lib/auth/session";
 import { getTasksByUser } from "@/lib/db/repositories/tasks";
 import { getCoursesByUser } from "@/lib/db/repositories/courses";

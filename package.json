@@ -32,7 +32,7 @@
     "build:clean": "npm run clean:next && next build",
     "prod:local": "node scripts/run-production.mjs",
     "restart:prod": "npm run stop:app && npm run build:clean && node scripts/smoke-production.mjs && npm run prod:local",
-    "lint": "eslint app components lib middleware.ts --max-warnings=0",
+    "lint": "eslint src --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "check:project": "node scripts/check-project.mjs",
     "audit:schema": "node scripts/audit-schema-code.mjs",

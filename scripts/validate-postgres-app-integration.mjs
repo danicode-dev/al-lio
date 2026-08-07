@@ -20,18 +20,18 @@ function read(path) { return existsSync(join(root, path)) ? readFileSync(join(ro
 
 console.log("\n── Repositorios PostgreSQL ──");
 const REPOS = [
-  "lib/db/repositories/users.ts",
-  "lib/db/repositories/profiles.ts",
-  "lib/db/repositories/sources.ts",
-  "lib/db/repositories/quick_searches.ts",
-  "lib/db/repositories/opportunities.ts",
-  "lib/db/repositories/hackathons.ts",
-  "lib/db/repositories/courses.ts",
-  "lib/db/repositories/tasks.ts",
-  "lib/db/repositories/reminders.ts",
-  "lib/db/repositories/quick_links.ts",
-  "lib/db/repositories/tech_opportunities.ts",
-  "lib/db/repositories/fp_catalog.ts",
+  "src/lib/db/repositories/users.ts",
+  "src/lib/db/repositories/profiles.ts",
+  "src/lib/db/repositories/sources.ts",
+  "src/lib/db/repositories/quick_searches.ts",
+  "src/lib/db/repositories/opportunities.ts",
+  "src/lib/db/repositories/hackathons.ts",
+  "src/lib/db/repositories/courses.ts",
+  "src/lib/db/repositories/tasks.ts",
+  "src/lib/db/repositories/reminders.ts",
+  "src/lib/db/repositories/quick_links.ts",
+  "src/lib/db/repositories/tech_opportunities.ts",
+  "src/lib/db/repositories/fp_catalog.ts",
 ];
 for (const repo of REPOS) {
   check(`${repo} existe`, existsSync(join(root, repo)));
@@ -44,8 +44,8 @@ for (const repo of REPOS) {
 // ── lib/auth/current-user.ts ──────────────────────────────────────────────────
 
 console.log("\n── lib/auth/current-user.ts ──");
-const cu = read("lib/auth/current-user.ts");
-check("lib/auth/current-user.ts existe", existsSync(join(root, "lib/auth/current-user.ts")));
+const cu = read("src/lib/auth/current-user.ts");
+check("src/lib/auth/current-user.ts existe", existsSync(join(root, "src/lib/auth/current-user.ts")));
 check("getCurrentUserId exportado", cu.includes("export async function getCurrentUserId"));
 check("tryGetCurrentUserId exportado", cu.includes("export async function tryGetCurrentUserId"));
 check("server-only importado", cu.includes("server-only"));
@@ -53,8 +53,8 @@ check("server-only importado", cu.includes("server-only"));
 // Google OAuth callback creates the PostgreSQL user.
 
 console.log("\nGoogle OAuth callback");
-const googleCallback = read("app/api/google/calendar/callback/route.ts");
-check("Google callback existe", existsSync(join(root, "app/api/google/calendar/callback/route.ts")));
+const googleCallback = read("src/app/api/google/calendar/callback/route.ts");
+check("Google callback existe", existsSync(join(root, "src/app/api/google/calendar/callback/route.ts")));
 check("Google callback usa ensureUserByEmail", googleCallback.includes("ensureUserByEmail"));
 check("Google callback usa upsertProfile", googleCallback.includes("upsertProfile"));
 check("Google callback crea sesion propia", googleCallback.includes("createSession"));
@@ -63,19 +63,19 @@ check("Google callback no usa Supabase", !googleCallback.includes("@supabase") &
 // ── lib/data.ts usa PostgreSQL ────────────────────────────────────────────────
 
 console.log("\n── lib/data.ts ──");
-const data = read("lib/data.ts");
-check("lib/data.ts importa repositorios", data.includes("lib/db/repositories/"));
-check("lib/data.ts no usa .from() de Supabase para datos", !data.includes(".from(\"tasks\"") && !data.includes(".from(\"courses\"") && !data.includes(".from(\"hackathons\""));
+const data = read("src/lib/data.ts");
+check("src/lib/data.ts importa repositorios", data.includes("src/lib/db/repositories/"));
+check("src/lib/data.ts no usa .from() de Supabase para datos", !data.includes(".from(\"tasks\"") && !data.includes(".from(\"courses\"") && !data.includes(".from(\"hackathons\""));
 
 // ── lib/actions.ts usa repositorios para datos ────────────────────────────────
 
 console.log("\n── lib/actions.ts ──");
-const actions = read("lib/actions.ts");
-check("lib/actions.ts importa repositorios", actions.includes("lib/db/repositories/"));
-check("lib/actions.ts importa getCurrentUserId", actions.includes("getCurrentUserId"));
-check("lib/actions.ts no usa .from() de Supabase para datos (tasks/courses/etc)", !actions.includes('.from("tasks")') && !actions.includes('.from("courses")') && !actions.includes('.from("hackathons")'));
+const actions = read("src/lib/actions.ts");
+check("src/lib/actions.ts importa repositorios", actions.includes("src/lib/db/repositories/"));
+check("src/lib/actions.ts importa getCurrentUserId", actions.includes("getCurrentUserId"));
+check("src/lib/actions.ts no usa .from() de Supabase para datos (tasks/courses/etc)", !actions.includes('.from("tasks")') && !actions.includes('.from("courses")') && !actions.includes('.from("hackathons")'));
 check(
-  "lib/actions.ts no upsertea profiles en Supabase",
+  "src/lib/actions.ts no upsertea profiles en Supabase",
   !actions.includes('.from("profiles")') &&
   !actions.includes(".from('profiles')") &&
   !actions.includes(".from(`profiles`)") &&
@@ -86,11 +86,11 @@ check(
 // ── lib/db.ts usa PostgreSQL ──────────────────────────────────────────────────
 
 console.log("\n── lib/db.ts ──");
-const db = read("lib/db.ts");
-check("lib/db.ts usa query de pool", db.includes('from "@/lib/db/pool"'));
-check("lib/db.ts tiene whitelist de tablas", db.includes("WRITABLE_TABLES"));
-check("lib/db.ts no usa supabase", !db.includes("createClient") || db.includes("// createClient"));
-check("lib/db.ts no imprime connectionString", !db.includes("console.log(connectionString"));
+const db = read("src/lib/db.ts");
+check("src/lib/db.ts usa query de pool", db.includes('from "@/lib/db/pool"'));
+check("src/lib/db.ts tiene whitelist de tablas", db.includes("WRITABLE_TABLES"));
+check("src/lib/db.ts no usa supabase", !db.includes("createClient") || db.includes("// createClient"));
+check("src/lib/db.ts no imprime connectionString", !db.includes("console.log(connectionString"));
 
 // ── set-user-password requiere confirmación ───────────────────────────────────
 
