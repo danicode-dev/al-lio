@@ -8,7 +8,7 @@ const requiredFiles = [
   "app/globals.css",
   "components/guest-app.tsx",
   "public/data/empresas_tech_granada.md",
-  "csv/oportunidades_tech_supabase_combinado.csv",
+  "csv/oportunidades_tech_combinado.csv",
   "scripts/import-tech-opportunities.mjs",
   "scripts/audit-schema-code.mjs",
   "AGENTS.md",

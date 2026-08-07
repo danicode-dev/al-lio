@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
-const CSV_PATH = join(ROOT, "csv", "eventos_hackathons_supabase_actualizado.csv");
+const CSV_PATH = join(ROOT, "csv", "eventos_hackathons_actualizado.csv");
 const HACKATHON_NAMESPACE = "hackathons-csv-v1";
 
 function loadEnvLocal() {
