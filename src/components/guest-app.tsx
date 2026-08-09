@@ -46,7 +46,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
 import { insertDb, updateDb, deleteDb } from "@/lib/db";
 import { toast } from "sonner";
-import { TechOpportunitiesSection, type TechOpportunityTaskTarget } from "@/components/tech-opportunities-section";
 import { toggleFavoriteAction, markResourceStatusAction } from "@/lib/fp/resource-notes-actions";
 import { toggleCompanyFavoriteAction } from "@/lib/companies/actions";
 import { BlocNotepad } from "@/components/bloc/bloc-notepad";
@@ -898,80 +897,19 @@ export function GuestApp({ view }: { view: View }) {
 }
 
 function Dashboard({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
-  const activeTechOpportunities = useMemo(
-    () => store.techOpportunities.filter((item) => !isTechOpportunityCompletedByUser(item, store) && !isTechOpportunityPast(item)),
-    [store],
-  );
-
-  function addTechOpportunityTask(item: TechOpportunity, target: TechOpportunityTaskTarget) {
-    const category: TaskBucket = target === "pendiente" ? "urgente" : target;
-    const dueAt = target === "semanal"
-      ? addDaysKeepingTime(toDatetimeLocalValue(new Date()), 3)
-      : toDatetimeLocalValue(new Date());
-    const priority: TaskPriority = item.prioridad?.toLowerCase() === "alta" || item.encaje_daw_1_5 === 5
-      ? "alta"
-      : "media";
-
-    actions.addTask({
-      title: `Inscribirme: ${item.nombre}`,
-      description: buildTechOpportunityTaskDescription(item),
-      due_at: dueAt,
-      status: "pendiente",
-      priority,
-      category,
-    });
-  }
-
   return (
     <DashboardView
       store={store}
+      actions={actions}
       headerActions={(
         <>
           <NotificationBell store={store} actions={actions} />
           <GoogleCalendarStatusControl />
         </>
       )}
-      todo={<TodoOverview store={store} actions={actions} />}
       calendar={<TaskCalendar store={store} />}
-      opportunities={(
-        <TechOpportunitiesSection
-        initialItems={activeTechOpportunities}
-        onAddTask={addTechOpportunityTask}
-        onComplete={(item) => completeTechOpportunityItem(item, actions)}
-        />
-      )}
     />
   );
-}
-
-function buildTechOpportunityTaskDescription(item: TechOpportunity) {
-  return [
-    "Tarea creada desde Oportunidades tech para preparar la inscripción.",
-    item.entidad ? `Entidad: ${item.entidad}` : "",
-    item.modalidad ? `Modalidad: ${item.modalidad}` : "",
-    compactTechOpportunityLocation(item) ? `Lugar: ${compactTechOpportunityLocation(item)}` : "",
-    item.fecha_inicio ? `Fecha inicio: ${item.fecha_inicio}` : "",
-    item.fecha_fin ? `Fecha fin: ${item.fecha_fin}` : "",
-    item.estado ? `Estado: ${item.estado}` : "",
-    item.requisitos_resumen ? `Requisitos: ${item.requisitos_resumen}` : "",
-    item.fuente_url ? `Fuente: ${item.fuente_url}` : "",
-  ].filter(Boolean).join("\n");
-}
-
-function compactTechOpportunityLocation(item: TechOpportunity) {
-  return [item.localidad, item.provincia]
-    .filter(Boolean)
-    .filter((value, index, array) => array.indexOf(value) === index)
-    .join(", ");
-}
-
-function completeTechOpportunityItem(item: TechOpportunity, actions: ReturnTypeActions) {
-  if (isTechCourse(item)) {
-    completeCourseItem(techOpportunityToCourse(item), actions);
-    return;
-  }
-
-  completeHackathonItem(techOpportunityToHackathon(item), actions);
 }
 
 function completeCourseItem(item: Course, actions: ReturnTypeActions) {
@@ -1053,25 +991,6 @@ function hackathonAddPayload(item: Hackathon) {
   return data as Omit<Hackathon, "id" | "created_at">;
 }
 
-function isTechOpportunityCompletedByUser(item: TechOpportunity, store: Store) {
-  if (isTechCourse(item)) {
-    const identity = courseIdentityKey(techOpportunityToCourse(item));
-    return store.courses.some((course) => courseIdentityKey(course) === identity && isCourseArchived(course));
-  }
-
-  if (isTechHackathonOrEvent(item)) {
-    const identity = hackathonIdentityKey(techOpportunityToHackathon(item));
-    return store.hackathons.some((hackathon) => hackathonIdentityKey(hackathon) === identity && isHackathonArchived(hackathon));
-  }
-
-  return false;
-}
-
-function isTechOpportunityPast(item: TechOpportunity) {
-  return isPastActionDate(item.fecha_fin || item.fecha_inicio);
-}
-
-
 function GoogleCalendarStatusControl() {
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -1147,21 +1066,6 @@ function GoogleCalendarStatusControl() {
     >
       {content}
     </a>
-  );
-}
-
-function TodoOverview({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
-  const { settings: appSettings } = useAppSettings();
-  return (
-    <section className="space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold leading-none">To-do</h2>
-        <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs">
-          <Link href="/tasks">Ver tablero completo</Link>
-        </Button>
-      </div>
-      <TaskBoard store={store} actions={actions} variant="dashboard" compact={appSettings.compactTaskView} />
-    </section>
   );
 }
 
@@ -2023,12 +1927,14 @@ function NewEventDialog({ defaultDate, onClose, onCreated }: { defaultDate: Date
   }
 
   return (
-    <div className="absolute right-0 top-9 z-50 w-[min(23rem,calc(100vw-2rem))] rounded-lg border bg-background shadow-xl">
-      <div className="flex items-center justify-between border-b px-3 py-2">
-        <span className="text-sm font-semibold">Nuevo evento</span>
+    <>
+      <button type="button" aria-label="Cerrar nuevo evento" onClick={onClose} className="fixed inset-0 z-50 cursor-default bg-black/30 backdrop-blur-[1px]" />
+      <div role="dialog" aria-modal="true" aria-labelledby="new-event-title" className="fixed left-1/2 top-1/2 z-[51] w-[min(25rem,calc(100vw-2rem))] max-h-[calc(100dvh-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[18px] border border-[#e4dfd5] bg-white text-[#111111] shadow-[0_22px_50px_rgba(17,17,17,0.24)]">
+      <div className="flex items-center justify-between border-b border-[#f0ece2] px-4 py-3">
+        <span id="new-event-title" className="text-sm font-semibold">Nuevo evento</span>
         <button type="button" onClick={onClose} className="flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>
       </div>
-      <div className="space-y-2.5 p-3">
+      <div className="space-y-2.5 p-4">
         <Input placeholder="Añadir título" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} autoFocus />
         <button
           type="button"
@@ -2044,11 +1950,12 @@ function NewEventDialog({ defaultDate, onClose, onCreated }: { defaultDate: Date
         <EventDateTimeFields value={eventDate} onChange={setEventDate} />
         {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
-      <div className="flex justify-end gap-2 border-t px-3 py-2">
+      <div className="flex justify-end gap-2 border-t border-[#f0ece2] px-4 py-3">
         <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
         <Button size="sm" onClick={submit} disabled={saving || !title.trim()}>{saving ? "Guardando..." : "Guardar"}</Button>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -2083,15 +1990,16 @@ function TaskCalendar({ store }: { store: Store }) {
 
   return (
     <div>
-      <div className="mb-2 flex items-center">
-        <div className="flex flex-1 items-center gap-0.5">
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => setMonth(addMonths(month, -1))} aria-label="Mes anterior"><ChevronLeft className="h-3.5 w-3.5" /></Button>
-          <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => { const now = startOfMonth(new Date()); setMonth(now); setSelectedDay(todayKey()); }}>Hoy</Button>
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => setMonth(addMonths(month, 1))} aria-label="Mes siguiente"><ChevronRight className="h-3.5 w-3.5" /></Button>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="text-sm font-extrabold text-[#111111]">Calendario</h2>
+          <p className="mt-0.5 truncate text-xs text-[#777269]">{monthTitle(month)}</p>
         </div>
-        <h2 className="flex-1 text-center text-xs font-semibold uppercase tracking-widest">{monthTitle(month).toUpperCase()}</h2>
-        <div ref={newEventRef} className="relative flex flex-1 items-center justify-end">
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => setNewEventOpen((o) => !o)} aria-label="Crear evento">
+        <div ref={newEventRef} className="relative flex shrink-0 items-center gap-0.5">
+          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={() => setMonth(addMonths(month, -1))} aria-label="Mes anterior"><ChevronLeft className="h-3.5 w-3.5" /></Button>
+          <Button type="button" size="sm" variant="ghost" className="h-7 rounded-lg px-2 text-xs text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={() => { const now = startOfMonth(new Date()); setMonth(now); setSelectedDay(todayKey()); }}>Hoy</Button>
+          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={() => setMonth(addMonths(month, 1))} aria-label="Mes siguiente"><ChevronRight className="h-3.5 w-3.5" /></Button>
+          <Button type="button" size="icon" variant="ghost" className="ml-0.5 h-7 w-7 rounded-lg bg-[#fff0e9] text-[#e15d2d] hover:bg-[#fbe2d6] hover:text-[#c6491d]" onClick={() => setNewEventOpen((o) => !o)} aria-label="Crear evento">
             <Plus className="h-3.5 w-3.5" />
           </Button>
           {newEventOpen && (
@@ -2104,21 +2012,21 @@ function TaskCalendar({ store }: { store: Store }) {
         </div>
       </div>
       <div className="grid gap-3">
-        <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
-          {["L", "M", "X", "J", "V", "S", "D"].map((day) => <span key={day}>{day}</span>)}
+        <div className="grid grid-cols-7 gap-1 text-center text-xs text-[#8e887e]">
+          {["L", "M", "X", "J", "V", "S", "D"].map((day) => <span key={day} className="pb-0.5 font-semibold">{day}</span>)}
           {cells.map((day) => {
             const hasEvents = eventsByDay.has(day.key);
             const selected = selectedDay === day.key;
             return (
-              <button key={day.key} type="button" className={cn("relative flex h-9 items-center justify-center rounded-md text-sm", day.inMonth ? "bg-muted/60 text-foreground" : "text-muted-foreground/40", selected && "bg-primary text-primary-foreground", hasEvents && !selected && "ring-1 ring-primary/30")} onClick={() => setSelectedDay(day.key)}>
+              <button key={day.key} type="button" className={cn("relative flex h-8 items-center justify-center rounded-lg text-sm font-medium transition-colors", day.inMonth ? "text-[#39352e] hover:bg-[#fff0e9]" : "text-[#cbc5ba]", selected && "bg-[#f06a37] text-white shadow-[0_4px_10px_rgba(240,106,55,0.22)] hover:bg-[#e15d2d]", hasEvents && !selected && "bg-[#eef6f0] text-[#1f7a4d] ring-1 ring-[#1f7a4d]/15")} onClick={() => setSelectedDay(day.key)}>
                 {day.date.getDate()}
-                {hasEvents && <span className={cn("absolute bottom-1 h-1 w-1 rounded-full", selected ? "bg-primary-foreground" : "bg-primary")} />}
+                {hasEvents && <span className={cn("absolute bottom-1 h-1 w-1 rounded-full", selected ? "bg-white" : "bg-[#1f7a4d]")} />}
               </button>
             );
           })}
         </div>
         {selectedEvents.length > 0 && (
-          <div className="rounded-md border bg-background/70 p-3">
+          <div className="rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-3">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold">{formatDayTitle(selectedDay)}</h3>
               <Badge>{selectedEvents.length}</Badge>
@@ -2129,7 +2037,7 @@ function TaskCalendar({ store }: { store: Store }) {
           </div>
         )}
       </div>
-    </div>
+      </div>
   );
 }
 
@@ -5079,18 +4987,18 @@ function formatLongDate(value?: string) {
 
 function calendarEventClass(type: CalendarEvent["type"], status?: string) {
   if (isCalendarEventDone({ type, status })) return "bg-slate-100 text-slate-700 line-through";
-  if (type === "task") return "bg-blue-100 text-blue-800";
-  if (type === "course") return "bg-emerald-100 text-emerald-800";
-  if (type === "event") return "bg-violet-100 text-violet-800";
+  if (type === "task") return "bg-[#fff0e9] text-[#c6491d]";
+  if (type === "course") return "bg-[#eaf6ed] text-[#1f7a4d]";
+  if (type === "event") return "bg-[#eef6f0] text-[#1f7a4d]";
   if (type === "google") return "bg-red-100 text-red-800";
   return "bg-amber-100 text-amber-900";
 }
 
 function calendarDotClass(type: CalendarEvent["type"], status?: string) {
   if (isCalendarEventDone({ type, status })) return "bg-slate-400";
-  if (type === "task") return "bg-blue-500";
-  if (type === "course") return "bg-emerald-500";
-  if (type === "event") return "bg-violet-500";
+  if (type === "task") return "bg-[#f06a37]";
+  if (type === "course") return "bg-[#1f7a4d]";
+  if (type === "event") return "bg-[#1f7a4d]";
   if (type === "google") return "bg-red-500";
   return "bg-amber-500";
 }

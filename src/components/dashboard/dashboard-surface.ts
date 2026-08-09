@@ -10,9 +10,10 @@ export const dashboardLightSurface: CssVariables = {
   "--foreground": "220 14% 12%",
   "--card": "0 0% 100%",
   "--card-foreground": "220 14% 12%",
-  "--primary": "214 84% 38%",
+  "--primary": "16 86% 58%",
   "--primary-foreground": "0 0% 100%",
   "--muted": "210 18% 92%",
   "--muted-foreground": "220 9% 38%",
   "--border": "214 15% 84%",
+  "--ring": "16 86% 58%",
 };
