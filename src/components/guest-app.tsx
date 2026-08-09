@@ -1813,7 +1813,7 @@ const workBrandCss = `
   .al-work-tab { border: none; background: transparent; border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 700; color: #6b6f72; cursor: pointer; transition: background .15s, color .15s; }
   .al-work-tab-active { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; box-shadow: 0 6px 16px rgba(225, 93, 45, 0.25); }
 
-  .al-work-portal-grid { display: grid; gap: 10px; }
+  .al-work-portal-grid { display: grid; gap: 10px; align-items: start; }
   .al-work-portal-card { border: 1px solid #ece7dc; border-radius: 14px; background: white; padding: 10px; box-shadow: 0 8px 20px rgba(17, 17, 17, 0.04); transition: border-color .15s, box-shadow .15s; }
   .al-work-portal-card-expanded { border-color: rgba(225, 93, 45, 0.35); box-shadow: 0 10px 24px rgba(225, 93, 45, 0.1); }
   .al-work-portal-head { display: flex; width: 100%; align-items: center; gap: 10px; text-align: left; border: none; background: transparent; cursor: pointer; padding: 0; }
@@ -2556,10 +2556,12 @@ function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: b
   );
 }
 
+// "candidaturas" se queda fuera del MVP a proposito: el tracker ya funciona
+// (tabla job_applications + radar de scraping), pero se oculta hasta que se
+// decida retomarlo. Basta con volver a anadir la fila para reactivarlo.
 const WORK_TABS: ["portals" | "companies" | "candidaturas", string][] = [
   ["portals", "Portales"],
   ["companies", "Empresas"],
-  ["candidaturas", "Candidaturas"],
 ];
 
 function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
@@ -2669,7 +2671,7 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
   );
 
   return (
-    <Section title="Trabajo">
+    <>
       <style>{workBrandCss}</style>
       <div className="al-work-tabs">
         {WORK_TABS.map(([id, label]) => (
@@ -2837,7 +2839,7 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
           )}
         </div>
       )}
-    </Section>
+    </>
   );
 }
 
