@@ -73,6 +73,10 @@ for (const text of ["techlife.bloc.D1OS.v1", "techlife.app.settings.D1OS.v1", "p
   }
 }
 
+if (packageJson.scripts?.dev !== "next dev -p 3000") {
+  fail('El script dev debe fijar el puerto 3000 para impedir dos instancias Next sobre la misma carpeta .next');
+}
+
 const quickAdd = readFileSync(join(root, "src/components/quick-add.tsx"), "utf8");
 for (const text of ["Podrás planificarla con fecha", "Tarea", "Curso", "Reto"]) {
   if (!quickAdd.includes(text)) {
