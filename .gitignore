@@ -17,6 +17,8 @@ Thumbs.db
 .vscode/
 .idea/
 .claude/
+AGENTS.md
+CLAUDE.md
 vercel.json
 .playwright-mcp
 dev-server*.log

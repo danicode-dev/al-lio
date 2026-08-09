@@ -11,8 +11,6 @@ const requiredFiles = [
   "csv/oportunidades_tech_combinado.csv",
   "scripts/import-tech-opportunities.mjs",
   "scripts/audit-schema-code.mjs",
-  "AGENTS.md",
-  "CLAUDE.md",
   "docs/README.md",
   "docs/01_PRODUCT_SPEC.md",
   "docs/02_ARCHITECTURE_AND_STACK.md",
