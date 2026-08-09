@@ -7,6 +7,7 @@ export type RoadmapSkill = {
   id: string;
   titulo: string;
   descripcion: string | null;
+  horasEstimadas: number | null;
   obligatoria: boolean;
   ordenGlobal: number;
   status: RoadmapSkillStatus;
@@ -19,6 +20,32 @@ export type RoadmapModule = {
   ordenGlobal: number;
   skills: RoadmapSkill[];
   esComun: boolean;
+};
+
+export type RoadmapOverview = {
+  cycleName: string;
+  cycleCode: string;
+  completion: {
+    completed: number;
+    total: number;
+    percent: number;
+  };
+  nextStep: {
+    moduleCode: string;
+    moduleName: string;
+    skillId: string;
+    skillTitle: string;
+    href: string;
+    hasContent: boolean;
+  } | null;
+  focusModules: Array<{
+    code: string;
+    name: string;
+    completed: number;
+    total: number;
+    percent: number;
+    estimatedHours: number | null;
+  }>;
 };
 
 const ETAPA_ORDER: FpCompetencyEtapa[] = [
@@ -64,6 +91,7 @@ export function buildRoadmapModules(
       id: cs.id,
       titulo: cs.titulo,
       descripcion: cs.descripcion,
+      horasEstimadas: cs.horas_estimadas,
       obligatoria: cs.obligatoria_roadmap_base,
       ordenGlobal: cs.orden_global,
       status: statusBySkillId.get(cs.id) ?? "sin_contenido",

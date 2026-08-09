@@ -1,0 +1,221 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { BriefcaseBusiness, CalendarClock, ChevronLeft, ChevronRight, Compass, Sparkles, Trophy } from "lucide-react";
+import type { Store } from "@/components/guest-app";
+
+type CarouselSection = "upcoming" | "opportunities" | "work" | "hackathons";
+
+type FocusCard = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  detail: string;
+  href: string;
+};
+
+const sections: Array<{ id: CarouselSection; label: string; description: string; href: string; cta: string; Icon: typeof CalendarClock }> = [
+  { id: "upcoming", label: "Próximos", description: "Fechas y tareas que merece la pena atender ahora.", href: "/calendar", cta: "Ver calendario", Icon: CalendarClock },
+  { id: "opportunities", label: "Oportunidades", description: "Recursos que encajan con tu itinerario formativo.", href: "/courses", cta: "Explorar oportunidades", Icon: Sparkles },
+  { id: "work", label: "Trabajo", description: "Empresas para orientar tu próxima búsqueda.", href: "/work", cta: "Abrir Trabajo", Icon: BriefcaseBusiness },
+  { id: "hackathons", label: "Hackathons", description: "Retos y eventos para aprender haciendo y ganar visibilidad.", href: "/hackathons", cta: "Ver hackathons", Icon: Trophy },
+];
+
+function dayValue(value?: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function shortDate(value?: string | null) {
+  const date = dayValue(value);
+  if (!date) return "Sin fecha";
+  return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" }).format(date);
+}
+
+function isActiveTask(status: string) {
+  return status !== "completada" && status !== "cancelada";
+}
+
+function isArchivedHackathon(status: string) {
+  return status === "realizado" || status === "descartado";
+}
+
+function contentTypeLabel(value: string | null | undefined) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized.includes("curso")) return "Curso";
+  if (normalized.includes("beca")) return "Beca";
+  if (normalized.includes("evento")) return "Evento";
+  if (normalized.includes("práctica") || normalized.includes("practica")) return "Prácticas";
+  return value || "Oportunidad";
+}
+
+function dateSort(a?: string | null, b?: string | null) {
+  return (dayValue(a)?.getTime() ?? Number.MAX_SAFE_INTEGER) - (dayValue(b)?.getTime() ?? Number.MAX_SAFE_INTEGER);
+}
+
+function buildCards(store: Store): Record<CarouselSection, FocusCard[]> {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const inTwoWeeks = new Date(today);
+  inTwoWeeks.setDate(inTwoWeeks.getDate() + 14);
+
+  const upcoming = [
+    ...store.tasks
+      .filter((task) => isActiveTask(task.status))
+      .filter((task) => {
+        const due = dayValue(task.due_at);
+        return due && due >= today && due <= inTwoWeeks;
+      })
+      .sort((a, b) => dateSort(a.due_at, b.due_at))
+      .map((task) => ({ id: `task-${task.id}`, eyebrow: `Tarea · ${shortDate(task.due_at)}`, title: task.title, detail: task.category || "Organización", href: "/tasks" })),
+    ...store.courses
+      .filter((course) => course.status !== "terminado" && course.status !== "descartado")
+      .filter((course) => {
+        const date = dayValue(course.deadline_at || course.start_at || course.fecha_inicio);
+        return date && date >= today && date <= inTwoWeeks;
+      })
+      .map((course) => ({
+        id: `course-${course.id}`,
+        eyebrow: `Curso · ${shortDate(course.deadline_at || course.start_at || course.fecha_inicio)}`,
+        title: course.title,
+        detail: course.entidad || course.platform || "Formación",
+        href: "/courses",
+      })),
+  ].sort((a, b) => a.eyebrow.localeCompare(b.eyebrow)).slice(0, 3);
+
+  const opportunities = store.fpContent
+    .filter((item) => item.user_status !== "completed" && item.user_status !== "dismissed")
+    .filter((item) => {
+      const end = dayValue(item.end_date);
+      return !end || end >= today;
+    })
+    .sort((a, b) => {
+      const priority = { Alta: 0, Media: 1, Baja: 2 } as const;
+      return (priority[a.priority] ?? 3) - (priority[b.priority] ?? 3) || dateSort(a.start_date, b.start_date);
+    })
+    .slice(0, 3)
+    .map((item) => ({
+      id: `opportunity-${item.id}`,
+      eyebrow: contentTypeLabel(item.type),
+      title: item.title,
+      detail: [item.entity, item.location].filter(Boolean).join(" · ") || "Recomendado para tu perfil",
+      href: "/courses",
+    }));
+
+  const work = [...store.companies]
+    .sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite) || a.nombre.localeCompare(b.nombre))
+    .slice(0, 3)
+    .map((company) => ({
+      id: `company-${company.id}`,
+      eyebrow: company.is_favorite ? "Empresa guardada" : "Empresa",
+      title: company.nombre,
+      detail: company.categoria || company.granada_note || "Explora su equipo y vacantes",
+      href: "/work",
+    }));
+
+  const hackathons = store.hackathons
+    .filter((hackathon) => !isArchivedHackathon(hackathon.status))
+    .filter((hackathon) => {
+      const date = dayValue(hackathon.registration_deadline_at || hackathon.inscripcion_hasta || hackathon.start_at);
+      return !date || date >= today;
+    })
+    .sort((a, b) => dateSort(a.registration_deadline_at || a.inscripcion_hasta || a.start_at, b.registration_deadline_at || b.inscripcion_hasta || b.start_at))
+    .slice(0, 3)
+    .map((hackathon) => ({
+      id: `hackathon-${hackathon.id}`,
+      eyebrow: `Hackathon · ${shortDate(hackathon.registration_deadline_at || hackathon.inscripcion_hasta || hackathon.start_at)}`,
+      title: hackathon.name,
+      detail: [hackathon.city || hackathon.province, hackathon.organizer].filter(Boolean).join(" · ") || "Reto tecnológico",
+      href: "/hackathons",
+    }));
+
+  return { upcoming, opportunities, work, hackathons };
+}
+
+export function DashboardFocusCarousel({ store }: { store: Store }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const cards = useMemo(() => buildCards(store), [store]);
+  const active = sections[activeIndex];
+  const activeCards = cards[active.id];
+
+  const move = useCallback((direction: -1 | 1) => {
+    setActiveIndex((index) => (index + direction + sections.length) % sections.length);
+  }, []);
+
+  useEffect(() => {
+    if (paused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const interval = window.setInterval(() => move(1), 8000);
+    return () => window.clearInterval(interval);
+  }, [move, paused]);
+
+  const Icon = active.Icon;
+  return (
+    <section
+      className="rounded-[20px] border border-[#ece7dc] bg-white p-5 shadow-[0_10px_26px_rgba(17,17,17,0.045)]"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false);
+      }}
+      aria-label="Explora tus próximos pasos"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#eef6f0] text-[#1f7a4d]">
+            <Icon className="h-4.5 w-4.5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-extrabold text-[#111111]">{active.label}</p>
+            <p className="mt-1 text-xs leading-5 text-[#6b6f72]">{active.description}</p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <button type="button" onClick={() => move(-1)} className="grid h-8 w-8 place-items-center rounded-lg border border-[#ece7dc] text-[#6b6f72] transition hover:border-[#d7cfc2] hover:text-[#111111]" aria-label="Categoría anterior">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={() => move(1)} className="grid h-8 w-8 place-items-center rounded-lg border border-[#ece7dc] text-[#6b6f72] transition hover:border-[#d7cfc2] hover:text-[#111111]" aria-label="Categoría siguiente">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-2.5 sm:grid-cols-3">
+        {activeCards.length ? activeCards.map((card) => (
+          <Link key={card.id} href={card.href} className="group rounded-xl border border-[#eee9df] bg-[#fcfbf8] p-3 transition hover:-translate-y-0.5 hover:border-[#f1c7b5] hover:bg-white hover:shadow-[0_8px_18px_rgba(37,30,20,0.06)]">
+            <p className="truncate text-[11px] font-bold text-[#e15d2d]">{card.eyebrow}</p>
+            <p className="mt-2 line-clamp-2 text-sm font-bold leading-5 text-[#25221d]">{card.title}</p>
+            <p className="mt-1.5 line-clamp-2 text-xs leading-4 text-[#777269]">{card.detail}</p>
+          </Link>
+        )) : (
+          <div className="sm:col-span-3 flex min-h-28 flex-col items-center justify-center rounded-xl border border-dashed border-[#e4dfd5] bg-[#fcfbf8] px-4 text-center">
+            <Compass className="h-4 w-4 text-[#b1aba0]" />
+            <p className="mt-2 text-sm font-bold text-[#333029]">Aún no hay elementos para mostrar</p>
+            <p className="mt-1 text-xs text-[#777269]">Añade o guarda contenido desde esta sección.</p>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-1.5" aria-label={`Categoría ${activeIndex + 1} de ${sections.length}`}>
+          {sections.map((section, index) => (
+            <button
+              key={section.id}
+              type="button"
+              onClick={() => setActiveIndex(index)}
+              className={index === activeIndex ? "h-1.5 w-5 rounded-full bg-[#f06a37] transition-all" : "h-1.5 w-1.5 rounded-full bg-[#d6d0c4] transition-all hover:bg-[#a49d90]"}
+              aria-label={`Mostrar ${section.label}`}
+              aria-current={index === activeIndex ? "true" : undefined}
+            />
+          ))}
+        </div>
+        <Link href={active.href} className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#e15d2d] transition hover:text-[#c6491d]">
+          {active.cta} <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </section>
+  );
+}
