@@ -22,8 +22,6 @@ Código de la aplicación bajo `src/` (convención oficial de Next.js):
 - `scripts/` - validaciones, importadores y utilidades operativas.
 - `.env.example` - plantilla local.
 - `.env.production.example` - plantilla de producción.
-- `AGENTS.md` - guía operativa para agentes.
-- `CLAUDE.md` - entrada específica para Claude.
 - `README.md` - portada humana del proyecto.
 - `docs/` - documentación activa.
 
@@ -38,7 +36,8 @@ No subir:
 - `migration-artifacts/`
 - dumps de base de datos;
 - logs temporales;
-- prompts o notas privadas dentro de `public/`.
+- prompts o notas privadas dentro de `public/`;
+- guías operativas para asistentes de IA (`AGENTS.md`, `CLAUDE.md`) - existen en local para quien desarrolle con asistencia de IA, pero no forman parte del repositorio público.
 
 ## Regla De Limpieza
 

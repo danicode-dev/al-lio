@@ -4,6 +4,10 @@ AL-LÍO es una aplicación web para centralizar tareas, calendario, cursos, hack
 
 [Demo pública](https://al-lio.danielcode.dev) · [Documentación](docs/) · [Runbook VPS](docs/DEPLOY_VPS.md)
 
+## Créditos
+
+AL-LÍO se desarrolla con el apoyo de la beca [Aircury's Summer of Code](https://www.aircury.es) de Aircury SL.
+
 ## Estado Actual
 
 - Aplicación Next.js 15 con App Router.
