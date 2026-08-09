@@ -21,6 +21,7 @@ import {
   ExternalLink,
   Flame,
   FolderKanban,
+  Heart,
   ListChecks,
   ListTodo,
   MapPin,
@@ -49,6 +50,7 @@ import { insertDb, updateDb, deleteDb } from "@/lib/db";
 import { toast } from "sonner";
 import { TechOpportunitiesSection, type TechOpportunityTaskTarget } from "@/components/tech-opportunities-section";
 import { toggleFavoriteAction, markResourceStatusAction } from "@/lib/fp/resource-notes-actions";
+import { toggleCompanyFavoriteAction } from "@/lib/companies/actions";
 import { BlocNotepad } from "@/components/bloc/bloc-notepad";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
@@ -58,7 +60,7 @@ type View = "dashboard" | "work" | "courses" | "hackathons" | "tasks" | "calenda
 type TaskStatus = "pendiente" | "en_progreso" | "completada" | "pospuesta" | "cancelada";
 type TaskBucket = "diario" | "urgente" | "semanal";
 type TaskPriority = "alta" | "media" | "baja" | "critica";
-type QuickAddType = "task" | "course" | "hackathon" | "company";
+type QuickAddType = "task" | "course" | "hackathon";
 
 type AppSettings = {
   displayName: string;
@@ -229,16 +231,12 @@ type Hackathon = {
 
 type Company = {
   id: string;
-  name: string;
+  nombre: string;
   web?: string;
-  employment_url?: string;
-  employment_type?: string;
-  category?: string;
-  granada?: string;
-  source?: string;
-  notes?: string;
-  link_status: "sin_verificar" | "ok" | "revisar";
-  created_at: string;
+  empleo_url?: string;
+  categoria?: string;
+  granada_note?: string;
+  is_favorite: boolean;
 };
 
 type QuickLink = {
@@ -444,10 +442,9 @@ export type ReturnTypeActions = {
   updateCourse: (id: string, data: Partial<Course>) => void;
   addHackathon: (data: Omit<Hackathon, "id" | "created_at">) => void;
   updateHackathon: (id: string, data: Partial<Hackathon>) => void;
-  addCompany: (data: Omit<Company, "id" | "created_at" | "link_status"> & { link_status?: Company["link_status"] }) => void;
-  updateCompany: (id: string, data: Partial<Company>) => void;
   addLink: (data: Omit<QuickLink, "id" | "created_at">) => void;
   toggleFpFavorite: (idSlug: string, nextValue: boolean) => void;
+  toggleCompanyFavorite: (companyId: string) => void;
   markLearningItemDone: (idSlug: string) => void;
   reset: () => void;
 };
@@ -581,25 +578,6 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       if (registration_deadline_at !== undefined) dbData.registration_deadline = registration_deadline_at || null;
       await updateDb("hackathons", id, dbData, ["/hackathons"]);
     },
-    addCompany: async (data: Omit<Company, "id" | "created_at" | "link_status"> & { link_status?: Company["link_status"] }) => {
-      setStore((current) => ({ ...current, companies: [{ id: makeId(), created_at: nowIso(), link_status: "sin_verificar", ...data }, ...current.companies] }));
-      try {
-        await insertDb("opportunities", { title: data.name, company: data.name, source: data.web || "Manual", url: data.employment_url || data.web || "https://", status: "guardada", notes: data.notes, category: data.category, location: data.granada || "Granada" }, ["/work"]);
-        toast.success("Empresa guardada");
-      } catch {
-        toast.error("Error al guardar la empresa");
-      }
-    },
-    updateCompany: async (id: string, data: Partial<Company>) => {
-      setStore((current) => ({ ...current, companies: patchById(current.companies, id, data) }));
-      const dbData: any = {};
-      if (data.name) { dbData.title = data.name; dbData.company = data.name; }
-      if (data.web) dbData.source = data.web;
-      if (data.employment_url) dbData.url = data.employment_url;
-      if (data.notes) dbData.notes = data.notes;
-      if (data.category) dbData.category = data.category;
-      await updateDb("opportunities", id, dbData, ["/work"]);
-    },
     addLink: async (data: Omit<QuickLink, "id" | "created_at">) => {
       const id = makeId();
       setStore((current) => ({ ...current, links: [{ id, created_at: nowIso(), ...data }, ...current.links] }));
@@ -622,6 +600,21 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
             fpContent: current.fpContent.map((item) => (item.id_slug === idSlug ? { ...item, is_favorite: !nextValue } : item)),
           }));
           toast.error("No se pudo guardar");
+        }
+      });
+    },
+    toggleCompanyFavorite: (companyId: string) => {
+      setStore((current) => ({
+        ...current,
+        companies: current.companies.map((c) => (c.id === companyId ? { ...c, is_favorite: !c.is_favorite } : c)),
+      }));
+      toggleCompanyFavoriteAction(companyId).then((result) => {
+        if (result.error) {
+          setStore((current) => ({
+            ...current,
+            companies: current.companies.map((c) => (c.id === companyId ? { ...c, is_favorite: !c.is_favorite } : c)),
+          }));
+          toast.error("No se pudo guardar el favorito");
         }
       });
     },
@@ -1815,6 +1808,41 @@ function TaskDetailDialog({ task, actions, onClose }: { task: Task | null; actio
   );
 }
 
+const workBrandCss = `
+  .al-work-tabs { display: inline-flex; align-items: center; gap: 2px; background: #f5f2ea; border-radius: 10px; padding: 3px; }
+  .al-work-tab { border: none; background: transparent; border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 700; color: #6b6f72; cursor: pointer; transition: background .15s, color .15s; }
+  .al-work-tab-active { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; box-shadow: 0 6px 16px rgba(225, 93, 45, 0.25); }
+
+  .al-work-portal-grid { display: grid; gap: 10px; }
+  .al-work-portal-card { border: 1px solid #ece7dc; border-radius: 14px; background: white; padding: 10px; box-shadow: 0 8px 20px rgba(17, 17, 17, 0.04); transition: border-color .15s, box-shadow .15s; }
+  .al-work-portal-card-expanded { border-color: rgba(225, 93, 45, 0.35); box-shadow: 0 10px 24px rgba(225, 93, 45, 0.1); }
+  .al-work-portal-head { display: flex; width: 100%; align-items: center; gap: 10px; text-align: left; border: none; background: transparent; cursor: pointer; padding: 0; }
+  .al-work-portal-mark { display: flex; height: 32px; width: 32px; flex-shrink: 0; align-items: center; justify-content: center; overflow: hidden; border-radius: 10px; border: 1px solid #ece7dc; background: white; }
+  .al-work-portal-title { font-size: 13.5px; font-weight: 700; color: #111111; }
+  .al-work-portal-sub { font-size: 11px; color: #9a958a; }
+  .al-work-portal-expand { margin-top: 10px; display: grid; gap: 8px; }
+  .al-work-portal-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .al-work-portal-search-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 10px; border: none; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; text-decoration: none; }
+
+  .al-work-companies-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .al-work-company-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .al-work-company-card { position: relative; border: 1px solid #ece7dc; border-radius: 16px; background: white; padding: 16px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); display: flex; flex-direction: column; gap: 8px; }
+  .al-work-company-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .al-work-company-name { font-size: 14.5px; font-weight: 700; color: #111111; line-height: 1.3; }
+  .al-work-company-category { font-size: 11.5px; color: #6b6f72; line-height: 1.4; margin-top: 2px; }
+  .al-work-company-note { font-size: 11px; color: #9a958a; }
+  .al-work-company-fav { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 999px; border: 1px solid #ece7dc; background: white; color: #c9c3b6; cursor: pointer; flex-shrink: 0; transition: color .15s, border-color .15s, background .15s; }
+  .al-work-company-fav-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
+  .al-work-company-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
+  .al-work-company-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 34px; border-radius: 10px; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; }
+  .al-work-company-btn-outline { border: 1px solid #e4dfd5; color: #333029; background: white; }
+  .al-work-company-btn-solid { border: none; color: white; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); }
+
+  .al-work-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 16px; text-align: center; border: 1px dashed #e4dfd5; border-radius: 16px; background: white; }
+  .al-work-empty-title { font-size: 14px; font-weight: 700; color: #333029; }
+  .al-work-empty-desc { font-size: 12px; color: #9a958a; max-width: 360px; }
+`;
+
 const dashboardFeedSections = [
   { id: "tasks", label: "Tareas urgentes", sub: "Prioridad alta, critica o pendientes reales.", Icon: Flame, color: "text-rose-500" },
   { id: "calendar", label: "Semana", sub: "Eventos y fechas importantes.", Icon: CalendarDays, color: "text-blue-500" },
@@ -1962,6 +1990,7 @@ function DashboardOperationalFeed({ store, actions }: { store: Store; actions: R
         if (!event.currentTarget.contains(event.relatedTarget)) setAutoPaused(false);
       }}
     >
+      <style>{workBrandCss}</style>
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <Icon className={cn("h-4 w-4 shrink-0", current.color)} />
@@ -2145,25 +2174,25 @@ const QuickJobSearchCard = memo(function QuickJobSearchCard({ platform, expanded
   const url = useMemo(() => buildJobSearchUrl(platform, query, scope), [platform, query, scope]);
 
   return (
-    <div className={cn("rounded-md border bg-background/70 p-2.5 shadow-sm transition-colors", expanded && "border-primary/50 bg-primary/5")}>
-      <button type="button" className="flex w-full items-center gap-2 text-left" onClick={() => onToggle(platform)}>
+    <div className={cn("al-work-portal-card", expanded && "al-work-portal-card-expanded")}>
+      <button type="button" className="al-work-portal-head" onClick={() => onToggle(platform)}>
         <PortalMark platform={platform} />
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{platform}</p>
-          <p className="truncate text-[11px] text-muted-foreground">Busqueda rapida</p>
+          <p className="al-work-portal-title truncate">{platform}</p>
+          <p className="al-work-portal-sub truncate">Busqueda rapida</p>
         </div>
       </button>
       {expanded && (
-        <div className="mt-2 grid gap-2">
+        <div className="al-work-portal-expand">
           <Input value={query} onChange={(event) => setQuery(event.target.value)} className="h-8 text-xs" placeholder="programador java" aria-label={`Busqueda en ${platform}`} />
-          <div className="grid grid-cols-[1fr_auto] gap-2">
+          <div className="al-work-portal-row">
             <Select value={scope} onChange={(event) => setScope(event.target.value as "Granada" | "Teletrabajo")} className="h-8 text-xs" aria-label={`Ambito de busqueda en ${platform}`}>
               <option value="Granada">Granada</option>
               <option value="Teletrabajo">Teletrabajo</option>
             </Select>
-            <Button asChild size="sm" variant="outline" className="h-8 px-3 text-xs">
-              <a href={url} target="_blank" rel="noreferrer">Buscar <ExternalLink className="h-3.5 w-3.5" /></a>
-            </Button>
+            <a href={url} target="_blank" rel="noreferrer" className="al-work-portal-search-btn">
+              Buscar <ExternalLink className="h-3.5 w-3.5" />
+            </a>
           </div>
         </div>
       )}
@@ -2224,7 +2253,7 @@ function PortalMark({ platform }: { platform: JobPlatform }) {
 
   if (!failed) {
     return (
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-white dark:bg-white/90">
+      <span className="al-work-portal-mark">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
@@ -2239,7 +2268,7 @@ function PortalMark({ platform }: { platform: JobPlatform }) {
   }
 
   return (
-    <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-xs font-semibold", PORTAL_COLORS[platform] ?? "bg-muted text-foreground")}>
+    <span className={cn("al-work-portal-mark text-xs font-semibold", PORTAL_COLORS[platform] ?? "bg-muted text-foreground")}>
       {platform.slice(0, 2)}
     </span>
   );
@@ -2450,10 +2479,6 @@ function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: b
     if (type === "hackathon") {
       actions.addHackathon({ name: title, organizer: val(form, "organizer"), province: val(form, "province") || "Granada", city: val(form, "city"), status: "revisar_futura_edicion", priority: "media", start_at: val(form, "start_at"), end_at: val(form, "end_at"), registration_deadline_at: val(form, "registration_deadline_at"), url: val(form, "url"), notes: val(form, "notes") });
     }
-    if (type === "company") {
-      actions.addCompany({ name: title, web: val(form, "web"), employment_url: val(form, "employment_url"), employment_type: "Manual", category: val(form, "category"), notes: val(form, "notes") });
-    }
-
     setOpen(false);
   }
 
@@ -2473,9 +2498,8 @@ function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: b
               <option value="task">Tarea</option>
               <option value="course">Curso</option>
               <option value="hackathon">Hackathon</option>
-              <option value="company">Empresa</option>
             </Select>
-            <Input name="title" placeholder={type === "company" ? "Nombre" : "Título"} required />
+            <Input name="title" placeholder="Título" required />
 
             {type === "task" && (
               <>
@@ -2516,15 +2540,6 @@ function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: b
               </>
             )}
 
-            {type === "company" && (
-              <>
-                <Input name="web" placeholder="Web" />
-                <Input name="employment_url" placeholder="Portal de empleo" />
-                <Input name="category" placeholder="Categoría" />
-                <Textarea name="notes" placeholder="Notas" />
-              </>
-            )}
-
             <Button className="w-full">Guardar</Button>
           </FieldForm>
         </Card>
@@ -2551,7 +2566,6 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
   const [tab, setTab] = useState<"portals" | "companies" | "candidaturas">("portals");
   const [expandedPortal, setExpandedPortal] = useState<JobPlatform | null>(null);
   const [companySearch, setCompanySearch] = useState("");
-  const [companyType, setCompanyType] = useState("");
 
   // Candidaturas state
   const [applications, setApplications] = useState<JobApplication[]>([]);
@@ -2565,14 +2579,9 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
   const handleToggleWork = useCallback((p: JobPlatform) => setExpandedPortal((v) => v === p ? null : p), []);
 
   const filteredCompanies = useMemo(() => store.companies.filter((company) => {
-    const haystack = `${company.name} ${company.category} ${company.granada} ${company.employment_type}`.toLowerCase();
-    return (!companySearch || haystack.includes(companySearch.toLowerCase())) && (!companyType || company.employment_type === companyType);
-  }), [store.companies, companySearch, companyType]);
-
-  const companyTypes = useMemo(
-    () => Array.from(new Set(store.companies.map((c) => c.employment_type).filter(Boolean))).sort(),
-    [store.companies],
-  );
+    const haystack = `${company.nombre} ${company.categoria ?? ""}`.toLowerCase();
+    return !companySearch || haystack.includes(companySearch.toLowerCase());
+  }), [store.companies, companySearch]);
 
   const fetchApplications = useCallback(async () => {
     const res = await fetch("/api/job-radar");
@@ -2661,14 +2670,26 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
 
   return (
     <Section title="Trabajo">
-      <SegmentedTabs value={tab} setValue={setTab} tabs={WORK_TABS} />
+      <style>{workBrandCss}</style>
+      <div className="al-work-tabs">
+        {WORK_TABS.map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            className={cn("al-work-tab", tab === id && "al-work-tab-active")}
+            onClick={() => setTab(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       {tab === "portals" && (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Haz clic en un portal para escribir tu búsqueda y abrirla directamente.
           </p>
-          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
+          <div className="al-work-portal-grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
             {jobPlatforms.map((platform) => (
               <QuickJobSearchCard
                 key={platform}
@@ -2683,42 +2704,31 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
 
       {tab === "companies" && (
         <div className="space-y-4">
-          <Card className="p-4">
-            <div className="grid gap-3 lg:grid-cols-[1fr_220px_auto]">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input className="pl-9" value={companySearch} onChange={(event) => setCompanySearch(event.target.value)} placeholder="Buscar empresa, stack o categoria" />
-              </div>
-              <Select value={companyType} onChange={(event) => setCompanyType(event.target.value)}>
-                <option value="">Todos los enlaces</option>
-                {companyTypes.map((type) => <option key={type}>{type}</option>)}
-              </Select>
-              {(companySearch || companyType) && (
-                <Button type="button" size="sm" variant="ghost" className="h-9 px-2 text-xs text-muted-foreground" onClick={() => { setCompanySearch(""); setCompanyType(""); }}>
-                  Limpiar
-                </Button>
-              )}
+          <div className="al-work-companies-toolbar">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" value={companySearch} onChange={(event) => setCompanySearch(event.target.value)} placeholder="Buscar empresa o categoria" />
             </div>
-          </Card>
+            {store.companies.length > 0 && (
+              <span className="text-xs text-muted-foreground">{filteredCompanies.length} empresas</span>
+            )}
+          </div>
 
-          <CrudGrid
-            form={
-              <FieldForm action={(form) => actions.addCompany({ name: val(form, "name"), web: val(form, "web"), employment_url: val(form, "employment_url"), employment_type: "Manual", category: val(form, "category"), notes: val(form, "notes") })}>
-                <Input name="name" placeholder="Empresa" required />
-                <Input name="web" placeholder="Web" />
-                <Input name="employment_url" placeholder="Portal de empleo" />
-                <Input name="category" placeholder="Categoria" />
-                <Textarea name="notes" placeholder="Notas" />
-                <Button>Guardar empresa</Button>
-              </FieldForm>
-            }
-          >
-            <div className="space-y-3">
-              <div className="text-sm text-muted-foreground">{filteredCompanies.length} empresas guardadas</div>
-              {filteredCompanies.map((company) => <CompanyRow key={company.id} company={company} />)}
-              {!filteredCompanies.length && <EmptyText>No hay empresas con esos filtros.</EmptyText>}
+          {!store.companies.length ? (
+            <div className="al-work-empty">
+              <Building2 className="h-8 w-8 text-muted-foreground/40" />
+              <p className="al-work-empty-title">Próximamente para tu ciclo</p>
+              <p className="al-work-empty-desc">Todavía no tenemos empresas identificadas para tu familia profesional. Iremos añadiéndolas.</p>
             </div>
-          </CrudGrid>
+          ) : !filteredCompanies.length ? (
+            <EmptyText>No hay empresas con esa búsqueda.</EmptyText>
+          ) : (
+            <div className="al-work-company-grid">
+              {filteredCompanies.map((company) => (
+                <CompanyCard key={company.id} company={company} onToggleFavorite={() => actions.toggleCompanyFavorite(company.id)} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -4658,38 +4668,38 @@ function QuickDateButton({ label, onClick, className }: { label: string; onClick
   return <Button type="button" size="sm" variant="outline" className={className} onClick={onClick}>{label}</Button>;
 }
 
-function SegmentedTabs<T extends string>({ value, setValue, tabs }: { value: T; setValue: (value: T) => void; tabs: Array<[T, string]> }) {
+function CompanyCard({ company, onToggleFavorite }: { company: Company; onToggleFavorite: () => void }) {
   return (
-    <div className="inline-flex rounded-md border bg-card p-1">
-      {tabs.map(([id, label]) => (
-        <Button key={id} type="button" size="sm" variant={value === id ? "default" : "ghost"} onClick={() => setValue(id)}>
-          {label}
-        </Button>
-      ))}
-    </div>
-  );
-}
-
-function CompanyRow({ company }: { company: Company }) {
-  return (
-    <Card className="p-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+    <div className="al-work-company-card">
+      <div className="al-work-company-top">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            <h3 className="font-semibold">{company.name}</h3>
-            <Badge>{company.employment_type || "Manual"}</Badge>
-            <Badge>{company.link_status}</Badge>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">{company.category || "Sin categoria"}</p>
-          {company.granada ? <p className="mt-1 text-sm text-muted-foreground">{company.granada}</p> : null}
+          <p className="al-work-company-name">{company.nombre}</p>
+          {company.categoria && <p className="al-work-company-category">{company.categoria}</p>}
         </div>
-        <div className="flex flex-wrap gap-2">
-          {company.web && <Button asChild size="sm" variant="outline"><a href={company.web} target="_blank" rel="noreferrer">Web<ExternalLink className="h-4 w-4" /></a></Button>}
-          {company.employment_url && <Button asChild size="sm"><a href={company.employment_url} target="_blank" rel="noreferrer">Empleo<ExternalLink className="h-4 w-4" /></a></Button>}
-        </div>
+        <button
+          type="button"
+          className={cn("al-work-company-fav", company.is_favorite && "al-work-company-fav-active")}
+          onClick={onToggleFavorite}
+          aria-label={company.is_favorite ? "Quitar de favoritos" : "Guardar como favorita"}
+          aria-pressed={company.is_favorite}
+        >
+          <Heart className="h-4 w-4" fill={company.is_favorite ? "currentColor" : "none"} />
+        </button>
       </div>
-    </Card>
+      {company.granada_note && <p className="al-work-company-note">{company.granada_note}</p>}
+      <div className="al-work-company-actions">
+        {company.web && (
+          <a href={company.web} target="_blank" rel="noreferrer" className="al-work-company-btn al-work-company-btn-outline">
+            Visitar <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        )}
+        {company.empleo_url && (
+          <a href={company.empleo_url} target="_blank" rel="noreferrer" className="al-work-company-btn al-work-company-btn-solid">
+            Ver empleo <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        )}
+      </div>
+    </div>
   );
 }
 

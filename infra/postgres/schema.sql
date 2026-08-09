@@ -632,3 +632,43 @@ drop trigger if exists set_job_applications_updated_at on public.job_application
 create trigger set_job_applications_updated_at
   before update on public.job_applications
   for each row execute function public.set_updated_at();
+
+-- ── Tabla companies ──────────────────────────────────────────────────────────
+-- Catálogo global de empresas por familia profesional (cycle_group). Sin
+-- user_id: datos importados por script, iguales para todos los alumnos de un
+-- mismo ciclo. Sin notas/seguimiento/checklist: solo lo que el alumno necesita
+-- para visitar la empresa o su portal de empleo.
+create table if not exists public.companies (
+  id           uuid primary key default gen_random_uuid(),
+  id_slug      text unique not null,
+  nombre       text not null,
+  web          text,
+  empleo_url   text,
+  tipo_empleo  text,
+  categoria    text,
+  granada_note text,
+  fuente       text,
+  cycle_group  text not null check (cycle_group in ('DEV','AF','TSAF','MP')),
+  sort_order   integer not null default 100,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create index if not exists companies_cycle_group_idx on public.companies(cycle_group, sort_order);
+
+drop trigger if exists set_companies_updated_at on public.companies;
+create trigger set_companies_updated_at
+  before update on public.companies
+  for each row execute function public.set_updated_at();
+
+-- ── Tabla company_favorites ──────────────────────────────────────────────────
+-- Favorito del alumno sobre una empresa del catálogo. Sin más estado: la
+-- existencia de la fila es el favorito (togglear = insertar/borrar).
+create table if not exists public.company_favorites (
+  user_id    uuid not null references public.users(id) on delete cascade,
+  company_id uuid not null references public.companies(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, company_id)
+);
+
+create index if not exists company_favorites_user_idx on public.company_favorites(user_id);
