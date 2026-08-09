@@ -2069,11 +2069,11 @@ function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: b
   return (
     <>
       {open && (
-        <Card className="fixed bottom-20 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm p-4 shadow-xl md:bottom-20 md:right-5">
+        <Card className="fixed bottom-20 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-[20px] border-[#e4dfd5] bg-white p-4 shadow-[0_22px_50px_rgba(37,30,20,0.18)] md:bottom-20 md:right-5">
           <div className="mb-3 flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Alta rápida</p>
-              <h2 className="font-semibold">Añadir a Al-Lio</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#e15d2d]">Alta rápida</p>
+              <h2 className="mt-0.5 font-semibold text-[#111111]">Añadir a AL-LIO</h2>
             </div>
             <Button type="button" size="icon" variant="ghost" onClick={() => setOpen(false)} aria-label="Cerrar alta rapida"><X className="h-4 w-4" /></Button>
           </div>
@@ -2124,13 +2124,13 @@ function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: b
               </>
             )}
 
-            <Button className="w-full">Guardar</Button>
+            <Button className="w-full bg-[#f06a37] text-white hover:bg-[#df5725]">Guardar</Button>
           </FieldForm>
         </Card>
       )}
       <Button
         size="icon"
-        className="fixed bottom-20 md:bottom-5 right-4 md:right-5 z-50 h-14 w-14 rounded-full shadow-xl"
+        className="fixed bottom-20 right-4 z-50 h-14 w-14 rounded-full border border-[#f68a62] bg-[#f06a37] text-white shadow-[0_14px_30px_rgba(240,106,55,0.34)] transition hover:scale-105 hover:bg-[#df5725] focus-visible:ring-[#f06a37] md:bottom-5 md:right-5"
         onClick={() => setOpen(!open)}
         aria-label="Añadir rápido"
       >

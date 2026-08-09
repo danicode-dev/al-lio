@@ -140,6 +140,24 @@ export function DashboardFocusCarousel({ store }: { store: Store }) {
   const cards = useMemo(() => buildCards(store), [store]);
   const active = sections[activeIndex];
   const activeCards = cards[active.id];
+  const emptyCopy = {
+    upcoming: {
+      title: "No tienes próximos pasos con fecha",
+      detail: "Añade una tarea o revisa el calendario para organizar lo siguiente.",
+    },
+    opportunities: {
+      title: "Aún no hay oportunidades guardadas",
+      detail: "Explora recursos alineados con tu itinerario y guarda los que te interesen.",
+    },
+    work: {
+      title: "Aún no tienes empresas para seguir",
+      detail: "Empieza por guardar las que te gustaría conocer mejor.",
+    },
+    hackathons: {
+      title: "Aún no tienes hackathons guardados",
+      detail: "Explora retos y eventos para preparar tu próxima participación.",
+    },
+  }[active.id];
 
   const move = useCallback((direction: -1 | 1) => {
     setActiveIndex((index) => (index + direction + sections.length) % sections.length);
@@ -154,7 +172,7 @@ export function DashboardFocusCarousel({ store }: { store: Store }) {
   const Icon = active.Icon;
   return (
     <section
-      className="rounded-[20px] border border-[#ece7dc] bg-white p-5 shadow-[0_10px_26px_rgba(17,17,17,0.045)]"
+      className="flex h-full min-h-[352px] flex-col rounded-[20px] border border-[#ece7dc] bg-white p-5 shadow-[0_10px_26px_rgba(17,17,17,0.045)]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
@@ -183,23 +201,25 @@ export function DashboardFocusCarousel({ store }: { store: Store }) {
         </div>
       </div>
 
-      <div className="mt-5 grid gap-2.5 sm:grid-cols-3">
+      <div className="mt-5 grid flex-1 gap-2.5 sm:grid-cols-3">
         {activeCards.length ? activeCards.map((card) => (
-          <Link key={card.id} href={card.href} className="group rounded-xl border border-[#eee9df] bg-[#fcfbf8] p-3 transition hover:-translate-y-0.5 hover:border-[#f1c7b5] hover:bg-white hover:shadow-[0_8px_18px_rgba(37,30,20,0.06)]">
+          <Link key={card.id} href={card.href} className="group flex h-full flex-col rounded-xl border border-[#eee9df] bg-[#fcfbf8] p-3 transition hover:-translate-y-0.5 hover:border-[#f1c7b5] hover:bg-white hover:shadow-[0_8px_18px_rgba(37,30,20,0.06)]">
             <p className="truncate text-[11px] font-bold text-[#e15d2d]">{card.eyebrow}</p>
             <p className="mt-2 line-clamp-2 text-sm font-bold leading-5 text-[#25221d]">{card.title}</p>
             <p className="mt-1.5 line-clamp-2 text-xs leading-4 text-[#777269]">{card.detail}</p>
           </Link>
         )) : (
-          <div className="sm:col-span-3 flex min-h-28 flex-col items-center justify-center rounded-xl border border-dashed border-[#e4dfd5] bg-[#fcfbf8] px-4 text-center">
-            <Compass className="h-4 w-4 text-[#b1aba0]" />
-            <p className="mt-2 text-sm font-bold text-[#333029]">Aún no hay elementos para mostrar</p>
-            <p className="mt-1 text-xs text-[#777269]">Añade o guarda contenido desde esta sección.</p>
+          <div className="sm:col-span-3 flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-[#e4dfd5] bg-[#fcfbf8] px-6 text-center">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-[#b1aba0] shadow-[0_4px_12px_rgba(37,30,20,0.04)]">
+              <Compass className="h-4 w-4" />
+            </span>
+            <p className="mt-3 text-sm font-bold text-[#333029]">{emptyCopy.title}</p>
+            <p className="mt-1 max-w-md text-xs leading-5 text-[#777269]">{emptyCopy.detail}</p>
           </div>
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-4">
+      <div className="mt-4 flex items-center justify-between gap-4 border-t border-[#f0ece2] pt-4">
         <div className="flex items-center gap-1.5" aria-label={`Categoría ${activeIndex + 1} de ${sections.length}`}>
           {sections.map((section, index) => (
             <button

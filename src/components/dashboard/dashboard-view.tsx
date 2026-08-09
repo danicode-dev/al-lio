@@ -27,7 +27,7 @@ export function DashboardView({ store, actions, headerActions, calendar }: Dashb
         <DashboardCalendar>{calendar}</DashboardCalendar>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
         <DashboardFocusCarousel store={store} />
         <DashboardProgress roadmap={store.roadmap} />
       </div>
