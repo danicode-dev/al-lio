@@ -49,7 +49,17 @@ import { toast } from "sonner";
 import { toggleFavoriteAction, markResourceStatusAction } from "@/lib/fp/resource-notes-actions";
 import { toggleCompanyFavoriteAction } from "@/lib/companies/actions";
 import { BlocNotepad } from "@/components/bloc/bloc-notepad";
+import {
+  CalendarView,
+  TaskCalendar,
+  isCalendarEventDone,
+  loadGoogleCalendarRange,
+  sortCalendarEvents as sortEvents,
+  type CalendarEvent,
+  type GoogleCalendarEvent,
+} from "@/components/calendar/app-calendar";
 import { DashboardView } from "@/components/dashboard/dashboard-view";
+import { QuickAdd } from "@/components/quick-add";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
 import { APPLICATION_STATUSES, STATUS_LABELS, STATUS_COLORS } from "@/lib/job-radar/types";
@@ -59,8 +69,6 @@ type View = "dashboard" | "work" | "courses" | "hackathons" | "tasks" | "calenda
 type TaskStatus = "pendiente" | "en_progreso" | "completada" | "pospuesta" | "cancelada";
 type TaskBucket = "diario" | "urgente" | "semanal";
 type TaskPriority = "alta" | "media" | "baja" | "critica";
-type QuickAddType = "task" | "course" | "hackathon";
-
 type AppSettings = {
   displayName: string;
   defaultTaskBucket: TaskBucket;
@@ -260,77 +268,6 @@ export type Store = {
   roadmap: RoadmapOverview | null;
   companies: Company[];
 };
-
-type CalendarEvent = {
-  id: string;
-  type: "task" | "course" | "hackathon" | "event" | "google";
-  title: string;
-  date_at: string;
-  end_at?: string;
-  status?: string;
-  href: string;
-};
-
-type GoogleCalendarEvent = {
-  id: string;
-  title: string;
-  start: string;
-  end: string;
-  htmlLink?: string;
-  status?: string;
-};
-
-const googleEventsCache = new Map<string, GoogleCalendarEvent[]>();
-
-async function loadGoogleCalendarRange(start: string, end: string, force = false) {
-  const cacheKey = `${start}:${end}`;
-  const cached = googleEventsCache.get(cacheKey);
-  if (cached && !force) return cached;
-
-  const response = await fetch(`/api/google/calendar/events?timeMin=${encodeURIComponent(start)}&timeMax=${encodeURIComponent(end)}`, { cache: "no-store" });
-  if (!response.ok) throw new Error("Google Calendar request failed");
-  const data = await response.json();
-  const events = data.connected ? data.events ?? [] : [];
-  googleEventsCache.set(cacheKey, events);
-  return events as GoogleCalendarEvent[];
-}
-
-function useGoogleCalendarEvents(month: Date, refreshKey = 0) {
-  const [events, setEvents] = useState<GoogleCalendarEvent[]>([]);
-
-  useEffect(() => {
-    let alive = true;
-    const start = startOfMonth(month).toISOString();
-    const end = addMonths(startOfMonth(month), 1).toISOString();
-
-    loadGoogleCalendarRange(start, end, refreshKey > 0)
-      .then((next) => {
-        if (alive) setEvents(next);
-      })
-      .catch(() => {
-        if (alive) setEvents([]);
-      });
-
-    return () => {
-      alive = false;
-    };
-  }, [month, refreshKey]);
-
-  return useMemo(
-    () =>
-      events.map((event) => ({
-        id: event.id,
-        type: "google" as const,
-        title: event.title,
-        date_at: event.start,
-        end_at: event.end,
-        status: event.status,
-        href: event.htmlLink || "/calendar",
-      })),
-    [events],
-  );
-}
-
 
 const emptyStore: Store = {
   version: 2,
@@ -885,7 +822,7 @@ export function GuestApp({ view }: { view: View }) {
       {view === "tasks" && <Tasks store={store} actions={actions} />}
       {view === "courses" && <Courses store={store} actions={actions} />}
       {view === "hackathons" && <Hackathons store={store} actions={actions} />}
-      {view === "calendar" && <CalendarView store={store} />}
+      {view === "calendar" && <CalendarView events={getCalendarEvents(store)} completedTasks={store.tasks} />}
       {view === "links" && <LinksView store={store} actions={actions} />}
       {view === "sources" && <Sources />}
       {view === "settings" && <Settings reset={actions.reset} addTask={actions.addTask} />}
@@ -907,7 +844,7 @@ function Dashboard({ store, actions }: { store: Store; actions: ReturnTypeAction
           <GoogleCalendarStatusControl />
         </>
       )}
-      calendar={<TaskCalendar store={store} />}
+      calendar={<TaskCalendar events={getCalendarEvents(store)} />}
     />
   );
 }
@@ -1851,292 +1788,6 @@ function PortalMark({ platform }: { platform: JobPlatform }) {
     <span className={cn("al-work-portal-mark text-xs font-semibold", PORTAL_COLORS[platform] ?? "bg-muted text-foreground")}>
       {platform.slice(0, 2)}
     </span>
-  );
-}
-
-function EventDateTimeFields({ value, onChange }: { value: Date; onChange: (d: Date) => void }) {
-  function updateDate(dateValue: string) {
-    const [year, month, day] = dateValue.split("-").map(Number);
-    if (!year || !month || !day) return;
-    const next = new Date(value);
-    next.setFullYear(year, month - 1, day);
-    onChange(next);
-  }
-
-  function updateTime(timeValue: string) {
-    const [hour, minute] = timeValue.split(":").map(Number);
-    if (Number.isNaN(hour) || Number.isNaN(minute)) return;
-    const next = new Date(value);
-    next.setHours(hour, minute, 0, 0);
-    onChange(next);
-  }
-
-  function setToday() {
-    const now = new Date();
-    const next = new Date(value);
-    next.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
-    onChange(next);
-  }
-
-  return (
-    <div className="grid gap-2 sm:grid-cols-[1fr_120px]">
-      <div className="space-y-1">
-        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Dia</p>
-        <div className="flex gap-2">
-          <Input type="date" value={toDateInputValue(value)} onChange={(event) => updateDate(event.target.value)} />
-          <Button type="button" variant="outline" size="sm" className="h-10 shrink-0" onClick={setToday}>Hoy</Button>
-        </div>
-      </div>
-      <div className="space-y-1">
-        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Hora</p>
-        <Input type="time" value={toTimeInputValue(value)} onChange={(event) => updateTime(event.target.value)} />
-      </div>
-    </div>
-  );
-}
-
-function NewEventDialog({ defaultDate, onClose, onCreated }: { defaultDate: Date; onClose: () => void; onCreated: () => void }) {
-  const [title, setTitle] = useState("");
-  const [notes, setNotes] = useState("");
-  const [eventDate, setEventDate] = useState(defaultDate);
-  const [descriptionOpen, setDescriptionOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  async function submit() {
-    if (!title.trim()) return;
-    setSaving(true);
-    setError("");
-    const start = eventDate.toISOString();
-    const end = addMinutes(eventDate, 60).toISOString();
-    try {
-      const res = await fetch("/api/google/calendar/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim(), start, end, notes: notes.trim() || undefined }),
-      });
-      if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.error || "Error al guardar"); }
-      googleEventsCache.clear();
-      toast.success("Evento añadido al calendario");
-      onCreated();
-      onClose();
-    } catch (e) {
-      setError((e as Error).message);
-      setSaving(false);
-    }
-  }
-
-  return (
-    <>
-      <button type="button" aria-label="Cerrar nuevo evento" onClick={onClose} className="fixed inset-0 z-50 cursor-default bg-black/30 backdrop-blur-[1px]" />
-      <div role="dialog" aria-modal="true" aria-labelledby="new-event-title" className="fixed left-1/2 top-1/2 z-[51] w-[min(25rem,calc(100vw-2rem))] max-h-[calc(100dvh-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[18px] border border-[#e4dfd5] bg-white text-[#111111] shadow-[0_22px_50px_rgba(17,17,17,0.24)]">
-      <div className="flex items-center justify-between border-b border-[#f0ece2] px-4 py-3">
-        <span id="new-event-title" className="text-sm font-semibold">Nuevo evento</span>
-        <button type="button" onClick={onClose} className="flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>
-      </div>
-      <div className="space-y-2.5 p-4">
-        <Input placeholder="Añadir título" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} autoFocus />
-        <button
-          type="button"
-          onClick={() => setDescriptionOpen((open) => !open)}
-          className="flex w-full items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
-        >
-          <span className="text-muted-foreground">{notes.trim() ? "Descripcion anadida" : "Descripcion"}</span>
-          <ChevronRight className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", descriptionOpen && "rotate-90")} />
-        </button>
-        {descriptionOpen && (
-          <Textarea placeholder="Escribe los detalles del evento" value={notes} onChange={(e) => setNotes(e.target.value)} rows={5} className="text-sm" />
-        )}
-        <EventDateTimeFields value={eventDate} onChange={setEventDate} />
-        {error && <p className="text-xs text-destructive">{error}</p>}
-      </div>
-      <div className="flex justify-end gap-2 border-t border-[#f0ece2] px-4 py-3">
-        <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
-        <Button size="sm" onClick={submit} disabled={saving || !title.trim()}>{saving ? "Guardando..." : "Guardar"}</Button>
-      </div>
-      </div>
-    </>
-  );
-}
-
-function TaskCalendar({ store }: { store: Store }) {
-  const [month, setMonth] = useState(startOfMonth(new Date()));
-  const [selectedDay, setSelectedDay] = useState(todayKey());
-  const [newEventOpen, setNewEventOpen] = useState(false);
-  const [calendarRefresh, setCalendarRefresh] = useState(0);
-  const newEventRef = useRef<HTMLDivElement>(null);
-  const googleCalendarEvents = useGoogleCalendarEvents(month, calendarRefresh);
-  const events = useMemo(() => [...getCalendarEvents(store), ...googleCalendarEvents].sort(sortEvents), [store, googleCalendarEvents]);
-  const cells = buildMonthCells(month);
-  const eventsByDay = groupEventsByDay(events);
-  const selectedEvents = eventsByDay.get(selectedDay) ?? [];
-
-  useEffect(() => {
-    if (!newEventOpen) return;
-    function handle(e: PointerEvent) {
-      if (newEventRef.current && !newEventRef.current.contains(e.target as Node)) setNewEventOpen(false);
-    }
-    document.addEventListener("pointerdown", handle);
-    return () => document.removeEventListener("pointerdown", handle);
-  }, [newEventOpen]);
-
-  const defaultEventDate = useMemo(() => {
-    const parsed = parseDate(selectedDay);
-    const base = parsed ? new Date(parsed) : new Date();
-    const now = new Date();
-    base.setHours(now.getHours(), now.getMinutes(), 0, 0);
-    return base;
-  }, [selectedDay]);
-
-  return (
-    <div>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <h2 className="text-sm font-extrabold text-[#111111]">Calendario</h2>
-          <p className="mt-0.5 truncate text-xs text-[#777269]">{monthTitle(month)}</p>
-        </div>
-        <div ref={newEventRef} className="relative flex shrink-0 items-center gap-0.5">
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={() => setMonth(addMonths(month, -1))} aria-label="Mes anterior"><ChevronLeft className="h-3.5 w-3.5" /></Button>
-          <Button type="button" size="sm" variant="ghost" className="h-7 rounded-lg px-2 text-xs text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={() => { const now = startOfMonth(new Date()); setMonth(now); setSelectedDay(todayKey()); }}>Hoy</Button>
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={() => setMonth(addMonths(month, 1))} aria-label="Mes siguiente"><ChevronRight className="h-3.5 w-3.5" /></Button>
-          <Button type="button" size="icon" variant="ghost" className="ml-0.5 h-7 w-7 rounded-lg bg-[#fff0e9] text-[#e15d2d] hover:bg-[#fbe2d6] hover:text-[#c6491d]" onClick={() => setNewEventOpen((o) => !o)} aria-label="Crear evento">
-            <Plus className="h-3.5 w-3.5" />
-          </Button>
-          {newEventOpen && (
-            <NewEventDialog
-              defaultDate={defaultEventDate}
-              onClose={() => setNewEventOpen(false)}
-              onCreated={() => setCalendarRefresh((value) => value + 1)}
-            />
-          )}
-        </div>
-      </div>
-      <div className="grid gap-3">
-        <div className="grid grid-cols-7 gap-1 text-center text-xs text-[#8e887e]">
-          {["L", "M", "X", "J", "V", "S", "D"].map((day) => <span key={day} className="pb-0.5 font-semibold">{day}</span>)}
-          {cells.map((day) => {
-            const hasEvents = eventsByDay.has(day.key);
-            const selected = selectedDay === day.key;
-            return (
-              <button key={day.key} type="button" className={cn("relative flex h-8 items-center justify-center rounded-lg text-sm font-medium transition-colors", day.inMonth ? "text-[#39352e] hover:bg-[#fff0e9]" : "text-[#cbc5ba]", selected && "bg-[#f06a37] text-white shadow-[0_4px_10px_rgba(240,106,55,0.22)] hover:bg-[#e15d2d]", hasEvents && !selected && "bg-[#eef6f0] text-[#1f7a4d] ring-1 ring-[#1f7a4d]/15")} onClick={() => setSelectedDay(day.key)}>
-                {day.date.getDate()}
-                {hasEvents && <span className={cn("absolute bottom-1 h-1 w-1 rounded-full", selected ? "bg-white" : "bg-[#1f7a4d]")} />}
-              </button>
-            );
-          })}
-        </div>
-        {selectedEvents.length > 0 && (
-          <div className="rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-sm font-semibold">{formatDayTitle(selectedDay)}</h3>
-              <Badge>{selectedEvents.length}</Badge>
-            </div>
-            <div className="space-y-2">
-              {selectedEvents.map((event) => <CalendarAgendaRow key={`${event.type}-${event.id}`} event={event} compact />)}
-            </div>
-          </div>
-        )}
-      </div>
-      </div>
-  );
-}
-
-
-function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: boolean) => void; actions: ReturnTypeActions }) {
-  const [type, setType] = useState<QuickAddType>("task");
-  const [dueAt, setDueAt] = useState(toDatetimeLocalValue(new Date()));
-
-  useEffect(() => {
-    if (open && type === "task") setDueAt(toDatetimeLocalValue(new Date()));
-  }, [open, type]);
-
-  function submit(form: FormData) {
-    const title = val(form, "title");
-    if (!title) return;
-
-    if (type === "task") {
-      actions.addTask({ title, description: val(form, "notes"), due_at: val(form, "due_at"), status: "pendiente", priority: "media" });
-    }
-    if (type === "course") {
-      actions.addCourse({ title, platform: val(form, "platform"), url: val(form, "url"), start_at: val(form, "start_at"), deadline_at: val(form, "deadline_at"), status: "pendiente", notes: val(form, "notes") });
-    }
-    if (type === "hackathon") {
-      actions.addHackathon({ name: title, organizer: val(form, "organizer"), province: val(form, "province") || "Granada", city: val(form, "city"), status: "revisar_futura_edicion", priority: "media", start_at: val(form, "start_at"), end_at: val(form, "end_at"), registration_deadline_at: val(form, "registration_deadline_at"), url: val(form, "url"), notes: val(form, "notes") });
-    }
-    setOpen(false);
-  }
-
-  return (
-    <>
-      {open && (
-        <Card className="fixed bottom-20 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-[20px] border-[#e4dfd5] bg-white p-4 shadow-[0_22px_50px_rgba(37,30,20,0.18)] md:bottom-20 md:right-5">
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#e15d2d]">Alta rápida</p>
-              <h2 className="mt-0.5 font-semibold text-[#111111]">Añadir a AL-LIO</h2>
-            </div>
-            <Button type="button" size="icon" variant="ghost" onClick={() => setOpen(false)} aria-label="Cerrar alta rapida"><X className="h-4 w-4" /></Button>
-          </div>
-          <FieldForm action={submit}>
-            <Select value={type} onChange={(event) => setType(event.target.value as QuickAddType)} name="type">
-              <option value="task">Tarea</option>
-              <option value="course">Curso</option>
-              <option value="hackathon">Hackathon</option>
-            </Select>
-            <Input name="title" placeholder="Título" required />
-
-            {type === "task" && (
-              <>
-                <div className="grid grid-cols-2 gap-2">
-                  <QuickDateButton label="Hoy" onClick={() => setDueAt(toDatetimeLocalValue(new Date()))} />
-                  <QuickDateButton label="Mañana misma hora" onClick={() => setDueAt(addDaysKeepingTime(dueAt, 1))} />
-                  <QuickDateButton label="Mañana mañana" onClick={() => setDueAt(nextDayAt(9, 0))} />
-                  <QuickDateButton label="Mañana tarde" onClick={() => setDueAt(nextDayAt(17, 0))} />
-                </div>
-                <QuickDateButton label="Esta semana" onClick={() => setDueAt(addDaysKeepingTime(dueAt, 3))} className="w-full" />
-                <Input name="due_at" type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
-                <Textarea name="notes" placeholder="Notas" />
-              </>
-            )}
-
-            {type === "course" && (
-              <>
-                <Input name="platform" placeholder="Plataforma" />
-                <Input name="url" placeholder="URL del curso" />
-                <Input name="start_at" type="datetime-local" />
-                <Input name="deadline_at" type="datetime-local" />
-                <Textarea name="notes" placeholder="Notas" />
-              </>
-            )}
-
-            {type === "hackathon" && (
-              <>
-                <Input name="organizer" placeholder="Organizador" />
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <Input name="province" placeholder="Provincia" />
-                  <Input name="city" placeholder="Ciudad" />
-                </div>
-                <Input name="url" placeholder="Link" />
-                <Input name="start_at" type="datetime-local" />
-                <Input name="end_at" type="datetime-local" />
-                <Input name="registration_deadline_at" type="datetime-local" />
-                <Textarea name="notes" placeholder="Notas" />
-              </>
-            )}
-
-            <Button className="w-full bg-[#f06a37] text-white hover:bg-[#df5725]">Guardar</Button>
-          </FieldForm>
-        </Card>
-      )}
-      <Button
-        size="icon"
-        className="fixed bottom-20 right-4 z-50 h-14 w-14 rounded-full border border-[#f68a62] bg-[#f06a37] text-white shadow-[0_14px_30px_rgba(240,106,55,0.34)] transition hover:scale-105 hover:bg-[#df5725] focus-visible:ring-[#f06a37] md:bottom-5 md:right-5"
-        onClick={() => setOpen(!open)}
-        aria-label="Añadir rápido"
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
-    </>
   );
 }
 
@@ -4014,63 +3665,6 @@ function CompetencyRequirement({
   );
 }
 
-function CalendarView({ store }: { store: Store }) {
-  const [month, setMonth] = useState(startOfMonth(new Date()));
-  const googleCalendarEvents = useGoogleCalendarEvents(month);
-  const events = useMemo(() => [...getCalendarEvents(store), ...googleCalendarEvents].sort(sortEvents), [store, googleCalendarEvents]);
-  const cells = buildMonthCells(month);
-  const eventsByDay = groupEventsByDay(events);
-  const completed = store.tasks.filter((item) => item.status === "completada" && item.completed_at && isSameMonth(item.completed_at, month));
-
-  return (
-    <Section title="Calendario">
-      <Card className="p-4">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-xl font-semibold">{monthTitle(month)}</h2>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant="outline" aria-label="Mes anterior" onClick={() => setMonth(addMonths(month, -1))}><ChevronLeft className="h-4 w-4" /><span className="hidden sm:inline">Mes anterior</span></Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => setMonth(startOfMonth(new Date()))}>Hoy</Button>
-            <Button type="button" size="sm" variant="outline" aria-label="Mes siguiente" onClick={() => setMonth(addMonths(month, 1))}><span className="hidden sm:inline">Mes siguiente</span><ChevronRight className="h-4 w-4" /></Button>
-          </div>
-        </div>
-        <div className="grid grid-cols-7 border-l border-t text-xs text-muted-foreground">
-          {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((day) => <div key={day} className="border-b border-r p-2 font-medium">{day}</div>)}
-          {cells.map((cell) => {
-            const dayEvents = eventsByDay.get(cell.key) ?? [];
-            return (
-              <div key={cell.key} className={`min-h-32 border-b border-r p-2 ${cell.inMonth ? "bg-background" : "bg-muted/30 text-muted-foreground/60"}`}>
-                <div className={`mb-2 flex h-7 w-7 items-center justify-center rounded-full text-sm ${cell.key === todayKey() ? "bg-primary text-primary-foreground" : ""}`}>{cell.date.getDate()}</div>
-                <div className="space-y-1">
-                  {dayEvents.slice(0, 4).map((event) => <CalendarPill key={`${event.type}-${event.id}`} event={event} />)}
-                  {dayEvents.length > 4 && <p className="text-[11px] text-muted-foreground">+{dayEvents.length - 4} mas</p>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-
-      <Card className="p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Resumen realizado</h2>
-            <p className="text-sm text-muted-foreground">Tareas completadas durante este mes.</p>
-          </div>
-          <Badge>{completed.length} completadas</Badge>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {completed.length ? completed.slice(0, 9).map((task) => (
-            <div key={task.id} className="rounded-md border p-3 text-sm">
-              <p className="font-medium">{task.title}</p>
-              <p className="mt-1 text-muted-foreground">{formatLongDate(task.completed_at)}</p>
-            </div>
-          )) : <EmptyText>Todavia no hay tareas completadas este mes.</EmptyText>}
-        </div>
-      </Card>
-    </Section>
-  );
-}
-
 function LinksView({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
   return (
     <CrudGrid
@@ -4250,10 +3844,6 @@ function EmptyText({ children }: { children: React.ReactNode }) {
   return <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">{children}</div>;
 }
 
-function QuickDateButton({ label, onClick, className }: { label: string; onClick: () => void; className?: string }) {
-  return <Button type="button" size="sm" variant="outline" className={className} onClick={onClick}>{label}</Button>;
-}
-
 function CompanyCard({ company, onToggleFavorite }: { company: Company; onToggleFavorite: () => void }) {
   return (
     <div className="al-work-company-card">
@@ -4289,26 +3879,6 @@ function CompanyCard({ company, onToggleFavorite }: { company: Company; onToggle
   );
 }
 
-
-function CalendarAgendaRow({ event, compact = false }: { event: CalendarEvent; compact?: boolean }) {
-  return (
-    <Link href={event.href} className={cn("flex items-start gap-2 rounded-md border bg-card/70 p-3 text-sm hover:bg-muted", compact && "p-2.5")}>
-      <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", calendarDotClass(event.type, event.status))} />
-      <span className="min-w-0">
-        <span className="block truncate font-medium">{event.title}</span>
-        <span className="text-xs text-muted-foreground">{formatTime(event.date_at)}{event.end_at ? ` - ${formatTime(event.end_at)}` : ""} - {calendarTypeLabel(event.type)}</span>
-      </span>
-    </Link>
-  );
-}
-
-function CalendarPill({ event }: { event: CalendarEvent }) {
-  return (
-    <Link href={event.href} className={`block truncate rounded px-2 py-1 text-[11px] leading-tight ${calendarEventClass(event.type, event.status)}`} title={event.title}>
-      {event.type === "task" && event.date_at ? `${formatTime(event.date_at)} ` : ""}{event.title}
-    </Link>
-  );
-}
 
 const techCourseCategories = new Set(["curso", "fp"]);
 const techHackathonCategories = new Set(["hackathon_reto"]);
@@ -4646,16 +4216,6 @@ function dedupeCalendarEvents(events: CalendarEvent[]) {
   return Array.from(map.values());
 }
 
-function groupEventsByDay(events: CalendarEvent[]) {
-  const map = new Map<string, CalendarEvent[]>();
-  for (const event of events) {
-    const key = dateKey(event.date_at);
-    if (!key) continue;
-    map.set(key, [...(map.get(key) ?? []), event]);
-  }
-  return map;
-}
-
 function patchById<T extends { id: string }>(items: T[], id: string, data: Partial<T>) {
   return items.map((item) => (item.id === id ? { ...item, ...data } : item));
 }
@@ -4750,14 +4310,6 @@ function isCalendarItemPast(event: CalendarEvent, store: Store) {
   }
 
   return false;
-}
-
-function isCalendarEventDone(event: Pick<CalendarEvent, "type" | "status">) {
-  const status = String(event.status || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (event.type === "task") return status === "completada" || status === "cancelada";
-  if (event.type === "course") return status.includes("termin") || status.includes("final") || status.includes("descart");
-  if (event.type === "hackathon") return status.includes("realiz") || status.includes("final") || status.includes("descart");
-  return status === "cancelled" || status === "cancelado";
 }
 
 function sortTasksByPriority(a: Task, b: Task) {
@@ -4860,10 +4412,6 @@ function sortTasks(a: Task, b: Task) {
   return String(a.due_at || "9999").localeCompare(String(b.due_at || "9999"));
 }
 
-function sortEvents(a: CalendarEvent, b: CalendarEvent) {
-  return String(a.date_at || "").localeCompare(String(b.date_at || ""));
-}
-
 function parseDate(value?: string) {
   if (!value) return null;
   const date = new Date(value);
@@ -4874,26 +4422,11 @@ function toDatetimeLocalValue(date: Date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function toDateInputValue(date: Date) {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-function toTimeInputValue(date: Date) {
-  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
 function addDaysKeepingTime(value: string | undefined, days: number) {
   const base = parseDate(value) ?? new Date();
   base.setDate(base.getDate() + days);
   return toDatetimeLocalValue(base);
 }
-
-function nextDayAt(hour: number, minute: number) {
-  const date = addDays(new Date(), 1);
-  date.setHours(hour, minute, 0, 0);
-  return toDatetimeLocalValue(date);
-}
-
 
 function dateKey(value?: string) {
   const date = parseDate(value);
@@ -4905,11 +4438,6 @@ function todayKey() {
   return dateKey(nowIso());
 }
 
-
-function isSameMonth(value: string | undefined, month: Date) {
-  const date = parseDate(value);
-  return Boolean(date) && date!.getFullYear() === month.getFullYear() && date!.getMonth() === month.getMonth();
-}
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -4929,10 +4457,6 @@ function addDays(date: Date, days: number) {
   return next;
 }
 
-function addMinutes(date: Date, minutes: number) {
-  return new Date(date.getTime() + minutes * 60_000);
-}
-
 function addMonths(date: Date, months: number) {
   return new Date(date.getFullYear(), date.getMonth() + months, 1);
 }
@@ -4945,22 +4469,6 @@ function buildMonthCells(month: Date) {
     const date = addDays(start, index);
     return { date, key: dateKey(date.toISOString()), inMonth: date.getMonth() === month.getMonth() };
   });
-}
-
-function monthTitle(date: Date) {
-  return new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" }).format(date);
-}
-
-function formatDayTitle(value: string) {
-  const date = parseDate(value);
-  if (!date) return "Dia seleccionado";
-  return new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "2-digit", month: "long" }).format(date);
-}
-
-function formatTime(value?: string) {
-  const date = parseDate(value);
-  if (!date) return "";
-  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function formatShortDateTime(value?: string) {
@@ -4984,33 +4492,6 @@ function formatLongDate(value?: string) {
   if (!date) return "sin fecha";
   return new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
 }
-
-function calendarEventClass(type: CalendarEvent["type"], status?: string) {
-  if (isCalendarEventDone({ type, status })) return "bg-slate-100 text-slate-700 line-through";
-  if (type === "task") return "bg-[#fff0e9] text-[#c6491d]";
-  if (type === "course") return "bg-[#eaf6ed] text-[#1f7a4d]";
-  if (type === "event") return "bg-[#eef6f0] text-[#1f7a4d]";
-  if (type === "google") return "bg-red-100 text-red-800";
-  return "bg-amber-100 text-amber-900";
-}
-
-function calendarDotClass(type: CalendarEvent["type"], status?: string) {
-  if (isCalendarEventDone({ type, status })) return "bg-slate-400";
-  if (type === "task") return "bg-[#f06a37]";
-  if (type === "course") return "bg-[#1f7a4d]";
-  if (type === "event") return "bg-[#1f7a4d]";
-  if (type === "google") return "bg-red-500";
-  return "bg-amber-500";
-}
-
-function calendarTypeLabel(type: CalendarEvent["type"]) {
-  if (type === "task") return "tarea";
-  if (type === "course") return "curso";
-  if (type === "hackathon") return "hackathon";
-  if (type === "event") return "evento";
-  return "Google";
-}
-
 
 function pad(value: number) {
   return String(value).padStart(2, "0");

@@ -42,7 +42,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <MobileHeaderActions />
             </div>
           </div>
-          <div className="w-full px-4 py-6 md:px-8">
+          <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8">
             {children}
           </div>
         </main>

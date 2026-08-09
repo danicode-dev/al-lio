@@ -7,6 +7,8 @@ const requiredFiles = [
   "src/app/layout.tsx",
   "src/app/globals.css",
   "src/components/guest-app.tsx",
+  "src/components/calendar/app-calendar.tsx",
+  "src/components/quick-add.tsx",
   "public/data/empresas_tech_granada.md",
   "csv/oportunidades_tech_combinado.csv",
   "scripts/import-tech-opportunities.mjs",
@@ -65,9 +67,27 @@ for (const text of ["AL-LÍO", "npm run verify:startup", "docs/README.md"]) {
 }
 
 const guestApp = readFileSync(join(root, "src/components/guest-app.tsx"), "utf8");
-for (const text of ["techlife.bloc.D1OS.v1", "techlife.app.settings.D1OS.v1", "misma hora", "progress_notes", "techOpportunities"]) {
+for (const text of ["techlife.bloc.D1OS.v1", "techlife.app.settings.D1OS.v1", "progress_notes", "techOpportunities"]) {
   if (!guestApp.includes(text)) {
     fail(`components/guest-app.tsx deberia contener: ${text}`);
+  }
+}
+
+if (packageJson.scripts?.dev !== "next dev -p 3000") {
+  fail('El script dev debe fijar el puerto 3000 para impedir dos instancias Next sobre la misma carpeta .next');
+}
+
+const quickAdd = readFileSync(join(root, "src/components/quick-add.tsx"), "utf8");
+for (const text of ["Podrás planificarla con fecha", "Tarea", "Curso", "Reto"]) {
+  if (!quickAdd.includes(text)) {
+    fail(`components/quick-add.tsx deberia contener: ${text}`);
+  }
+}
+
+const appCalendar = readFileSync(join(root, "src/components/calendar/app-calendar.tsx"), "utf8");
+for (const text of ["CalendarHeader", "CalendarMonthGrid", "TaskCalendar", "CalendarView"]) {
+  if (!appCalendar.includes(text)) {
+    fail(`components/calendar/app-calendar.tsx deberia contener: ${text}`);
   }
 }
 
