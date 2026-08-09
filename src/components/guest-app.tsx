@@ -8,7 +8,6 @@ import {
   Bell,
   Bookmark,
   BookOpen,
-  Briefcase,
   Building2,
   CalendarDays,
   Check,
@@ -20,7 +19,6 @@ import {
   MoreVertical,
   ExternalLink,
   Flame,
-  FolderKanban,
   Heart,
   ListChecks,
   ListTodo,
@@ -48,13 +46,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
 import { insertDb, updateDb, deleteDb } from "@/lib/db";
 import { toast } from "sonner";
-import { TechOpportunitiesSection, type TechOpportunityTaskTarget } from "@/components/tech-opportunities-section";
 import { toggleFavoriteAction, markResourceStatusAction } from "@/lib/fp/resource-notes-actions";
 import { toggleCompanyFavoriteAction } from "@/lib/companies/actions";
 import { BlocNotepad } from "@/components/bloc/bloc-notepad";
+import { DashboardView } from "@/components/dashboard/dashboard-view";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
 import { APPLICATION_STATUSES, STATUS_LABELS, STATUS_COLORS } from "@/lib/job-radar/types";
+import type { RoadmapOverview } from "@/lib/fp/roadmap";
 
 type View = "dashboard" | "work" | "courses" | "hackathons" | "tasks" | "calendar" | "links" | "sources" | "settings" | "bloc";
 type TaskStatus = "pendiente" | "en_progreso" | "completada" | "pospuesta" | "cancelada";
@@ -258,6 +257,7 @@ export type Store = {
   fpContent: FpCatalogItem[];
   links: QuickLink[];
   reminders: unknown[];
+  roadmap: RoadmapOverview | null;
   companies: Company[];
 };
 
@@ -342,6 +342,7 @@ const emptyStore: Store = {
   fpContent: [],
   links: [],
   reminders: [],
+  roadmap: null,
   companies: [],
 };
 
@@ -430,8 +431,6 @@ const taskBuckets: Array<{
 
 const taskBucketIds = taskBuckets.map((bucket) => bucket.id);
 const taskPriorities: TaskPriority[] = ["baja", "media", "alta", "critica"];
-const dashboardJobPortals: JobPlatform[] = [...jobPlatforms];
-const dashboardHackathonCutoff = new Date("2026-05-01T00:00:00");
 
 export type ReturnTypeActions = {
   addTask: (data: Omit<Task, "id" | "created_at" | "progress_notes"> & { progress_notes?: ProgressNote[] }) => void;
@@ -881,13 +880,6 @@ export function GuestApp({ view }: { view: View }) {
           </div>
         </div>
       )}
-      {view === "dashboard" && (
-        <div className="hidden md:flex items-center justify-end gap-2">
-          <NotificationBell store={store} actions={actions} />
-          <GoogleCalendarStatusControl />
-        </div>
-      )}
-
       {view === "dashboard" && <Dashboard store={store} actions={actions} />}
       {view === "work" && <Work store={store} actions={actions} />}
       {view === "tasks" && <Tasks store={store} actions={actions} />}
@@ -905,72 +897,19 @@ export function GuestApp({ view }: { view: View }) {
 }
 
 function Dashboard({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
-  const activeTechOpportunities = useMemo(
-    () => store.techOpportunities.filter((item) => !isTechOpportunityCompletedByUser(item, store) && !isTechOpportunityPast(item)),
-    [store],
-  );
-
-  function addTechOpportunityTask(item: TechOpportunity, target: TechOpportunityTaskTarget) {
-    const category: TaskBucket = target === "pendiente" ? "urgente" : target;
-    const dueAt = target === "semanal"
-      ? addDaysKeepingTime(toDatetimeLocalValue(new Date()), 3)
-      : toDatetimeLocalValue(new Date());
-    const priority: TaskPriority = item.prioridad?.toLowerCase() === "alta" || item.encaje_daw_1_5 === 5
-      ? "alta"
-      : "media";
-
-    actions.addTask({
-      title: `Inscribirme: ${item.nombre}`,
-      description: buildTechOpportunityTaskDescription(item),
-      due_at: dueAt,
-      status: "pendiente",
-      priority,
-      category,
-    });
-  }
-
   return (
-    <>
-      <TodoOverview store={store} actions={actions} />
-      <DashboardOperationalFeed store={store} actions={actions} />
-      <TaskCalendar store={store} />
-      <TechOpportunitiesSection
-        initialItems={activeTechOpportunities}
-        onAddTask={addTechOpportunityTask}
-        onComplete={(item) => completeTechOpportunityItem(item, actions)}
-      />
-    </>
+    <DashboardView
+      store={store}
+      actions={actions}
+      headerActions={(
+        <>
+          <NotificationBell store={store} actions={actions} />
+          <GoogleCalendarStatusControl />
+        </>
+      )}
+      calendar={<TaskCalendar store={store} />}
+    />
   );
-}
-
-function buildTechOpportunityTaskDescription(item: TechOpportunity) {
-  return [
-    "Tarea creada desde Oportunidades tech para preparar la inscripción.",
-    item.entidad ? `Entidad: ${item.entidad}` : "",
-    item.modalidad ? `Modalidad: ${item.modalidad}` : "",
-    compactTechOpportunityLocation(item) ? `Lugar: ${compactTechOpportunityLocation(item)}` : "",
-    item.fecha_inicio ? `Fecha inicio: ${item.fecha_inicio}` : "",
-    item.fecha_fin ? `Fecha fin: ${item.fecha_fin}` : "",
-    item.estado ? `Estado: ${item.estado}` : "",
-    item.requisitos_resumen ? `Requisitos: ${item.requisitos_resumen}` : "",
-    item.fuente_url ? `Fuente: ${item.fuente_url}` : "",
-  ].filter(Boolean).join("\n");
-}
-
-function compactTechOpportunityLocation(item: TechOpportunity) {
-  return [item.localidad, item.provincia]
-    .filter(Boolean)
-    .filter((value, index, array) => array.indexOf(value) === index)
-    .join(", ");
-}
-
-function completeTechOpportunityItem(item: TechOpportunity, actions: ReturnTypeActions) {
-  if (isTechCourse(item)) {
-    completeCourseItem(techOpportunityToCourse(item), actions);
-    return;
-  }
-
-  completeHackathonItem(techOpportunityToHackathon(item), actions);
 }
 
 function completeCourseItem(item: Course, actions: ReturnTypeActions) {
@@ -1052,25 +991,6 @@ function hackathonAddPayload(item: Hackathon) {
   return data as Omit<Hackathon, "id" | "created_at">;
 }
 
-function isTechOpportunityCompletedByUser(item: TechOpportunity, store: Store) {
-  if (isTechCourse(item)) {
-    const identity = courseIdentityKey(techOpportunityToCourse(item));
-    return store.courses.some((course) => courseIdentityKey(course) === identity && isCourseArchived(course));
-  }
-
-  if (isTechHackathonOrEvent(item)) {
-    const identity = hackathonIdentityKey(techOpportunityToHackathon(item));
-    return store.hackathons.some((hackathon) => hackathonIdentityKey(hackathon) === identity && isHackathonArchived(hackathon));
-  }
-
-  return false;
-}
-
-function isTechOpportunityPast(item: TechOpportunity) {
-  return isPastActionDate(item.fecha_fin || item.fecha_inicio);
-}
-
-
 function GoogleCalendarStatusControl() {
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -1146,21 +1066,6 @@ function GoogleCalendarStatusControl() {
     >
       {content}
     </a>
-  );
-}
-
-function TodoOverview({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
-  const { settings: appSettings } = useAppSettings();
-  return (
-    <section className="space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold leading-none">To-do</h2>
-        <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs">
-          <Link href="/tasks">Ver tablero completo</Link>
-        </Button>
-      </div>
-      <TaskBoard store={store} actions={actions} variant="dashboard" compact={appSettings.compactTaskView} />
-    </section>
   );
 }
 
@@ -1843,331 +1748,6 @@ const workBrandCss = `
   .al-work-empty-desc { font-size: 12px; color: #9a958a; max-width: 360px; }
 `;
 
-const dashboardFeedSections = [
-  { id: "tasks", label: "Tareas urgentes", sub: "Prioridad alta, critica o pendientes reales.", Icon: Flame, color: "text-rose-500" },
-  { id: "calendar", label: "Semana", sub: "Eventos y fechas importantes.", Icon: CalendarDays, color: "text-blue-500" },
-  { id: "hackathons", label: "Hackathons proximos", sub: "Solo fechas desde el 01/05/2026.", Icon: FolderKanban, color: "text-amber-500" },
-  { id: "jobs", label: "Busqueda rapida", sub: "Portales con termino y ubicacion editables.", Icon: Briefcase, color: "text-emerald-500" },
-  { id: "radar", label: "Radar de empleo", sub: "Nuevas ofertas detectadas en empresas de Granada.", Icon: Target, color: "text-violet-500" },
-] as const;
-
-function DashboardOperationalFeed({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
-  const [section, setSection] = useState(0);
-  const [autoPaused, setAutoPaused] = useState(false);
-  const [expandedPortal, setExpandedPortal] = useState<JobPlatform | null>(null);
-  const [googleWeekEvents, setGoogleWeekEvents] = useState<GoogleCalendarEvent[]>([]);
-  const [radarApps, setRadarApps] = useState<JobApplication[]>([]);
-  const [radarSyncing, setRadarSyncing] = useState(false);
-  const radarFetched = useRef(false);
-
-  const handleToggleDashboard = useCallback((p: JobPlatform) => setExpandedPortal((v) => v === p ? null : p), []);
-
-  useEffect(() => {
-    if (autoPaused) return;
-    const id = window.setInterval(() => {
-      setSection((value) => (value + 1) % dashboardFeedSections.length);
-    }, 8000);
-    return () => window.clearInterval(id);
-  }, [autoPaused]);
-
-  useEffect(() => {
-    let alive = true;
-    async function loadGoogleWeekEvents() {
-      try {
-        const start = startOfDay(new Date()).toISOString();
-        const end = addDays(startOfDay(new Date()), 14).toISOString();
-        const next = await loadGoogleCalendarRange(start, end);
-        if (alive) setGoogleWeekEvents(next);
-      } catch {
-        if (alive) setGoogleWeekEvents([]);
-      }
-    }
-    loadGoogleWeekEvents();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const current = dashboardFeedSections[section];
-
-  useEffect(() => {
-    if (current.id !== "radar" || radarFetched.current) return;
-    radarFetched.current = true;
-    let alive = true;
-    fetch("/api/job-radar")
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (alive && d?.applications) setRadarApps(d.applications); })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, [current.id]);
-
-  const syncRadarDashboard = useCallback(async () => {
-    setRadarSyncing(true);
-    try {
-      await fetch("/api/job-radar/sync", { method: "POST" });
-      const res = await fetch("/api/job-radar");
-      if (res.ok) {
-        const d = await res.json();
-        setRadarApps(d.applications ?? []);
-        toast.success("Job Radar actualizado");
-      }
-    } catch {
-      toast.error("Error al sincronizar Job Radar");
-    } finally {
-      setRadarSyncing(false);
-    }
-  }, []);
-
-  const today = useMemo(() => startOfDay(new Date()), []);
-  const weekLimit = useMemo(() => addDays(today, 14), [today]);
-
-  const urgentTasks = useMemo(
-    () =>
-      activeTasks(store.tasks)
-        .filter((task) => {
-          const priority = getTaskPriority(task);
-          return priority === "alta" || priority === "critica" || toTaskBucket(task.category) === "urgente";
-        })
-        .sort(sortTasksByPriority)
-        .slice(0, 6),
-    [store.tasks],
-  );
-
-  const googleCalendarWeekEvents = useMemo(
-    () =>
-      googleWeekEvents.map((event) => ({
-        id: event.id,
-        type: "google" as const,
-        title: event.title,
-        date_at: event.start,
-        end_at: event.end,
-        status: event.status,
-        href: event.htmlLink || "/calendar",
-      })),
-    [googleWeekEvents],
-  );
-
-  const weekEvents = useMemo(
-    () =>
-      [...getCalendarEvents(store), ...googleCalendarWeekEvents]
-        .filter((event) => {
-          const date = parseDate(event.date_at);
-          return Boolean(date) && date! >= today && date! <= weekLimit && !isCalendarEventDone(event) && !isCalendarItemPast(event, store);
-        })
-        .sort(sortEvents)
-        .slice(0, 9),
-    [store, googleCalendarWeekEvents, today, weekLimit],
-  );
-
-  const displayHackathons = useMemo(() => getDisplayHackathons(store.hackathons, store.techOpportunities), [store.hackathons, store.techOpportunities]);
-
-  const upcomingHackathons = useMemo(
-    () =>
-      displayHackathons
-        .filter(isDashboardFutureHackathon)
-        .sort((a, b) =>
-          String(hackathonDashboardDate(a)?.toISOString() || "9999").localeCompare(
-            String(hackathonDashboardDate(b)?.toISOString() || "9999"),
-          ),
-        )
-        .slice(0, 6),
-    [displayHackathons],
-  );
-
-  const Icon = current.Icon;
-
-  const moveSection = useCallback((direction: -1 | 1) => {
-    setSection((value) => (value + direction + dashboardFeedSections.length) % dashboardFeedSections.length);
-  }, []);
-
-  return (
-    <section
-      className="space-y-2"
-      onMouseEnter={() => setAutoPaused(true)}
-      onMouseLeave={() => setAutoPaused(false)}
-      onFocusCapture={() => setAutoPaused(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setAutoPaused(false);
-      }}
-    >
-      <style>{workBrandCss}</style>
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <Icon className={cn("h-4 w-4 shrink-0", current.color)} />
-          <div className="min-w-0">
-            <h2 className="truncate text-sm font-semibold">{current.label}</h2>
-            <p className="truncate text-xs text-muted-foreground">{current.sub}</p>
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveSection(-1)} aria-label="Categoria anterior">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          {dashboardFeedSections.map((item, index) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setSection(index)}
-              className={cn("h-1.5 rounded-full transition-all duration-300", index === section ? "w-5 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60")}
-              aria-label={`Ver ${item.label}`}
-            />
-          ))}
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveSection(1)} aria-label="Categoria siguiente">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-lg border bg-card/80 p-3 shadow-sm">
-        <div key={current.id} className="min-h-[190px] animate-in fade-in duration-300">
-          {current.id === "tasks" && (
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-              {urgentTasks.length ? urgentTasks.map((task) => <DashboardTaskMiniCard key={task.id} task={task} actions={actions} />) : <EmptyText>Sin tareas de alta prioridad.</EmptyText>}
-            </div>
-          )}
-          {current.id === "calendar" && (
-            <div className="grid max-h-[250px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
-              {weekEvents.length ? weekEvents.map((event) => <DashboardEventMiniCard key={`${event.type}-${event.id}`} event={event} store={store} actions={actions} />) : <EmptyText>Sin eventos importantes esta semana.</EmptyText>}
-            </div>
-          )}
-          {current.id === "hackathons" && (
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {upcomingHackathons.length ? upcomingHackathons.map((hackathon) => <DashboardHackathonMiniCard key={hackathon.id} hackathon={hackathon} actions={actions} />) : <EmptyText>No hay hackathons proximos con fecha desde el 01/05/2026.</EmptyText>}
-            </div>
-          )}
-          {current.id === "jobs" && (
-            <div className="grid max-h-[250px] gap-2 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-4">
-              {dashboardJobPortals.map((platform) => (
-                <QuickJobSearchCard
-                  key={platform}
-                  platform={platform}
-                  expanded={expandedPortal === platform}
-                  onToggle={handleToggleDashboard}
-                />
-              ))}
-            </div>
-          )}
-          {current.id === "radar" && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  {radarApps.filter((a) => a.is_new).length} nuevas · {radarApps.length} total
-                </span>
-                <button
-                  type="button"
-                  onClick={syncRadarDashboard}
-                  disabled={radarSyncing}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
-                >
-                  <RefreshCw className={cn("h-3 w-3", radarSyncing && "animate-spin")} />
-                  {radarSyncing ? "Escaneando..." : "Sincronizar"}
-                </button>
-              </div>
-              {radarApps.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Sin ofertas. Pulsa Sincronizar para escanear las empresas.</p>
-              ) : (
-                <ul className="max-h-[190px] space-y-1.5 overflow-y-auto pr-1">
-                  {radarApps.slice(0, 8).map((app) => (
-                    <li key={app.id} className="flex items-center gap-2">
-                      {app.is_new
-                        ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
-                        : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/20" />
-                      }
-                      <span className="min-w-0 flex-1 text-xs">
-                        <span className="font-medium text-foreground/90">{app.company_name}</span>
-                        <span className="text-muted-foreground"> — {app.job_title}</span>
-                      </span>
-                      <a
-                        href={app.job_url ?? app.company_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
-                        title="Ver oferta"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="mt-2 text-[10px] text-muted-foreground/50 select-none">{section + 1} / {dashboardFeedSections.length}</div>
-      </div>
-    </section>
-  );
-}
-
-const DashboardTaskMiniCard = memo(function DashboardTaskMiniCard({ task, actions }: { task: Task; actions: ReturnTypeActions }) {
-  const priority = getTaskPriority(task);
-  return (
-    <div className="relative overflow-hidden rounded-md border bg-background/70 p-2.5 shadow-sm">
-      <span className={cn("absolute left-0 top-0 h-full w-1", priorityBarClass(priority))} />
-      <div className="flex items-start justify-between gap-2 pl-1">
-        <p className="min-w-0 truncate text-sm font-medium">{task.title}</p>
-        <Badge className={cn("shrink-0 px-1.5 text-[10px]", priorityClass(priority))}>{priorityLabel(priority)}</Badge>
-      </div>
-      <div className="mt-2 flex items-center gap-1 pl-1">
-        <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => actions.updateTask(task.id, { status: "completada", completed_at: nowIso() })}>
-          <CheckCircle2 className="h-3.5 w-3.5" />
-          Hecho
-        </Button>
-        <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => actions.deleteTask(task.id)} aria-label="Eliminar tarea">
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-    </div>
-  );
-});
-
-const DashboardEventMiniCard = memo(function DashboardEventMiniCard({ event, store, actions }: { event: CalendarEvent; store: Store; actions: ReturnTypeActions }) {
-  const canComplete = event.type === "task" || event.type === "course" || event.type === "hackathon";
-  return (
-    <div className="flex items-start gap-2 rounded-md border bg-background/70 p-2.5 text-sm shadow-sm transition-colors hover:bg-muted/60">
-      <Link href={event.href} className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <p className="min-w-0 truncate font-medium">{event.title}</p>
-          <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", calendarDotClass(event.type, event.status))} />
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">{formatShortDateTime(event.date_at)} - {calendarTypeLabel(event.type)}</p>
-      </Link>
-      {canComplete && (
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-emerald-600"
-          onClick={() => completeCalendarEvent(event, store, actions)}
-          aria-label="Marcar como hecho"
-        >
-          <CheckCircle2 className="h-3.5 w-3.5" />
-        </Button>
-      )}
-    </div>
-  );
-});
-
-const DashboardHackathonMiniCard = memo(function DashboardHackathonMiniCard({ hackathon, actions }: { hackathon: Hackathon; actions: ReturnTypeActions }) {
-  const date = hackathonDashboardDate(hackathon);
-  return (
-    <div className="rounded-md border bg-background/70 p-2.5 shadow-sm">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{hackathon.name}</p>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{[hackathon.city || hackathon.province, date ? formatShortDateTime(date.toISOString()) : null].filter(Boolean).join(" - ")}</p>
-        </div>
-        <Badge className="shrink-0 px-1.5 text-[10px]">{hackathon.status}</Badge>
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-1">
-        {hackathon.url && <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs"><a href={hackathon.url} target="_blank" rel="noreferrer">Info</a></Button>}
-        <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => actions.addTask({ title: `Investigar ${hackathon.name}`, due_at: toDatetimeLocalValue(addDays(new Date(), 1)), status: "pendiente", priority: "media", category: "urgente", description: "Hackathon" })}>Investigar</Button>
-        <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => completeHackathonItem(hackathon, actions)} aria-label="Marcar hackathon como realizado"><CheckCircle2 className="h-3.5 w-3.5" /></Button>
-      </div>
-    </div>
-  );
-});
-
 const QuickJobSearchCard = memo(function QuickJobSearchCard({ platform, expanded, onToggle }: { platform: JobPlatform; expanded: boolean; onToggle: (p: JobPlatform) => void }) {
   const [query, setQuery] = useState("programador java");
   const [scope, setScope] = useState<"Granada" | "Teletrabajo">("Granada");
@@ -2347,12 +1927,14 @@ function NewEventDialog({ defaultDate, onClose, onCreated }: { defaultDate: Date
   }
 
   return (
-    <div className="absolute right-0 top-9 z-50 w-[min(23rem,calc(100vw-2rem))] rounded-lg border bg-background shadow-xl">
-      <div className="flex items-center justify-between border-b px-3 py-2">
-        <span className="text-sm font-semibold">Nuevo evento</span>
+    <>
+      <button type="button" aria-label="Cerrar nuevo evento" onClick={onClose} className="fixed inset-0 z-50 cursor-default bg-black/30 backdrop-blur-[1px]" />
+      <div role="dialog" aria-modal="true" aria-labelledby="new-event-title" className="fixed left-1/2 top-1/2 z-[51] w-[min(25rem,calc(100vw-2rem))] max-h-[calc(100dvh-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[18px] border border-[#e4dfd5] bg-white text-[#111111] shadow-[0_22px_50px_rgba(17,17,17,0.24)]">
+      <div className="flex items-center justify-between border-b border-[#f0ece2] px-4 py-3">
+        <span id="new-event-title" className="text-sm font-semibold">Nuevo evento</span>
         <button type="button" onClick={onClose} className="flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>
       </div>
-      <div className="space-y-2.5 p-3">
+      <div className="space-y-2.5 p-4">
         <Input placeholder="Añadir título" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} autoFocus />
         <button
           type="button"
@@ -2368,11 +1950,12 @@ function NewEventDialog({ defaultDate, onClose, onCreated }: { defaultDate: Date
         <EventDateTimeFields value={eventDate} onChange={setEventDate} />
         {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
-      <div className="flex justify-end gap-2 border-t px-3 py-2">
+      <div className="flex justify-end gap-2 border-t border-[#f0ece2] px-4 py-3">
         <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
         <Button size="sm" onClick={submit} disabled={saving || !title.trim()}>{saving ? "Guardando..." : "Guardar"}</Button>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -2406,16 +1989,17 @@ function TaskCalendar({ store }: { store: Store }) {
   }, [selectedDay]);
 
   return (
-    <Card className="p-3">
-      <div className="mb-2 flex items-center">
-        <div className="flex flex-1 items-center gap-0.5">
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => setMonth(addMonths(month, -1))} aria-label="Mes anterior"><ChevronLeft className="h-3.5 w-3.5" /></Button>
-          <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => { const now = startOfMonth(new Date()); setMonth(now); setSelectedDay(todayKey()); }}>Hoy</Button>
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => setMonth(addMonths(month, 1))} aria-label="Mes siguiente"><ChevronRight className="h-3.5 w-3.5" /></Button>
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="text-sm font-extrabold text-[#111111]">Calendario</h2>
+          <p className="mt-0.5 truncate text-xs text-[#777269]">{monthTitle(month)}</p>
         </div>
-        <h2 className="flex-1 text-center text-xs font-semibold uppercase tracking-widest">{monthTitle(month).toUpperCase()}</h2>
-        <div ref={newEventRef} className="relative flex flex-1 items-center justify-end">
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => setNewEventOpen((o) => !o)} aria-label="Crear evento">
+        <div ref={newEventRef} className="relative flex shrink-0 items-center gap-0.5">
+          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={() => setMonth(addMonths(month, -1))} aria-label="Mes anterior"><ChevronLeft className="h-3.5 w-3.5" /></Button>
+          <Button type="button" size="sm" variant="ghost" className="h-7 rounded-lg px-2 text-xs text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={() => { const now = startOfMonth(new Date()); setMonth(now); setSelectedDay(todayKey()); }}>Hoy</Button>
+          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={() => setMonth(addMonths(month, 1))} aria-label="Mes siguiente"><ChevronRight className="h-3.5 w-3.5" /></Button>
+          <Button type="button" size="icon" variant="ghost" className="ml-0.5 h-7 w-7 rounded-lg bg-[#fff0e9] text-[#e15d2d] hover:bg-[#fbe2d6] hover:text-[#c6491d]" onClick={() => setNewEventOpen((o) => !o)} aria-label="Crear evento">
             <Plus className="h-3.5 w-3.5" />
           </Button>
           {newEventOpen && (
@@ -2428,21 +2012,21 @@ function TaskCalendar({ store }: { store: Store }) {
         </div>
       </div>
       <div className="grid gap-3">
-        <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
-          {["L", "M", "X", "J", "V", "S", "D"].map((day) => <span key={day}>{day}</span>)}
+        <div className="grid grid-cols-7 gap-1 text-center text-xs text-[#8e887e]">
+          {["L", "M", "X", "J", "V", "S", "D"].map((day) => <span key={day} className="pb-0.5 font-semibold">{day}</span>)}
           {cells.map((day) => {
             const hasEvents = eventsByDay.has(day.key);
             const selected = selectedDay === day.key;
             return (
-              <button key={day.key} type="button" className={cn("relative flex h-9 items-center justify-center rounded-md text-sm", day.inMonth ? "bg-muted/60 text-foreground" : "text-muted-foreground/40", selected && "bg-primary text-primary-foreground", hasEvents && !selected && "ring-1 ring-primary/30")} onClick={() => setSelectedDay(day.key)}>
+              <button key={day.key} type="button" className={cn("relative flex h-8 items-center justify-center rounded-lg text-sm font-medium transition-colors", day.inMonth ? "text-[#39352e] hover:bg-[#fff0e9]" : "text-[#cbc5ba]", selected && "bg-[#f06a37] text-white shadow-[0_4px_10px_rgba(240,106,55,0.22)] hover:bg-[#e15d2d]", hasEvents && !selected && "bg-[#eef6f0] text-[#1f7a4d] ring-1 ring-[#1f7a4d]/15")} onClick={() => setSelectedDay(day.key)}>
                 {day.date.getDate()}
-                {hasEvents && <span className={cn("absolute bottom-1 h-1 w-1 rounded-full", selected ? "bg-primary-foreground" : "bg-primary")} />}
+                {hasEvents && <span className={cn("absolute bottom-1 h-1 w-1 rounded-full", selected ? "bg-white" : "bg-[#1f7a4d]")} />}
               </button>
             );
           })}
         </div>
         {selectedEvents.length > 0 && (
-          <div className="rounded-md border bg-background/70 p-3">
+          <div className="rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-3">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold">{formatDayTitle(selectedDay)}</h3>
               <Badge>{selectedEvents.length}</Badge>
@@ -2453,7 +2037,7 @@ function TaskCalendar({ store }: { store: Store }) {
           </div>
         )}
       </div>
-    </Card>
+      </div>
   );
 }
 
@@ -2485,11 +2069,11 @@ function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: b
   return (
     <>
       {open && (
-        <Card className="fixed bottom-20 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm p-4 shadow-xl md:bottom-20 md:right-5">
+        <Card className="fixed bottom-20 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-[20px] border-[#e4dfd5] bg-white p-4 shadow-[0_22px_50px_rgba(37,30,20,0.18)] md:bottom-20 md:right-5">
           <div className="mb-3 flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Alta rápida</p>
-              <h2 className="font-semibold">Añadir a Al-Lio</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#e15d2d]">Alta rápida</p>
+              <h2 className="mt-0.5 font-semibold text-[#111111]">Añadir a AL-LIO</h2>
             </div>
             <Button type="button" size="icon" variant="ghost" onClick={() => setOpen(false)} aria-label="Cerrar alta rapida"><X className="h-4 w-4" /></Button>
           </div>
@@ -2540,13 +2124,13 @@ function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: b
               </>
             )}
 
-            <Button className="w-full">Guardar</Button>
+            <Button className="w-full bg-[#f06a37] text-white hover:bg-[#df5725]">Guardar</Button>
           </FieldForm>
         </Card>
       )}
       <Button
         size="icon"
-        className="fixed bottom-20 md:bottom-5 right-4 md:right-5 z-50 h-14 w-14 rounded-full shadow-xl"
+        className="fixed bottom-20 right-4 z-50 h-14 w-14 rounded-full border border-[#f68a62] bg-[#f06a37] text-white shadow-[0_14px_30px_rgba(240,106,55,0.34)] transition hover:scale-105 hover:bg-[#df5725] focus-visible:ring-[#f06a37] md:bottom-5 md:right-5"
         onClick={() => setOpen(!open)}
         aria-label="Añadir rápido"
       >
@@ -5272,15 +4856,6 @@ function priorityBarClass(value: TaskPriority) {
   return "bg-emerald-500";
 }
 
-function hackathonDashboardDate(hackathon: Hackathon) {
-  return parseDate(hackathon.start_at) ?? parseDate(hackathon.registration_deadline_at);
-}
-
-function isDashboardFutureHackathon(hackathon: Hackathon) {
-  const date = hackathonDashboardDate(hackathon);
-  return Boolean(date) && date! >= dashboardHackathonCutoff && !isHackathonArchived(hackathon) && !isHackathonPast(hackathon);
-}
-
 function sortTasks(a: Task, b: Task) {
   return String(a.due_at || "9999").localeCompare(String(b.due_at || "9999"));
 }
@@ -5412,18 +4987,18 @@ function formatLongDate(value?: string) {
 
 function calendarEventClass(type: CalendarEvent["type"], status?: string) {
   if (isCalendarEventDone({ type, status })) return "bg-slate-100 text-slate-700 line-through";
-  if (type === "task") return "bg-blue-100 text-blue-800";
-  if (type === "course") return "bg-emerald-100 text-emerald-800";
-  if (type === "event") return "bg-violet-100 text-violet-800";
+  if (type === "task") return "bg-[#fff0e9] text-[#c6491d]";
+  if (type === "course") return "bg-[#eaf6ed] text-[#1f7a4d]";
+  if (type === "event") return "bg-[#eef6f0] text-[#1f7a4d]";
   if (type === "google") return "bg-red-100 text-red-800";
   return "bg-amber-100 text-amber-900";
 }
 
 function calendarDotClass(type: CalendarEvent["type"], status?: string) {
   if (isCalendarEventDone({ type, status })) return "bg-slate-400";
-  if (type === "task") return "bg-blue-500";
-  if (type === "course") return "bg-emerald-500";
-  if (type === "event") return "bg-violet-500";
+  if (type === "task") return "bg-[#f06a37]";
+  if (type === "course") return "bg-[#1f7a4d]";
+  if (type === "event") return "bg-[#1f7a4d]";
   if (type === "google") return "bg-red-500";
   return "bg-amber-500";
 }
