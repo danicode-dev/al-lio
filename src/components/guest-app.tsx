@@ -3680,7 +3680,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                         {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
                         {item.prioridad && <ChipTag className={coursePriorityClass(item.prioridad)}>{priorityText(item.prioridad)}</ChipTag>}
                       </div>
-                      {item.requisitos_resumen && <p className="al-course-card-desc line-clamp-1">{item.requisitos_resumen}</p>}
+                      {item.requisitos_resumen && <p className="al-course-card-desc line-clamp-2">{item.requisitos_resumen}</p>}
                       <div className="al-course-card-actions">
                         {url && <a href={url} target="_blank" rel="noreferrer" className="al-course-btn"><ExternalLink className="h-3.5 w-3.5" />Abrir</a>}
                         {!isCourseArchived(item) && (
@@ -4076,7 +4076,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                         {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
                         {item.priority && <ChipTag className={hackPriorityClass(item.priority)}>{priorityText(item.priority)}</ChipTag>}
                       </div>
-                      {item.notes && <p className="al-hack-card-desc line-clamp-1">{item.notes}</p>}
+                      {item.notes && <p className="al-hack-card-desc line-clamp-2">{item.notes}</p>}
                       <div className="al-hack-card-actions">
                         {hasRuta ? (
                           <Link href={`/ruta/${item.id_slug}`} className="al-hack-btn al-hack-btn-primary">

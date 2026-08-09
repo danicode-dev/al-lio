@@ -464,7 +464,7 @@ function NewsCard({
             <a href={item.url} target="_blank" rel="noreferrer noopener" onClick={onRead} className="al-news-title-link block line-clamp-2">
               {item.title}
             </a>
-            {item.description && <p className="al-news-desc line-clamp-1">{item.description}</p>}
+            {item.description && <p className="al-news-desc line-clamp-2">{item.description}</p>}
             <div className="al-news-meta">
               {item.publishedAt && <span>{formatDate(item.publishedAt)}</span>}
               {item.tags.slice(0, 3).map((t) => (
