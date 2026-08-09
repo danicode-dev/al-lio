@@ -65,7 +65,7 @@ for (const text of ["AL-LÍO", "npm run verify:startup", "docs/README.md"]) {
 }
 
 const guestApp = readFileSync(join(root, "src/components/guest-app.tsx"), "utf8");
-for (const text of ["techlife.bloc.D1OS.v1", "techlife.app.settings.D1OS.v1", "misma hora", "progress_notes", "techOpportunities"]) {
+for (const text of ["techlife.bloc.D1OS.v1", "techlife.app.settings.D1OS.v1", "Podrás planificarla con fecha", "progress_notes", "techOpportunities"]) {
   if (!guestApp.includes(text)) {
     fail(`components/guest-app.tsx deberia contener: ${text}`);
   }

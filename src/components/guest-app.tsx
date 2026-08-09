@@ -60,7 +60,6 @@ type TaskStatus = "pendiente" | "en_progreso" | "completada" | "pospuesta" | "ca
 type TaskBucket = "diario" | "urgente" | "semanal";
 type TaskPriority = "alta" | "media" | "baja" | "critica";
 type QuickAddType = "task" | "course" | "hackathon";
-
 type AppSettings = {
   displayName: string;
   defaultTaskBucket: TaskBucket;
@@ -1966,7 +1965,12 @@ function TaskCalendar({ store }: { store: Store }) {
   const [calendarRefresh, setCalendarRefresh] = useState(0);
   const newEventRef = useRef<HTMLDivElement>(null);
   const googleCalendarEvents = useGoogleCalendarEvents(month, calendarRefresh);
-  const events = useMemo(() => [...getCalendarEvents(store), ...googleCalendarEvents].sort(sortEvents), [store, googleCalendarEvents]);
+  const events = useMemo(
+    () => [...getCalendarEvents(store), ...googleCalendarEvents]
+      .filter((event) => !isCalendarEventDone(event))
+      .sort(sortEvents),
+    [store, googleCalendarEvents],
+  );
   const cells = buildMonthCells(month);
   const eventsByDay = groupEventsByDay(events);
   const selectedEvents = eventsByDay.get(selectedDay) ?? [];
@@ -2025,17 +2029,24 @@ function TaskCalendar({ store }: { store: Store }) {
             );
           })}
         </div>
-        {selectedEvents.length > 0 && (
-          <div className="rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-3">
+        <div className="h-52 rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-3">
+          {selectedEvents.length > 0 ? (
+            <>
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold">{formatDayTitle(selectedDay)}</h3>
               <Badge>{selectedEvents.length}</Badge>
             </div>
-            <div className="space-y-2">
+            <div className="max-h-[145px] space-y-2 overflow-y-auto overscroll-contain pr-1">
               {selectedEvents.map((event) => <CalendarAgendaRow key={`${event.type}-${event.id}`} event={event} compact />)}
             </div>
-          </div>
-        )}
+            </>
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center px-4 text-center">
+              <p className="text-sm font-semibold text-[#333029]">Sin pendientes este día</p>
+              <p className="mt-1 text-xs text-[#777269]">Las tareas sin fecha no se añaden al calendario.</p>
+            </div>
+          )}
+        </div>
       </div>
       </div>
   );
@@ -2044,24 +2055,52 @@ function TaskCalendar({ store }: { store: Store }) {
 
 function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: boolean) => void; actions: ReturnTypeActions }) {
   const [type, setType] = useState<QuickAddType>("task");
-  const [dueAt, setDueAt] = useState(toDatetimeLocalValue(new Date()));
+  const [showDates, setShowDates] = useState(false);
 
-  useEffect(() => {
-    if (open && type === "task") setDueAt(toDatetimeLocalValue(new Date()));
-  }, [open, type]);
+  function changeType(nextType: QuickAddType) {
+    setType(nextType);
+    setShowDates(false);
+  }
 
   function submit(form: FormData) {
     const title = val(form, "title");
     if (!title) return;
 
     if (type === "task") {
-      actions.addTask({ title, description: val(form, "notes"), due_at: val(form, "due_at"), status: "pendiente", priority: "media" });
+      actions.addTask({
+        title,
+        description: val(form, "notes"),
+        due_at: "",
+        status: "pendiente",
+        priority: "media",
+        category: "diario",
+      });
     }
     if (type === "course") {
-      actions.addCourse({ title, platform: val(form, "platform"), url: val(form, "url"), start_at: val(form, "start_at"), deadline_at: val(form, "deadline_at"), status: "pendiente", notes: val(form, "notes") });
+      actions.addCourse({
+        title,
+        platform: val(form, "platform"),
+        url: val(form, "url"),
+        start_at: val(form, "start_at"),
+        deadline_at: val(form, "deadline_at"),
+        status: "pendiente",
+        notes: val(form, "notes"),
+      });
     }
     if (type === "hackathon") {
-      actions.addHackathon({ name: title, organizer: val(form, "organizer"), province: val(form, "province") || "Granada", city: val(form, "city"), status: "revisar_futura_edicion", priority: "media", start_at: val(form, "start_at"), end_at: val(form, "end_at"), registration_deadline_at: val(form, "registration_deadline_at"), url: val(form, "url"), notes: val(form, "notes") });
+      actions.addHackathon({
+        name: title,
+        organizer: val(form, "organizer"),
+        province: "Granada",
+        city: val(form, "city"),
+        status: "revisar_futura_edicion",
+        priority: "media",
+        start_at: val(form, "start_at"),
+        end_at: val(form, "end_at"),
+        registration_deadline_at: val(form, "registration_deadline_at"),
+        url: val(form, "url"),
+        notes: val(form, "notes"),
+      });
     }
     setOpen(false);
   }
@@ -2078,53 +2117,70 @@ function QuickAdd({ open, setOpen, actions }: { open: boolean; setOpen: (open: b
             <Button type="button" size="icon" variant="ghost" onClick={() => setOpen(false)} aria-label="Cerrar alta rapida"><X className="h-4 w-4" /></Button>
           </div>
           <FieldForm action={submit}>
-            <Select value={type} onChange={(event) => setType(event.target.value as QuickAddType)} name="type">
-              <option value="task">Tarea</option>
-              <option value="course">Curso</option>
-              <option value="hackathon">Hackathon</option>
-            </Select>
-            <Input name="title" placeholder="Título" required />
+            <div className="grid grid-cols-3 gap-1 rounded-xl bg-[#f8f6f1] p-1" role="tablist" aria-label="Tipo de alta">
+              <button type="button" role="tab" aria-selected={type === "task"} onClick={() => changeType("task")} className={cn("flex h-10 items-center justify-center gap-1.5 rounded-lg text-xs font-bold transition", type === "task" ? "bg-white text-[#e15d2d] shadow-[0_2px_8px_rgba(37,30,20,0.08)]" : "text-[#777269] hover:text-[#333029]")}>
+                <ListTodo className="h-3.5 w-3.5" /> Tarea
+              </button>
+              <button type="button" role="tab" aria-selected={type === "course"} onClick={() => changeType("course")} className={cn("flex h-10 items-center justify-center gap-1.5 rounded-lg text-xs font-bold transition", type === "course" ? "bg-white text-[#e15d2d] shadow-[0_2px_8px_rgba(37,30,20,0.08)]" : "text-[#777269] hover:text-[#333029]")}>
+                <BookOpen className="h-3.5 w-3.5" /> Curso
+              </button>
+              <button type="button" role="tab" aria-selected={type === "hackathon"} onClick={() => changeType("hackathon")} className={cn("flex h-10 items-center justify-center gap-1.5 rounded-lg text-xs font-bold transition", type === "hackathon" ? "bg-white text-[#e15d2d] shadow-[0_2px_8px_rgba(37,30,20,0.08)]" : "text-[#777269] hover:text-[#333029]")}>
+                <Trophy className="h-3.5 w-3.5" /> Reto
+              </button>
+            </div>
+
+            <Input name="title" placeholder={type === "task" ? "¿Qué quieres hacer?" : type === "course" ? "Nombre del curso" : "Nombre del reto o hackathon"} autoFocus required />
 
             {type === "task" && (
               <>
-                <div className="grid grid-cols-2 gap-2">
-                  <QuickDateButton label="Hoy" onClick={() => setDueAt(toDatetimeLocalValue(new Date()))} />
-                  <QuickDateButton label="Mañana misma hora" onClick={() => setDueAt(addDaysKeepingTime(dueAt, 1))} />
-                  <QuickDateButton label="Mañana mañana" onClick={() => setDueAt(nextDayAt(9, 0))} />
-                  <QuickDateButton label="Mañana tarde" onClick={() => setDueAt(nextDayAt(17, 0))} />
-                </div>
-                <QuickDateButton label="Esta semana" onClick={() => setDueAt(addDaysKeepingTime(dueAt, 3))} className="w-full" />
-                <Input name="due_at" type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
-                <Textarea name="notes" placeholder="Notas" />
+                <Textarea name="notes" placeholder="Añade una nota si la necesitas (opcional)" rows={3} />
+                <p className="text-xs leading-5 text-[#777269]">Podrás planificarla con fecha desde Tareas o Calendario.</p>
               </>
             )}
 
             {type === "course" && (
               <>
-                <Input name="platform" placeholder="Plataforma" />
-                <Input name="url" placeholder="URL del curso" />
-                <Input name="start_at" type="datetime-local" />
-                <Input name="deadline_at" type="datetime-local" />
-                <Textarea name="notes" placeholder="Notas" />
+                <Input name="platform" placeholder="Plataforma (opcional)" />
+                <Input name="url" type="url" placeholder="Enlace (opcional)" />
+                <Textarea name="notes" placeholder="Nota (opcional)" rows={2} />
               </>
             )}
 
             {type === "hackathon" && (
               <>
-                <Input name="organizer" placeholder="Organizador" />
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <Input name="province" placeholder="Provincia" />
+                <Input name="organizer" placeholder="Organiza (opcional)" />
+                <div className="grid grid-cols-2 gap-2">
                   <Input name="city" placeholder="Ciudad" />
+                  <Input name="url" type="url" placeholder="Enlace" />
                 </div>
-                <Input name="url" placeholder="Link" />
-                <Input name="start_at" type="datetime-local" />
-                <Input name="end_at" type="datetime-local" />
-                <Input name="registration_deadline_at" type="datetime-local" />
-                <Textarea name="notes" placeholder="Notas" />
+                <Textarea name="notes" placeholder="Nota (opcional)" rows={2} />
               </>
             )}
 
-            <Button className="w-full bg-[#f06a37] text-white hover:bg-[#df5725]">Guardar</Button>
+            {type !== "task" && (
+              <>
+                <button type="button" onClick={() => setShowDates((current) => !current)} className="flex items-center gap-1.5 self-start text-xs font-bold text-[#e15d2d] transition hover:text-[#c6491d]">
+                  {showDates ? "Ocultar fechas" : "Añadir fechas (opcional)"}
+                  <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", showDates && "rotate-90")} />
+                </button>
+                {showDates && (type === "course" ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input name="start_at" type="datetime-local" aria-label="Inicio del curso" />
+                    <Input name="deadline_at" type="datetime-local" aria-label="Fecha límite del curso" />
+                  </div>
+                ) : (
+                  <div className="grid gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input name="start_at" type="datetime-local" aria-label="Inicio del reto" />
+                      <Input name="end_at" type="datetime-local" aria-label="Fin del reto" />
+                    </div>
+                    <Input name="registration_deadline_at" type="datetime-local" aria-label="Fecha límite de inscripción" />
+                  </div>
+                ))}
+              </>
+            )}
+
+            <Button className="w-full bg-[#f06a37] text-white hover:bg-[#df5725]">{type === "task" ? "Añadir tarea" : type === "course" ? "Añadir curso" : "Añadir reto"}</Button>
           </FieldForm>
         </Card>
       )}
@@ -4250,10 +4306,6 @@ function EmptyText({ children }: { children: React.ReactNode }) {
   return <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">{children}</div>;
 }
 
-function QuickDateButton({ label, onClick, className }: { label: string; onClick: () => void; className?: string }) {
-  return <Button type="button" size="sm" variant="outline" className={className} onClick={onClick}>{label}</Button>;
-}
-
 function CompanyCard({ company, onToggleFavorite }: { company: Company; onToggleFavorite: () => void }) {
   return (
     <div className="al-work-company-card">
@@ -4887,13 +4939,6 @@ function addDaysKeepingTime(value: string | undefined, days: number) {
   base.setDate(base.getDate() + days);
   return toDatetimeLocalValue(base);
 }
-
-function nextDayAt(hour: number, minute: number) {
-  const date = addDays(new Date(), 1);
-  date.setHours(hour, minute, 0, 0);
-  return toDatetimeLocalValue(date);
-}
-
 
 function dateKey(value?: string) {
   const date = parseDate(value);

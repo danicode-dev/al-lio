@@ -28,7 +28,7 @@ export function DashboardTodo({ store, actions }: { store: Store; actions: Retur
     actions.addTask({
       title: nextTitle,
       description: notes.trim(),
-      due_at: new Date().toISOString(),
+      due_at: "",
       status: "pendiente",
       priority: "media",
       category: "diario",
