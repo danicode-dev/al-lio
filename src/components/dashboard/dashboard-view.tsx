@@ -21,7 +21,7 @@ export function DashboardView({ store, actions, headerActions, calendar }: Dashb
     <div className="space-y-5">
       <DashboardGreeting userName={store.userName} actions={headerActions} />
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(300px,1.08fr)_minmax(350px,1.14fr)_minmax(260px,.78fr)]">
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(300px,1.08fr)_minmax(350px,1.14fr)_minmax(260px,.78fr)]">
         <DashboardTodo store={store} actions={actions} />
         <DashboardNextStep roadmap={store.roadmap} />
         <DashboardCalendar>{calendar}</DashboardCalendar>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -56,8 +56,10 @@ export async function loadGoogleCalendarRange(start: string, end: string, force 
 export function TaskCalendar({ events: localEvents }: { events: CalendarEvent[] }) {
   const [month, setMonth] = useState(startOfMonth(new Date()));
   const [selectedDay, setSelectedDay] = useState(todayKey());
+  const [agendaOpen, setAgendaOpen] = useState(false);
   const [newEventOpen, setNewEventOpen] = useState(false);
   const [calendarRefresh, setCalendarRefresh] = useState(0);
+  const calendarRef = useRef<HTMLDivElement>(null);
   const newEventRef = useRef<HTMLDivElement>(null);
   const googleCalendarEvents = useGoogleCalendarEvents(month, calendarRefresh);
   const events = useMemo(
@@ -78,6 +80,15 @@ export function TaskCalendar({ events: localEvents }: { events: CalendarEvent[] 
     return () => document.removeEventListener("pointerdown", handle);
   }, [newEventOpen]);
 
+  useEffect(() => {
+    if (!agendaOpen) return;
+    function handle(event: PointerEvent) {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) setAgendaOpen(false);
+    }
+    document.addEventListener("pointerdown", handle);
+    return () => document.removeEventListener("pointerdown", handle);
+  }, [agendaOpen]);
+
   const defaultEventDate = useMemo(() => {
     const parsed = parseDate(selectedDay);
     const base = parsed ? new Date(parsed) : new Date();
@@ -86,16 +97,21 @@ export function TaskCalendar({ events: localEvents }: { events: CalendarEvent[] 
     return base;
   }, [selectedDay]);
 
+  function selectDay(day: string) {
+    setSelectedDay(day);
+    setAgendaOpen(true);
+  }
+
   return (
-    <div>
+    <div ref={calendarRef} className={cn("relative", agendaOpen && "z-20")}>
       <CalendarHeader
         month={month}
         compact
         controlsRef={newEventRef}
-        onPrevious={() => setMonth(addMonths(month, -1))}
-        onToday={() => { setMonth(startOfMonth(new Date())); setSelectedDay(todayKey()); }}
-        onNext={() => setMonth(addMonths(month, 1))}
-        onCreate={() => setNewEventOpen((open) => !open)}
+        onPrevious={() => { setMonth(addMonths(month, -1)); setAgendaOpen(false); }}
+        onToday={() => { setMonth(startOfMonth(new Date())); setSelectedDay(todayKey()); setAgendaOpen(false); }}
+        onNext={() => { setMonth(addMonths(month, 1)); setAgendaOpen(false); }}
+        onCreate={() => { setAgendaOpen(false); setNewEventOpen((open) => !open); }}
       >
         {newEventOpen && (
           <NewEventDialog
@@ -107,26 +123,36 @@ export function TaskCalendar({ events: localEvents }: { events: CalendarEvent[] 
       </CalendarHeader>
 
       <div className="grid gap-3">
-        <CalendarMonthGrid month={month} eventsByDay={eventsByDay} selectedDay={selectedDay} onSelectDay={setSelectedDay} variant="compact" />
-        <div className="h-52 rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-3">
+        <CalendarMonthGrid month={month} eventsByDay={eventsByDay} selectedDay={selectedDay} onSelectDay={selectDay} variant="compact" />
+        <button
+          type="button"
+          onClick={() => setAgendaOpen((open) => !open)}
+          className="flex h-8 items-center justify-between rounded-lg border border-[#ece7dc] bg-[#fcfbf8] px-2.5 text-xs font-semibold text-[#5f5a52] transition hover:border-[#e4cdbf] hover:bg-[#fff8f4]"
+          aria-expanded={agendaOpen}
+        >
+          <span>{selectedEvents.length ? `${selectedEvents.length} pendiente${selectedEvents.length === 1 ? "" : "s"}` : "Agenda del día"}</span>
+          <ChevronDown className={cn("h-3.5 w-3.5 text-[#e15d2d] transition-transform", agendaOpen && "rotate-180")} />
+        </button>
+      </div>
+
+      {agendaOpen && (
+        <div className="absolute left-0 right-0 top-full z-30 mt-2 rounded-xl border border-[#e4dfd5] bg-white p-3 shadow-[0_16px_34px_rgba(37,30,20,0.16)]">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-semibold">{formatDayTitle(selectedDay)}</h3>
+            {selectedEvents.length > 0 && <Badge>{selectedEvents.length}</Badge>}
+          </div>
           {selectedEvents.length > 0 ? (
-            <>
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-sm font-semibold">{formatDayTitle(selectedDay)}</h3>
-                <Badge>{selectedEvents.length}</Badge>
-              </div>
-              <div className="max-h-[145px] space-y-2 overflow-y-auto overscroll-contain pr-1">
-                {selectedEvents.map((event) => <CalendarAgendaRow key={`${event.type}-${event.id}`} event={event} />)}
-              </div>
-            </>
+            <div className="max-h-44 space-y-2 overflow-y-auto overscroll-contain pr-1">
+              {selectedEvents.map((event) => <CalendarAgendaRow key={`${event.type}-${event.id}`} event={event} />)}
+            </div>
           ) : (
-            <div className="flex h-full flex-col items-center justify-center px-4 text-center">
+            <div className="rounded-lg bg-[#fcfbf8] px-3 py-4 text-center">
               <p className="text-sm font-semibold text-[#333029]">Sin pendientes este día</p>
               <p className="mt-1 text-xs text-[#777269]">Las tareas sin fecha no se añaden al calendario.</p>
             </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
