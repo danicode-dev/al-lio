@@ -19,6 +19,22 @@ export interface DbJobApplication {
   updated_at: string;
 }
 
+export interface DbCompany {
+  id: string;
+  id_slug: string;
+  nombre: string;
+  web: string | null;
+  empleo_url: string | null;
+  tipo_empleo: string | null;
+  categoria: string | null;
+  granada_note: string | null;
+  fuente: string | null;
+  cycle_group: FpCycleGroup;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DbUser {
   id: string;
   email: string;

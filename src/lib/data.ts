@@ -7,6 +7,7 @@ import { getHackathonsByUser } from "@/lib/db/repositories/hackathons";
 import { getOpportunitiesByUser } from "@/lib/db/repositories/opportunities";
 import { getQuickLinksByUser } from "@/lib/db/repositories/quick_links";
 import { getAllTechOpportunities } from "@/lib/db/repositories/tech_opportunities";
+import { getCompaniesByCycleGroup, getFavoriteCompanyIds } from "@/lib/db/repositories/companies";
 import { getUserById } from "@/lib/db/repositories/users";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import {
@@ -28,7 +29,7 @@ export async function getGlobalStore() {
   const profile = await getProfileByUser(userId);
   if (!profile || !profile.onboarding_completed_at) redirect("/onboarding");
 
-  const [tasks, courses, hackathons, techOpportunities, opportunities, links, pgUser, fpContent] =
+  const [tasks, courses, hackathons, techOpportunities, opportunities, links, pgUser, fpContent, dbCompanies, favoriteCompanyIds] =
     await Promise.all([
       getTasksByUser(userId),
       getCoursesByUser(userId),
@@ -38,6 +39,8 @@ export async function getGlobalStore() {
       getQuickLinksByUser(userId),
       getUserById(userId),
       getFpContentForProfile(userId, profile),
+      profile.cycle_group ? getCompaniesByCycleGroup(profile.cycle_group) : Promise.resolve([]),
+      getFavoriteCompanyIds(userId),
     ]);
 
   const aptitudeGatedItemIds = fpContent
@@ -141,17 +144,14 @@ export async function getGlobalStore() {
       updated_at: iso(l.updated_at),
     })),
     reminders: [],
-    companies: opportunities.map((o) => ({
-      id: o.id,
-      name: String(o.company || o.title || ""),
-      web: String(o.source || ""),
-      employment_url: String(o.url || ""),
-      granada: o.location === "Granada" ? "Granada" : undefined,
-      employment_type: "oportunidad",
-      link_status: "ok" as const,
-      notes: o.notes ? String(o.notes) : undefined,
-      category: o.category ? String(o.category) : undefined,
-      created_at: iso(o.created_at),
+    companies: dbCompanies.map((c) => ({
+      id: c.id,
+      nombre: c.nombre,
+      web: c.web ?? undefined,
+      empleo_url: c.empleo_url ?? undefined,
+      categoria: c.categoria ?? undefined,
+      granada_note: c.granada_note ?? undefined,
+      is_favorite: favoriteCompanyIds.has(c.id),
     })),
   };
 }
