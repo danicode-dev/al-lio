@@ -59,6 +59,7 @@
     "postgres:migrate": "node scripts/postgres/migrate.mjs",
     "postgres:migrate:status": "node scripts/postgres/migrate.mjs --status",
     "postgres:baseline:audit": "node scripts/postgres/audit-baseline.mjs",
+    "postgres:baseline:reconcile": "node scripts/postgres/reconcile-baseline.mjs",
     "postgres:baseline:adopt": "node scripts/postgres/audit-baseline.mjs --adopt",
     "postgres:bootstrap-runtime-role": "node scripts/postgres/bootstrap-runtime-role.mjs",
     "postgres:sandbox:up": "docker compose -f infra/docker-compose.postgres-sandbox.yml up -d",

@@ -119,8 +119,11 @@ Una base existente sin historial se bloquea. Debe auditarse y adoptarse de forma
 
 ```bash
 npm run postgres:baseline:audit
+AL_LIO_BASELINE_RECONCILIATION=RECONCILE_0001_INITIAL_SCHEMA npm run postgres:baseline:reconcile
 AL_LIO_BASELINE_CONFIRMATION=ADOPT_0001_INITIAL_SCHEMA npm run postgres:baseline:adopt
 ```
+
+`postgres:baseline:reconcile` se reserva para instalaciones legacy ensayadas sobre una restauración. Después de ejecutarlo siempre deben repetirse `audit` y `adopt`; nunca sustituye una migración normal.
 
 Importadores disponibles:
 
