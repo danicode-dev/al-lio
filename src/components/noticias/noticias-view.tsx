@@ -44,7 +44,7 @@ export function NoticiasView() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"date" | "score">("date");
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [sourceFilter, setSourceFilter] = useState("");
   const [viewMode, setViewMode] = useState<"lista" | "grid">("lista");
@@ -226,6 +226,11 @@ export function NoticiasView() {
         .al-news-sync-warn { margin-top: 4px; color: #8a5c14; }
       `}</style>
       <div className="space-y-4">
+        <header>
+          <h1 className="text-2xl font-semibold tracking-normal text-[#111111] dark:text-[#faf9f6] sm:text-3xl">Noticias</h1>
+          <p className="mt-1 text-sm text-[#6b6f72] dark:text-[#c9c4bc]">Actualidad relevante para tu formación y tus próximos pasos.</p>
+        </header>
+
         <div className="al-news-toolbar">
           <div className="al-news-search">
             <Search />
@@ -251,7 +256,13 @@ export function NoticiasView() {
             <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
             {syncing ? "Sync…" : "Sync"}
           </button>
-          <button type="button" className={cn("al-news-btn", showFilters && "al-news-btn-active")} onClick={() => setShowFilters((v) => !v)}>
+          <button
+            type="button"
+            className={cn("al-news-btn", showFilters && "al-news-btn-active")}
+            onClick={() => setShowFilters((v) => !v)}
+            aria-expanded={showFilters}
+            aria-controls="news-filter-panel"
+          >
             <SlidersHorizontal className="h-3.5 w-3.5" />
             Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
           </button>
@@ -332,7 +343,7 @@ export function NoticiasView() {
 
           {showFilters && (
             <div className="w-full shrink-0 lg:w-64">
-              <div className="al-news-filter-panel">
+              <div id="news-filter-panel" className="al-news-filter-panel">
                 <div className="al-news-filter-head">
                   <span className="al-news-filter-title">Filtros</span>
                   {activeFilterCount > 0 && (
