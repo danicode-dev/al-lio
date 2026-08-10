@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useActionState, useState } from "react";
 import { GoogleLoginButton } from "@/components/auth/google-login-button";
 import { LoginBrandPanel } from "@/components/auth/login-brand-panel";
+import { DemoProfilePicker } from "@/components/auth/demo-profile-picker";
 import { loginWithPasswordAction, type PasswordLoginState } from "@/lib/auth/password-login";
 
 const errorCopy: Record<string, string> = {
@@ -18,11 +19,13 @@ const errorCopy: Record<string, string> = {
   google_session_error: "Google conectó correctamente, pero no se pudo crear la sesión.",
   credentials_invalid: "Correo o clave incorrectos.",
   credentials_unavailable: "No se pudo validar el acceso. Vuelve a intentarlo.",
+  demo_disabled: "El acceso a los perfiles demo está desactivado temporalmente.",
+  demo_unavailable: "Este perfil demo no está disponible ahora mismo.",
 };
 
 const initialPasswordLoginState: PasswordLoginState = { error: null };
 
-export function LoginForm({ error }: { error?: string | null }) {
+export function LoginForm({ error, demoAccessEnabled = false }: { error?: string | null; demoAccessEnabled?: boolean }) {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordLoginState, passwordLoginAction, isPasswordLoginPending] = useActionState(
     loginWithPasswordAction,
@@ -447,6 +450,8 @@ export function LoginForm({ error }: { error?: string | null }) {
               {/* Google — ancho completo */}
               <GoogleLoginButton className="al-google-btn" />
             </form>
+
+            {demoAccessEnabled && <DemoProfilePicker />}
 
           </div>
         </main>

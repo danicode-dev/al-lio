@@ -807,7 +807,7 @@ export function GuestApp({ view }: { view: View }) {
                 links: "Links",
                 sources: "Fuentes",
                 settings: "Configuración",
-                bloc: "Bloc",
+                bloc: "Bloc de notas",
               } as Record<string, string>)[view] ?? view}
             </h1>
           </div>
