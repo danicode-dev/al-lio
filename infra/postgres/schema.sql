@@ -1,7 +1,9 @@
 -- ============================================================
--- Aidraft — Schema PostgreSQL propio (sin Supabase Auth)
+-- AL-LIO - baseline inicial de PostgreSQL propio (sin Supabase Auth)
 -- ============================================================
--- Versión: Fase 1 de migración desde Supabase.
+-- IMPORTANTE: este archivo es la migración 0001_initial_schema.
+-- No debe modificarse una vez adoptado en producción. Los cambios futuros
+-- deben añadirse como nuevos archivos en infra/postgres/migrations/.
 -- Diferencias respecto al schema de Supabase:
 --   - Tabla `users` propia (reemplaza auth.users).
 --   - FK user_id → public.users(id) en lugar de auth.users(id).
@@ -410,9 +412,10 @@ create table if not exists public.fp_user_content_state (
 -- esquema), asi que en vez de mantenerlo se sustituye por un texto simple
 -- y legible (fp_cycle_skills.prerrequisito_texto) que el alumno puede leer
 -- pero que no exige mantener relaciones.
-drop table if exists public.fp_item_competencies cascade;
-drop table if exists public.fp_competency_relations cascade;
-drop table if exists public.fp_competencies cascade;
+-- Las tablas históricas no se eliminan desde el baseline. Su retirada, si
+-- procede, debe hacerse mediante una migración posterior, versionada y con
+-- backup verificado. Esto evita pérdida de datos al inicializar o reconciliar
+-- una instalación existente.
 
 create table if not exists public.fp_skills (
   id                    text primary key,

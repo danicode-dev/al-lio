@@ -21,6 +21,7 @@ const errorCopy: Record<string, string> = {
   credentials_unavailable: "No se pudo validar el acceso. Vuelve a intentarlo.",
   demo_disabled: "El acceso a los perfiles demo está desactivado temporalmente.",
   demo_unavailable: "Este perfil demo no está disponible ahora mismo.",
+  rate_limited: "Demasiados intentos seguidos. Espera unos minutos antes de volver a probar.",
 };
 
 const initialPasswordLoginState: PasswordLoginState = { error: null };

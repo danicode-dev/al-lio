@@ -36,6 +36,7 @@ check("docker-compose.prod.yml exists", existsSync(join(root, "infra/docker-comp
 check("uses al_lio_web container", compose.includes("al_lio_web"));
 check("uses al_lio_postgres container", compose.includes("al_lio_postgres"));
 check("uses al_lio_postgres_data volume", compose.includes("al_lio_postgres_data"));
+check("uses persistent al_lio_news_data volume", compose.includes("al_lio_news_data:/app/data"));
 check("uses al_lio_internal network", compose.includes("al_lio_internal"));
 check("uses external danicode_web network", compose.includes("danicode_web"));
 check("does not use aidraft_web", !compose.includes("aidraft_web"));
@@ -59,6 +60,8 @@ check(
   envExample.includes("al-lio.danielcode.dev/api/google/calendar/callback"),
 );
 check("DATABASE_URL points to al_lio_postgres", envExample.includes("@al_lio_postgres:5432/al_lio"));
+check("DATABASE_URL uses restricted al_lio_app role", envExample.includes("DATABASE_URL=postgresql://al_lio_app:"));
+check("DATABASE_MIGRATION_URL uses admin role", envExample.includes("DATABASE_MIGRATION_URL=postgresql://al_lio:"));
 check("does not contain aidraft BASE_URL", !envExample.includes("BASE_URL=https://aidraft"));
 check("does not contain real Supabase anon key", !(/NEXT_PUBLIC_SUPABASE_ANON_KEY=ey[A-Za-z0-9]/.test(envExample)));
 check("does not contain real Supabase service role key", !(/SUPABASE_SERVICE_ROLE_KEY=ey[A-Za-z0-9]/.test(envExample)));
@@ -86,14 +89,21 @@ check(
   "runbook uses compose order validated on VPS",
   runbook.includes("docker compose -f infra/docker-compose.prod.yml --env-file .env"),
 );
-check("runbook does not require Node.js on host", !runbook.includes("npm ci --omit=dev"));
+check(
+  "runbook does not require Node.js/npm on host",
+  !runbook.includes("npm ci") && !runbook.includes("npm run postgres:"),
+);
 check("runbook does not use local curl healthcheck", !runbook.includes("curl http://localhost:3000"));
 check("runbook uses internal al_lio_web healthcheck", runbook.includes("docker exec al_lio_web wget"));
+check("runbook validates database readiness", runbook.includes("/api/ready"));
 check(
   "runbook validates public JSON health response",
   runbook.includes("curl -fsS https://al-lio.danielcode.dev/api/health"),
 );
-check("runbook documents commit rollback", runbook.includes("git checkout <commit-anterior>"));
+check(
+  "runbook documents immutable image rollback",
+  runbook.includes("AL_LIO_IMAGE_TAG") && runbook.includes("Rollback de aplicación"),
+);
 
 console.log("\n-- Git staged safety --");
 let staged = "";

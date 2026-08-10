@@ -1,22 +1,78 @@
 services:
   al_lio_web:
+    image: al-lio-web:${AL_LIO_IMAGE_TAG:-local}
     build:
       context: ..
       dockerfile: infra/Dockerfile
     container_name: al_lio_web
     restart: unless-stopped
-    env_file: ../.env
+    init: true
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+      TARGET_USER_EMAIL: ${TARGET_USER_EMAIL:-}
+      AL_LIO_DEMO_ACCESS_ENABLED: ${AL_LIO_DEMO_ACCESS_ENABLED:-false}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
+      GOOGLE_TOKEN_ENCRYPTION_KEY: ${GOOGLE_TOKEN_ENCRYPTION_KEY:-}
+      BASE_URL: ${BASE_URL:?BASE_URL is required}
+      INFOJOBS_CLIENT_ID: ${INFOJOBS_CLIENT_ID:-}
+      INFOJOBS_CLIENT_SECRET: ${INFOJOBS_CLIENT_SECRET:-}
+      ADZUNA_APP_ID: ${ADZUNA_APP_ID:-}
+      ADZUNA_APP_KEY: ${ADZUNA_APP_KEY:-}
+      JOOBLE_API_KEY: ${JOOBLE_API_KEY:-}
+      PG_POOL_MAX: ${PG_POOL_MAX:-10}
+      PG_IDLE_TIMEOUT_MS: ${PG_IDLE_TIMEOUT_MS:-30000}
+      PG_CONNECTION_TIMEOUT_MS: ${PG_CONNECTION_TIMEOUT_MS:-5000}
+      PG_STATEMENT_TIMEOUT_MS: ${PG_STATEMENT_TIMEOUT_MS:-15000}
     expose:
       - "3000"
+    volumes:
+      - al_lio_news_data:/app/data
     networks:
       - danicode_web
       - al_lio_internal
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/api/ready"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      al_lio_postgres:
+        condition: service_healthy
+
+  al_lio_migrator:
+    image: al-lio-web:${AL_LIO_IMAGE_TAG:-local}
+    profiles: ["ops"]
+    restart: "no"
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DATABASE_MIGRATION_URL: ${DATABASE_MIGRATION_URL:?DATABASE_MIGRATION_URL is required}
+      AL_LIO_BASELINE_CONFIRMATION: ${AL_LIO_BASELINE_CONFIRMATION:-}
+      AL_LIO_DB_ROLE_CONFIRMATION: ${AL_LIO_DB_ROLE_CONFIRMATION:-}
+    command: ["node", "scripts/postgres/migrate.mjs"]
+    networks:
+      - al_lio_internal
     depends_on:
       al_lio_postgres:
         condition: service_healthy
@@ -25,6 +81,8 @@ services:
     image: postgres:17-alpine
     container_name: al_lio_postgres
     restart: unless-stopped
+    stop_grace_period: 60s
+    shm_size: 128mb
     environment:
       POSTGRES_DB: al_lio
       POSTGRES_USER: al_lio
@@ -38,6 +96,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   danicode_web:
@@ -46,3 +109,5 @@ networks:
 
 volumes:
   al_lio_postgres_data:
+  al_lio_news_data:
+    name: al_lio_news_data

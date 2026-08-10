@@ -9,6 +9,7 @@ const STATE_COOKIE = "d1os_google_calendar_state";
 const REDIRECT_COOKIE = "d1os_google_calendar_redirect";
 const RETURN_COOKIE = "d1os_google_calendar_return";
 const DEFAULT_RETURN_PATH = "/calendar";
+const USE_SECURE_COOKIES = process.env.NODE_ENV === "production";
 const SCOPES = [
   "openid",
   "email",
@@ -103,18 +104,21 @@ export async function createGoogleAuthUrl(returnTo?: string | null): Promise<str
 
   cookieStore.set(STATE_COOKIE, state, {
     httpOnly: true,
+    secure: USE_SECURE_COOKIES,
     sameSite: "lax",
     path: "/",
     maxAge: 10 * 60,
   });
   cookieStore.set(REDIRECT_COOKIE, redirectUri, {
     httpOnly: true,
+    secure: USE_SECURE_COOKIES,
     sameSite: "lax",
     path: "/",
     maxAge: 10 * 60,
   });
   cookieStore.set(RETURN_COOKIE, safeReturnPath, {
     httpOnly: true,
+    secure: USE_SECURE_COOKIES,
     sameSite: "lax",
     path: "/",
     maxAge: 10 * 60,
@@ -154,8 +158,10 @@ export async function saveGoogleTokens(tokens: StoredGoogleTokens): Promise<void
   const cookieStore = await cookies();
   cookieStore.set(TOKEN_COOKIE, encryptTokens(tokens), {
     httpOnly: true,
+    secure: USE_SECURE_COOKIES,
     sameSite: "lax",
     path: "/",
+    priority: "high",
     maxAge: 60 * 60 * 24 * 90,
   });
 }

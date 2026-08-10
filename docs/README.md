@@ -13,6 +13,7 @@ estado real y actual.
 - `03_INTEGRATIONS_AND_DEEPLINKS.md` - criterio de integraciones y enlaces externos.
 - `04_SEED_HACKATHONS.md` - referencia de hackathons semilla.
 - `DEPLOY_VPS.md` - operación en VPS.
+- `PRODUCTION_READINESS.md` - checklist de seguridad, recuperación y optimización.
 - `PROJECT_STRUCTURE.md` - mapa del repositorio.
 
 ## Criterio
