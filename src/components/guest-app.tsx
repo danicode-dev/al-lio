@@ -794,7 +794,7 @@ export function GuestApp({ view }: { view: View }) {
 
   return (
     <div className="space-y-6 pb-20 md:pb-6">
-      {view !== "dashboard" && (
+      {view !== "dashboard" && view !== "calendar" && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
@@ -822,7 +822,18 @@ export function GuestApp({ view }: { view: View }) {
       {view === "tasks" && <Tasks store={store} actions={actions} />}
       {view === "courses" && <Courses store={store} actions={actions} />}
       {view === "hackathons" && <Hackathons store={store} actions={actions} />}
-      {view === "calendar" && <CalendarView events={getCalendarEvents(store)} completedTasks={store.tasks} />}
+      {view === "calendar" && (
+        <CalendarView
+          events={getCalendarEvents(store)}
+          completedTasks={store.tasks}
+          headerActions={(
+            <>
+              <GoogleCalendarStatusControl />
+              <NotificationBell store={store} actions={actions} />
+            </>
+          )}
+        />
+      )}
       {view === "links" && <LinksView store={store} actions={actions} />}
       {view === "sources" && <Sources />}
       {view === "settings" && <Settings reset={actions.reset} addTask={actions.addTask} />}

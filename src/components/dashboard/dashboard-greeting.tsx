@@ -19,7 +19,7 @@ export function DashboardGreeting({ userName, actions }: { userName?: string; ac
         </h1>
         <p className="mt-1 text-sm text-[#6b6f72] dark:text-[#c9c4bc]">Aquí tienes lo importante para avanzar hoy.</p>
       </div>
-      <div className="flex items-center gap-2">{actions}</div>
+      <div className="hidden items-center gap-2 md:flex">{actions}</div>
     </header>
   );
 }
