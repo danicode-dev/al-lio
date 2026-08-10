@@ -38,6 +38,8 @@ check("uses al_lio_postgres container", compose.includes("al_lio_postgres"));
 check("uses al_lio_postgres_data volume", compose.includes("al_lio_postgres_data"));
 check("uses persistent al_lio_news_data volume", compose.includes("al_lio_news_data:/app/data"));
 check("uses al_lio_internal network", compose.includes("al_lio_internal"));
+check("uses stable internal network name", compose.includes("name: al_lio_backend_internal"));
+check("marks the PostgreSQL network internal", compose.includes("internal: true"));
 check("uses external danicode_web network", compose.includes("danicode_web"));
 check("does not use aidraft_web", !compose.includes("aidraft_web"));
 check("does not use aidraft_postgres as service", !compose.includes("aidraft_postgres:"));

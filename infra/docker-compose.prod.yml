@@ -7,6 +7,8 @@ services:
     container_name: al_lio_web
     restart: unless-stopped
     init: true
+    user: nextjs
+    read_only: true
     stop_grace_period: 30s
     security_opt:
       - no-new-privileges:true
@@ -37,6 +39,13 @@ services:
       - "3000"
     volumes:
       - al_lio_news_data:/app/data
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=128m,uid=1001,gid=1001
+      - /app/.next/cache:rw,noexec,nosuid,nodev,size=128m,uid=1001,gid=1001
+    mem_limit: 1536m
+    mem_reservation: 256m
+    cpus: 2.0
+    pids_limit: 256
     networks:
       - danicode_web
       - al_lio_internal
@@ -60,6 +69,12 @@ services:
     profiles: ["ops"]
     restart: "no"
     init: true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m,uid=1001,gid=1001
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 128
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -69,6 +84,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       DATABASE_MIGRATION_URL: ${DATABASE_MIGRATION_URL:?DATABASE_MIGRATION_URL is required}
       AL_LIO_BASELINE_CONFIRMATION: ${AL_LIO_BASELINE_CONFIRMATION:-}
+      AL_LIO_BASELINE_RECONCILIATION: ${AL_LIO_BASELINE_RECONCILIATION:-}
       AL_LIO_DB_ROLE_CONFIRMATION: ${AL_LIO_DB_ROLE_CONFIRMATION:-}
     command: ["node", "scripts/postgres/migrate.mjs"]
     networks:
@@ -81,8 +97,13 @@ services:
     image: postgres:17-alpine
     container_name: al_lio_postgres
     restart: unless-stopped
+    init: true
     stop_grace_period: 60s
-    shm_size: 128mb
+    shm_size: 256mb
+    mem_limit: 1g
+    mem_reservation: 128m
+    cpus: 2.0
+    pids_limit: 256
     environment:
       POSTGRES_DB: al_lio
       POSTGRES_USER: al_lio
@@ -106,6 +127,8 @@ networks:
   danicode_web:
     external: true
   al_lio_internal:
+    name: al_lio_backend_internal
+    internal: true
 
 volumes:
   al_lio_postgres_data:

@@ -148,7 +148,16 @@ docker compose -f infra/docker-compose.prod.yml --env-file .env --profile ops ru
   al_lio_migrator node scripts/postgres/audit-baseline.mjs
 ```
 
-Si la auditoría muestra diferencias, detenerse. Crear una migración de reconciliación revisada; no corregir producción manualmente.
+Si la auditoría muestra diferencias, detenerse. Cuando la causa sea una instalación legacy sin historial y el baseline se haya revisado como reconciliación aditiva, ensayarlo únicamente sobre la copia:
+
+```bash
+docker compose -f infra/docker-compose.prod.yml --env-file .env --profile ops run --rm \
+  -e DATABASE_MIGRATION_URL="$AL_LIO_REHEARSAL_DATABASE_URL" \
+  -e AL_LIO_BASELINE_RECONCILIATION=RECONCILE_0001_INITIAL_SCHEMA \
+  al_lio_migrator node scripts/postgres/reconcile-baseline.mjs
+```
+
+La reconciliación se ejecuta en una sola transacción y no registra el baseline. Repetir obligatoriamente la auditoría anterior. Si sigue mostrando diferencias, no continuar ni corregir producción manualmente.
 
 Cuando el ensayo coincida, registrar el baseline y aplicar las migraciones solo en la copia:
 
@@ -176,7 +185,22 @@ docker compose -f infra/docker-compose.prod.yml --env-file .env --profile ops ru
   al_lio_migrator node scripts/postgres/audit-baseline.mjs
 ```
 
-Si coincide, registrar el baseline:
+Si la primera auditoría muestra las mismas diferencias legacy ya verificadas sobre la restauración, reconciliar producción una sola vez:
+
+```bash
+AL_LIO_BASELINE_RECONCILIATION=RECONCILE_0001_INITIAL_SCHEMA \
+docker compose -f infra/docker-compose.prod.yml --env-file .env --profile ops run --rm \
+  al_lio_migrator node scripts/postgres/reconcile-baseline.mjs
+```
+
+Volver a auditar inmediatamente. La adopción queda prohibida mientras la auditoría no sea completamente verde:
+
+```bash
+docker compose -f infra/docker-compose.prod.yml --env-file .env --profile ops run --rm \
+  al_lio_migrator node scripts/postgres/audit-baseline.mjs
+```
+
+Cuando coincida, registrar el baseline:
 
 ```bash
 AL_LIO_BASELINE_CONFIRMATION=ADOPT_0001_INITIAL_SCHEMA \

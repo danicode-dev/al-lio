@@ -32,6 +32,14 @@ for (const migration of migrations) {
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 check("postgres:migrate usa el runner versionado", packageJson.scripts?.["postgres:migrate"] === "node scripts/postgres/migrate.mjs");
 check("postgres:setup ya no aplica schema.sql directamente", !packageJson.scripts?.["postgres:setup"]?.includes("setup-postgres-schema"));
+check(
+  "la reconciliación legacy usa un comando explícito",
+  packageJson.scripts?.["postgres:baseline:reconcile"] === "node scripts/postgres/reconcile-baseline.mjs",
+);
+
+const reconciler = readFileSync(join(root, "scripts", "postgres", "reconcile-baseline.mjs"), "utf8");
+check("la reconciliación exige confirmación", reconciler.includes("RECONCILE_0001_INITIAL_SCHEMA"));
+check("la reconciliación no registra el baseline", !reconciler.includes("INSERT INTO public.schema_migrations"));
 
 const dockerignorePath = join(root, ".dockerignore");
 check(".dockerignore existe", existsSync(dockerignorePath));
@@ -51,6 +59,10 @@ check("las credenciales admin solo viven en el perfil ops", compose.includes('pr
 check("el healthcheck usa readiness con PostgreSQL", compose.includes("/api/ready"));
 check("la imagen también usa readiness con PostgreSQL", dockerfile.includes("/api/ready"));
 check("Noticias usa un volumen persistente", compose.includes("al_lio_news_data:/app/data"));
+check("la red PostgreSQL conserva su nombre estable", compose.includes("name: al_lio_backend_internal"));
+check("la red PostgreSQL es interna", compose.includes("internal: true"));
+check("el runtime web conserva filesystem de solo lectura", webService.includes("read_only: true"));
+check("el runtime web mantiene límites de recursos", webService.includes("pids_limit:") && webService.includes("mem_limit:"));
 
 if (errors > 0) {
   console.error(`\nRESULTADO: ${errors} problema(s) de migración/despliegue.`);
