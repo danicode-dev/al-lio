@@ -52,15 +52,22 @@
     "verify:cheap": "npm run verify:startup && npm run lint",
     "verify:prod": "npm run stop:app && npm run build:clean && node scripts/smoke-production.mjs",
     "test": "npm run check:project && npm run validate:fp-content && npm run typecheck",
-    "ci": "npm run lint && npm run test && npm run build",
-    "validate:deploy": "node scripts/validate-deploy-readiness.mjs",
-    "postgres:setup": "node scripts/setup-postgres-schema.mjs",
+    "ci": "npm run lint && npm run test && npm run validate:production-deploy && npm run validate:postgres-app-integration && npm run validate:migrations && npm run build",
+    "validate:deploy": "npm run validate:production-deploy",
+    "validate:runtime": "node scripts/validate-runtime-env.mjs",
+    "postgres:setup": "npm run postgres:migrate",
+    "postgres:migrate": "node scripts/postgres/migrate.mjs",
+    "postgres:migrate:status": "node scripts/postgres/migrate.mjs --status",
+    "postgres:baseline:audit": "node scripts/postgres/audit-baseline.mjs",
+    "postgres:baseline:adopt": "node scripts/postgres/audit-baseline.mjs --adopt",
+    "postgres:bootstrap-runtime-role": "node scripts/postgres/bootstrap-runtime-role.mjs",
     "postgres:sandbox:up": "docker compose -f infra/docker-compose.postgres-sandbox.yml up -d",
     "postgres:sandbox:down": "docker compose -f infra/docker-compose.postgres-sandbox.yml down",
     "postgres:sandbox:down:volumes": "docker compose -f infra/docker-compose.postgres-sandbox.yml down -v",
     "postgres:sandbox:logs": "docker compose -f infra/docker-compose.postgres-sandbox.yml logs -f aidraft_postgres_sandbox",
     "postgres:schema:validate-sandbox": "node scripts/validate-postgres-schema-sandbox.mjs",
     "validate:postgres-app-integration": "node scripts/validate-postgres-app-integration.mjs",
+    "validate:migrations": "node scripts/validate-migrations.mjs",
     "validate:production-deploy": "node scripts/validate-production-deploy-readiness.mjs",
     "postgres:user:set-password": "node scripts/postgres/set-user-password.mjs"
   },
@@ -73,7 +80,7 @@
     "date-fns": "^4.1.0",
     "googleapis": "^171.4.0",
     "lucide-react": "^0.468.0",
-    "next": "^15.5.22",
+    "next": "15.5.23",
     "pg": "^8.20.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -88,9 +95,15 @@
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
     "eslint": "^9.24.0",
-    "eslint-config-next": "^15.5.22",
-    "postcss": "^8.5.25",
+    "eslint-config-next": "15.5.23",
+    "postcss": "^8.5.26",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.26",
+      "sharp": "0.35.3"
+    }
   }
 }

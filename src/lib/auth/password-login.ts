@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSession } from "@/lib/auth/session";
+import { clearAuthRateLimit, consumeAuthRateLimit } from "@/lib/auth/login-rate-limit";
 import { getUserByEmail } from "@/lib/db/repositories/users";
 import type { DbUser } from "@/lib/db/types";
 
@@ -33,6 +34,10 @@ export async function loginWithPasswordAction(
 
   const email = parsed.data.email.toLowerCase();
   const password = parsed.data.password;
+  const rateLimit = await consumeAuthRateLimit("password", email, 6, 15 * 60 * 1_000);
+  if (!rateLimit.allowed) {
+    return { error: "rate_limited" };
+  }
   let authenticatedUser: DbUser | null = null;
 
   try {
@@ -51,6 +56,7 @@ export async function loginWithPasswordAction(
     return { error: "credentials_invalid" };
   }
 
+  await clearAuthRateLimit("password", email);
   await createSession({
     id: authenticatedUser.id,
     email: authenticatedUser.email,

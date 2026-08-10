@@ -19,6 +19,7 @@ export async function createSession(user: { id: string; email: string; name?: st
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
+    priority: "high",
     maxAge: SESSION_DAYS * 24 * 60 * 60,
   });
 }

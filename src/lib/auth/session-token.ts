@@ -9,8 +9,9 @@ const encoder = new TextEncoder();
 
 function getSecret(): string {
   const secret = process.env.SESSION_SECRET;
-  if (!secret || secret.length < 16) {
-    throw new Error("SESSION_SECRET no está configurado (mínimo 16 caracteres)");
+  const minimumLength = process.env.NODE_ENV === "production" ? 32 : 16;
+  if (!secret || secret.length < minimumLength) {
+    throw new Error(`SESSION_SECRET no está configurado (mínimo ${minimumLength} caracteres)`);
   }
   return secret;
 }

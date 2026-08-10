@@ -5,6 +5,7 @@ import { z } from "zod";
 import { isDemoAccessEnabled } from "@/lib/auth/demo-access";
 import { getDemoProfile } from "@/lib/auth/demo-profiles";
 import { createSession } from "@/lib/auth/session";
+import { consumeAuthRateLimit } from "@/lib/auth/login-rate-limit";
 import { getUserByEmail } from "@/lib/db/repositories/users";
 
 const demoLoginSchema = z.object({
@@ -23,6 +24,11 @@ export async function loginAsDemoAction(formData: FormData): Promise<void> {
 
   if (!profile) {
     redirect("/login?error=demo_unavailable");
+  }
+
+  const rateLimit = await consumeAuthRateLimit("demo", profile.key, 30, 10 * 60 * 1_000);
+  if (!rateLimit.allowed) {
+    redirect("/login?error=rate_limited");
   }
 
   let user = null;

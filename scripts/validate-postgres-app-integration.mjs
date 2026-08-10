@@ -32,6 +32,9 @@ const REPOS = [
   "src/lib/db/repositories/quick_links.ts",
   "src/lib/db/repositories/tech_opportunities.ts",
   "src/lib/db/repositories/fp_catalog.ts",
+  "src/lib/db/repositories/fp_resource_notes.ts",
+  "src/lib/db/repositories/bloc_notes.ts",
+  "src/lib/db/repositories/companies.ts",
 ];
 for (const repo of REPOS) {
   check(`${repo} existe`, existsSync(join(root, repo)));
@@ -64,14 +67,14 @@ check("Google callback no usa Supabase", !googleCallback.includes("@supabase") &
 
 console.log("\n── lib/data.ts ──");
 const data = read("src/lib/data.ts");
-check("src/lib/data.ts importa repositorios", data.includes("src/lib/db/repositories/"));
+check("src/lib/data.ts importa repositorios", data.includes("@/lib/db/repositories/"));
 check("src/lib/data.ts no usa .from() de Supabase para datos", !data.includes(".from(\"tasks\"") && !data.includes(".from(\"courses\"") && !data.includes(".from(\"hackathons\""));
 
 // ── lib/actions.ts usa repositorios para datos ────────────────────────────────
 
 console.log("\n── lib/actions.ts ──");
 const actions = read("src/lib/actions.ts");
-check("src/lib/actions.ts importa repositorios", actions.includes("src/lib/db/repositories/"));
+check("src/lib/actions.ts importa repositorios", actions.includes("@/lib/db/repositories/"));
 check("src/lib/actions.ts importa getCurrentUserId", actions.includes("getCurrentUserId"));
 check("src/lib/actions.ts no usa .from() de Supabase para datos (tasks/courses/etc)", !actions.includes('.from("tasks")') && !actions.includes('.from("courses")') && !actions.includes('.from("hackathons")'));
 check(

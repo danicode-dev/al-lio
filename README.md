@@ -97,7 +97,7 @@ Para producción, usar `.env.production.example` como plantilla. No subir `.env`
 
 ## Base de Datos
 
-Schema principal:
+Baseline inicial inmutable:
 
 - `infra/postgres/schema.sql`
 
@@ -108,10 +108,18 @@ npm run postgres:sandbox:up
 npm run postgres:schema:validate-sandbox
 ```
 
-Aplicar schema sobre la base configurada en `DATABASE_URL`:
+Consultar y aplicar migraciones sobre una base vacía/versionada:
 
 ```bash
+npm run postgres:migrate:status
 npm run postgres:setup
+```
+
+Una base existente sin historial se bloquea. Debe auditarse y adoptarse de forma explícita después de verificar un backup:
+
+```bash
+npm run postgres:baseline:audit
+AL_LIO_BASELINE_CONFIRMATION=ADOPT_0001_INITIAL_SCHEMA npm run postgres:baseline:adopt
 ```
 
 Importadores disponibles:
@@ -166,6 +174,7 @@ Guía operativa:
 - `docs/01_PRODUCT_SPEC.md` - especificación de producto vigente.
 - `docs/02_ARCHITECTURE_AND_STACK.md` - arquitectura actual.
 - `docs/DEPLOY_VPS.md` - despliegue VPS.
+- `docs/PRODUCTION_READINESS.md` - checklist de seguridad, recuperación y optimización.
 - `docs/PROJECT_STRUCTURE.md` - estructura del repositorio.
 
 Alias ASCII usado en algunos scripts y checks: `Al-Lio`.
