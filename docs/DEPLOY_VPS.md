@@ -18,7 +18,7 @@ Esta guía actualiza AL-LÍO en `https://al-lio.danielcode.dev` sin aplicar camb
 - Red Docker externa `danicode_web`.
 - Caddy conectado a `danicode_web`.
 - DNS y TLS de `al-lio.danielcode.dev` operativos.
-- Repositorio en `/srv/danicode/projects/al-lio`.
+- Repositorios en `/srv/danicode/projects/al-lio` y `/srv/danicode/projects/al-lio-radar`.
 - Espacio libre suficiente para dos imágenes y dos copias de la base.
 - Archivo `.env` de producción fuera de Git.
 
@@ -41,6 +41,18 @@ git checkout --detach "$AL_LIO_RELEASE_SHA"
 test "$(git rev-parse HEAD)" = "$AL_LIO_RELEASE_SHA"
 ```
 
+Fijar también la versión aprobada del motor Radar:
+
+```bash
+cd /srv/danicode/projects/al-lio-radar
+git fetch --tags origin
+git status --short
+export AL_LIO_RADAR_RELEASE_SHA="<sha-radar-aprobado>"
+git checkout --detach "$AL_LIO_RADAR_RELEASE_SHA"
+test "$(git rev-parse HEAD)" = "$AL_LIO_RADAR_RELEASE_SHA"
+cd /srv/danicode/projects/al-lio
+```
+
 Guardar también la versión anterior:
 
 ```bash
@@ -60,6 +72,9 @@ GOOGLE_TOKEN_ENCRYPTION_KEY=<mínimo-32-caracteres>
 BASE_URL=https://al-lio.danielcode.dev
 GOOGLE_REDIRECT_URI=https://al-lio.danielcode.dev/api/google/calendar/callback
 AL_LIO_IMAGE_TAG=<sha-aprobado>
+AL_LIO_RADAR_IMAGE_TAG=<sha-radar-aprobado>
+AL_LIO_RADAR_BUILD_CONTEXT=../../al-lio-radar
+AL_LIO_RADAR_WEBHOOK_SECRET=<secreto-compartido-mínimo-32-caracteres>
 AL_LIO_DEMO_ACCESS_ENABLED=false
 NODE_ENV=production
 ```
@@ -97,7 +112,7 @@ docker exec al_lio_postgres psql -U al_lio -d al_lio -v ON_ERROR_STOP=1 -c \
 
 Guardar la salida en el registro de release, sin contraseñas.
 
-## 4. Respaldar PostgreSQL y Noticias
+## 4. Respaldar PostgreSQL y Radar
 
 Crear backup consistente:
 
@@ -113,21 +128,34 @@ export AL_LIO_BACKUP_FILE="$(ls -1t /srv/danicode/backups/al-lio/al_lio_*.dump |
 bash scripts/postgres/verify-backup-production.sh "$AL_LIO_BACKUP_FILE"
 ```
 
-Respaldar el almacenamiento JSON actual antes de introducir su volumen persistente:
+Archivar una vez el almacenamiento JSON legacy. No se restaura en el nuevo runtime:
 
 ```bash
-export AL_LIO_NEWS_BACKUP_DIR="/srv/danicode/backups/al-lio/news-$(date -u +%Y%m%dT%H%M%SZ)"
-mkdir -p "$AL_LIO_NEWS_BACKUP_DIR"
-docker cp al_lio_web:/app/data/. "$AL_LIO_NEWS_BACKUP_DIR/" 2>/dev/null || true
+export AL_LIO_LEGACY_NEWS_BACKUP_DIR="/srv/danicode/backups/al-lio/legacy-news-$(date -u +%Y%m%dT%H%M%SZ)"
+mkdir -p "$AL_LIO_LEGACY_NEWS_BACKUP_DIR"
+docker cp al_lio_web:/app/data/. "$AL_LIO_LEGACY_NEWS_BACKUP_DIR/" 2>/dev/null || true
 ```
+
+Si Radar ya está desplegado, detener solo ese servicio y copiar su volumen SQLite de forma consistente:
+
+```bash
+docker compose -f infra/docker-compose.prod.yml --env-file .env stop al_lio_radar 2>/dev/null || true
+docker run --rm \
+  -v al_lio_radar_data:/source:ro \
+  -v /srv/danicode/backups/al-lio:/backup \
+  alpine:3.20 sh -c 'cd /source && tar -czf /backup/radar-data.tgz .'
+```
+
+No reiniciar todavía Radar: se levantará después de que AL-LÍO esté healthy.
 
 Si falla el backup o su restauración, no continuar.
 
 ## 5. Construir sin detener producción
 
 ```bash
-docker compose -f infra/docker-compose.prod.yml --env-file .env build --pull al_lio_web
+docker compose -f infra/docker-compose.prod.yml --env-file .env build --pull al_lio_web al_lio_radar
 docker image inspect "al-lio-web:${AL_LIO_IMAGE_TAG}" >/dev/null
+docker image inspect "al-lio-radar:${AL_LIO_RADAR_IMAGE_TAG}" >/dev/null
 ```
 
 El contenedor anterior continúa atendiendo mientras se construye la imagen.
@@ -229,22 +257,18 @@ docker exec al_lio_postgres psql -U al_lio -d al_lio -c \
   "select rolname, rolsuper, rolcreatedb, rolcreaterole, rolcanlogin from pg_roles where rolname='al_lio_app';"
 ```
 
-## 8. Inicializar el volumen de Noticias
+## 8. Preparar la persistencia de Radar
 
-El volumen tiene nombre estable `al_lio_news_data`. En su primera incorporación:
+Compose crea el volumen estable `al_lio_radar_data`. No importar los JSON legacy de Noticias: el estado válido de publicación vive en `radar_items` y el estado del alumno en `radar_item_user_states`.
+
+Comprobar la definición antes de arrancar:
 
 ```bash
-docker volume create al_lio_news_data
-docker run --rm --user 0 \
-  -v al_lio_news_data:/app/data \
-  -v "$AL_LIO_NEWS_BACKUP_DIR:/restore:ro" \
-  --entrypoint sh "al-lio-web:${AL_LIO_IMAGE_TAG}" \
-  -c 'cp -a /restore/. /app/data/ 2>/dev/null || true; chown -R 1001:1001 /app/data'
+docker compose -f infra/docker-compose.prod.yml --env-file .env config --quiet
+docker volume inspect al_lio_radar_data 2>/dev/null || true
 ```
 
-En despliegues posteriores no repetir este paso.
-
-## 9. Reemplazar únicamente la aplicación
+## 9. Reemplazar la aplicación y arrancar Radar
 
 ```bash
 docker compose -f infra/docker-compose.prod.yml --env-file .env up -d --no-deps al_lio_web
@@ -261,7 +285,29 @@ curl -fsS https://al-lio.danielcode.dev/api/health
 curl -fsS https://al-lio.danielcode.dev/api/ready
 ```
 
-## 10. Smoke test funcional
+Solo cuando AL-LÍO responda healthy y ready, arrancar el productor:
+
+```bash
+docker compose -f infra/docker-compose.prod.yml --env-file .env up -d --no-deps al_lio_radar
+docker compose -f infra/docker-compose.prod.yml --env-file .env ps
+docker logs --tail=100 al_lio_radar
+```
+
+Debe existir una sola réplica de Radar para evitar carreras de planificación y revisión.
+
+## 10. Operar la revisión editorial
+
+La recogida y clasificación son automáticas, pero publicar exige una decisión humana auditada. Revisar siempre título, resumen, URL oficial, ciclo y módulos antes de aprobar:
+
+```bash
+docker exec al_lio_radar node dist/cli/reviewList.js
+docker exec al_lio_radar node dist/cli/reviewApprove.js <id> --actor <responsable> --reason "<motivo verificable>"
+docker exec al_lio_radar node dist/cli/reviewReject.js <id> --actor <responsable> --reason "<motivo del descarte>"
+```
+
+Ante cualquier duda, rechazar. Un candidato pendiente o rechazado nunca llega a AL-LÍO.
+
+## 11. Smoke test funcional
 
 Comprobar como mínimo:
 
@@ -271,7 +317,10 @@ Comprobar como mínimo:
 - crear, completar y eliminar una tarea de prueba;
 - crear una nota y verla tras recargar;
 - Calendario y conexión Google;
-- Noticias;
+- Noticias: ningún elemento de Ideal ni de otra fuente generalista legacy;
+- Noticias: cada perfil solo ve elementos aprobados para su ciclo;
+- Radar: aprobar un candidato controlado, entregarlo y comprobar una única fila en `radar_deliveries`;
+- Radar: reenviar el mismo `deliveryId` y comprobar respuesta idempotente sin duplicados;
 - Trabajo, Cursos y Hackathons;
 - persistencia tras reiniciar únicamente `al_lio_web`.
 
@@ -291,6 +340,16 @@ curl -fsS https://al-lio.danielcode.dev/api/ready
 
 No ejecutar migraciones inversas automáticas durante un incidente.
 
+## Rollback de Radar
+
+Radar puede detenerse sin afectar al resto de AL-LÍO; las noticias ya entregadas permanecen en PostgreSQL:
+
+```bash
+docker compose -f infra/docker-compose.prod.yml --env-file .env stop al_lio_radar
+```
+
+Para recuperar una versión anterior, cambiar `AL_LIO_RADAR_IMAGE_TAG`, reconstruir desde su SHA exacto y levantar solo `al_lio_radar`. La migración `0002_radar_news.sql` es aditiva y no debe revertirse durante un incidente.
+
 ## Recuperación de base de datos
 
 Restaurar el dump implica pérdida de los cambios posteriores al backup. Solo hacerlo tras confirmar el incidente, detener escrituras y guardar antes una copia del estado dañado.
@@ -299,7 +358,7 @@ El procedimiento debe ensayarse primero en una base temporal usando `verify-back
 
 ## Después de cada release
 
-- Registrar commit, tag, hora, operador y backup usado.
+- Registrar los dos commits, tags, hora, operador y backup usado.
 - Confirmar health/readiness y smoke test.
 - Conservar la imagen anterior hasta cerrar la ventana de observación.
 - Guardar el backup fuera del VPS.

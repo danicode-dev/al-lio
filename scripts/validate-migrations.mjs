@@ -29,6 +29,15 @@ for (const migration of migrations) {
   check(`${migration.version} no contiene DDL destructivo`, !destructive);
 }
 
+const radarMigration = migrations.find((migration) => migration.version === "0002_radar_news");
+check("existe migración versionada del radar", Boolean(radarMigration));
+if (radarMigration) {
+  check("la migración crea entregas e ítems", radarMigration.sql.includes("radar_deliveries") && radarMigration.sql.includes("radar_items"));
+  check("la migración crea estado por usuario", radarMigration.sql.includes("radar_item_user_states"));
+  check("la migración restringe ciclos FP", radarMigration.sql.includes("radar_items_cycle_codes_valid"));
+  check("la migración exige auditoría humana", radarMigration.sql.includes("radar_items_review_audit_required"));
+}
+
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 check("postgres:migrate usa el runner versionado", packageJson.scripts?.["postgres:migrate"] === "node scripts/postgres/migrate.mjs");
 check("postgres:setup ya no aplica schema.sql directamente", !packageJson.scripts?.["postgres:setup"]?.includes("setup-postgres-schema"));
@@ -58,7 +67,7 @@ check("el contenedor web no recibe DATABASE_MIGRATION_URL", !/^\s+DATABASE_MIGRA
 check("las credenciales admin solo viven en el perfil ops", compose.includes('profiles: ["ops"]') && compose.includes("DATABASE_MIGRATION_URL:"));
 check("el healthcheck usa readiness con PostgreSQL", compose.includes("/api/ready"));
 check("la imagen también usa readiness con PostgreSQL", dockerfile.includes("/api/ready"));
-check("Noticias usa un volumen persistente", compose.includes("al_lio_news_data:/app/data"));
+check("Noticias ya no depende de JSON local", !compose.includes("al_lio_news_data:/app/data"));
 check("la red PostgreSQL conserva su nombre estable", compose.includes("name: al_lio_backend_internal"));
 check("la red PostgreSQL es interna", compose.includes("internal: true"));
 check("el runtime web conserva filesystem de solo lectura", webService.includes("read_only: true"));

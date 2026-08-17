@@ -14,6 +14,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createRequire } from "node:module";
+import { randomUUID } from "node:crypto";
+import { loadMigrationFiles } from "./postgres/migration-files.mjs";
 
 const require = createRequire(import.meta.url);
 const root = process.cwd();
@@ -83,6 +85,7 @@ const EXPECTED_TABLES = [
   "users", "profiles", "sources", "quick_searches", "opportunities",
   "hackathons", "courses", "tech_opportunities", "tasks", "reminders", "quick_links",
   "fp_cycles", "fp_content_items", "fp_content_cycle_fit", "fp_user_content_state",
+  "radar_deliveries", "radar_items", "radar_delivery_items", "radar_item_user_states",
 ];
 
 const EXPECTED_INDEXES = [
@@ -93,6 +96,9 @@ const EXPECTED_INDEXES = [
   "fp_user_content_state_user_idx",
   "tasks_user_due_idx",
   "reminders_user_remind_idx",
+  "radar_items_cycles_idx",
+  "radar_items_active_date_idx",
+  "radar_item_user_states_user_idx",
 ];
 
 let passed = 0;
@@ -109,6 +115,10 @@ try {
   console.log("── Aplicando schema ──");
   await client.query(schema);
   ok("schema.sql aplicado sin errores");
+  for (const migration of loadMigrationFiles(root).filter((migration) => !migration.baseline)) {
+    await client.query(migration.sql);
+    ok(`migración ${migration.version} aplicada sin errores`);
+  }
 
   // ── Verificar tablas ────────────────────────────────────────────────────────
   console.log("\n── Tablas ──");
@@ -147,9 +157,9 @@ try {
     SELECT trigger_name FROM information_schema.triggers
     WHERE trigger_schema = 'public' AND trigger_name LIKE 'set_%_updated_at'
   `);
-  trgRes.rows.length >= 14
+  trgRes.rows.length >= 16
     ? ok(`triggers updated_at presentes (${trgRes.rows.length} encontrados)`)
-    : fail(`triggers updated_at insuficientes (${trgRes.rows.length}/14+)`);
+    : fail(`triggers updated_at insuficientes (${trgRes.rows.length}/16+)`);
 
   // ── Insertar datos mínimos de prueba ───────────────────────────────────────
   console.log("\n── Datos de prueba ──");
@@ -190,9 +200,42 @@ try {
   `, [userId]);
   ok("INSERT profiles (FK user_id OK)");
 
+  const deliveryId = randomUUID();
+  await client.query(
+    `INSERT INTO public.radar_deliveries (delivery_id, schema_version, payload_hash, item_count)
+     VALUES ($1, 2, repeat('a', 64), 1)`,
+    [deliveryId],
+  );
+  const radarItemRes = await client.query(
+    `INSERT INTO public.radar_items (
+       schema_version, source_id, source_name, external_id, canonical_url, title, summary,
+       fetched_at, kind, target_cycle_codes, module_codes, topics, matched_rule_ids,
+       matched_keywords, trust_tier, review_status, reviewed_by, reviewed_at, review_reason,
+       source_url, content_hash
+     ) VALUES (
+       2, 'sandbox-source', 'Sandbox Source', 'external-1', $1, 'Noticia DAW de prueba', '',
+       now(), 'news', array['DAW'], array['CLIENTE'], array['javascript'], array['sandbox-rule'],
+       array['javascript'], 'official', 'approved', 'sandbox', now(), 'Contenido verificado',
+       'https://example.test/feed', repeat('b', 64)
+     ) RETURNING id`,
+    [`https://example.test/${deliveryId}`],
+  );
+  const radarItemId = radarItemRes.rows[0].id;
+  await client.query(
+    `INSERT INTO public.radar_delivery_items (delivery_id, radar_item_id) VALUES ($1, $2)`,
+    [deliveryId, radarItemId],
+  );
+  await client.query(
+    `INSERT INTO public.radar_item_user_states (user_id, radar_item_id, status) VALUES ($1, $2, 'saved')`,
+    [userId, radarItemId],
+  );
+  ok("INSERT radar delivery/item/user state (constraints y FK OK)");
+
   // ── Limpiar datos de prueba ────────────────────────────────────────────────
   console.log("\n── Limpieza ──");
   await client.query(`DELETE FROM public.users WHERE id = $1`, [userId]);
+  await client.query(`DELETE FROM public.radar_items WHERE id = $1`, [radarItemId]);
+  await client.query(`DELETE FROM public.radar_deliveries WHERE delivery_id = $1`, [deliveryId]);
   ok("datos de prueba eliminados (CASCADE en tablas dependientes)");
 
 } catch (err) {

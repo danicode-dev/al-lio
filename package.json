@@ -37,7 +37,6 @@
     "check:project": "node scripts/check-project.mjs",
     "audit:schema": "node scripts/audit-schema-code.mjs",
     "smoke": "node scripts/smoke-local.mjs",
-    "sync:news": "node scripts/sync-news.mjs",
     "import:opportunities": "node scripts/import-tech-opportunities.mjs",
     "import:fp-content": "node scripts/import-fp-content.mjs",
     "validate:fp-content": "node scripts/validate-fp-content-csv.mjs",
@@ -52,7 +51,7 @@
     "verify:cheap": "npm run verify:startup && npm run lint",
     "verify:prod": "npm run stop:app && npm run build:clean && node scripts/smoke-production.mjs",
     "test": "npm run check:project && npm run validate:fp-content && npm run typecheck",
-    "ci": "npm run lint && npm run test && npm run validate:production-deploy && npm run validate:postgres-app-integration && npm run validate:migrations && npm run build",
+    "ci": "npm run lint && npm run test && npm run validate:radar && npm run validate:production-deploy && npm run validate:postgres-app-integration && npm run validate:migrations && npm run build",
     "validate:deploy": "npm run validate:production-deploy",
     "validate:runtime": "node scripts/validate-runtime-env.mjs",
     "postgres:setup": "npm run postgres:migrate",
@@ -69,6 +68,7 @@
     "postgres:schema:validate-sandbox": "node scripts/validate-postgres-schema-sandbox.mjs",
     "validate:postgres-app-integration": "node scripts/validate-postgres-app-integration.mjs",
     "validate:migrations": "node scripts/validate-migrations.mjs",
+    "validate:radar": "node scripts/validate-radar-integration.mjs",
     "validate:production-deploy": "node scripts/validate-production-deploy-readiness.mjs",
     "postgres:user:set-password": "node scripts/postgres/set-user-password.mjs"
   },
@@ -102,6 +102,7 @@
     "typescript": "^5.8.3"
   },
   "overrides": {
+    "nanoid": "3.3.18",
     "next": {
       "postcss": "8.5.26",
       "sharp": "0.35.3"

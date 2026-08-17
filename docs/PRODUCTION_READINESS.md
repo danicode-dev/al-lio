@@ -9,7 +9,11 @@ Este documento separa lo ya automatizado de lo que requiere acceso al VPS o deci
 - [x] Imagen versionable mediante `AL_LIO_IMAGE_TAG`.
 - [x] Healthcheck de liveness y readiness con PostgreSQL.
 - [x] Rotación básica de logs Docker.
-- [x] Volumen persistente transitorio para Noticias.
+- [x] Persistencia PostgreSQL para noticias, entregas y estado por usuario.
+- [x] Receptor Radar v2 con HMAC, protección contra replay e idempotencia.
+- [x] Filtrado de noticias en servidor por ciclo del perfil autenticado.
+- [x] Publicación limitada a elementos aprobados; fuentes generalistas legacy desactivadas.
+- [x] Servicio Radar separado, no-root y con volumen SQLite persistente.
 - [x] Migraciones ordenadas, transaccionales, con checksum y advisory lock.
 - [x] Rechazo automático de bases existentes no auditadas.
 - [x] Auditoría estricta y adopción explícita del baseline.
@@ -30,7 +34,11 @@ Este documento separa lo ya automatizado de lo que requiere acceso al VPS o deci
 - [ ] Crear una migración de reconciliación si aparece cualquier diferencia.
 - [ ] Adoptar el baseline solo después del ensayo.
 - [ ] Crear `al_lio_app` y comprobar sus privilegios.
-- [ ] Preservar el directorio `/app/data` de Noticias al crear el volumen.
+- [ ] Archivar los JSON legacy de `/app/data` sin reintroducirlos en runtime.
+- [ ] Generar y configurar el mismo `AL_LIO_RADAR_WEBHOOK_SECRET` en ambos servicios.
+- [ ] Fijar y registrar los SHA exactos de AL-LÍO y AL-LÍO Radar.
+- [ ] Aplicar y verificar `0002_radar_news.sql` primero sobre la restauración de ensayo.
+- [ ] Aprobar un candidato controlado y confirmar su entrega, ciclo y visualización.
 - [ ] Ejecutar smoke test de todos los flujos críticos.
 - [ ] Guardar backup cifrado fuera del VPS.
 
@@ -40,7 +48,8 @@ Este documento separa lo ya automatizado de lo que requiere acceso al VPS o deci
 - [ ] Añadir monitor externo para `/api/health` y `/api/ready`.
 - [ ] Centralizar errores de servidor sin datos sensibles.
 - [ ] Añadir pruebas de autorización por usuario y manipulación de IDs.
-- [ ] Migrar Noticias desde JSON a `news_items` y `user_news_state`.
+- [ ] Automatizar backup diario del volumen `al_lio_radar_data`.
+- [ ] Medir aprobaciones y rechazos por fuente antes de permitir cualquier autoaprobación.
 - [ ] Reiniciar los datos demo periódicamente o usar una base demo separada.
 - [ ] Diseñar revocación/rotación de sesiones activas.
 - [ ] Revisar cabeceras CSP/HSTS y política de orígenes en Caddy.

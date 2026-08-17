@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle,
   Bell,
   BookmarkCheck,
   CheckCircle2,
@@ -10,565 +9,386 @@ import {
   Newspaper,
   RefreshCw,
   Search,
+  ShieldCheck,
   SlidersHorizontal,
-  Sparkles,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import {
-  CATEGORY_LABELS,
-  type NewsCategory,
-} from "@/lib/sources/source-registry";
-import type { NewsItem, NewsStatus, SyncStatus } from "@/lib/news/types";
+import type { NewsItem, NewsStatus, NewsSyncStatus, NewsTrustTier } from "@/lib/news/types";
 import { toast } from "sonner";
 
-const ALL_CATEGORIES: Array<{ id: NewsCategory | "all"; label: string }> = [
-  { id: "all", label: "Todas" },
-  { id: "granada", label: CATEGORY_LABELS.granada },
-  { id: "ia", label: CATEGORY_LABELS.ia },
-  { id: "empresas_granada", label: CATEGORY_LABELS.empresas_granada },
-  { id: "eventos_granada", label: CATEGORY_LABELS.eventos_granada },
-];
+type ApiResponse = { items: NewsItem[]; status: NewsSyncStatus };
+type SortMode = "date" | "trust";
 
-type ApiResponse = { items: NewsItem[]; status: SyncStatus };
+const TRUST_LABELS: Record<NewsTrustTier, string> = {
+  official: "Oficial",
+  institutional: "Institucional",
+  first_party: "Primera parte",
+  sector: "Sectorial",
+  reference: "Especializada",
+};
+
+const TRUST_WEIGHT: Record<NewsTrustTier, number> = {
+  official: 5,
+  institutional: 4,
+  first_party: 3,
+  sector: 2,
+  reference: 1,
+};
+
+const KIND_LABELS: Record<NewsItem["kind"], string> = {
+  news: "Noticia",
+  event: "Evento",
+  call: "Convocatoria",
+  legal: "Normativa",
+};
 
 export function NoticiasView() {
   const [items, setItems] = useState<NewsItem[]>([]);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
+  const [status, setStatus] = useState<NewsSyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-
-  // Filters
-  const [category, setCategory] = useState<NewsCategory | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<NewsStatus | "all">("all");
+  const [refreshing, setRefreshing] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<"date" | "score">("date");
-  const [showFilters, setShowFilters] = useState(false);
-  const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<NewsStatus | "all">("all");
   const [sourceFilter, setSourceFilter] = useState("");
-  const [viewMode, setViewMode] = useState<"lista" | "grid">("lista");
+  const [sort, setSort] = useState<SortMode>("date");
+  const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
-  async function load(autoSync = false) {
-    setLoading(true);
+  async function load({ quiet = false }: { quiet?: boolean } = {}) {
+    if (quiet) setRefreshing(true);
+    else setLoading(true);
     try {
-      const r = await fetch(autoSync ? "/api/news?auto=1" : "/api/news", {
-        cache: "no-store",
-      });
-      const data = (await r.json()) as ApiResponse;
+      const response = await fetch("/api/news?limit=200", { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = (await response.json()) as ApiResponse;
       setItems(data.items ?? []);
-      setSyncStatus(data.status ?? null);
-    } catch (err) {
-      console.warn("[noticias] load error", err);
+      setStatus(data.status ?? null);
+      if (quiet) toast.success("Noticias actualizadas");
+    } catch (error) {
+      console.warn("[noticias] load error", error);
+      toast.error("No se pudieron cargar las noticias");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }
 
-  async function syncNow() {
-    setSyncing(true);
+  async function markRead(item: NewsItem) {
+    if (item.status !== "new") return;
+    const previousItems = items;
+    setItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, status: "read" } : candidate));
     try {
-      const r = await fetch("/api/news/sync?force=1", { method: "POST" });
-      const data = (await r.json()) as { ok: boolean; status?: SyncStatus };
-      if (data.ok && data.status) setSyncStatus(data.status);
-      await load(false);
-      if (data.ok) toast.success("Noticias actualizadas");
-      else toast.error("Error al sincronizar noticias");
+      const response = await fetch(`/api/news/${encodeURIComponent(item.id)}/read`, { method: "PATCH" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      setStatus((current) => current ? { ...current, newItems: Math.max(0, current.newItems - 1) } : current);
     } catch {
-      toast.error("Error al conectar con el servidor de noticias");
-    } finally {
-      setSyncing(false);
+      setItems(previousItems);
+      toast.error("No se pudo marcar como leída");
     }
   }
 
-  async function markRead(id: string) {
+  async function saveItem(item: NewsItem) {
+    if (item.status === "saved") return;
+    const previousItems = items;
+    setItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, status: "saved" } : candidate));
     try {
-      await fetch(`/api/news/${encodeURIComponent(id)}/read`, { method: "PATCH" });
-      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status: "read" } : i)));
-    } catch { /* noop */ }
+      const response = await fetch(`/api/news/${encodeURIComponent(item.id)}/save`, { method: "PATCH" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      setStatus((current) => current ? {
+        ...current,
+        savedItems: current.savedItems + 1,
+        newItems: item.status === "new" ? Math.max(0, current.newItems - 1) : current.newItems,
+      } : current);
+      toast.success("Noticia guardada");
+    } catch {
+      setItems(previousItems);
+      toast.error("No se pudo guardar la noticia");
+    }
   }
-
-  async function markSaved(id: string) {
-    try {
-      await fetch(`/api/news/${encodeURIComponent(id)}/save`, { method: "PATCH" });
-      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status: "saved" } : i)));
-    } catch { /* noop */ }
-  }
-
-  useEffect(() => { load(true); }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => setSearch(searchInput), 250);
-    return () => clearTimeout(t);
+    void load();
+  }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setSearch(searchInput.trim().toLowerCase()), 250);
+    return () => clearTimeout(timeout);
   }, [searchInput]);
 
   const sources = useMemo(
-    () =>
-      Array.from(
-        new Map(items.map((i) => [i.sourceId, i.sourceName])).entries()
-      ).sort((a, b) => a[1].localeCompare(b[1])),
-    [items]
+    () => Array.from(new Map(items.map((item) => [item.sourceId, item.sourceName])).entries())
+      .sort((first, second) => first[1].localeCompare(second[1])),
+    [items],
   );
 
-  const filtered = useMemo(() => {
-    let out = items;
-    if (category !== "all") out = out.filter((i) => i.category === category);
-    if (statusFilter !== "all") out = out.filter((i) => i.status === statusFilter);
-    if (showSavedOnly) out = out.filter((i) => i.status === "saved");
-    if (sourceFilter) out = out.filter((i) => i.sourceId === sourceFilter);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      out = out.filter(
-        (i) =>
-          i.title.toLowerCase().includes(q) ||
-          (i.description ?? "").toLowerCase().includes(q) ||
-          i.tags.some((t) => t.toLowerCase().includes(q))
-      );
-    }
-    return [...out].sort((a, b) =>
-      sort === "score"
-        ? b.relevanceScore - a.relevanceScore
-        : (b.publishedAt || b.fetchedAt).localeCompare(a.publishedAt || a.fetchedAt)
-    );
-  }, [items, category, statusFilter, showSavedOnly, sourceFilter, search, sort]);
+  const filteredItems = useMemo(() => {
+    const filtered = items.filter((item) => {
+      if (statusFilter !== "all" && item.status !== statusFilter) return false;
+      if (sourceFilter && item.sourceId !== sourceFilter) return false;
+      if (!search) return true;
+      return [item.title, item.description ?? "", item.sourceName, ...item.topics, ...item.moduleCodes]
+        .some((value) => value.toLowerCase().includes(search));
+    });
+    return filtered.sort((first, second) => {
+      if (sort === "trust") {
+        const trustDifference = TRUST_WEIGHT[second.trustTier] - TRUST_WEIGHT[first.trustTier];
+        if (trustDifference !== 0) return trustDifference;
+      }
+      return itemDate(second).localeCompare(itemDate(first));
+    });
+  }, [items, search, sourceFilter, sort, statusFilter]);
 
-  // KPIs
-  const { kpiTotal, kpiNuevas, kpiGuardadas, kpiFailed } = useMemo(() => ({
-    kpiTotal: items.filter((i) => category === "all" || i.category === category).length,
-    kpiNuevas: items.filter((i) => (category === "all" || i.category === category) && i.status === "new").length,
-    kpiGuardadas: items.filter((i) => i.status === "saved").length,
-    kpiFailed: syncStatus?.sources.filter((s) => !s.ok).length ?? 0,
-  }), [items, category, syncStatus]);
-
-  const activeFilterCount = [
-    statusFilter !== "all",
-    showSavedOnly,
-    !!sourceFilter,
-    sort !== "date",
-  ].filter(Boolean).length;
+  const activeFilterCount = [statusFilter !== "all", Boolean(sourceFilter), sort !== "date"].filter(Boolean).length;
 
   function clearFilters() {
     setStatusFilter("all");
-    setShowSavedOnly(false);
     setSourceFilter("");
     setSort("date");
     setSearchInput("");
     setSearch("");
   }
 
-  const lastSync = syncStatus?.lastSyncAt
-    ? formatRelative(syncStatus.lastSyncAt)
-    : null;
-
   return (
-    <>
-      <style>{`
-        .al-news-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-        .al-news-search { position: relative; flex: 1; min-width: 220px; }
-        .al-news-search input { padding-left: 36px; height: 40px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 13px; }
-        .al-news-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #9a958a; }
-        .al-news-tabs { display: flex; align-items: center; gap: 2px; border-radius: 12px; border: 1px solid #ece7dc; background: white; padding: 3px; }
-        .al-news-tab { height: 32px; padding: 0 12px; border-radius: 9px; font-size: 12.5px; font-weight: 600; color: #6b6f72; background: transparent; border: none; cursor: pointer; transition: background 0.15s, color 0.15s; white-space: nowrap; }
-        .al-news-tab.al-news-tab-active { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; box-shadow: 0 6px 14px rgba(225, 93, 45, 0.25); }
-        .al-news-btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 12.5px; font-weight: 600; color: #333029; cursor: pointer; }
-        .al-news-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .al-news-btn.al-news-btn-active { background: #fbe7dd; border-color: rgba(225, 93, 45, 0.3); color: #c94f21; }
-        .al-news-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        @media (min-width: 640px) { .al-news-stats { grid-template-columns: repeat(4, 1fr); } }
-        .al-news-stat-card { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid #ece7dc; border-radius: 18px; padding: 14px 16px; box-shadow: 0 8px 20px rgba(17, 17, 17, 0.04); }
-        .al-news-stat-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
-        .al-news-stat-value { font-size: 22px; font-weight: 800; line-height: 1; color: #111111; }
-        .al-news-stat-value-text { font-size: 13px; font-weight: 700; line-height: 1.3; color: #111111; }
-        .al-news-stat-label { font-size: 11px; font-weight: 600; color: #6b6f72; margin-top: 3px; }
-        .al-news-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .al-news-count-text { font-size: 12px; color: #6b6f72; }
-        .al-news-grid { display: grid; gap: 10px; }
-        .al-news-grid-2 { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-        .al-news-card { position: relative; display: flex; flex-direction: column; gap: 8px; background: white; border: 1px solid #ece7dc; border-radius: 16px; box-shadow: 0 8px 20px rgba(17, 17, 17, 0.04); padding: 13px; transition: border-color 0.15s; }
-        .al-news-card:hover { border-color: rgba(225, 93, 45, 0.3); }
-        .al-news-card-read { opacity: 0.6; }
-        .al-news-card-saved { border-color: rgba(225, 93, 45, 0.35); }
-        .al-news-source { font-size: 11.5px; font-weight: 700; color: #6b6f72; }
-        .al-news-title-link { font-weight: 600; font-size: 13px; line-height: 1.35; color: #111111; text-decoration: none; }
-        .al-news-title-link:hover { color: #c94f21; text-decoration: underline; text-underline-offset: 2px; }
-        .al-news-desc { font-size: 11.5px; color: #6b6f72; line-height: 1.4; }
-        .al-news-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 10.5px; color: #9a958a; }
-        .al-news-tag { border-radius: 6px; background: #f3ece1; padding: 1px 6px; color: #6b6f72; }
-        .al-news-badge-top { display: inline-flex; align-items: center; gap: 3px; border-radius: 6px; background: #e7f5ee; padding: 2px 6px; font-size: 10px; font-weight: 700; color: #1f7a4d; flex-shrink: 0; }
-        .al-news-badge-saved { border-radius: 6px; background: #fbe7dd; padding: 2px 6px; font-size: 10px; font-weight: 700; color: #c94f21; flex-shrink: 0; }
-        .al-news-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; flex-shrink: 0; text-decoration: none; }
-        .al-news-icon-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
-        .al-news-icon-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .al-news-icon-btn-done { color: #1f7a4d; }
-        .al-news-open-btn { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 9px; border: 1px solid #ece7dc; background: white; font-size: 11px; font-weight: 600; color: #333029; text-decoration: none; }
-        .al-news-open-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
-        .al-news-empty { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .al-news-empty-icon { width: 48px; height: 48px; border-radius: 14px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
-        .al-news-empty-title { color: #111111; font-weight: 700; font-size: 14px; }
-        .al-news-empty-desc { color: #6b6f72; font-size: 12.5px; }
-        .al-news-empty-link { color: #c94f21; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; background: none; border: none; cursor: pointer; padding: 0; font-size: inherit; }
-        .al-news-filter-panel { background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 16px; display: flex; flex-direction: column; gap: 16px; }
-        .al-news-filter-head { display: flex; align-items: center; justify-content: space-between; }
-        .al-news-filter-title { font-size: 13px; font-weight: 700; color: #111111; }
-        .al-news-filter-clear { font-size: 11.5px; font-weight: 600; color: #9a958a; }
-        .al-news-filter-clear:hover { color: #c94f21; }
-        .al-news-filter-section { padding-top: 14px; border-top: 1px solid #f0ece2; }
-        .al-news-filter-section:first-child { padding-top: 0; border-top: none; }
-        .al-news-filter-section-label { margin-bottom: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9a958a; }
-        .al-news-chip { border-radius: 999px; border: 1px solid #ece7dc; background: white; color: #333029; padding: 3px 10px; font-size: 11.5px; font-weight: 600; transition: border-color 0.15s, color 0.15s; }
-        .al-news-chip:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
-        .al-news-chip-active, .al-news-chip-active:hover { border-color: transparent; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; }
-        .al-news-source-row { width: 100%; border-radius: 9px; padding: 5px 8px; text-align: left; font-size: 11.5px; color: #333029; background: none; border: none; cursor: pointer; }
-        .al-news-source-row:hover { background: #f7f4ee; }
-        .al-news-source-row-active { background: #fbe7dd; color: #c94f21; font-weight: 700; }
-        .al-news-sync-info { border-radius: 12px; border: 1px solid #ece7dc; background: #faf8f4; padding: 10px; font-size: 10.5px; color: #6b6f72; }
-        .al-news-sync-info strong { color: #111111; }
-        .al-news-sync-warn { margin-top: 4px; color: #8a5c14; }
-      `}</style>
-      <div className="space-y-4">
-        <header>
-          <h1 className="text-2xl font-semibold tracking-normal text-[#111111] dark:text-[#faf9f6] sm:text-3xl">Noticias</h1>
-          <p className="mt-1 text-sm text-[#6b6f72] dark:text-[#c9c4bc]">Actualidad relevante para tu formación y tus próximos pasos.</p>
-        </header>
-
-        <div className="al-news-toolbar">
-          <div className="al-news-search">
-            <Search />
-            <Input
-              placeholder="Buscar título, fuente, tag..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
+    <div className="space-y-5">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-normal text-[#111111] dark:text-[#faf9f6] sm:text-3xl">Noticias</h1>
+            {status?.cycleCode && (
+              <span className="rounded-full bg-[#e7f5ee] px-2.5 py-1 text-xs font-bold text-[#1f7a4d]">
+                {status.cycleCode}
+              </span>
+            )}
           </div>
-          <div className="al-news-tabs">
-            {ALL_CATEGORIES.map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                className={cn("al-news-tab", category === id && "al-news-tab-active")}
-                onClick={() => setCategory(id)}
-              >
-                {label}
-              </button>
+          <p className="mt-1 text-sm text-[#6b6f72] dark:text-[#c9c4bc]">
+            Información aprobada y relacionada con tu ciclo formativo.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-[#6b6f72]">
+          <ShieldCheck className="h-4 w-4 text-[#1f7a4d]" />
+          Solo fuentes verificadas y contenido revisado
+        </div>
+      </header>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[230px] flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a958a]" />
+          <Input
+            className="h-10 rounded-xl border-[#ece7dc] bg-white pl-9 text-sm"
+            placeholder="Buscar por título, tema o módulo..."
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => void load({ quiet: true })}
+          disabled={refreshing}
+          className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#ece7dc] bg-white px-3 text-xs font-semibold text-[#333029] disabled:opacity-60"
+        >
+          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+          Actualizar
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowFilters((current) => !current)}
+          className={cn(
+            "inline-flex h-10 items-center gap-2 rounded-xl border border-[#ece7dc] bg-white px-3 text-xs font-semibold text-[#333029]",
+            showFilters && "border-[#efb79f] bg-[#fbe7dd] text-[#c94f21]",
+          )}
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          Filtros{activeFilterCount ? ` ${activeFilterCount}` : ""}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard icon={Newspaper} value={status?.totalItems ?? 0} label="Disponibles" color="#E15D2D" background="#fbe7dd" />
+        <StatCard icon={Bell} value={status?.newItems ?? 0} label="Nuevas" color="#1f7a4d" background="#e7f5ee" />
+        <StatCard icon={BookmarkCheck} value={status?.savedItems ?? 0} label="Guardadas" color="#b4791f" background="#fdf1dd" />
+        <StatCard icon={ShieldCheck} value={sources.length} label="Fuentes activas" color="#475569" background="#eef2f6" />
+      </div>
+
+      {showFilters && (
+        <div className="grid gap-4 rounded-2xl border border-[#ece7dc] bg-white p-4 shadow-sm sm:grid-cols-3">
+          <FilterGroup label="Orden">
+            <FilterButton active={sort === "date"} onClick={() => setSort("date")}>Reciente</FilterButton>
+            <FilterButton active={sort === "trust"} onClick={() => setSort("trust")}>Confianza</FilterButton>
+          </FilterGroup>
+          <FilterGroup label="Estado">
+            {(["all", "new", "read", "saved"] as const).map((value) => (
+              <FilterButton key={value} active={statusFilter === value} onClick={() => setStatusFilter(value)}>
+                {{ all: "Todas", new: "Nueva", read: "Leída", saved: "Guardada" }[value]}
+              </FilterButton>
             ))}
-          </div>
-          <button type="button" className="al-news-btn" onClick={syncNow} disabled={syncing}>
-            <RefreshCw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
-            {syncing ? "Sync…" : "Sync"}
-          </button>
-          <button
-            type="button"
-            className={cn("al-news-btn", showFilters && "al-news-btn-active")}
-            onClick={() => setShowFilters((v) => !v)}
-            aria-expanded={showFilters}
-            aria-controls="news-filter-panel"
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-5 lg:flex-row">
-          <div className="min-w-0 flex-1 space-y-4">
-            <div className="al-news-stats">
-              <div className="al-news-stat-card">
-                <span className="al-news-stat-icon" style={{ background: "#fbe7dd", color: "#E15D2D" }}><Newspaper className="h-4.5 w-4.5" /></span>
-                <div><p className="al-news-stat-value">{kpiTotal}</p><p className="al-news-stat-label">Total</p></div>
-              </div>
-              <div className="al-news-stat-card">
-                <span className="al-news-stat-icon" style={{ background: "#e7f5ee", color: "#1f7a4d" }}><Bell className="h-4.5 w-4.5" /></span>
-                <div><p className="al-news-stat-value">{kpiNuevas}</p><p className="al-news-stat-label">Nuevas</p></div>
-              </div>
-              <div className="al-news-stat-card">
-                <span className="al-news-stat-icon" style={{ background: "#fdf1dd", color: "#b4791f" }}><BookmarkCheck className="h-4.5 w-4.5" /></span>
-                <div><p className="al-news-stat-value">{kpiGuardadas}</p><p className="al-news-stat-label">Guardadas</p></div>
-              </div>
-              {kpiFailed > 0 ? (
-                <div className="al-news-stat-card">
-                  <span className="al-news-stat-icon" style={{ background: "#fbe2df", color: "#c23a2e" }}><AlertTriangle className="h-4.5 w-4.5" /></span>
-                  <div><p className="al-news-stat-value">{kpiFailed}</p><p className="al-news-stat-label">Errores sync</p></div>
-                </div>
-              ) : (
-                <div className="al-news-stat-card">
-                  <span className="al-news-stat-icon" style={{ background: "#f3ece1", color: "#6b6f72" }}><RefreshCw className="h-4.5 w-4.5" /></span>
-                  <div><p className="al-news-stat-value-text">{lastSync ?? "—"}</p><p className="al-news-stat-label">Último sync</p></div>
-                </div>
-              )}
-            </div>
-
-            <div className="al-news-count-row">
-              <p className="al-news-count-text">
-                Mostrando {filtered.length} {filtered.length === 1 ? "artículo" : "artículos"}
-                {lastSync ? ` · sync ${lastSync}` : ""}
-              </p>
-              <div className="al-news-tabs">
-                {(["lista", "grid"] as const).map((v) => (
-                  <button key={v} type="button" className={cn("al-news-tab", viewMode === v && "al-news-tab-active")} onClick={() => setViewMode(v)}>
-                    {v === "lista" ? "Lista" : "Grid"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {loading && items.length === 0 ? (
-              <div className="al-news-empty">
-                <span className="al-news-empty-icon"><Newspaper className="h-5 w-5" /></span>
-                <p className="al-news-empty-title">Cargando noticias…</p>
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="al-news-empty">
-                <span className="al-news-empty-icon"><Search className="h-5 w-5" /></span>
-                <p className="al-news-empty-title">Sin resultados</p>
-                <p className="al-news-empty-desc">
-                  No hay artículos con estos filtros.{" "}
-                  <button type="button" className="al-news-empty-link" onClick={syncNow}>
-                    Sincronizar ahora
-                  </button>
-                </p>
-              </div>
-            ) : (
-              <div className={cn("al-news-grid", viewMode === "grid" && "al-news-grid-2")}>
-                {filtered.map((item) => (
-                  <NewsCard
-                    key={item.id}
-                    item={item}
-                    compact={viewMode === "lista"}
-                    onRead={() => markRead(item.id)}
-                    onSave={() => markSaved(item.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {showFilters && (
-            <div className="w-full shrink-0 lg:w-64">
-              <div id="news-filter-panel" className="al-news-filter-panel">
-                <div className="al-news-filter-head">
-                  <span className="al-news-filter-title">Filtros</span>
-                  {activeFilterCount > 0 && (
-                    <button type="button" onClick={clearFilters} className="al-news-filter-clear">
-                      Limpiar
-                    </button>
-                  )}
-                </div>
-
-                <div className="al-news-filter-section">
-                  <p className="al-news-filter-section-label">Ordenar</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {([["date", "Reciente"], ["score", "Relevancia"]] as const).map(([v, l]) => (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => setSort(v)}
-                        className={cn("al-news-chip", sort === v && "al-news-chip-active")}
-                      >
-                        {l}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="al-news-filter-section">
-                  <p className="al-news-filter-section-label">Estado</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {([["all", "Todas"], ["new", "Nueva"], ["read", "Leída"], ["saved", "Guardada"]] as const).map(([v, l]) => (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => setStatusFilter(v)}
-                        className={cn("al-news-chip", statusFilter === v && "al-news-chip-active")}
-                      >
-                        {l}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {sources.length > 1 && (
-                  <div className="al-news-filter-section">
-                    <p className="al-news-filter-section-label">Fuente</p>
-                    <div className="max-h-48 overflow-y-auto space-y-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setSourceFilter("")}
-                        className={cn("al-news-source-row", !sourceFilter && "al-news-source-row-active")}
-                      >
-                        Todas las fuentes
-                      </button>
-                      {sources.map(([id, name]) => (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => setSourceFilter(sourceFilter === id ? "" : id)}
-                          className={cn("al-news-source-row", sourceFilter === id && "al-news-source-row-active")}
-                        >
-                          {name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="al-news-filter-section">
-                  <p className="al-news-filter-section-label">Solo</p>
-                  <label className="flex cursor-pointer items-center gap-2 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={showSavedOnly}
-                      onChange={(e) => setShowSavedOnly(e.target.checked)}
-                      className="rounded"
-                    />
-                    Guardadas
-                  </label>
-                </div>
-
-                {syncStatus && (
-                  <div className="al-news-sync-info">
-                    <p><strong>{syncStatus.totalItems}</strong> artículos guardados</p>
-                    <p>{syncStatus.newToday} nuevos hoy</p>
-                    {syncStatus.sources.filter((s) => !s.ok).length > 0 && (
-                      <p className="al-news-sync-warn">
-                        {syncStatus.sources.filter((s) => !s.ok).length} fuente(s) con error
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
-
-function NewsCard({
-  item,
-  compact,
-  onRead,
-  onSave,
-}: {
-  item: NewsItem;
-  compact: boolean;
-  onRead: () => void;
-  onSave: () => void;
-}) {
-  const cardClass = cn(
-    "al-news-card",
-    item.status === "read" && "al-news-card-read",
-    item.status === "saved" && "al-news-card-saved"
-  );
-
-  if (compact) {
-    return (
-      <div className={cardClass}>
-        <div className="flex items-start gap-3">
-          <div className="min-w-0 flex-1 space-y-1">
-            <div className="flex items-center gap-1.5">
-              <span className="al-news-source truncate">{item.sourceName}</span>
-              {item.relevanceScore >= 50 && (
-                <span className="al-news-badge-top"><Sparkles className="h-2.5 w-2.5" />top</span>
-              )}
-              {item.status === "saved" && <span className="al-news-badge-saved">guardada</span>}
-            </div>
-            <a href={item.url} target="_blank" rel="noreferrer noopener" onClick={onRead} className="al-news-title-link block line-clamp-2">
-              {item.title}
-            </a>
-            {item.description && <p className="al-news-desc line-clamp-2">{item.description}</p>}
-            <div className="al-news-meta">
-              {item.publishedAt && <span>{formatDate(item.publishedAt)}</span>}
-              {item.tags.slice(0, 3).map((t) => (
-                <span key={t} className="al-news-tag">#{t}</span>
-              ))}
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <a href={item.url} target="_blank" rel="noreferrer noopener" onClick={onRead} className="al-news-icon-btn">
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-            {item.status !== "saved" ? (
-              <button type="button" className="al-news-icon-btn" onClick={onSave} title="Guardar">
-                <BookmarkCheck className="h-3.5 w-3.5" />
-              </button>
-            ) : (
-              <button type="button" className="al-news-icon-btn al-news-icon-btn-done" disabled>
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              </button>
+          </FilterGroup>
+          <div>
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#9a958a]">Fuente</p>
+            <select
+              value={sourceFilter}
+              onChange={(event) => setSourceFilter(event.target.value)}
+              className="h-9 w-full rounded-lg border border-[#ece7dc] bg-white px-2 text-xs text-[#333029]"
+            >
+              <option value="">Todas las fuentes</option>
+              {sources.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+            </select>
+            {activeFilterCount > 0 && (
+              <button type="button" onClick={clearFilters} className="mt-2 text-xs font-semibold text-[#c94f21]">Limpiar filtros</button>
             )}
           </div>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  return (
-    <div className={cardClass}>
-      <div className="flex items-center justify-between gap-2">
-        <span className="al-news-source truncate">{item.sourceName}</span>
-        <div className="flex shrink-0 items-center gap-1">
-          {item.relevanceScore >= 50 && (
-            <span className="al-news-badge-top"><Sparkles className="h-2.5 w-2.5" />top</span>
-          )}
-          {item.status === "saved" && <span className="al-news-badge-saved">guardada</span>}
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs text-[#6b6f72]">Mostrando {filteredItems.length} contenidos aprobados</p>
+        <div className="flex rounded-xl border border-[#ece7dc] bg-white p-1">
+          <FilterButton active={viewMode === "list"} onClick={() => setViewMode("list")}>Lista</FilterButton>
+          <FilterButton active={viewMode === "grid"} onClick={() => setViewMode("grid")}>Grid</FilterButton>
         </div>
       </div>
-      <a href={item.url} target="_blank" rel="noreferrer noopener" onClick={onRead} className="al-news-title-link line-clamp-3">
-        {item.title}
-      </a>
-      {item.description && <p className="al-news-desc line-clamp-2">{item.description}</p>}
-      <div className="mt-auto space-y-2">
-        <div className="flex flex-wrap gap-1">
-          {item.tags.slice(0, 4).map((t) => (
-            <span key={t} className="al-news-tag">#{t}</span>
+
+      {loading && items.length === 0 ? (
+        <EmptyState icon={RefreshCw} title="Cargando noticias verificadas..." />
+      ) : filteredItems.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          title="Todavía no hay contenido aprobado"
+          description="El radar solo mostrará información que haya superado la clasificación y revisión de tu ciclo."
+        />
+      ) : (
+        <div className={cn("grid gap-3", viewMode === "grid" && "sm:grid-cols-2 xl:grid-cols-3")}>
+          {filteredItems.map((item) => (
+            <NewsCard key={item.id} item={item} onRead={() => void markRead(item)} onSave={() => void saveItem(item)} />
           ))}
         </div>
-        <div className="flex items-center justify-between gap-2">
-          <div className="al-news-meta">
-            {item.publishedAt && <span>{formatDate(item.publishedAt)}</span>}
-          </div>
-          <div className="flex items-center gap-1">
-            <a href={item.url} target="_blank" rel="noreferrer noopener" onClick={onRead} className="al-news-open-btn">
-              Abrir
-            </a>
-            {item.status !== "saved" ? (
-              <button type="button" className="al-news-icon-btn" onClick={onSave}>
-                <BookmarkCheck className="h-3.5 w-3.5" />
-              </button>
-            ) : (
-              <button type="button" className="al-news-icon-btn al-news-icon-btn-done" disabled>
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
 
-function formatDate(value?: string): string {
-  if (!value) return "";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat("es-ES", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d);
+function NewsCard({ item, onRead, onSave }: { item: NewsItem; onRead: () => void; onSave: () => void }) {
+  return (
+    <article className={cn(
+      "flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-[0_8px_20px_rgba(17,17,17,0.04)]",
+      item.status === "read" ? "border-[#ece7dc] opacity-70" : "border-[#e6e1d8]",
+      item.status === "saved" && "border-[#efb79f] opacity-100",
+    )}>
+      <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold">
+        <span className="text-[#6b6f72]">{item.sourceName}</span>
+        <span className={cn(
+          "rounded-full px-2 py-0.5",
+          item.trustTier === "official" || item.trustTier === "institutional"
+            ? "bg-[#e7f5ee] text-[#1f7a4d]"
+            : "bg-[#f3ece1] text-[#6b6f72]",
+        )}>
+          {TRUST_LABELS[item.trustTier]}
+        </span>
+        <span className="rounded-full bg-[#fbe7dd] px-2 py-0.5 text-[#c94f21]">{KIND_LABELS[item.kind]}</span>
+        {item.status === "saved" && <span className="rounded-full bg-[#fdf1dd] px-2 py-0.5 text-[#9a6418]">Guardada</span>}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noreferrer noopener"
+          onClick={onRead}
+          className="line-clamp-3 text-sm font-semibold leading-5 text-[#111111] hover:text-[#c94f21] hover:underline hover:underline-offset-2"
+        >
+          {item.title}
+        </a>
+        {item.description && <p className="mt-1.5 line-clamp-3 text-xs leading-5 text-[#6b6f72]">{item.description}</p>}
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {item.topics.slice(0, 3).map((topic) => (
+          <span key={topic} className="rounded-md bg-[#f3ece1] px-2 py-1 text-[10px] text-[#6b6f72]">#{topic}</span>
+        ))}
+        {item.moduleCodes.slice(0, 2).map((moduleCode) => (
+          <span key={moduleCode} className="rounded-md bg-[#eef4f1] px-2 py-1 text-[10px] text-[#1f6a4c]">{formatModule(moduleCode)}</span>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between gap-2 border-t border-[#f0ece2] pt-3">
+        <div className="text-[10px] text-[#9a958a]">
+          {item.publishedAt ? formatDate(item.publishedAt) : "Fecha no indicada"}
+          {item.province ? ` · ${item.province}` : ""}
+        </div>
+        <div className="flex items-center gap-1">
+          <a href={item.url} target="_blank" rel="noreferrer noopener" onClick={onRead} className="icon-button" title="Abrir fuente">
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+          {item.status === "saved" ? (
+            <span className="icon-button text-[#1f7a4d]" title="Guardada"><CheckCircle2 className="h-3.5 w-3.5" /></span>
+          ) : (
+            <button type="button" onClick={onSave} className="icon-button" title="Guardar"><BookmarkCheck className="h-3.5 w-3.5" /></button>
+          )}
+        </div>
+      </div>
+      <style jsx>{`
+        .icon-button { display:inline-flex; width:30px; height:30px; align-items:center; justify-content:center; border:1px solid #ece7dc; border-radius:9px; color:#6b6f72; background:white; }
+        .icon-button:hover { border-color:rgba(225,93,45,.4); color:#c94f21; }
+      `}</style>
+    </article>
+  );
 }
 
-function formatRelative(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  const diff = Date.now() - d.getTime();
-  const min = Math.floor(diff / 60_000);
-  if (min < 1) return "ahora";
-  if (min < 60) return `hace ${min}m`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `hace ${hr}h`;
-  const days = Math.floor(hr / 24);
-  if (days < 7) return `hace ${days}d`;
-  return new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "short" }).format(d);
+function StatCard({ icon: Icon, value, label, color, background }: {
+  icon: typeof Newspaper;
+  value: number;
+  label: string;
+  color: string;
+  background: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-[#ece7dc] bg-white p-4 shadow-[0_8px_20px_rgba(17,17,17,0.04)]">
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ color, background }}><Icon className="h-4 w-4" /></span>
+      <div><p className="text-xl font-extrabold leading-none text-[#111111]">{value}</p><p className="mt-1 text-[11px] font-semibold text-[#6b6f72]">{label}</p></div>
+    </div>
+  );
+}
+
+function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#9a958a]">{label}</p><div className="flex flex-wrap gap-1.5">{children}</div></div>;
+}
+
+function FilterButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition",
+        active ? "bg-[#E15D2D] text-white" : "bg-[#f7f4ee] text-[#6b6f72] hover:text-[#c94f21]",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function EmptyState({ icon: Icon, title, description }: { icon: typeof Search; title: string; description?: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-2xl border border-[#ece7dc] bg-white px-6 py-12 text-center shadow-sm">
+      <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#fbe7dd] text-[#E15D2D]"><Icon className="h-5 w-5" /></span>
+      <p className="text-sm font-bold text-[#111111]">{title}</p>
+      {description && <p className="max-w-lg text-xs leading-5 text-[#6b6f72]">{description}</p>}
+    </div>
+  );
+}
+
+function itemDate(item: NewsItem): string {
+  return item.publishedAt ?? item.fetchedAt;
+}
+
+function formatDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Fecha no indicada";
+  return new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "short", year: "numeric" }).format(date);
+}
+
+function formatModule(value: string): string {
+  return value.toLowerCase().replaceAll("_", " ").replace(/^./, (firstCharacter) => firstCharacter.toUpperCase());
 }

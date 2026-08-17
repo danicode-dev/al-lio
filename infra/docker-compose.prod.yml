@@ -19,6 +19,7 @@ services:
       PORT: "3000"
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+      AL_LIO_RADAR_WEBHOOK_SECRET: ${AL_LIO_RADAR_WEBHOOK_SECRET:?AL_LIO_RADAR_WEBHOOK_SECRET is required}
       TARGET_USER_EMAIL: ${TARGET_USER_EMAIL:-}
       AL_LIO_DEMO_ACCESS_ENABLED: ${AL_LIO_DEMO_ACCESS_ENABLED:-false}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -37,8 +38,6 @@ services:
       PG_STATEMENT_TIMEOUT_MS: ${PG_STATEMENT_TIMEOUT_MS:-15000}
     expose:
       - "3000"
-    volumes:
-      - al_lio_news_data:/app/data
     tmpfs:
       - /tmp:rw,noexec,nosuid,nodev,size=128m,uid=1001,gid=1001
       - /app/.next/cache:rw,noexec,nosuid,nodev,size=128m,uid=1001,gid=1001
@@ -62,6 +61,52 @@ services:
         max-file: "3"
     depends_on:
       al_lio_postgres:
+        condition: service_healthy
+
+  al_lio_radar:
+    image: al-lio-radar:${AL_LIO_RADAR_IMAGE_TAG:-local}
+    build:
+      context: ${AL_LIO_RADAR_BUILD_CONTEXT:-../../al-lio-radar}
+      dockerfile: Dockerfile
+    container_name: al_lio_radar
+    restart: unless-stopped
+    init: true
+    user: radar
+    read_only: true
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: ${AL_LIO_RADAR_LOG_LEVEL:-info}
+      AL_LIO_WEBHOOK_URL: ${BASE_URL:?BASE_URL is required}
+      AL_LIO_RADAR_WEBHOOK_SECRET: ${AL_LIO_RADAR_WEBHOOK_SECRET:?AL_LIO_RADAR_WEBHOOK_SECRET is required}
+      DATABASE_PATH: /app/data/al-lio-radar.sqlite
+      HTTP_USER_AGENT: al-lio-radar/1.0 (+https://github.com/danicode-dev/al-lio-radar)
+      HTTP_TIMEOUT_MS: ${AL_LIO_RADAR_HTTP_TIMEOUT_MS:-10000}
+      HTTP_MAX_RETRIES: ${AL_LIO_RADAR_HTTP_MAX_RETRIES:-3}
+      HTTP_RATE_LIMIT_PER_HOST_MS: ${AL_LIO_RADAR_RATE_LIMIT_MS:-2000}
+      HTTP_MAX_BODY_BYTES: ${AL_LIO_RADAR_MAX_BODY_BYTES:-5000000}
+      DELIVERY_BATCH_SIZE: ${AL_LIO_RADAR_DELIVERY_BATCH_SIZE:-100}
+    volumes:
+      - al_lio_radar_data:/app/data
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m
+    mem_limit: 512m
+    mem_reservation: 128m
+    cpus: 1.0
+    pids_limit: 128
+    networks:
+      - danicode_web
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      al_lio_web:
         condition: service_healthy
 
   al_lio_migrator:
@@ -132,5 +177,5 @@ networks:
 
 volumes:
   al_lio_postgres_data:
-  al_lio_news_data:
-    name: al_lio_news_data
+  al_lio_radar_data:
+    name: al_lio_radar_data

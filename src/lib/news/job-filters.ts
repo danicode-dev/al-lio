@@ -1,5 +1,3 @@
-import type { NewsItem } from "@/lib/news/types";
-
 const GRANADA_TERMS = ["granada", "armilla", "albolote", "maracena", "ogijares", "huetor", "pts"];
 const REMOTE_ONLY_TERMS = ["remote", "remoto", "teletrabajo", "worldwide", "anywhere", "us only", "eu only"];
 const ENTRY_TERMS = [
@@ -63,20 +61,4 @@ export function isGranadaCandidateJobText(text: string): boolean {
   const seniorOnly = hasAny(normalized, SENIOR_TERMS) && !entryFit;
 
   return (entryFit || stackFit) && !seniorOnly;
-}
-
-export function isGranadaCandidateJob(item: NewsItem): boolean {
-  // "jobs" category no longer exists; all items pass through
-  void item;
-  return true;
-  return isGranadaCandidateJobText(
-    [
-      item.title,
-      item.description ?? "",
-      item.sourceName,
-      item.sourceId,
-      item.url,
-      ...(item.tags ?? []),
-    ].join(" "),
-  );
 }

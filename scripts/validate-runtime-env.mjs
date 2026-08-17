@@ -21,6 +21,7 @@ if (googleRedirect && !googleRedirect.pathname.endsWith("/api/google/calendar/ca
 }
 
 requiredSecret("SESSION_SECRET", production ? 32 : 16);
+requiredSecret("AL_LIO_RADAR_WEBHOOK_SECRET", 32);
 
 const googleValues = [
   process.env.GOOGLE_CLIENT_ID,

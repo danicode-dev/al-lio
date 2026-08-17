@@ -1,44 +1,45 @@
-import type { NewsCategory } from "@/lib/sources/source-registry";
+import type { FpCycleCode } from "@/lib/db/types";
 
 export type NewsStatus = "new" | "read" | "saved";
+export type NewsTrustTier = "official" | "institutional" | "first_party" | "sector" | "reference";
+export type NewsKind = "news" | "event" | "call" | "legal";
 
 export type NewsItem = {
   id: string;
   sourceId: string;
   sourceName: string;
-  category: NewsCategory;
   title: string;
   description?: string;
   url: string;
+  kind: NewsKind;
   publishedAt?: string;
   fetchedAt: string;
-  tags: string[];
-  relevanceScore: number;
+  expiresAt?: string;
+  eventStartsAt?: string;
+  eventEndsAt?: string;
+  registrationUrl?: string;
+  registrationDeadline?: string;
+  locality?: string;
+  province?: string;
+  targetCycleCodes: FpCycleCode[];
+  moduleCodes: string[];
+  topics: string[];
+  trustTier: NewsTrustTier;
   status: NewsStatus;
 };
 
-export type SourceSyncRecord = {
-  sourceId: string;
-  lastSyncAt: string;
-  ok: boolean;
-  itemsAdded: number;
-  itemsUpdated: number;
-  error?: string;
-};
-
-export type SyncStatus = {
-  lastSyncAt: string | null;
-  lastSyncOk: boolean;
+export type NewsSyncStatus = {
+  cycleCode: FpCycleCode;
   totalItems: number;
-  newToday: number;
-  sources: SourceSyncRecord[];
+  newItems: number;
+  savedItems: number;
+  lastReceivedAt: string | null;
 };
 
 export type NewsListFilters = {
-  category?: NewsCategory | "all";
   sourceId?: string;
   status?: NewsStatus | "all";
   search?: string;
-  sort?: "date" | "score";
+  sort?: "date" | "trust";
   limit?: number;
 };

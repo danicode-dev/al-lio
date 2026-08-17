@@ -13,8 +13,9 @@ Código de la aplicación bajo `src/` (convención oficial de Next.js):
 ## Datos
 
 - `infra/postgres/schema.sql` - schema PostgreSQL actual.
+- `infra/postgres/migrations/0002_radar_news.sql` - persistencia de entregas, noticias y estado por usuario de AL-LÍO Radar.
 - `csv/` - fuentes CSV para importadores.
-- `data/` - caché versionada de noticias usada por `/api/news`.
+- `data/` - copia legacy conservada solo como respaldo; `/api/news` usa PostgreSQL.
 
 ## Operaciones
 

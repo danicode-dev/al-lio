@@ -1,5 +1,5 @@
 import "server-only";
-import { Pool, type QueryResultRow } from "pg";
+import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
 const connectionString = process.env.DATABASE_URL ?? null;
 
@@ -42,7 +42,27 @@ export async function end() {
 }
 
 export async function checkDatabaseConnection(): Promise<void> {
-  await getPool().query("SELECT 1");
+  const result = await getPool().query<{ radar_items: string | null }>(
+    "SELECT to_regclass('public.radar_items')::text AS radar_items",
+  );
+  if (!result.rows[0]?.radar_items) {
+    throw new Error("Required radar_items migration is not applied");
+  }
+}
+
+export async function withTransaction<T>(work: (client: PoolClient) => Promise<T>): Promise<T> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const result = await work(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 function integerEnv(name: string, fallback: number, minimum: number, maximum: number): number {
