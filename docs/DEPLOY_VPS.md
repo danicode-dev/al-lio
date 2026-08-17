@@ -312,7 +312,7 @@ Ante cualquier duda, rechazar. Un candidato pendiente o rechazado nunca llega a 
 Comprobar como mínimo:
 
 - login por contraseña;
-- los cuatro perfiles demo, si se han activado;
+- los cinco perfiles demo, si se han activado;
 - Dashboard;
 - crear, completar y eliminar una tarea de prueba;
 - crear una nota y verla tras recargar;

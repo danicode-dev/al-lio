@@ -35,6 +35,18 @@ const DEMO_USERS = [
     skills: ["Excel", "Contabilidad", "Facturacion"],
   },
   {
+    id: "10000000-0000-0000-0000-000000000005",
+    email: "demo.dam@al-lio.test",
+    displayName: "Demo Multiplataforma",
+    fullName: "Demo Desarrollo de Aplicaciones Multiplataforma",
+    targetRole: "Desarrollo de aplicaciones moviles y multiplataforma",
+    cycleCode: "DAM",
+    cycleGroup: "DEV",
+    academicYear: 2,
+    interests: ["android", "kotlin", "multiplataforma", "iot"],
+    skills: ["Kotlin", "Android", "SQL", "Git"],
+  },
+  {
     id: "10000000-0000-0000-0000-000000000003",
     email: "demo.tsaf@al-lio.test",
     displayName: "Demo TSAF",

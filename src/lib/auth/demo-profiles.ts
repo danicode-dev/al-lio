@@ -16,6 +16,14 @@ export const DEMO_PROFILES = [
     initials: "AF",
   },
   {
+    key: "mobile",
+    userId: "10000000-0000-0000-0000-000000000005",
+    email: "demo.dam@al-lio.test",
+    title: "Desarrollo Multiplataforma",
+    detail: "DAM · 2.º curso",
+    initials: "DM",
+  },
+  {
     key: "fitness",
     userId: "10000000-0000-0000-0000-000000000003",
     email: "demo.tsaf@al-lio.test",
