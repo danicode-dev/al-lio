@@ -27,7 +27,9 @@ function check(label, condition) {
 
 function read(path) {
   const fullPath = join(root, path);
-  return existsSync(fullPath) ? readFileSync(fullPath, "utf-8") : "";
+  // Normalize CRLF -> LF so multi-line .includes() checks below don't depend
+  // on the checkout's line endings (e.g. Windows with core.autocrlf=true).
+  return existsSync(fullPath) ? readFileSync(fullPath, "utf-8").replace(/\r\n/g, "\n") : "";
 }
 
 console.log("\n-- infra/docker-compose.prod.yml --");
