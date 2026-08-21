@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, CheckCircle2, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { addResourceNoteAction, markResourceStatusAction } from "@/lib/fp/resource-notes-actions";
-import { useYouTubePlayer, formatTimestamp } from "@/components/ruta/use-youtube-player";
+import { useYouTubePlayer } from "@/components/ruta/use-youtube-player";
+import { formatTimestamp } from "@/lib/learning/time";
 
 type ContentStatus = "saved" | "started" | "completed" | "dismissed";
 

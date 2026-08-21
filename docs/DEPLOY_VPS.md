@@ -198,9 +198,13 @@ docker compose -f infra/docker-compose.prod.yml --env-file .env --profile ops ru
 docker compose -f infra/docker-compose.prod.yml --env-file .env --profile ops run --rm \
   -e DATABASE_MIGRATION_URL="$AL_LIO_REHEARSAL_DATABASE_URL" \
   al_lio_migrator node scripts/postgres/migrate.mjs
+
+docker compose -f infra/docker-compose.prod.yml --env-file .env --profile ops run --rm \
+  -e DATABASE_MIGRATION_URL="$AL_LIO_REHEARSAL_DATABASE_URL" \
+  al_lio_migrator node scripts/import-learning-competencies.mjs
 ```
 
-Validar la aplicación completa contra esa copia antes de continuar y destruir la copia de ensayo solo después de guardar su resultado.
+La importación del catálogo es transaccional e idempotente. Validar la aplicación completa contra esa copia antes de continuar y destruir la copia de ensayo solo después de guardar su resultado.
 
 ## 7. Adoptar y migrar producción
 
@@ -240,6 +244,13 @@ Aplicar migraciones pendientes:
 
 ```bash
 docker compose -f infra/docker-compose.prod.yml --env-file .env --profile ops run --rm al_lio_migrator
+```
+
+Importar o actualizar el catálogo español de competencias antes de arrancar la imagen nueva:
+
+```bash
+docker compose -f infra/docker-compose.prod.yml --env-file .env --profile ops run --rm \
+  al_lio_migrator node scripts/import-learning-competencies.mjs
 ```
 
 Crear o reforzar el rol de runtime:

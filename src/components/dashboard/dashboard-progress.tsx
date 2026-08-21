@@ -21,7 +21,7 @@ export function DashboardProgress({ roadmap, loadFailed = false }: { roadmap: Ro
           <p className="text-sm font-bold text-[#111111]">Tu progreso</p>
           <p className="mt-1 text-xs text-[#6b6f72]">
             {hasTrackableProgress
-              ? `${roadmap.completion.completed} de ${roadmap.completion.total} competencias disponibles.`
+              ? `${roadmap.completion.completed} de ${roadmap.completion.total} cursos completados.`
               : "El progreso se activará al vincular recursos."}
           </p>
         </div>
@@ -35,7 +35,7 @@ export function DashboardProgress({ roadmap, loadFailed = false }: { roadmap: Ro
       </div>
 
       <div className="mt-5 border-t border-[#f0ece2] pt-4">
-        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.06em] text-[#6b6f72]"><Route className="h-3.5 w-3.5 text-[#1f7a4d]" /> Áreas de enfoque</p>
+        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.06em] text-[#6b6f72]"><Route className="h-3.5 w-3.5 text-[#1f7a4d]" /> Competencias en curso</p>
         <div className="mt-3 space-y-3">
           {roadmap.focusModules.length ? roadmap.focusModules.map((module) => (
             <div key={module.code}>
@@ -47,7 +47,7 @@ export function DashboardProgress({ roadmap, loadFailed = false }: { roadmap: Ro
                 <div className="h-full rounded-full bg-[#f06a37] transition-[width] duration-500" style={{ width: `${module.percent}%` }} />
               </div>
             </div>
-          )) : <p className="text-xs text-[#6b6f72]">{hasTrackableProgress ? "No quedan módulos pendientes." : "Tus áreas aparecerán cuando tengan recursos vinculados."}</p>}
+          )) : <p className="text-xs text-[#6b6f72]">{hasTrackableProgress ? "No quedan competencias pendientes." : "Tus competencias aparecerán cuando tengan cursos vinculados."}</p>}
         </div>
       </div>
 
@@ -62,7 +62,7 @@ export function DashboardProgress({ roadmap, loadFailed = false }: { roadmap: Ro
       </div>
 
       <Link href="/roadmap" className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#e15d2d] transition hover:text-[#c6491d]">
-        Ver detalle del Roadmap <ArrowRight className="h-3.5 w-3.5" />
+        Ver todas las competencias <ArrowRight className="h-3.5 w-3.5" />
       </Link>
     </section>
   );

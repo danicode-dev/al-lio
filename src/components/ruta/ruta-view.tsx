@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { addResourceNoteAction, markResourceStatusAction } from "@/lib/fp/resource-notes-actions";
-import { useYouTubePlayer, formatTimestamp } from "@/components/ruta/use-youtube-player";
+import { useYouTubePlayer } from "@/components/ruta/use-youtube-player";
+import { formatTimestamp } from "@/lib/learning/time";
 
 const TYPE_LABELS: Record<string, string> = {
   curso_basico: "Curso básico",

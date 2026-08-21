@@ -35,7 +35,7 @@ export function DashboardNextStep({ roadmap, loadFailed = false }: { roadmap: Ro
           Sigue con tu ruta
         </div>
         <h2 className="mt-7 text-xl font-extrabold tracking-[-0.03em]">{roadmap.cycleName}</h2>
-        <p className="mt-1 text-sm text-white/80">{completion.total ? `Roadmap · ${completion.percent}% completado` : "Tu siguiente paso está preparado"}</p>
+        <p className="mt-1 text-sm text-white/80">{completion.total ? `Competencias · ${completion.percent}% completado` : "Tu siguiente paso está preparado"}</p>
 
         {completion.total > 0 && (
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/20">
@@ -46,7 +46,7 @@ export function DashboardNextStep({ roadmap, loadFailed = false }: { roadmap: Ro
         {nextStep ? (
           <>
             <div className="mt-5 border-t border-white/15 pt-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/60">Siguiente competencia obligatoria</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/60">Siguiente curso</p>
               <p className="mt-1 text-sm font-bold leading-5">{nextStep.skillTitle}</p>
               <p className="mt-1 text-xs text-white/65">{nextStep.hasContent ? nextStep.moduleName : `${nextStep.moduleName} · Recursos próximamente`}</p>
             </div>

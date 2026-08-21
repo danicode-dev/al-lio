@@ -27,7 +27,7 @@ const SECTIONS = [
   },
   {
     href: "/roadmap",
-    label: "Roadmap",
+    label: "Competencias",
     Icon: Route,
     cardBg: "bg-cyan-50",
     iconBg: "bg-cyan-100",

@@ -42,11 +42,12 @@ export async function end() {
 }
 
 export async function checkDatabaseConnection(): Promise<void> {
-  const result = await getPool().query<{ radar_items: string | null }>(
-    "SELECT to_regclass('public.radar_items')::text AS radar_items",
+  const result = await getPool().query<{ radar_items: string | null; learning_competencies: string | null }>(
+    `SELECT to_regclass('public.radar_items')::text AS radar_items,
+            to_regclass('public.fp_learning_competencies')::text AS learning_competencies`,
   );
-  if (!result.rows[0]?.radar_items) {
-    throw new Error("Required radar_items migration is not applied");
+  if (!result.rows[0]?.radar_items || !result.rows[0]?.learning_competencies) {
+    throw new Error("Required application migrations are not applied");
   }
 }
 

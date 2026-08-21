@@ -116,6 +116,63 @@ export interface DbFpResourceNote {
   updated_at: string;
 }
 
+export type FpLearningRequirement = "essential" | "recommended";
+export type FpLearningLevel = "inicial" | "intermedio" | "avanzado";
+export type FpLearningStatus = "started" | "completed";
+
+export interface DbFpLearningCompetency {
+  id: string;
+  cycle_code: FpCycleCode;
+  slug: string;
+  title: string;
+  description: string;
+  requirement: FpLearningRequirement;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbFpLearningResource {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  provider: string;
+  language: "es";
+  level: FpLearningLevel;
+  youtube_url: string;
+  duration_seconds: number | null;
+  review_status: "approved";
+  reviewed_at: string;
+  reviewed_by: string;
+  review_reason: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbFpUserLearningState {
+  user_id: string;
+  resource_id: string;
+  status: FpLearningStatus;
+  last_position_seconds: number;
+  duration_seconds: number | null;
+  started_at: string;
+  completed_at: string | null;
+  updated_at: string;
+}
+
+export interface DbFpLearningNote {
+  id: string;
+  user_id: string;
+  resource_id: string;
+  timestamp_seconds: number;
+  body: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DbFpContentCycleFit {
   content_item_id: string;
   cycle_code: FpCycleCode;

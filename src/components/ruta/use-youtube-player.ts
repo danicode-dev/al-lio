@@ -5,6 +5,7 @@ import { parseYouTubeUrl } from "@/lib/utils";
 
 type YouTubePlayerInstance = {
   getCurrentTime: () => number;
+  getDuration: () => number;
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
   destroy: () => void;
 };
@@ -17,7 +18,7 @@ declare global {
         options: {
           videoId?: string;
           playerVars?: Record<string, number | string>;
-          events?: { onReady?: () => void };
+          events?: { onReady?: () => void; onStateChange?: (event: { data: number }) => void };
         }
       ) => YouTubePlayerInstance;
     };
@@ -57,16 +58,20 @@ function loadYouTubeApi(): Promise<void> {
 // the only thing React ever renders — it's an empty, static leaf. Everything
 // the API touches (the mount div, the iframe it creates) is created and torn
 // down imperatively inside the effect, so React never has children to diff there.
-export function useYouTubePlayer(videoUrl: string | null | undefined) {
+export function useYouTubePlayer(videoUrl: string | null | undefined, initialTimeSeconds = 0) {
   const youtubeRef = videoUrl ? parseYouTubeUrl(videoUrl) : null;
   const wrapperRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YouTubePlayerInstance | null>(null);
   const [playerReady, setPlayerReady] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [playerState, setPlayerState] = useState(-1);
 
   useEffect(() => {
     setPlayerReady(false);
     setCurrentTime(0);
+    setDuration(0);
+    setPlayerState(-1);
     const wrapper = wrapperRef.current;
     if (!youtubeRef || !wrapper) return;
     let cancelled = false;
@@ -86,7 +91,19 @@ export function useYouTubePlayer(videoUrl: string | null | undefined) {
       playerRef.current = new window.YT.Player(mountNode, {
         ...(youtubeRef.type === "video" ? { videoId: youtubeRef.id } : {}),
         playerVars,
-        events: { onReady: () => setPlayerReady(true) },
+        events: {
+          onReady: () => {
+            const player = playerRef.current;
+            const playerDuration = player?.getDuration() ?? 0;
+            setDuration(playerDuration);
+            if (initialTimeSeconds > 5 && (!playerDuration || initialTimeSeconds < playerDuration - 10)) {
+              player?.seekTo(initialTimeSeconds, true);
+              setCurrentTime(initialTimeSeconds);
+            }
+            setPlayerReady(true);
+          },
+          onStateChange: (event) => setPlayerState(event.data),
+        },
       });
     });
 
@@ -100,13 +117,15 @@ export function useYouTubePlayer(videoUrl: string | null | undefined) {
       wrapper.innerHTML = "";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [youtubeRef?.type, youtubeRef?.id]);
+  }, [youtubeRef?.type, youtubeRef?.id, initialTimeSeconds]);
 
   useEffect(() => {
     if (!playerReady) return;
     const interval = setInterval(() => {
       const time = playerRef.current?.getCurrentTime();
       if (typeof time === "number") setCurrentTime(time);
+      const playerDuration = playerRef.current?.getDuration();
+      if (typeof playerDuration === "number" && playerDuration > 0) setDuration(playerDuration);
     }, 1000);
     return () => clearInterval(interval);
   }, [playerReady]);
@@ -115,12 +134,5 @@ export function useYouTubePlayer(videoUrl: string | null | undefined) {
     playerRef.current?.seekTo(seconds, true);
   }
 
-  return { youtubeRef, playerContainerRef: wrapperRef, playerReady, currentTime, seekTo };
-}
-
-export function formatTimestamp(seconds: number) {
-  const safe = Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
-  const m = Math.floor(safe / 60);
-  const s = Math.floor(safe % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
+  return { youtubeRef, playerContainerRef: wrapperRef, playerReady, currentTime, duration, playerState, seekTo };
 }

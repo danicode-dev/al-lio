@@ -38,8 +38,19 @@ if (radarMigration) {
   check("la migración exige auditoría humana", radarMigration.sql.includes("radar_items_review_audit_required"));
 }
 
+const learningMigration = migrations.find((migration) => migration.version === "0003_learning_competencies");
+check("existe migración versionada de competencias", Boolean(learningMigration));
+if (learningMigration) {
+  check("la migración separa competencias y recursos", learningMigration.sql.includes("fp_learning_competencies") && learningMigration.sql.includes("fp_learning_resources"));
+  check("la migración persiste reanudación", learningMigration.sql.includes("last_position_seconds"));
+  check("la migración persiste notas privadas", learningMigration.sql.includes("fp_learning_notes"));
+  check("la migración restringe recursos al español", learningMigration.sql.includes("language = 'es'"));
+  check("la migración exige trazabilidad editorial", learningMigration.sql.includes("reviewed_by") && learningMigration.sql.includes("review_reason"));
+}
+
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 check("postgres:migrate usa el runner versionado", packageJson.scripts?.["postgres:migrate"] === "node scripts/postgres/migrate.mjs");
+check("existe importador versionado de competencias", packageJson.scripts?.["import:learning-competencies"] === "node scripts/import-learning-competencies.mjs");
 check("postgres:setup ya no aplica schema.sql directamente", !packageJson.scripts?.["postgres:setup"]?.includes("setup-postgres-schema"));
 check(
   "la reconciliación legacy usa un comando explícito",
@@ -62,6 +73,7 @@ if (existsSync(dockerignorePath)) {
 
 const compose = readFileSync(join(root, "infra", "docker-compose.prod.yml"), "utf8");
 const dockerfile = readFileSync(join(root, "infra", "Dockerfile"), "utf8");
+const deployRunbook = readFileSync(join(root, "docs", "DEPLOY_VPS.md"), "utf8");
 const webService = compose.split("  al_lio_migrator:")[0];
 check("el contenedor web no recibe DATABASE_MIGRATION_URL", !/^\s+DATABASE_MIGRATION_URL:/m.test(webService));
 check("las credenciales admin solo viven en el perfil ops", compose.includes('profiles: ["ops"]') && compose.includes("DATABASE_MIGRATION_URL:"));
@@ -72,6 +84,7 @@ check("la red PostgreSQL conserva su nombre estable", compose.includes("name: al
 check("la red PostgreSQL es interna", compose.includes("internal: true"));
 check("el runtime web conserva filesystem de solo lectura", webService.includes("read_only: true"));
 check("el runtime web mantiene límites de recursos", webService.includes("pids_limit:") && webService.includes("mem_limit:"));
+check("el runbook importa competencias tras migrar", deployRunbook.includes("node scripts/import-learning-competencies.mjs"));
 
 if (errors > 0) {
   console.error(`\nRESULTADO: ${errors} problema(s) de migración/despliegue.`);

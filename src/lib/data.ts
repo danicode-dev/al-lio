@@ -11,7 +11,7 @@ import { getAllTechOpportunities } from "@/lib/db/repositories/tech_opportunitie
 import { getCompaniesByCycleGroup, getFavoriteCompanyIds } from "@/lib/db/repositories/companies";
 import { getUserById } from "@/lib/db/repositories/users";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
-import { getRoadmapOverview } from "@/lib/fp/roadmap-overview";
+import { getLearningOverview } from "@/lib/learning/overview";
 import {
   getFpContentForProfile,
   getRequiredCompetenciesForItems,
@@ -45,7 +45,7 @@ export async function getGlobalStore() {
       getFpContentForProfile(userId, profile),
       profile.cycle_group ? getCompaniesByCycleGroup(profile.cycle_group) : Promise.resolve([]),
       getFavoriteCompanyIds(userId),
-      getRoadmapOverview(userId, profile),
+      getLearningOverview(userId, profile),
     ]);
 
   const aptitudeGatedItemIds = fpContent
@@ -149,7 +149,7 @@ export async function getGlobalStore() {
       updated_at: iso(l.updated_at),
     })),
     reminders: [],
-    roadmap: roadmap?.overview ?? null,
+    roadmap,
     companies: dbCompanies.map((c) => ({
       id: c.id,
       nombre: c.nombre,
@@ -280,7 +280,7 @@ export async function getDashboardStore() {
       ? loadStoreSection("companies", getCompaniesByCycleGroup(profile.cycle_group), [], issues)
       : Promise.resolve([]),
     loadStoreSection("companies", getFavoriteCompanyIds(session.uid), new Set<string>(), issues),
-    loadStoreSection("roadmap", getRoadmapOverview(session.uid, profile), null, issues),
+    loadStoreSection("roadmap", getLearningOverview(session.uid, profile), null, issues),
   ]);
 
   return {
@@ -304,7 +304,7 @@ export async function getDashboardStore() {
       updated_at: iso(item.updated_at),
       requiredCompetencies: [],
     })),
-    roadmap: roadmap?.overview ?? null,
+    roadmap,
     companies: dbCompanies.map((company) => ({
       id: company.id,
       nombre: company.nombre,

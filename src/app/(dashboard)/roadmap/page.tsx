@@ -1,8 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
-import { getRoadmapOverview } from "@/lib/fp/roadmap-overview";
-import { RoadmapView } from "@/components/roadmap/roadmap-view";
+import { getActiveFpCycles } from "@/lib/db/repositories/fp_catalog";
+import { getLearningCompetenciesForCycle } from "@/lib/db/repositories/learning";
+import { LEARNING_CATALOG_DISCLAIMER } from "@/lib/learning/catalog";
+import { CompetenciesView } from "@/components/learning/competencies-view";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +13,13 @@ export default async function RoadmapPage() {
   if (!session) redirect("/login");
 
   const profile = await getProfileByUser(session.uid);
-  if (!profile?.cycle_code || !profile.cycle_group) notFound();
+  if (!profile?.cycle_code) notFound();
 
-  const roadmap = await getRoadmapOverview(session.uid, profile);
-  if (!roadmap) notFound();
+  const [competencies, cycles] = await Promise.all([
+    getLearningCompetenciesForCycle(session.uid, profile.cycle_code),
+    getActiveFpCycles(),
+  ]);
+  const cycleName = cycles.find((cycle) => cycle.code === profile.cycle_code)?.name ?? profile.cycle_code;
 
-  return <RoadmapView cycleName={roadmap.overview.cycleName} modules={roadmap.modules} />;
+  return <CompetenciesView cycleName={cycleName} competencies={competencies} disclaimer={LEARNING_CATALOG_DISCLAIMER} />;
 }

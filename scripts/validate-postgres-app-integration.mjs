@@ -35,6 +35,7 @@ const REPOS = [
   "src/lib/db/repositories/fp_resource_notes.ts",
   "src/lib/db/repositories/bloc_notes.ts",
   "src/lib/db/repositories/companies.ts",
+  "src/lib/db/repositories/learning.ts",
 ];
 for (const repo of REPOS) {
   check(`${repo} existe`, existsSync(join(root, repo)));
@@ -76,12 +77,17 @@ console.log("\n── Aislamiento de contenido FP ──");
 const fpCatalog = read("src/lib/db/repositories/fp_catalog.ts");
 const manifest = read("src/app/manifest.ts");
 const resourceActions = read("src/lib/fp/resource-notes-actions.ts");
+const learningRepository = read("src/lib/db/repositories/learning.ts");
+const learningActions = read("src/lib/learning/actions.ts");
 const dashboardLayout = read("src/app/(dashboard)/layout.tsx");
 check("El catalogo filtra por cycle_code exacto", fpCatalog.includes('"fit.cycle_code = $3"'));
 check("Los recursos formativos filtran por cycle_code", fpCatalog.includes("AND fit.cycle_code = $2"));
 check("El manifiesto PWA fuerza una apariencia clara", manifest.includes("background_color: '#f8f6f1'") && manifest.includes("theme_color: '#ffffff'"));
 check("Existe consulta de recurso autorizada por ciclo", fpCatalog.includes("getFpContentItemBySlugForCycle"));
 check("Las acciones consultan el perfil antes del recurso", resourceActions.includes("getProfileByUser") && resourceActions.includes("getFpContentItemBySlugForCycle"));
+check("Los cursos de competencias filtran por ciclo", learningRepository.includes("competency.cycle_code=$3"));
+check("El progreso valida usuario y ciclo antes de escribir", learningActions.includes("getAuthorizedResource") && learningActions.includes("getLearningResourceForCycle"));
+check("La reproducción persiste la posición", learningRepository.includes("last_position_seconds"));
 check("El layout no carga el store global completo", dashboardLayout.includes("getShellStore") && !dashboardLayout.includes("getGlobalStore"));
 check("Existe boundary de error del dashboard", existsSync(join(root, "src/app/(dashboard)/error.tsx")));
 

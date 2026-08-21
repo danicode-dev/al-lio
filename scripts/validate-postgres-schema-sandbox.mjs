@@ -86,6 +86,8 @@ const EXPECTED_TABLES = [
   "hackathons", "courses", "tech_opportunities", "tasks", "reminders", "quick_links",
   "fp_cycles", "fp_content_items", "fp_content_cycle_fit", "fp_user_content_state",
   "radar_deliveries", "radar_items", "radar_delivery_items", "radar_item_user_states",
+  "fp_learning_competencies", "fp_learning_resources", "fp_learning_competency_resources",
+  "fp_user_learning_state", "fp_learning_notes",
 ];
 
 const EXPECTED_INDEXES = [
@@ -99,6 +101,9 @@ const EXPECTED_INDEXES = [
   "radar_items_cycles_idx",
   "radar_items_active_date_idx",
   "radar_item_user_states_user_idx",
+  "fp_learning_competencies_cycle_idx",
+  "fp_user_learning_state_user_idx",
+  "fp_learning_notes_user_resource_idx",
 ];
 
 let passed = 0;
