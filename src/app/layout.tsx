@@ -10,22 +10,11 @@ const barlow = Barlow({
   variable: "--font-barlow",
 });
 
-const themeScript = `
-(() => {
-  try {
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const isDark = savedTheme === "dark" || (!savedTheme && prefersDark);
-    document.documentElement.classList.toggle("dark", isDark);
-    document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-  } catch {}
-})();
-`;
-
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  colorScheme: "light",
 };
 
 export const metadata: Metadata = {
@@ -45,10 +34,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
+    <html lang="es">
       <body className={`${inter.className} ${barlow.variable}`}>{children}</body>
     </html>
   );

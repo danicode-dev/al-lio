@@ -158,22 +158,22 @@ const ALERT_META = {
   task: {
     Icon: ListTodo,
     iconColor: "text-rose-500",
-    iconBg: "bg-rose-100 dark:bg-rose-900/40",
+    iconBg: "bg-rose-100",
   },
   hackathon: {
     Icon: FolderKanban,
     iconColor: "text-violet-500",
-    iconBg: "bg-violet-100 dark:bg-violet-900/40",
+    iconBg: "bg-violet-100",
   },
   course: {
     Icon: GraduationCap,
     iconColor: "text-sky-500",
-    iconBg: "bg-sky-100 dark:bg-sky-900/40",
+    iconBg: "bg-sky-100",
   },
   gcal: {
     Icon: CalendarDays,
     iconColor: "text-emerald-500",
-    iconBg: "bg-emerald-100 dark:bg-emerald-900/40",
+    iconBg: "bg-emerald-100",
   },
 } as const;
 
@@ -311,7 +311,7 @@ export function DailyAlerts() {
                 "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
                 tab === "urgent"
                   ? "bg-rose-500 text-white"
-                  : "bg-rose-100 text-rose-600 hover:bg-rose-200 dark:bg-rose-950/50 dark:text-rose-400",
+                  : "bg-rose-100 text-rose-600 hover:bg-rose-200",
               )}
             >
               🔥 {urgentAlerts.length} urgente{urgentAlerts.length !== 1 ? "s" : ""}

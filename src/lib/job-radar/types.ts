@@ -28,13 +28,13 @@ export const STATUS_LABELS: Record<ApplicationStatus, string> = {
 };
 
 export const STATUS_COLORS: Record<ApplicationStatus, string> = {
-  nueva:         "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  revisada:      "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  aplicada:      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
-  en_proceso:    "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-  descartada:    "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
-  sin_respuesta: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
-  oferta:        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  nueva:         "bg-blue-100 text-blue-800",
+  revisada:      "bg-slate-100 text-slate-700",
+  aplicada:      "bg-yellow-100 text-yellow-800",
+  en_proceso:    "bg-purple-100 text-purple-800",
+  descartada:    "bg-red-100 text-red-700",
+  sin_respuesta: "bg-orange-100 text-orange-800",
+  oferta:        "bg-green-100 text-green-800",
 };
 
 export interface ApplicationNote {

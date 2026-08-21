@@ -760,7 +760,7 @@ function NotificationBell({ store, actions }: { store: Store; actions: ReturnTyp
                         {(event.type === "course" || event.type === "hackathon") && (
                           <button
                             type="button"
-                            className="inline-flex h-6 items-center gap-1 rounded bg-emerald-500/10 px-2 text-[11px] font-medium text-emerald-700 transition-colors hover:bg-emerald-500/20 dark:text-emerald-300"
+                            className="inline-flex h-6 items-center gap-1 rounded bg-emerald-500/10 px-2 text-[11px] font-medium text-emerald-700 transition-colors hover:bg-emerald-500/20"
                             onClick={(e) => markEventDone(e, event)}
                           >
                             <CheckCircle2 className="h-3 w-3" />
@@ -1260,7 +1260,7 @@ function TaskItemRow({
                 {formatShortDateTime(task.due_at)}
               </span>
             )}
-            {task.status === "en_progreso" && <span className="font-medium text-amber-600 dark:text-amber-400">· En curso</span>}
+            {task.status === "en_progreso" && <span className="font-medium text-amber-600">· En curso</span>}
             {task.status === "pospuesta" && <span>· Pospuesta</span>}
             {task.reminder_at && (
               <span className="inline-flex items-center gap-1">
@@ -1274,8 +1274,8 @@ function TaskItemRow({
       </button>
 
       {completed ? (
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
-          <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+          <Check className="h-4 w-4 text-emerald-600" />
         </span>
       ) : (
         <TaskPriorityBadge priority={priority} />
@@ -1355,7 +1355,7 @@ function TaskBoardColumn({
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: bucket.id });
 
   return (
-    <section ref={setDropRef} className={cn("flex min-w-0 flex-col overflow-hidden rounded-lg border bg-muted/30 shadow-sm transition-colors dark:bg-zinc-950/70", compact ? "min-w-0" : "min-h-[430px]", isOver && "ring-2 ring-inset ring-primary/40 bg-muted/60")}>
+    <section ref={setDropRef} className={cn("flex min-w-0 flex-col overflow-hidden rounded-lg border bg-muted/30 shadow-sm transition-colors", compact ? "min-w-0" : "min-h-[430px]", isOver && "ring-2 ring-inset ring-primary/40 bg-muted/60")}>
       <div className={cn("bg-gradient-to-br text-white", bucket.tone, compact ? "px-3 py-2.5" : "p-4")}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -2106,7 +2106,7 @@ const CandidaturaCard = memo(function CandidaturaCard({
 }) {
   const [showNotes, setShowNotes] = useState(false);
   return (
-    <div className={cn("rounded-lg border bg-card p-4 space-y-2", app.is_new && "border-blue-400/50 dark:border-blue-500/40")}>
+    <div className={cn("rounded-lg border bg-card p-4 space-y-2", app.is_new && "border-blue-400/50")}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{app.company_name}</p>
@@ -2464,17 +2464,17 @@ const tasksBrandCss = `
 
 function courseStatusClass(status: string) {
   if (status === "empezado") return "al-course-chip-terracotta";
-  if (status === "terminado") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+  if (status === "terminado") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700";
   if (status === "pausado") return "al-course-chip-amber";
-  if (status === "descartado") return "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300";
+  if (status === "descartado") return "border-red-500/30 bg-red-500/10 text-red-700";
   return "";
 }
 
 function hackathonStatusClass(status: string) {
-  if (status === "inscripcion_abierta") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
-  if (status === "realizado") return "border-slate-400/30 bg-slate-400/10 text-slate-600 dark:text-slate-300";
-  if (status === "descartado") return "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300";
-  if (status === "revisar_futura_edicion") return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  if (status === "inscripcion_abierta") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700";
+  if (status === "realizado") return "border-slate-400/30 bg-slate-400/10 text-slate-600";
+  if (status === "descartado") return "border-red-500/30 bg-red-500/10 text-red-700";
+  if (status === "revisar_futura_edicion") return "border-amber-500/30 bg-amber-500/10 text-amber-700";
   return "";
 }
 
@@ -4406,10 +4406,10 @@ function priorityLabel(value: TaskPriority) {
 }
 
 function priorityClass(value: TaskPriority) {
-  if (value === "critica") return "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300";
-  if (value === "alta") return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
-  if (value === "media") return "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300";
-  return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+  if (value === "critica") return "border-red-500/30 bg-red-500/10 text-red-700";
+  if (value === "alta") return "border-amber-500/30 bg-amber-500/10 text-amber-700";
+  if (value === "media") return "border-blue-500/30 bg-blue-500/10 text-blue-700";
+  return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700";
 }
 
 function priorityBarClass(value: TaskPriority) {

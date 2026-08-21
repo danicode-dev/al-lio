@@ -1,6 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNav } from "@/components/bottom-nav";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { getGlobalStore } from "@/lib/data";
 import { StoreProvider, MobileHeaderActions } from "@/components/guest-app";
 import { DailyAlerts } from "@/components/daily-alerts";
@@ -25,22 +24,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 alt="AL-LIO"
                 width={615}
                 height={214}
-                className="block h-auto w-28 object-contain object-left dark:hidden"
-                priority
-              />
-              <Image
-                src="/assets/al_lio_logo_horizontal_white_transparent.png"
-                alt="AL-LIO"
-                width={560}
-                height={115}
-                className="hidden h-auto w-28 object-contain object-left dark:block"
+                className="block h-auto w-28 object-contain object-left"
                 priority
               />
             </div>
-            <div className="flex items-center gap-1">
-              <ThemeToggle />
-              <MobileHeaderActions />
-            </div>
+            <MobileHeaderActions />
           </div>
           <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8">
             {children}

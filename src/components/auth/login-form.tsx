@@ -41,7 +41,6 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           --alio-terracotta: #E15D2D;
           --alio-graphite: #111111;
           --alio-cream: #F5F2EC;
-          --alio-dark: #080B0C;
         }
 
         @keyframes al-fadeUp {

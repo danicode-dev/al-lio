@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { signOut } from "@/lib/actions";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -74,15 +73,7 @@ export function AppSidebar() {
               alt="AL-LIO"
               width={26}
               height={26}
-              className="block dark:hidden"
-              priority
-            />
-            <Image
-              src="/assets/al_lio_favicon_dark_circle_512.png"
-              alt="AL-LIO"
-              width={26}
-              height={26}
-              className="hidden rounded-sm dark:block"
+              className="block"
               priority
             />
           </button>
@@ -94,22 +85,12 @@ export function AppSidebar() {
                 alt="AL-LIO"
                 width={615}
                 height={214}
-                className="block object-contain object-left dark:hidden"
-                style={{ width: 128, height: "auto" }}
-                priority
-              />
-              <Image
-                src="/assets/al_lio_logo_horizontal_white_transparent.png"
-                alt="AL-LIO"
-                width={560}
-                height={115}
-                className="hidden object-contain object-left dark:block"
+                className="block object-contain object-left"
                 style={{ width: 128, height: "auto" }}
                 priority
               />
             </div>
             <div className="flex shrink-0 items-center gap-0.5">
-              <ThemeToggle />
               <Button variant="ghost" size="icon" onClick={toggleCollapsed} aria-label="Plegar menú">
                 <ChevronLeft className="h-4 w-4" />
               </Button>

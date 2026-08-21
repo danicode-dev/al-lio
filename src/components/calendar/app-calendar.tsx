@@ -194,11 +194,11 @@ export function CalendarView({
   }
 
   return (
-    <div className="space-y-5 text-[#111111] dark:text-[#faf9f6]">
+    <div className="space-y-5 text-[#111111]">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">Calendario</h1>
-          <p className="mt-1 text-sm text-[#6b6f72] dark:text-[#c9c4bc]">Gestiona tus eventos, fechas y actividades.</p>
+          <p className="mt-1 text-sm text-[#6b6f72]">Gestiona tus eventos, fechas y actividades.</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="hidden items-center gap-2 md:flex">{headerActions}</div>

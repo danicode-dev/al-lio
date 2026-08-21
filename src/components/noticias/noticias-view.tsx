@@ -165,17 +165,17 @@ export function NoticiasView() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-normal text-[#111111] dark:text-[#faf9f6] sm:text-3xl">Noticias</h1>
+            <h1 className="text-2xl font-semibold tracking-normal text-[#111111] sm:text-3xl">Noticias</h1>
             {status?.cycleCode && (
               <span className="rounded-full bg-[#e7f5ee] px-2.5 py-1 text-xs font-bold text-[#1f7a4d]">
                 {status.cycleCode}
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-[#6b6f72] dark:text-[#c9c4bc]">
+          <p className="mt-1 text-sm text-[#6b6f72]">
             Información aprobada y relacionada con tu ciclo formativo.
           </p>
-          <p className="mt-1 text-xs text-[#9a958a] dark:text-[#aaa49a]">
+          <p className="mt-1 text-xs text-[#9a958a]">
             Radar revisa las fuentes automáticamente cada 12–24 horas; recargar no inicia un nuevo rastreo.
           </p>
         </div>
