@@ -79,6 +79,7 @@ check("el contenedor web no recibe DATABASE_MIGRATION_URL", !/^\s+DATABASE_MIGRA
 check("las credenciales admin solo viven en el perfil ops", compose.includes('profiles: ["ops"]') && compose.includes("DATABASE_MIGRATION_URL:"));
 check("el healthcheck usa readiness con PostgreSQL", compose.includes("/api/ready"));
 check("la imagen también usa readiness con PostgreSQL", dockerfile.includes("/api/ready"));
+check("la imagen conserva bcryptjs para operaciones controladas", dockerfile.includes("/app/node_modules/bcryptjs"));
 check("Noticias ya no depende de JSON local", !compose.includes("al_lio_news_data:/app/data"));
 check("la red PostgreSQL conserva su nombre estable", compose.includes("name: al_lio_backend_internal"));
 check("la red PostgreSQL es interna", compose.includes("internal: true"));
