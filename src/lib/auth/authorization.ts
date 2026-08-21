@@ -1,16 +1,15 @@
 import "server-only";
 
-import { cache } from "react";
 import { redirect } from "next/navigation";
 
 import { getSession } from "@/lib/auth/session";
 import { getUserById } from "@/lib/db/repositories/users";
 
-export const getCurrentUser = cache(async () => {
+export async function getCurrentUser() {
   const session = await getSession();
   if (!session) return null;
   return getUserById(session.uid);
-});
+}
 
 export async function isCurrentUserAdmin() {
   return (await getCurrentUser())?.role === "admin";
