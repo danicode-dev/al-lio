@@ -300,10 +300,15 @@ Debe existir una sola réplica de Radar para evitar carreras de planificación y
 La recogida y clasificación son automáticas, pero publicar exige una decisión humana auditada. Revisar siempre título, resumen, URL oficial, ciclo y módulos antes de aprobar:
 
 ```bash
+docker exec al_lio_radar node dist/cli/reviewStatus.js --json
 docker exec al_lio_radar node dist/cli/reviewList.js
 docker exec al_lio_radar node dist/cli/reviewApprove.js <id> --actor <responsable> --reason "<motivo verificable>"
 docker exec al_lio_radar node dist/cli/reviewReject.js <id> --actor <responsable> --reason "<motivo del descarte>"
 ```
+
+Monitorizar `reviewStatus.js --json` fuera del `HEALTHCHECK`: la cola editorial
+vacía o reciente no debe reiniciar el contenedor, pero una antigüedad superior
+a 72 horas devuelve código 2 y requiere aviso al responsable de contenidos.
 
 Ante cualquier duda, rechazar. Un candidato pendiente o rechazado nunca llega a AL-LÍO.
 

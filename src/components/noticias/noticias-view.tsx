@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell,
   BookmarkCheck,
@@ -55,8 +55,10 @@ export function NoticiasView() {
   const [sort, setSort] = useState<SortMode>("date");
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const lastReceivedAtRef = useRef<string | null>(null);
 
-  async function load({ quiet = false }: { quiet?: boolean } = {}) {
+  const load = useCallback(async ({ quiet = false }: { quiet?: boolean } = {}) => {
+    const previousReceivedAt = lastReceivedAtRef.current;
     if (quiet) setRefreshing(true);
     else setLoading(true);
     try {
@@ -65,7 +67,15 @@ export function NoticiasView() {
       const data = (await response.json()) as ApiResponse;
       setItems(data.items ?? []);
       setStatus(data.status ?? null);
-      if (quiet) toast.success("Noticias actualizadas");
+      lastReceivedAtRef.current = data.status?.lastReceivedAt ?? null;
+      if (quiet) {
+        const receivedAt = data.status?.lastReceivedAt ?? null;
+        toast.success(
+          receivedAt && receivedAt !== previousReceivedAt
+            ? "Hay nuevas noticias aprobadas"
+            : "Lista al día; no hay nuevas entregas aprobadas",
+        );
+      }
     } catch (error) {
       console.warn("[noticias] load error", error);
       toast.error("No se pudieron cargar las noticias");
@@ -73,7 +83,7 @@ export function NoticiasView() {
       setLoading(false);
       setRefreshing(false);
     }
-  }
+  }, []);
 
   async function markRead(item: NewsItem) {
     if (item.status !== "new") return;
@@ -110,7 +120,7 @@ export function NoticiasView() {
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   useEffect(() => {
     const timeout = setTimeout(() => setSearch(searchInput.trim().toLowerCase()), 250);
@@ -165,6 +175,9 @@ export function NoticiasView() {
           <p className="mt-1 text-sm text-[#6b6f72] dark:text-[#c9c4bc]">
             Información aprobada y relacionada con tu ciclo formativo.
           </p>
+          <p className="mt-1 text-xs text-[#9a958a] dark:text-[#aaa49a]">
+            Radar revisa las fuentes automáticamente cada 12–24 horas; recargar no inicia un nuevo rastreo.
+          </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-[#6b6f72]">
           <ShieldCheck className="h-4 w-4 text-[#1f7a4d]" />
@@ -189,7 +202,7 @@ export function NoticiasView() {
           className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#ece7dc] bg-white px-3 text-xs font-semibold text-[#333029] disabled:opacity-60"
         >
           <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-          Actualizar
+          Recargar lista
         </button>
         <button
           type="button"
@@ -208,7 +221,14 @@ export function NoticiasView() {
         <StatCard icon={Newspaper} value={status?.totalItems ?? 0} label="Disponibles" color="#E15D2D" background="#fbe7dd" />
         <StatCard icon={Bell} value={status?.newItems ?? 0} label="Nuevas" color="#1f7a4d" background="#e7f5ee" />
         <StatCard icon={BookmarkCheck} value={status?.savedItems ?? 0} label="Guardadas" color="#b4791f" background="#fdf1dd" />
-        <StatCard icon={ShieldCheck} value={sources.length} label="Fuentes activas" color="#475569" background="#eef2f6" />
+        <StatCard icon={ShieldCheck} value={sources.length} label="Fuentes con contenido" color="#475569" background="#eef2f6" />
+      </div>
+
+      <div className="flex flex-col gap-1 rounded-xl border border-[#ece7dc] bg-[#faf8f3] px-4 py-3 text-xs text-[#6b6f72] sm:flex-row sm:items-center sm:justify-between">
+        <span>Solo aparecen contenidos que ya han superado la revisión editorial.</span>
+        <span className="font-semibold text-[#333029]">
+          Última entrega: {status?.lastReceivedAt ? formatDateTime(status.lastReceivedAt) : "todavía no disponible"}
+        </span>
       </div>
 
       {showFilters && (
@@ -302,6 +322,14 @@ function NewsCard({ item, onRead, onSave }: { item: NewsItem; onRead: () => void
         {item.description && <p className="mt-1.5 line-clamp-3 text-xs leading-5 text-[#6b6f72]">{item.description}</p>}
       </div>
 
+      {item.kind === "event" && (item.eventStartsAt || item.registrationDeadline) && (
+        <div className="rounded-xl border border-[#e5eee9] bg-[#f4f8f6] px-3 py-2 text-[11px] leading-5 text-[#315f4b]">
+          {item.eventStartsAt && <p><span className="font-bold">Comienza:</span> {formatDateTime(item.eventStartsAt)}</p>}
+          {item.eventEndsAt && <p><span className="font-bold">Finaliza:</span> {formatDateTime(item.eventEndsAt)}</p>}
+          {item.registrationDeadline && <p><span className="font-bold">Inscripción hasta:</span> {formatDateTime(item.registrationDeadline)}</p>}
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-1.5">
         {item.topics.slice(0, 3).map((topic) => (
           <span key={topic} className="rounded-md bg-[#f3ece1] px-2 py-1 text-[10px] text-[#6b6f72]">#{topic}</span>
@@ -387,6 +415,18 @@ function formatDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Fecha no indicada";
   return new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "short", year: "numeric" }).format(date);
+}
+
+function formatDateTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Fecha no indicada";
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function formatModule(value: string): string {
