@@ -8,13 +8,13 @@ import {
   GraduationCap,
   FolderKanban,
   CalendarDays,
-  Link as LinkIcon,
   Route,
   Settings,
   Compass,
   UserCircle,
 } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { isCurrentUserAdmin } from "@/lib/auth/authorization";
 
 const SECTIONS = [
   {
@@ -90,22 +90,6 @@ const SECTIONS = [
     iconColor: "text-amber-500",
   },
   {
-    href: "/links",
-    label: "Enlaces",
-    Icon: LinkIcon,
-    cardBg: "bg-teal-50",
-    iconBg: "bg-teal-100",
-    iconColor: "text-teal-500",
-  },
-  {
-    href: "/settings",
-    label: "Ajustes",
-    Icon: Settings,
-    cardBg: "bg-slate-100",
-    iconBg: "bg-slate-200",
-    iconColor: "text-slate-500",
-  },
-  {
     href: "/profile",
     label: "Perfil",
     Icon: UserCircle,
@@ -115,7 +99,12 @@ const SECTIONS = [
   },
 ] as const;
 
-export default function MorePage() {
+export default async function MorePage() {
+  const isAdmin = await isCurrentUserAdmin();
+  const sections = isAdmin
+    ? [...SECTIONS, { href: "/settings", label: "Administración", Icon: Settings, cardBg: "bg-slate-100", iconBg: "bg-slate-200", iconColor: "text-slate-500" }]
+    : SECTIONS;
+
   return (
     <div className="px-4 py-6 pb-8 md:px-8">
       {/* Header */}
@@ -136,7 +125,7 @@ export default function MorePage() {
 
       {/* Grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {SECTIONS.map(({ href, label, Icon, cardBg, iconBg, iconColor }) => (
+        {sections.map(({ href, label, Icon, cardBg, iconBg, iconColor }) => (
           <Link
             key={href}
             href={href}

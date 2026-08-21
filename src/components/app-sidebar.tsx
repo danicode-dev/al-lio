@@ -11,7 +11,6 @@ import {
   FolderKanban,
   GraduationCap,
   Home,
-  LinkIcon,
   ListTodo,
   Newspaper,
   Route,
@@ -36,12 +35,10 @@ const items = [
   { href: "/courses", label: "Cursos", icon: GraduationCap },
   { href: "/hackathons", label: "Hackathons", icon: FolderKanban },
   { href: "/calendar", label: "Calendario", icon: CalendarDays },
-  { href: "/links", label: "Enlaces", icon: LinkIcon },
-  { href: "/settings", label: "Ajustes", icon: Settings },
   { href: "/profile", label: "Perfil", icon: UserCircle },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -119,6 +116,20 @@ export function AppSidebar() {
             </Link>
           );
         })}
+        {isAdmin && (
+          <Link
+            href="/settings"
+            className={cn(
+              "flex h-10 items-center gap-3 rounded-md px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground",
+              pathname === "/settings" && "bg-muted text-foreground",
+              collapsed && "justify-center px-0",
+            )}
+            title="Ajustes de administración"
+          >
+            <Settings className="h-4 w-4" />
+            {!collapsed && <span>Administración</span>}
+          </Link>
+        )}
       </nav>
       <div className="absolute bottom-4 left-0 w-full px-2">
         <form action={signOut}>

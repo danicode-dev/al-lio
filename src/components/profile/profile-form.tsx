@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import {
+  ArrowRight,
   BookOpen,
   Calendar,
   CheckCircle2,
@@ -15,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { updateProfileAction, type ProfileUpdateState } from "@/lib/profile/onboarding-actions";
 import { ONBOARDING_INTEREST_OPTIONS } from "@/lib/profile/onboarding-options";
 import type { DbFpCycle, DbProfile } from "@/lib/db/types";
+import type { RoadmapOverview } from "@/lib/fp/roadmap";
 import { FieldListbox, type FieldListboxOption } from "@/components/ui/field-listbox";
 
 const INTEREST_META: Record<
@@ -35,28 +38,24 @@ const errorCopy: Record<string, string> = {
 
 const initialState: ProfileUpdateState = { error: null, savedAt: null };
 
-export type ProfileStats = {
-  coursesTotal: number;
-  coursesDone: number;
-  hackathonsTotal: number;
-  hackathonsDone: number;
-  fpSaved: number;
-  fpCompleted: number;
-};
-
 export function ProfileForm({
   cycles,
   profile,
-  stats,
+  account,
+  learningOverview,
 }: {
   cycles: DbFpCycle[];
   profile: DbProfile;
-  stats: ProfileStats;
+  account: { email: string; displayName: string | null };
+  learningOverview: RoadmapOverview | null;
 }) {
   const [state, formAction, isPending] = useActionState(updateProfileAction, initialState);
   const [cycleCode, setCycleCode] = useState(profile.cycle_code ?? "");
   const [academicYear, setAcademicYear] = useState(profile.academic_year ? String(profile.academic_year) : "");
   const [interests, setInterests] = useState<string[]>(profile.interests ?? []);
+  const displayName = account.displayName?.trim() || account.email.split("@")[0] || "Estudiante";
+  const initials = displayName.split(/\s+/).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("");
+  const selectedCycle = cycles.find((cycle) => cycle.code === cycleCode);
 
   function toggleInterest(id: string) {
     setInterests((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
@@ -86,6 +85,31 @@ export function ProfileForm({
           grid-template-columns: minmax(0, 1.4fr) minmax(240px, 1fr);
           gap: 20px;
         }
+
+        .al-profile-identity {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          margin-bottom: 20px;
+          border-bottom: 1px solid #f0ece2;
+          padding-bottom: 20px;
+        }
+        .al-profile-avatar {
+          display: grid;
+          width: 54px;
+          height: 54px;
+          flex: 0 0 auto;
+          place-items: center;
+          border-radius: 18px;
+          background: linear-gradient(145deg, #fbe7dd, #f7d3c2);
+          color: #c94f21;
+          font-size: 17px;
+          font-weight: 900;
+        }
+        .al-profile-name { margin: 0; color: #111111; font-size: 16px; font-weight: 800; }
+        .al-profile-email { margin: 3px 0 0; color: #777269; font-size: 12px; overflow-wrap: anywhere; }
+        .al-profile-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .al-profile-badge { border-radius: 999px; background: #f7f4ee; padding: 4px 8px; color: #5f5a52; font-size: 10px; font-weight: 800; }
 
         .al-profile-card {
           background: white;
@@ -171,6 +195,23 @@ export function ProfileForm({
           margin: 0 0 16px 0;
         }
 
+        .al-profile-progress-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+        .al-profile-progress-ring {
+          display: grid;
+          width: 68px;
+          height: 68px;
+          flex: 0 0 auto;
+          place-items: center;
+          border-radius: 999px;
+          position: relative;
+        }
+        .al-profile-progress-ring::after { content: ""; position: absolute; inset: 7px; border-radius: 999px; background: white; }
+        .al-profile-progress-value { position: relative; z-index: 1; color: #111111; font-size: 14px; font-weight: 900; }
+        .al-profile-focus { margin-top: 18px; border-top: 1px solid #f0ece2; padding-top: 14px; }
+        .al-profile-focus-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; color: #4b4740; font-size: 12px; }
+        .al-profile-focus-row strong { color: #111111; font-size: 11px; }
+        .al-profile-roadmap-link { margin-top: 14px; display: inline-flex; align-items: center; gap: 6px; color: #e15d2d; font-size: 12px; font-weight: 800; }
+
         .al-profile-stat-row {
           display: flex;
           align-items: center;
@@ -195,6 +236,17 @@ export function ProfileForm({
 
       <div className="al-profile-grid">
         <div className="al-profile-card">
+          <div className="al-profile-identity">
+            <div className="al-profile-avatar" aria-hidden="true">{initials}</div>
+            <div className="min-w-0">
+              <p className="al-profile-name">{displayName}</p>
+              <p className="al-profile-email">{account.email}</p>
+              <div className="al-profile-badges">
+                <span className="al-profile-badge">{selectedCycle?.short_name ?? cycleCode}</span>
+                {academicYear && <span className="al-profile-badge">{academicYear}º curso</span>}
+              </div>
+            </div>
+          </div>
           {state.error && <p className="al-profile-error">{errorCopy[state.error] ?? "No se pudo guardar. Inténtalo de nuevo."}</p>}
 
           <form action={formAction} className="al-profile-form">
@@ -262,26 +314,23 @@ export function ProfileForm({
         </div>
 
         <div className="al-profile-stats-card">
-          <h2 className="al-profile-stats-title">Tu progreso</h2>
-          <div className="al-profile-stat-row">
-            <span>Cursos completados</span>
-            <strong>
-              {stats.coursesDone} / {stats.coursesTotal}
-            </strong>
+          <div className="al-profile-progress-head">
+            <div>
+              <h2 className="al-profile-stats-title">Progreso de competencias</h2>
+              <p className="m-0 text-xs leading-5 text-[#777269]">Vídeos completados dentro de tu ciclo.</p>
+            </div>
+            <div className="al-profile-progress-ring" style={{ background: `conic-gradient(#1f7a4d ${learningOverview?.completion.percent ?? 0}%, #eee9df 0)` }}>
+              <span className="al-profile-progress-value">{learningOverview?.completion.percent ?? 0}%</span>
+            </div>
           </div>
-          <div className="al-profile-stat-row">
-            <span>Hackathons realizados</span>
-            <strong>
-              {stats.hackathonsDone} / {stats.hackathonsTotal}
-            </strong>
-          </div>
-          <div className="al-profile-stat-row">
-            <span>Contenido FP guardado</span>
-            <strong>{stats.fpSaved}</strong>
-          </div>
-          <div className="al-profile-stat-row">
-            <span>Contenido FP completado</span>
-            <strong>{stats.fpCompleted}</strong>
+          <div className="al-profile-stat-row"><span>Recursos completados</span><strong>{learningOverview?.completion.completed ?? 0} / {learningOverview?.completion.total ?? 0}</strong></div>
+          <div className="al-profile-stat-row"><span>Ciclo personalizado</span><strong>{learningOverview?.cycleCode ?? cycleCode}</strong></div>
+          <div className="al-profile-focus">
+            <h3 className="m-0 text-xs font-extrabold uppercase tracking-[0.08em] text-[#8e887e]">Siguiente enfoque</h3>
+            {learningOverview?.focusModules.length ? learningOverview.focusModules.map((module) => (
+              <div key={module.code} className="al-profile-focus-row"><span>{module.name}</span><strong>{module.completed}/{module.total}</strong></div>
+            )) : <p className="mt-3 text-xs leading-5 text-[#777269]">No tienes competencias pendientes con contenido disponible.</p>}
+            <Link href="/roadmap" className="al-profile-roadmap-link">Ver todas las competencias <ArrowRight className="h-3.5 w-3.5" /></Link>
           </div>
         </div>
       </div>

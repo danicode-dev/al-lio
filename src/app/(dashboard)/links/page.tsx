@@ -1,5 +1,5 @@
-import { StoredGuestApp } from "@/components/stored-guest-app";
+import { redirect } from "next/navigation";
 
 export default function LinksPage() {
-  return <StoredGuestApp view="links" />;
+  redirect("/dashboard");
 }

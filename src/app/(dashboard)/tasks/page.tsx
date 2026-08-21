@@ -1,5 +1,5 @@
-import { StoredGuestApp } from "@/components/stored-guest-app";
+import { TasksView } from "@/components/tasks/tasks-view";
 
 export default function TasksPage() {
-  return <StoredGuestApp view="tasks" />;
+  return <TasksView />;
 }

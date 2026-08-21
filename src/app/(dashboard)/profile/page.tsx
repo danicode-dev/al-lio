@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
-import { getActiveFpCycles, getFpUserContentStateCounts } from "@/lib/db/repositories/fp_catalog";
-import { getCoursesByUser } from "@/lib/db/repositories/courses";
-import { getHackathonsByUser } from "@/lib/db/repositories/hackathons";
+import { getActiveFpCycles } from "@/lib/db/repositories/fp_catalog";
+import { getUserById } from "@/lib/db/repositories/users";
+import { getLearningOverview } from "@/lib/learning/overview";
 import { ProfileForm } from "@/components/profile/profile-form";
 
 export const dynamic = "force-dynamic";
@@ -12,24 +12,22 @@ export default async function ProfilePage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const [cycles, profile, courses, hackathons, fpCounts] = await Promise.all([
-    getActiveFpCycles(),
-    getProfileByUser(session.uid),
-    getCoursesByUser(session.uid),
-    getHackathonsByUser(session.uid),
-    getFpUserContentStateCounts(session.uid),
-  ]);
+  const profile = await getProfileByUser(session.uid);
 
   if (!profile || !profile.onboarding_completed_at) redirect("/onboarding");
 
-  const stats = {
-    coursesTotal: courses.length,
-    coursesDone: courses.filter((course) => course.status === "terminado").length,
-    hackathonsTotal: hackathons.length,
-    hackathonsDone: hackathons.filter((hackathon) => hackathon.status === "realizado").length,
-    fpSaved: (fpCounts.saved ?? 0) + (fpCounts.started ?? 0),
-    fpCompleted: fpCounts.completed ?? 0,
-  };
+  const [cycles, user, learningOverview] = await Promise.all([
+    getActiveFpCycles(),
+    getUserById(session.uid),
+    getLearningOverview(session.uid, profile),
+  ]);
 
-  return <ProfileForm cycles={cycles} profile={profile} stats={stats} />;
+  return (
+    <ProfileForm
+      cycles={cycles}
+      profile={profile}
+      account={{ email: user?.email ?? session.email, displayName: user?.display_name ?? profile.display_name ?? profile.full_name }}
+      learningOverview={learningOverview}
+    />
+  );
 }

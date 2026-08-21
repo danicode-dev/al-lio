@@ -1,6 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNav } from "@/components/bottom-nav";
 import { getShellStore } from "@/lib/data";
+import { isCurrentUserAdmin } from "@/lib/auth/authorization";
 import { StoreProvider } from "@/components/guest-store";
 import { MobileHeaderActions } from "@/components/mobile-header-actions";
 import { DailyAlerts } from "@/components/daily-alerts";
@@ -11,12 +12,16 @@ import { Toaster } from "sonner";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const store = (await getShellStore()) as unknown as Store;
+  const [shellStore, isAdmin] = await Promise.all([
+    getShellStore(),
+    isCurrentUserAdmin(),
+  ]);
+  const store = shellStore as unknown as Store;
 
   return (
     <StoreProvider initialStore={store}>
       <div className="flex min-h-[100dvh] bg-background">
-        <AppSidebar />
+        <AppSidebar isAdmin={isAdmin} />
         <main className="min-w-0 flex-1 relative pb-20 md:pb-0">
           <div className="flex h-14 items-center justify-between border-b bg-background/90 backdrop-blur-xl px-4 md:hidden sticky top-0 z-40">
             <div className="relative h-8 w-28">
