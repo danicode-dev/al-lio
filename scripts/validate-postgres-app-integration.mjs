@@ -74,10 +74,12 @@ check("Shell usa un loader minimo y tolerante", data.includes("export const getS
 
 console.log("\n── Aislamiento de contenido FP ──");
 const fpCatalog = read("src/lib/db/repositories/fp_catalog.ts");
+const manifest = read("src/app/manifest.ts");
 const resourceActions = read("src/lib/fp/resource-notes-actions.ts");
 const dashboardLayout = read("src/app/(dashboard)/layout.tsx");
 check("El catalogo filtra por cycle_code exacto", fpCatalog.includes('"fit.cycle_code = $3"'));
 check("Los recursos formativos filtran por cycle_code", fpCatalog.includes("AND fit.cycle_code = $2"));
+check("El manifiesto PWA fuerza una apariencia clara", manifest.includes("background_color: '#f8f6f1'") && manifest.includes("theme_color: '#ffffff'"));
 check("Existe consulta de recurso autorizada por ciclo", fpCatalog.includes("getFpContentItemBySlugForCycle"));
 check("Las acciones consultan el perfil antes del recurso", resourceActions.includes("getProfileByUser") && resourceActions.includes("getFpContentItemBySlugForCycle"));
 check("El layout no carga el store global completo", dashboardLayout.includes("getShellStore") && !dashboardLayout.includes("getGlobalStore"));

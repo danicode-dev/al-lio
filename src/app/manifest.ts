@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Panel privado para tareas, calendario y oportunidades.',
     start_url: '/dashboard',
     display: 'standalone',
-    background_color: '#09090b',
-    theme_color: '#09090b',
+    background_color: '#f8f6f1',
+    theme_color: '#ffffff',
     orientation: 'portrait',
     icons: [
       {
