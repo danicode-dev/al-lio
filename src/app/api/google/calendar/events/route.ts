@@ -28,7 +28,7 @@ function friendlyGoogleError(error: unknown): string {
 
 export async function GET(req: Request) {
   const calendar = await getGoogleCalendarClient();
-  if (!calendar) return unauthorized();
+  if (!calendar) return NextResponse.json({ connected: false, events: [] });
 
   const url = new URL(req.url);
   const timeMin = url.searchParams.get("timeMin") ?? new Date().toISOString();
