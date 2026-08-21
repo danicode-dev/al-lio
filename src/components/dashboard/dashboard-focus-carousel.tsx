@@ -140,6 +140,13 @@ export function DashboardFocusCarousel({ store }: { store: Store }) {
   const cards = useMemo(() => buildCards(store), [store]);
   const active = sections[activeIndex];
   const activeCards = cards[active.id];
+  const loadFailed = active.id === "upcoming"
+    ? store.loadIssues?.some((issue) => issue === "tasks" || issue === "courses")
+    : active.id === "opportunities"
+      ? store.loadIssues?.includes("opportunities")
+      : active.id === "work"
+        ? store.loadIssues?.includes("companies")
+        : store.loadIssues?.includes("hackathons");
   const emptyCopy = {
     upcoming: {
       title: "No tienes próximos pasos con fecha",
@@ -158,6 +165,9 @@ export function DashboardFocusCarousel({ store }: { store: Store }) {
       detail: "Explora retos y eventos para preparar tu próxima participación.",
     },
   }[active.id];
+  const visibleEmptyCopy = loadFailed
+    ? { title: "No se pudo cargar esta sección", detail: "La información guardada no se ha modificado. Reintenta desde el aviso superior." }
+    : emptyCopy;
 
   const move = useCallback((direction: -1 | 1) => {
     setActiveIndex((index) => (index + direction + sections.length) % sections.length);
@@ -213,8 +223,8 @@ export function DashboardFocusCarousel({ store }: { store: Store }) {
             <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-[#b1aba0] shadow-[0_4px_12px_rgba(37,30,20,0.04)]">
               <Compass className="h-4 w-4" />
             </span>
-            <p className="mt-3 text-sm font-bold text-[#333029]">{emptyCopy.title}</p>
-            <p className="mt-1 max-w-md text-xs leading-5 text-[#777269]">{emptyCopy.detail}</p>
+            <p className="mt-3 text-sm font-bold text-[#333029]">{visibleEmptyCopy.title}</p>
+            <p className="mt-1 max-w-md text-xs leading-5 text-[#777269]">{visibleEmptyCopy.detail}</p>
           </div>
         )}
       </div>

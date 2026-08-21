@@ -35,7 +35,7 @@ export async function getRoadmapOverview(
 
   const learningBySkill = await getLearningItemsForCompetencies(
     cycleSkills.map((skill) => skill.id),
-    profile.cycle_group,
+    profile.cycle_code,
   );
 
   const primaryContentBySkill = new Map<string, string>();

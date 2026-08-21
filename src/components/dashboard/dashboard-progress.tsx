@@ -2,8 +2,16 @@ import Link from "next/link";
 import { ArrowRight, Clock3, Route } from "lucide-react";
 import type { RoadmapOverview } from "@/lib/fp/roadmap";
 
-export function DashboardProgress({ roadmap }: { roadmap: RoadmapOverview | null }) {
-  if (!roadmap) return null;
+export function DashboardProgress({ roadmap, loadFailed = false }: { roadmap: RoadmapOverview | null; loadFailed?: boolean }) {
+  if (!roadmap) {
+    if (!loadFailed) return null;
+    return (
+      <section className="rounded-[20px] border border-amber-200 bg-amber-50 p-5 text-amber-950 shadow-[0_10px_26px_rgba(17,17,17,0.045)]">
+        <p className="text-sm font-bold">Progreso temporalmente no disponible</p>
+        <p className="mt-1 text-xs leading-5 text-amber-800">No hemos podido consultar tu ruta. Tus datos guardados no se han modificado.</p>
+      </section>
+    );
+  }
   const hasTrackableProgress = roadmap.completion.total > 0;
 
   return (

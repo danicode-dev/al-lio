@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import {
-  getFpContentItemBySlug,
+  getFpContentItemBySlugForCycle,
   getRequiredCompetenciesForItems,
   getUserContentState,
 } from "@/lib/db/repositories/fp_catalog";
@@ -26,13 +26,13 @@ export default async function RutaPage({
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const item = await getFpContentItemBySlug(slug);
+  const profile = await getProfileByUser(session.uid);
+  if (!profile?.cycle_code || !profile.cycle_group) notFound();
+
+  const item = await getFpContentItemBySlugForCycle(slug, profile.cycle_code);
   if (!item) notFound();
 
   if (FP_APTITUDE_GATED_TYPES.has(item.type)) {
-    const profile = await getProfileByUser(session.uid);
-    if (!profile?.cycle_group) notFound();
-
     const requiredByItem = await getRequiredCompetenciesForItems([item.id]);
     const competencies = requiredByItem.get(item.id) ?? [];
     if (competencies.length === 0) notFound();
@@ -52,7 +52,7 @@ export default async function RutaPage({
         descripcion: competency.descripcion,
         obligatoria: competency.obligatoria_para_item,
       })),
-      profile.cycle_group
+      profile.cycle_code
     );
 
     const requestedIndex = paso ? steps.findIndex((step) => step.competencyId === paso) : 0;

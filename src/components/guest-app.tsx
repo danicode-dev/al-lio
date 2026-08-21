@@ -65,7 +65,7 @@ import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
 import { APPLICATION_STATUSES, STATUS_LABELS, STATUS_COLORS } from "@/lib/job-radar/types";
 import type { RoadmapOverview } from "@/lib/fp/roadmap";
 
-type View = "dashboard" | "work" | "courses" | "hackathons" | "tasks" | "calendar" | "links" | "sources" | "settings" | "bloc";
+export type View = "dashboard" | "work" | "courses" | "hackathons" | "tasks" | "calendar" | "links" | "sources" | "settings" | "bloc";
 type TaskStatus = "pendiente" | "en_progreso" | "completada" | "pospuesta" | "cancelada";
 type TaskBucket = "diario" | "urgente" | "semanal";
 type TaskPriority = "alta" | "media" | "baja" | "critica";
@@ -267,6 +267,7 @@ export type Store = {
   reminders: unknown[];
   roadmap: RoadmapOverview | null;
   companies: Company[];
+  loadIssues?: Array<"tasks" | "courses" | "hackathons" | "opportunities" | "companies" | "roadmap">;
 };
 
 const emptyStore: Store = {
@@ -281,6 +282,7 @@ const emptyStore: Store = {
   reminders: [],
   roadmap: null,
   companies: [],
+  loadIssues: [],
 };
 
 const defaultPortals: Array<{ name: JobPlatform; note: string }> = [

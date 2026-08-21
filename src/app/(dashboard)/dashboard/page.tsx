@@ -1,5 +1,11 @@
-import { GuestApp } from "@/components/guest-app";
+import { GuestApp, StoreProvider, type Store } from "@/components/guest-app";
+import { getDashboardStore } from "@/lib/data";
 
-export default function DashboardPage() {
-  return <GuestApp view="dashboard" />;
+export default async function DashboardPage() {
+  const store = (await getDashboardStore()) as unknown as Store;
+  return (
+    <StoreProvider initialStore={store}>
+      <GuestApp view="dashboard" />
+    </StoreProvider>
+  );
 }

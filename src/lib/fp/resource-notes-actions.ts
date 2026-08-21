@@ -3,9 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
-import { getFpContentItemBySlug, upsertFpUserContentState } from "@/lib/db/repositories/fp_catalog";
+import { getFpContentItemBySlugForCycle, upsertFpUserContentState } from "@/lib/db/repositories/fp_catalog";
 import { addResourceNote } from "@/lib/db/repositories/fp_resource_notes";
+import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import type { DbFpResourceNote, DbFpUserContentState } from "@/lib/db/types";
+
+const CONTENT_STATUSES = new Set<DbFpUserContentState["status"]>(["saved", "started", "completed", "dismissed"]);
+
+async function getAuthorizedResource(userId: string, idSlug: string) {
+  const profile = await getProfileByUser(userId);
+  if (!profile?.cycle_code) return null;
+  return getFpContentItemBySlugForCycle(idSlug, profile.cycle_code);
+}
 
 export async function addResourceNoteAction(
   idSlug: string,
@@ -22,7 +31,7 @@ export async function addResourceNoteAction(
     return { error: "note_invalid", note: null };
   }
 
-  const item = await getFpContentItemBySlug(idSlug);
+  const item = await getAuthorizedResource(session.uid, idSlug);
   if (!item) return { error: "resource_not_found", note: null };
 
   try {
@@ -41,7 +50,7 @@ export async function toggleFavoriteAction(
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const item = await getFpContentItemBySlug(idSlug);
+  const item = await getAuthorizedResource(session.uid, idSlug);
   if (!item) return { error: "resource_not_found" };
 
   try {
@@ -59,7 +68,11 @@ export async function markResourceStatusAction(
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const item = await getFpContentItemBySlug(idSlug);
+  if (!CONTENT_STATUSES.has(status)) {
+    return { error: "status_invalid", status: null };
+  }
+
+  const item = await getAuthorizedResource(session.uid, idSlug);
   if (!item) return { error: "resource_not_found", status: null };
 
   try {
@@ -68,6 +81,8 @@ export async function markResourceStatusAction(
       completed_at: status === "completed" ? new Date().toISOString() : null,
     });
     revalidatePath(`/ruta/${idSlug}`);
+    revalidatePath("/roadmap");
+    revalidatePath("/dashboard");
     return { error: null, status: state.status };
   } catch {
     return { error: "status_save_failed", status: null };

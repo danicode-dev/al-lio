@@ -1,6 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNav } from "@/components/bottom-nav";
-import { getGlobalStore } from "@/lib/data";
+import { getShellStore } from "@/lib/data";
 import { StoreProvider, MobileHeaderActions } from "@/components/guest-app";
 import { DailyAlerts } from "@/components/daily-alerts";
 import type { Store } from "@/components/guest-app";
@@ -10,7 +10,7 @@ import { Toaster } from "sonner";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const store = (await getGlobalStore()) as unknown as Store;
+  const store = (await getShellStore()) as unknown as Store;
 
   return (
     <StoreProvider initialStore={store}>

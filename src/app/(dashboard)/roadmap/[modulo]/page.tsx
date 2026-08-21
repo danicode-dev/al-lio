@@ -39,7 +39,7 @@ export default async function RoadmapModulePage({
       descripcion: skill.descripcion,
       obligatoria: skill.obligatoria_roadmap_base,
     })),
-    profile.cycle_group
+    profile.cycle_code
   );
 
   const requestedIndex = paso ? steps.findIndex((step) => step.competencyId === paso) : 0;

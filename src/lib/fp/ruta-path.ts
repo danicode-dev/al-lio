@@ -1,7 +1,7 @@
 import "server-only";
 import { getLearningItemsForCompetencies, getUserContentStatesForItems } from "@/lib/db/repositories/fp_catalog";
 import { getResourceNotes } from "@/lib/db/repositories/fp_resource_notes";
-import type { FpCycleGroup } from "@/lib/db/types";
+import type { FpCycleCode } from "@/lib/db/types";
 import type { RutaPathStep } from "@/components/ruta/ruta-path-view";
 
 export type RutaPathSkillInput = {
@@ -18,12 +18,12 @@ export type RutaPathSkillInput = {
 export async function buildRutaPathSteps(
   userId: string,
   skills: RutaPathSkillInput[],
-  cycleGroup: FpCycleGroup
+  cycleCode: FpCycleCode
 ): Promise<RutaPathStep[]> {
   if (skills.length === 0) return [];
 
   const skillIds = skills.map((skill) => skill.id);
-  const learningBySkill = await getLearningItemsForCompetencies(skillIds, cycleGroup);
+  const learningBySkill = await getLearningItemsForCompetencies(skillIds, cycleCode);
 
   const stepsRaw = skills.map((skill) => {
     const learningItems = learningBySkill.get(skill.id) ?? [];

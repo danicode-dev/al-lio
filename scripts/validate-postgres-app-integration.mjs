@@ -69,6 +69,19 @@ console.log("\n── lib/data.ts ──");
 const data = read("src/lib/data.ts");
 check("src/lib/data.ts importa repositorios", data.includes("@/lib/db/repositories/"));
 check("src/lib/data.ts no usa .from() de Supabase para datos", !data.includes(".from(\"tasks\"") && !data.includes(".from(\"courses\"") && !data.includes(".from(\"hackathons\""));
+check("Dashboard usa un loader especifico", data.includes("export async function getDashboardStore"));
+check("Shell usa un loader minimo y tolerante", data.includes("export const getShellStore"));
+
+console.log("\n── Aislamiento de contenido FP ──");
+const fpCatalog = read("src/lib/db/repositories/fp_catalog.ts");
+const resourceActions = read("src/lib/fp/resource-notes-actions.ts");
+const dashboardLayout = read("src/app/(dashboard)/layout.tsx");
+check("El catalogo filtra por cycle_code exacto", fpCatalog.includes('"fit.cycle_code = $3"'));
+check("Los recursos formativos filtran por cycle_code", fpCatalog.includes("AND fit.cycle_code = $2"));
+check("Existe consulta de recurso autorizada por ciclo", fpCatalog.includes("getFpContentItemBySlugForCycle"));
+check("Las acciones consultan el perfil antes del recurso", resourceActions.includes("getProfileByUser") && resourceActions.includes("getFpContentItemBySlugForCycle"));
+check("El layout no carga el store global completo", dashboardLayout.includes("getShellStore") && !dashboardLayout.includes("getGlobalStore"));
+check("Existe boundary de error del dashboard", existsSync(join(root, "src/app/(dashboard)/error.tsx")));
 
 // ── lib/actions.ts usa repositorios para datos ────────────────────────────────
 

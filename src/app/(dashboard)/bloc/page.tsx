@@ -1,5 +1,5 @@
-import { GuestApp } from "@/components/guest-app";
+import { StoredGuestApp } from "@/components/stored-guest-app";
 
 export default function BlocPage() {
-  return <GuestApp view="bloc" />;
+  return <StoredGuestApp view="bloc" />;
 }

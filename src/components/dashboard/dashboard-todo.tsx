@@ -19,6 +19,7 @@ export function DashboardTodo({ store, actions }: { store: Store; actions: Retur
     () => [...store.tasks].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 4),
     [store.tasks],
   );
+  const loadFailed = store.loadIssues?.includes("tasks") ?? false;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -90,7 +91,13 @@ export function DashboardTodo({ store, actions }: { store: Store; actions: Retur
       )}
 
       <div className="mt-4 divide-y divide-[#f0ece2] border-y border-[#f0ece2]">
-        {latestTasks.length ? latestTasks.map((task) => {
+        {loadFailed ? (
+          <div className="flex min-h-28 flex-col items-center justify-center px-4 text-center">
+            <ListTodo className="h-5 w-5 text-amber-600" />
+            <p className="mt-2 text-sm font-bold text-[#333029]">No se pudieron cargar tus tareas</p>
+            <p className="mt-1 text-xs text-[#777269]">Tus tareas siguen guardadas. Reintenta desde el aviso superior.</p>
+          </div>
+        ) : latestTasks.length ? latestTasks.map((task) => {
           const done = isCompleted(task.status);
           return (
             <div key={task.id} className="flex items-start gap-3 py-3 first:pt-3 last:pb-3">

@@ -33,6 +33,21 @@ export async function getFpContentItemBySlug(idSlug: string): Promise<DbFpConten
   return res.rows[0] ?? null;
 }
 
+export async function getFpContentItemBySlugForCycle(
+  idSlug: string,
+  cycleCode: FpCycleCode,
+): Promise<DbFpContentItem | null> {
+  const res = await query<DbFpContentItem>(
+    `SELECT item.*
+     FROM public.fp_content_items item
+     INNER JOIN public.fp_content_cycle_fit fit ON fit.content_item_id = item.id
+     WHERE item.id_slug = $1 AND fit.cycle_code = $2
+     LIMIT 1`,
+    [idSlug, cycleCode],
+  );
+  return res.rows[0] ?? null;
+}
+
 export async function getActiveFpCycles(): Promise<DbFpCycle[]> {
   const res = await query<DbFpCycle>(
     `SELECT *
@@ -48,10 +63,10 @@ export async function getFpContentForProfile(
   profile: Pick<DbProfile, "cycle_code" | "cycle_group" | "academic_year" | "interests">,
   options: { includeVolatile?: boolean } = {}
 ): Promise<FpCatalogContentRow[]> {
-  if (!profile.cycle_group) return [];
+  if (!profile.cycle_code || !profile.cycle_group) return [];
 
-  const values: unknown[] = [userId, profile.cycle_group];
-  const filters = ["fit.cycle_group = $2"];
+  const values: unknown[] = [userId, profile.cycle_group, profile.cycle_code];
+  const filters = ["fit.cycle_group = $2", "fit.cycle_code = $3"];
 
   if (profile.academic_year) {
     values.push(profile.academic_year);
@@ -177,7 +192,7 @@ export type CompetencyLearningItem = {
 // tienes para aprender esto".
 export async function getLearningItemsForCompetencies(
   skillIds: string[],
-  cycleGroup: FpCycleGroup,
+  cycleCode: FpCycleCode,
   perSkillLimit = 3
 ): Promise<Map<string, CompetencyLearningItem[]>> {
   const map = new Map<string, CompetencyLearningItem[]>();
@@ -190,9 +205,9 @@ export async function getLearningItemsForCompetencies(
      INNER JOIN public.fp_content_cycle_fit fit ON fit.content_item_id = item.id
      WHERE link.skill_id = ANY($1)
        AND link.tipo_relacion = 'ensena'
-       AND fit.cycle_group = $2
+       AND fit.cycle_code = $2
      ORDER BY link.skill_id`,
-    [skillIds, cycleGroup]
+    [skillIds, cycleCode]
   );
 
   for (const row of res.rows) {

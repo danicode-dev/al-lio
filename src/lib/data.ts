@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 import { getSession } from "@/lib/auth/session";
 import { getTasksByUser } from "@/lib/db/repositories/tasks";
@@ -20,6 +21,8 @@ import {
 } from "@/lib/db/repositories/fp_catalog";
 
 export const FP_APTITUDE_GATED_TYPES = new Set(["hackathon", "evento", "reto", "convocatoria_practicas"]);
+
+export type StoreLoadSection = "tasks" | "courses" | "hackathons" | "opportunities" | "companies" | "roadmap";
 
 export async function getGlobalStore() {
   const session = await getSession();
@@ -50,8 +53,8 @@ export async function getGlobalStore() {
     .map((item) => item.id);
   const requiredCompetenciesByItem = await getRequiredCompetenciesForItems(aptitudeGatedItemIds);
   const requiredCompetencyIds = [...new Set([...requiredCompetenciesByItem.values()].flat().map((c) => c.id))];
-  const learningItemsByCompetency = profile.cycle_group
-    ? await getLearningItemsForCompetencies(requiredCompetencyIds, profile.cycle_group)
+  const learningItemsByCompetency = profile.cycle_code
+    ? await getLearningItemsForCompetencies(requiredCompetencyIds, profile.cycle_code)
     : new Map();
   const learningItemIds = [...new Set([...learningItemsByCompetency.values()].flat().map((li) => li.id))];
   const learningItemStatusById = await getUserContentStatesForItems(userId, learningItemIds);
@@ -156,6 +159,162 @@ export async function getGlobalStore() {
       granada_note: c.granada_note ?? undefined,
       is_favorite: favoriteCompanyIds.has(c.id),
     })),
+    loadIssues: [] as StoreLoadSection[],
+  };
+}
+
+const getStoreContext = cache(async () => {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const [profile, pgUser] = await Promise.all([
+    getProfileByUser(session.uid),
+    getUserById(session.uid),
+  ]);
+  if (!profile || !profile.onboarding_completed_at) redirect("/onboarding");
+
+  const rawName = pgUser?.display_name || session.name || session.email.split("@")[0] || "Invitado";
+  return {
+    session,
+    profile,
+    userName: rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase(),
+  };
+});
+
+async function loadStoreSection<T>(
+  section: StoreLoadSection,
+  promise: Promise<T>,
+  fallback: T,
+  issues: StoreLoadSection[],
+): Promise<T> {
+  try {
+    return await promise;
+  } catch (error) {
+    issues.push(section);
+    console.error(`[store] No se pudo cargar ${section}`, error);
+    return fallback;
+  }
+}
+
+function serializeTasks(tasks: Awaited<ReturnType<typeof getTasksByUser>>) {
+  return tasks.map((task) => ({
+    ...task,
+    due_date: ymd(task.due_date),
+    due_at: ymd(task.due_date),
+    category: task.category ?? "diario",
+    reminder_at: iso(task.reminder_at),
+    progress_notes: Array.isArray(task.progress_notes) ? task.progress_notes : [],
+    completed_at: iso(task.completed_at),
+    created_at: iso(task.created_at),
+    updated_at: iso(task.updated_at),
+  }));
+}
+
+function serializeCourses(courses: Awaited<ReturnType<typeof getCoursesByUser>>) {
+  return courses.map((course) => ({
+    ...course,
+    start_date: ymd(course.start_date),
+    deadline: ymd(course.deadline),
+    deadline_at: ymd(course.deadline),
+    start_at: ymd(course.start_date),
+    fecha_inicio: ymd(course.fecha_inicio),
+    fecha_fin: ymd(course.fecha_fin),
+    ultima_revision: ymd(course.ultima_revision),
+    created_at: iso(course.created_at),
+    updated_at: iso(course.updated_at),
+  }));
+}
+
+function serializeHackathons(hackathons: Awaited<ReturnType<typeof getHackathonsByUser>>) {
+  return hackathons.map((hackathon) => ({
+    ...hackathon,
+    event_start_date: ymd(hackathon.event_start_date),
+    event_end_date: ymd(hackathon.event_end_date),
+    registration_deadline: ymd(hackathon.registration_deadline),
+    start_at: ymd(hackathon.event_start_date),
+    end_at: ymd(hackathon.event_end_date),
+    registration_deadline_at: ymd(hackathon.registration_deadline),
+    inscripcion_hasta: ymd(hackathon.inscripcion_hasta),
+    ultima_revision: ymd(hackathon.ultima_revision),
+    detected_at: ymd(hackathon.detected_at),
+    last_reviewed_at: ymd(hackathon.last_reviewed_at),
+    next_review_at: ymd(hackathon.next_review_at),
+    created_at: iso(hackathon.created_at),
+    updated_at: iso(hackathon.updated_at),
+  }));
+}
+
+export const getShellStore = cache(async () => {
+  const { session, userName } = await getStoreContext();
+  const issues: StoreLoadSection[] = [];
+  const [tasks, courses, hackathons] = await Promise.all([
+    loadStoreSection("tasks", getTasksByUser(session.uid), [], issues),
+    loadStoreSection("courses", getCoursesByUser(session.uid), [], issues),
+    loadStoreSection("hackathons", getHackathonsByUser(session.uid), [], issues),
+  ]);
+
+  return {
+    version: 2 as const,
+    userName,
+    tasks: serializeTasks(tasks),
+    opportunities: [],
+    techOpportunities: [],
+    courses: serializeCourses(courses),
+    hackathons: serializeHackathons(hackathons),
+    fpContent: [],
+    links: [],
+    reminders: [],
+    roadmap: null,
+    companies: [],
+    loadIssues: issues,
+  };
+});
+
+export async function getDashboardStore() {
+  const [{ session, profile }, shellStore] = await Promise.all([getStoreContext(), getShellStore()]);
+  const issues = [...shellStore.loadIssues];
+  const [techOpportunities, fpContent, dbCompanies, favoriteCompanyIds, roadmap] = await Promise.all([
+    loadStoreSection("opportunities", getAllTechOpportunities(), [], issues),
+    loadStoreSection("opportunities", getFpContentForProfile(session.uid, profile), [], issues),
+    profile.cycle_group
+      ? loadStoreSection("companies", getCompaniesByCycleGroup(profile.cycle_group), [], issues)
+      : Promise.resolve([]),
+    loadStoreSection("companies", getFavoriteCompanyIds(session.uid), new Set<string>(), issues),
+    loadStoreSection("roadmap", getRoadmapOverview(session.uid, profile), null, issues),
+  ]);
+
+  return {
+    ...shellStore,
+    techOpportunities: sortTechOpportunities(
+      (techOpportunities as unknown as TechOpportunity[]).map((item) => ({
+        ...item,
+        fecha_inicio: ymd(item.fecha_inicio),
+        fecha_fin: ymd(item.fecha_fin),
+        ultima_revision: ymd(item.ultima_revision),
+        created_at: iso(item.created_at),
+        updated_at: iso(item.updated_at),
+      })),
+    ),
+    fpContent: fpContent.map((item) => ({
+      ...item,
+      start_date: ymd(item.start_date),
+      end_date: ymd(item.end_date),
+      last_reviewed_at: ymd(item.last_reviewed_at),
+      created_at: iso(item.created_at),
+      updated_at: iso(item.updated_at),
+      requiredCompetencies: [],
+    })),
+    roadmap: roadmap?.overview ?? null,
+    companies: dbCompanies.map((company) => ({
+      id: company.id,
+      nombre: company.nombre,
+      web: company.web ?? undefined,
+      empleo_url: company.empleo_url ?? undefined,
+      categoria: company.categoria ?? undefined,
+      granada_note: company.granada_note ?? undefined,
+      is_favorite: favoriteCompanyIds.has(company.id),
+    })),
+    loadIssues: [...new Set(issues)],
   };
 }
 

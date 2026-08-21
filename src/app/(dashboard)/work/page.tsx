@@ -1,5 +1,5 @@
-import { GuestApp } from "@/components/guest-app";
+import { StoredGuestApp } from "@/components/stored-guest-app";
 
 export default function WorkPage() {
-  return <GuestApp view="work" />;
+  return <StoredGuestApp view="work" />;
 }
