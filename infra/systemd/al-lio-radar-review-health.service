@@ -1,0 +1,11 @@
+[Unit]
+Description=Comprueba la antigüedad de la cola editorial de AL-LÍO Radar
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker exec al_lio_radar node dist/cli/reviewStatus.js --json
+
+[Install]
+WantedBy=multi-user.target

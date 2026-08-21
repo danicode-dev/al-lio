@@ -310,6 +310,17 @@ Monitorizar `reviewStatus.js --json` fuera del `HEALTHCHECK`: la cola editorial
 vacía o reciente no debe reiniciar el contenedor, pero una antigüedad superior
 a 72 horas devuelve código 2 y requiere aviso al responsable de contenidos.
 
+Instalar el monitor versionado y comprobar su primera ejecución:
+
+```bash
+sudo install -m 0644 infra/systemd/al-lio-radar-review-health.service /etc/systemd/system/
+sudo install -m 0644 infra/systemd/al-lio-radar-review-health.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now al-lio-radar-review-health.timer
+sudo systemctl start al-lio-radar-review-health.service
+systemctl status al-lio-radar-review-health.service --no-pager
+```
+
 Ante cualquier duda, rechazar. Un candidato pendiente o rechazado nunca llega a AL-LÍO.
 
 ## 11. Smoke test funcional

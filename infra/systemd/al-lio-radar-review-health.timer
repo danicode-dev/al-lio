@@ -1,0 +1,11 @@
+[Unit]
+Description=Monitor horario de la cola editorial de AL-LÍO Radar
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=5m
+Unit=al-lio-radar-review-health.service
+
+[Install]
+WantedBy=timers.target
