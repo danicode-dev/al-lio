@@ -12,7 +12,8 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useStore, type Store } from "@/components/guest-app";
+import { useStore } from "@/components/guest-store";
+import type { Store } from "@/components/guest-app";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

@@ -45,6 +45,7 @@
     "import:fp-resource-videos": "node scripts/import-fp-resource-videos.mjs",
     "import:learning-competencies": "node scripts/import-learning-competencies.mjs",
     "validate:learning-competencies": "node scripts/validate-learning-competencies.mjs",
+    "validate:learning-sources": "node scripts/validate-learning-sources.mjs",
     "import:courses": "node scripts/import-courses.mjs",
     "import:hackathons": "node scripts/import-hackathons.mjs",
     "import:companies": "node scripts/import-companies.mjs",

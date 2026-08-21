@@ -82,13 +82,13 @@ const defaultAppSettings: AppSettings = {
   compactTaskView: true,
 };
 
-type ProgressNote = {
+export type ProgressNote = {
   id: string;
   text: string;
   created_at: string;
 };
 
-type Task = {
+export type Task = {
   id: string;
   title: string;
   description?: string;
@@ -112,7 +112,7 @@ type Opportunity = {
   created_at: string;
 };
 
-type Course = {
+export type Course = {
   id: string;
   id_slug?: string;
   title: string;
@@ -177,7 +177,7 @@ type RequiredCompetency = {
   learningItems: RequiredCompetencyLearningItem[];
 };
 
-type FpCatalogItem = {
+export type FpCatalogItem = {
   id: string;
   id_slug: string;
   type: string;
@@ -205,7 +205,7 @@ type FpCatalogItem = {
   created_at: string;
 };
 
-type Hackathon = {
+export type Hackathon = {
   id: string;
   id_slug?: string;
   categoria?: string;
@@ -246,7 +246,7 @@ type Company = {
   is_favorite: boolean;
 };
 
-type QuickLink = {
+export type QuickLink = {
   id: string;
   name: string;
   url: string;

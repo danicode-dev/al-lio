@@ -1,7 +1,8 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNav } from "@/components/bottom-nav";
 import { getShellStore } from "@/lib/data";
-import { StoreProvider, MobileHeaderActions } from "@/components/guest-app";
+import { StoreProvider } from "@/components/guest-store";
+import { MobileHeaderActions } from "@/components/mobile-header-actions";
 import { DailyAlerts } from "@/components/daily-alerts";
 import type { Store } from "@/components/guest-app";
 import Image from "next/image";
