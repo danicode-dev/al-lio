@@ -59,6 +59,7 @@ import {
   type GoogleCalendarEvent,
 } from "@/components/calendar/app-calendar";
 import { DashboardView } from "@/components/dashboard/dashboard-view";
+import { MobileHeaderActions as BrandHeaderActions } from "@/components/mobile-header-actions";
 import { QuickAdd } from "@/components/quick-add";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
@@ -814,8 +815,7 @@ export function GuestApp({ view }: { view: View }) {
             </h1>
           </div>
           <div className="hidden md:flex items-center gap-2">
-            <GoogleCalendarStatusControl />
-            <NotificationBell store={store} actions={actions} />
+            <BrandHeaderActions />
           </div>
         </div>
       )}

@@ -208,8 +208,27 @@ export function ProfileForm({
         .al-profile-progress-ring::after { content: ""; position: absolute; inset: 7px; border-radius: 999px; background: white; }
         .al-profile-progress-value { position: relative; z-index: 1; color: #111111; font-size: 14px; font-weight: 900; }
         .al-profile-focus { margin-top: 18px; border-top: 1px solid #f0ece2; padding-top: 14px; }
-        .al-profile-focus-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; color: #4b4740; font-size: 12px; }
-        .al-profile-focus-row strong { color: #111111; font-size: 11px; }
+        .al-profile-focus-row { padding: 9px 0; color: #4b4740; font-size: 12px; }
+        .al-profile-focus-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .al-profile-focus-meta strong { color: #111111; font-size: 11px; }
+        .al-profile-focus-track { height: 4px; margin-top: 7px; overflow: hidden; border-radius: 999px; background: #eee9df; }
+        .al-profile-focus-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #f06a37, #e15d2d); }
+        .al-profile-next-step {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 2px 12px;
+          margin-top: 14px;
+          border: 1px solid #f3d7ca;
+          border-radius: 14px;
+          background: #fff7f3;
+          padding: 12px 14px;
+          color: #111111;
+          transition: border-color 0.15s, transform 0.15s;
+        }
+        .al-profile-next-step:hover { border-color: #f0a686; transform: translateY(-1px); }
+        .al-profile-next-step span { color: #8e5a43; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+        .al-profile-next-step strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
+        .al-profile-next-step-icon { grid-column: 2; grid-row: 1 / span 2; align-self: center; width: 16px; height: 16px; color: #e15d2d; }
         .al-profile-roadmap-link { margin-top: 14px; display: inline-flex; align-items: center; gap: 6px; color: #e15d2d; font-size: 12px; font-weight: 800; }
 
         .al-profile-stat-row {
@@ -324,11 +343,23 @@ export function ProfileForm({
             </div>
           </div>
           <div className="al-profile-stat-row"><span>Recursos completados</span><strong>{learningOverview?.completion.completed ?? 0} / {learningOverview?.completion.total ?? 0}</strong></div>
-          <div className="al-profile-stat-row"><span>Ciclo personalizado</span><strong>{learningOverview?.cycleCode ?? cycleCode}</strong></div>
+          <div className="al-profile-stat-row"><span>Ciclo activo</span><strong>{learningOverview?.cycleCode ?? cycleCode}</strong></div>
+          {learningOverview?.nextStep && (
+            <Link href={learningOverview.nextStep.href} className="al-profile-next-step">
+              <span>Continúa por</span>
+              <strong>{learningOverview.nextStep.skillTitle}</strong>
+              <ArrowRight className="al-profile-next-step-icon" aria-hidden="true" />
+            </Link>
+          )}
           <div className="al-profile-focus">
             <h3 className="m-0 text-xs font-extrabold uppercase tracking-[0.08em] text-[#8e887e]">Siguiente enfoque</h3>
             {learningOverview?.focusModules.length ? learningOverview.focusModules.map((module) => (
-              <div key={module.code} className="al-profile-focus-row"><span>{module.name}</span><strong>{module.completed}/{module.total}</strong></div>
+              <div key={module.code} className="al-profile-focus-row">
+                <div className="al-profile-focus-meta"><span>{module.name}</span><strong>{module.completed}/{module.total}</strong></div>
+                <div className="al-profile-focus-track" aria-hidden="true">
+                  <div className="al-profile-focus-fill" style={{ width: `${module.percent}%` }} />
+                </div>
+              </div>
             )) : <p className="mt-3 text-xs leading-5 text-[#777269]">No tienes competencias pendientes con contenido disponible.</p>}
             <Link href="/roadmap" className="al-profile-roadmap-link">Ver todas las competencias <ArrowRight className="h-3.5 w-3.5" /></Link>
           </div>
