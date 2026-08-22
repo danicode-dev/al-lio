@@ -139,9 +139,9 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       setStore((current) => ({ ...current, hackathons: [{ id, created_at: nowIso(), ...data }, ...current.hackathons] }));
       try {
         await insertDb("hackathons", { id, name: data.name, organizer: data.organizer, province: data.province, city: data.city, type: "hackathon", status: data.status || "revisar_futura_edicion", event_start_date: data.start_at, event_end_date: data.end_at, registration_deadline: data.registration_deadline_at, url: data.url, notes: data.notes, priority: data.priority }, ["/hackathons"]);
-        toast.success("Hackathon añadido");
+        toast.success("Evento o reto añadido");
       } catch {
-        toast.error("Error al añadir el hackathon");
+        toast.error("Error al añadir el evento o reto");
       }
     },
     updateHackathon: async (id: string, data: Partial<Hackathon>) => {

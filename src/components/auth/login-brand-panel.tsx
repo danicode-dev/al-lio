@@ -19,7 +19,7 @@ const TESTIMONIALS: Testimonial[] = [
     avatarSrc: "https://randomuser.me/api/portraits/men/76.jpg",
   },
   {
-    quote: "Preparo candidaturas y hackathons sin dispersarme. Tener cursos, oportunidades y calendario en un mismo sitio es clave.",
+    quote: "Preparo candidaturas, eventos y retos sin dispersarme. Tener cursos, oportunidades y calendario en un mismo sitio es clave.",
     name: "Yeray Valenzuela Ortega",
     role: "Desarrollador Full Stack",
     avatarSrc: "https://randomuser.me/api/portraits/men/52.jpg",
@@ -36,7 +36,7 @@ const MODULES = [
   { label: "Tareas",     Icon: CheckSquare },
   { label: "Trabajo",    Icon: Briefcase   },
   { label: "Cursos",     Icon: BookOpen    },
-  { label: "Hackathons", Icon: Trophy      },
+  { label: "Eventos y retos", Icon: Trophy },
   { label: "Calendario", Icon: Calendar    },
 ] as const;
 

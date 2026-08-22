@@ -75,7 +75,7 @@ const SECTIONS = [
   },
   {
     href: "/hackathons",
-    label: "Hackathons",
+    label: "Eventos y retos",
     Icon: FolderKanban,
     cardBg: "bg-rose-50",
     iconBg: "bg-rose-100",

@@ -4,7 +4,7 @@ import type { Store } from "@/components/guest-app";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 
 const fpCourseTypes = new Set(["curso_basico", "curso_complementario", "herramienta", "recurso", "evidencia_recomendada"]);
-const techCourseCategories = new Set(["curso", "fp"]);
+const techCourseCategories = new Set(["curso"]);
 const techHackathonCategories = new Set(["hackathon_reto"]);
 const techEventCategories = new Set(["evento_tech", "reto_programacion", "concurso_programacion"]);
 

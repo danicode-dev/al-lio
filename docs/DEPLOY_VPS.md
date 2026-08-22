@@ -302,7 +302,7 @@ Verify at minimum:
 - each cycle sees only its approved Radar items;
 - one controlled Radar approval and exactly one recorded delivery;
 - repeated delivery remains idempotent;
-- Work, Courses and Hackathons;
+- Work, Courses, and Events/Challenges;
 - persistence after restarting only `al_lio_web`.
 
 Do not enable public demo access merely to simplify a smoke test. Watch redacted

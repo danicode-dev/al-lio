@@ -14,7 +14,7 @@ const TYPE_LABELS: Record<string, string> = {
   herramienta: "Herramienta",
   recurso: "Recurso",
   evidencia_recomendada: "Evidencia recomendada",
-  hackathon: "Hackathon",
+  hackathon: "Evento o reto",
   evento: "Evento",
   reto: "Reto",
   convocatoria_practicas: "Prácticas en empresa",

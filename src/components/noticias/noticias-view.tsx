@@ -219,7 +219,7 @@ export function NewsView() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard icon={Newspaper} value={status?.totalItems ?? 0} label="Disponibles" color="#E15D2D" background="#fbe7dd" />
-        <StatCard icon={Bell} value={status?.newItems ?? 0} label="Nuevas" color="#1f7a4d" background="#e7f5ee" />
+        <StatCard icon={Bell} value={status?.newItems ?? 0} label="Sin leer" color="#1f7a4d" background="#e7f5ee" />
         <StatCard icon={BookmarkCheck} value={status?.savedItems ?? 0} label="Guardadas" color="#b4791f" background="#fdf1dd" />
         <StatCard icon={ShieldCheck} value={sources.length} label="Fuentes con contenido" color="#475569" background="#eef2f6" />
       </div>
@@ -227,7 +227,7 @@ export function NewsView() {
       <div className="flex flex-col gap-1 rounded-xl border border-[#ece7dc] bg-[#faf8f3] px-4 py-3 text-xs text-[#6b6f72] sm:flex-row sm:items-center sm:justify-between">
         <span>Solo aparecen contenidos que ya han superado la revisión editorial.</span>
         <span className="font-semibold text-[#333029]">
-          Última entrega: {status?.lastReceivedAt ? formatDateTime(status.lastReceivedAt) : "todavía no disponible"}
+          Última actualización: {status?.lastReceivedAt ? formatDateTime(status.lastReceivedAt) : "todavía no disponible"}
         </span>
       </div>
 

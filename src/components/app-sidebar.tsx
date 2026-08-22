@@ -33,7 +33,7 @@ const items = [
   { href: "/noticias", label: "Noticias", icon: Newspaper },
   { href: "/work", label: "Trabajo", icon: Briefcase },
   { href: "/courses", label: "Cursos", icon: GraduationCap },
-  { href: "/hackathons", label: "Hackathons", icon: FolderKanban },
+  { href: "/hackathons", label: "Eventos y retos", icon: FolderKanban },
   { href: "/calendar", label: "Calendario", icon: CalendarDays },
   { href: "/profile", label: "Perfil", icon: UserCircle },
 ];

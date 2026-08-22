@@ -102,6 +102,7 @@ export interface DbFpContentItem {
   notes: string | null;
   source_year: string;
   video_url: string | null;
+  radar_semantic_key: string | null;
   created_at: string;
   updated_at: string;
 }

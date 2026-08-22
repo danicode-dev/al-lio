@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     default: "AL-LIO",
     template: "%s · AL-LIO",
   },
-  description: "Panel privado para tareas, calendario, cursos, hackathons, oportunidades y noticias.",
+  description: "Panel privado para tareas, calendario, cursos, eventos, retos, oportunidades y noticias.",
   icons: {
     icon: [
       { url: "/assets/al_lio_favicon_dark_circle_512.png", type: "image/png" },

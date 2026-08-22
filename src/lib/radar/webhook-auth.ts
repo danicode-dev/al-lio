@@ -1,9 +1,9 @@
 import "server-only";
-import { RADAR_TIMESTAMP_TOLERANCE_MS } from "@/lib/radar/contract";
+import { RADAR_SUPPORTED_SCHEMA_VERSIONS, RADAR_TIMESTAMP_TOLERANCE_MS } from "@/lib/radar/contract";
 import { createRadarSignature, radarSignaturesMatch } from "@/lib/radar/signature";
 
 export type RadarWebhookAuthResult =
-  | { ok: true; deliveryId: string; timestamp: string }
+  | { ok: true; deliveryId: string; timestamp: string; schemaVersion: number }
   | { ok: false; status: 400 | 401; error: string };
 
 export function verifyRadarWebhook(request: Request, rawBody: string, now = new Date()): RadarWebhookAuthResult {
@@ -17,7 +17,10 @@ export function verifyRadarWebhook(request: Request, rawBody: string, now = new 
   const signature = request.headers.get("x-al-lio-signature") ?? "";
   const schemaVersion = request.headers.get("x-al-lio-schema-version") ?? "";
 
-  if (schemaVersion !== "2") return { ok: false, status: 400, error: "unsupported schema version" };
+  const parsedSchemaVersion = Number(schemaVersion);
+  if (!RADAR_SUPPORTED_SCHEMA_VERSIONS.some((version) => version === parsedSchemaVersion)) {
+    return { ok: false, status: 400, error: "unsupported schema version" };
+  }
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(deliveryId)) {
     return { ok: false, status: 400, error: "invalid delivery id" };
   }
@@ -32,5 +35,5 @@ export function verifyRadarWebhook(request: Request, rawBody: string, now = new 
     return { ok: false, status: 401, error: "invalid signature" };
   }
 
-  return { ok: true, deliveryId, timestamp };
+  return { ok: true, deliveryId, timestamp, schemaVersion: parsedSchemaVersion };
 }
