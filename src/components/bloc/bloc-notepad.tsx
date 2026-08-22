@@ -810,7 +810,7 @@ export function BlocNotepad() {
   return (
     <div className="relative">
       <style>{blocBrandCss}</style>
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="al-bloc-desktop-grid grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
         <div className="al-bloc-editor-shell min-w-0 overflow-hidden rounded-2xl">
           <div className="al-bloc-title-row flex items-center gap-2 px-5 py-4">
             <Input
@@ -867,7 +867,7 @@ export function BlocNotepad() {
               onKeyDown={handleEditorKeyDown}
               className={cn(
                 "al-bloc-content empty:before:pointer-events-none empty:before:text-[#9a958a] empty:before:content-[attr(data-placeholder)]",
-                "min-h-[430px] max-h-[62vh] overflow-y-auto px-8 py-6 leading-7 outline-none",
+                "min-h-[430px] flex-1 overflow-y-auto px-8 py-6 leading-7 outline-none",
                 fontClass,
               )}
             />
@@ -1570,7 +1570,8 @@ function nowIso() {
 }
 
 const blocBrandCss = `
-  .al-bloc-editor-shell { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); display: flex; flex-direction: column; }
+  .al-bloc-desktop-grid { align-items: stretch; }
+  .al-bloc-editor-shell { min-height: 0; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); display: flex; flex-direction: column; }
   .al-bloc-title-row { border-bottom: 1px solid #f0ece2; }
   .al-bloc-title-input { color: #111111; }
   .al-bloc-title-input::placeholder { color: #9a958a; }
@@ -1581,10 +1582,12 @@ const blocBrandCss = `
   .al-bloc-tool-btn:hover { background: white; color: #c94f21; }
   .al-bloc-size-group { display: inline-flex; align-items: center; gap: 1px; }
   .al-bloc-toolbar-select { border: 1px solid #ece7dc; border-radius: 8px; background: white; color: #333029; }
-  .al-bloc-content-wrap { position: relative; background: white; }
+  .al-bloc-content-wrap { position: relative; display: flex; min-height: 0; flex: 1; overflow: hidden; background: white; }
   .al-bloc-content-watermark { position: absolute; z-index: 0; right: 24px; bottom: 12px; width: 220px; height: auto; opacity: 0.55; pointer-events: none; user-select: none; }
-  .al-bloc-content { position: relative; z-index: 1; color: #333029; }
+  .al-bloc-content { position: relative; z-index: 1; min-width: 0; color: #333029; overflow-wrap: anywhere; }
   .al-bloc-content a { color: #c94f21; text-decoration: underline; }
+  .al-bloc-content p { margin: 0 0 8px; }
+  .al-bloc-content hr { margin: 12px 0 14px; border: 0; border-top: 1px solid #ece7dc; }
   .al-bloc-content blockquote { border-left: 3px solid #ece7dc; padding-left: 14px; color: #6b6f72; }
   .al-bloc-content h1 { font-size: 1.7em; font-weight: 700; color: #111111; }
   .al-bloc-content h2 { font-size: 1.4em; font-weight: 700; color: #111111; }
@@ -1608,7 +1611,7 @@ const blocBrandCss = `
   .al-bloc-list-empty-img { width: 96px; height: auto; opacity: 0.85; }
   .al-bloc-list-empty p { font-size: 12px; color: #6b6f72; margin: 0; }
   .al-bloc-search input { border: 1px solid #ece7dc; border-radius: 10px; background: white; }
-  .al-bloc-sidebar { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); padding: 14px; }
+  .al-bloc-sidebar { min-height: 0; overflow: hidden; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); padding: 14px; }
   .al-bloc-tabs { display: flex; align-items: center; gap: 2px; border-radius: 11px; border: 1px solid #ece7dc; background: #faf8f4; padding: 3px; }
   .al-bloc-tab { flex: 1; height: 28px; border-radius: 8px; font-size: 11px; font-weight: 600; color: #6b6f72; background: transparent; border: none; cursor: pointer; }
   .al-bloc-tab-active { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; box-shadow: 0 4px 10px rgba(225, 93, 45, 0.25); }
@@ -1651,4 +1654,8 @@ const blocBrandCss = `
   .al-bloc-sheet-row-danger:hover { background: #fbe2df; }
   .al-bloc-sheet-tile { border: 1px solid #ece7dc; color: #6b6f72; background: white; }
   .al-bloc-sheet-tile:hover { background: #faf8f4; color: #111111; }
+  @media (min-width: 1280px) {
+    .al-bloc-desktop-grid { height: clamp(620px, calc(100dvh - 148px), 960px); }
+    .al-bloc-editor-shell, .al-bloc-sidebar { height: 100%; }
+  }
 `;
