@@ -35,6 +35,9 @@ export async function POST(request: Request) {
   } catch {
     return jsonError("invalid json", 400);
   }
+  if (!isVersionedPayload(unknownPayload) || unknownPayload.schemaVersion !== auth.schemaVersion) {
+    return jsonError("schema version mismatch", 400);
+  }
   const parsed = radarDeliverySchema.safeParse(unknownPayload);
   if (!parsed.success) return jsonError("invalid radar payload", 400);
   if (parsed.data.deliveryId !== auth.deliveryId) return jsonError("delivery id mismatch", 400);
@@ -54,4 +57,8 @@ export async function POST(request: Request) {
 
 function jsonError(error: string, status: number) {
   return NextResponse.json({ ok: false, error }, { status, headers: { "Cache-Control": "no-store" } });
+}
+
+function isVersionedPayload(value: unknown): value is { schemaVersion: number } {
+  return typeof value === "object" && value !== null && typeof (value as { schemaVersion?: unknown }).schemaVersion === "number";
 }

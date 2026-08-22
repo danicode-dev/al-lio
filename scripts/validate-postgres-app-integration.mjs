@@ -80,6 +80,7 @@ const resourceActions = read("src/lib/fp/resource-notes-actions.ts");
 const learningRepository = read("src/lib/db/repositories/learning.ts");
 const learningActions = read("src/lib/learning/actions.ts");
 const dashboardLayout = read("src/app/(dashboard)/layout.tsx");
+const techOpportunities = read("src/lib/db/repositories/tech_opportunities.ts");
 check("El catalogo filtra por cycle_code exacto", fpCatalog.includes('"fit.cycle_code = $3"'));
 check("Los recursos formativos filtran por cycle_code", fpCatalog.includes("AND fit.cycle_code = $2"));
 check("El manifiesto PWA fuerza una apariencia clara", manifest.includes("background_color: '#f8f6f1'") && manifest.includes("theme_color: '#ffffff'"));
@@ -90,6 +91,7 @@ check("El progreso valida usuario y ciclo antes de escribir", learningActions.in
 check("La reproducción persiste la posición", learningRepository.includes("last_position_seconds"));
 check("El layout no carga el store global completo", dashboardLayout.includes("getShellStore") && !dashboardLayout.includes("getGlobalStore"));
 check("Existe boundary de error del dashboard", existsSync(join(root, "src/app/(dashboard)/error.tsx")));
+check("Los grados FP no se sirven como cursos complementarios", techOpportunities.includes("<> 'fp'"));
 
 // ── lib/actions.ts uses repositories for data ────────────────────────────────
 

@@ -19,7 +19,7 @@ const sections: Array<{ id: CarouselSection; label: string; description: string;
   { id: "upcoming", label: "Próximos", description: "Fechas y tareas que merece la pena atender ahora.", href: "/calendar", cta: "Ver calendario", Icon: CalendarClock },
   { id: "opportunities", label: "Oportunidades", description: "Recursos que encajan con tu itinerario formativo.", href: "/courses", cta: "Explorar oportunidades", Icon: Sparkles },
   { id: "work", label: "Trabajo", description: "Empresas para orientar tu próxima búsqueda.", href: "/work", cta: "Abrir Trabajo", Icon: BriefcaseBusiness },
-  { id: "hackathons", label: "Hackathons", description: "Retos y eventos para aprender haciendo y ganar visibilidad.", href: "/hackathons", cta: "Ver hackathons", Icon: Trophy },
+  { id: "hackathons", label: "Eventos y retos", description: "Retos y eventos para aprender haciendo y ganar visibilidad.", href: "/hackathons", cta: "Ver eventos y retos", Icon: Trophy },
 ];
 
 function dayValue(value?: string | null) {
@@ -125,7 +125,7 @@ function buildCards(store: Store): Record<CarouselSection, FocusCard[]> {
     .slice(0, 3)
     .map((hackathon) => ({
       id: `hackathon-${hackathon.id}`,
-      eyebrow: `Hackathon · ${shortDate(hackathon.registration_deadline_at || hackathon.inscripcion_hasta || hackathon.start_at)}`,
+      eyebrow: `Evento o reto · ${shortDate(hackathon.registration_deadline_at || hackathon.inscripcion_hasta || hackathon.start_at)}`,
       title: hackathon.name,
       detail: [hackathon.city || hackathon.province, hackathon.organizer].filter(Boolean).join(" · ") || "Reto tecnológico",
       href: "/hackathons",
@@ -161,7 +161,7 @@ export function DashboardFocusCarousel({ store }: { store: Store }) {
       detail: "Empieza por guardar las que te gustaría conocer mejor.",
     },
     hackathons: {
-      title: "Aún no tienes hackathons guardados",
+      title: "Aún no tienes eventos o retos guardados",
       detail: "Explora retos y eventos para preparar tu próxima participación.",
     },
   }[active.id];

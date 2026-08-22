@@ -47,7 +47,7 @@ An authenticated student can:
 | News | Show only approved, non-expired items for the user's cycle. |
 | Work | Present companies and employment-oriented links. |
 | Courses | Present reviewed training opportunities. |
-| Hackathons | Present reviewed challenges, events and calls. |
+| Events and challenges | Present reviewed challenges, events and calls. |
 | Calendar | Combine local planning with optional Google Calendar access. |
 | Profile | Persist identity, cycle and student preferences. |
 

@@ -501,9 +501,9 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       setStore((current) => ({ ...current, hackathons: [{ id, created_at: nowIso(), ...data }, ...current.hackathons] }));
       try {
         await insertDb("hackathons", { id, name: data.name, organizer: data.organizer, province: data.province, city: data.city, type: "hackathon", status: data.status || "revisar_futura_edicion", event_start_date: data.start_at, event_end_date: data.end_at, registration_deadline: data.registration_deadline_at, url: data.url, notes: data.notes, priority: data.priority }, ["/hackathons"]);
-        toast.success("Hackathon añadido");
+        toast.success("Evento o reto añadido");
       } catch {
-        toast.error("Error al añadir el hackathon");
+        toast.error("Error al añadir el evento o reto");
       }
     },
     updateHackathon: async (id: string, data: Partial<Hackathon>) => {
@@ -734,7 +734,7 @@ function NotificationBell({ store, actions }: { store: Store; actions: ReturnTyp
               <AlarmClock className="h-4 w-4 shrink-0 text-amber-500" />
               <h3 className="text-sm font-semibold">Proximos 7 dias</h3>
             </div>
-            <p className="text-xs text-muted-foreground">Cursos, hackathons y eventos de Google Calendar.</p>
+            <p className="text-xs text-muted-foreground">Cursos, eventos y retos de Google Calendar.</p>
           </div>
           <div className="max-h-[420px] overflow-y-auto">
             {alerts.length === 0 ? (
@@ -803,7 +803,7 @@ export function GuestApp({ view }: { view: View }) {
                 work: "Trabajo",
                 tasks: "Tareas",
                 courses: "Cursos",
-                hackathons: "Hackathons",
+                hackathons: "Eventos y retos",
                 calendar: "Calendario",
                 links: "Links",
                 sources: "Fuentes",
@@ -3236,7 +3236,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             {featuredHackathon && (
               <div className="al-hack-hero">
                 <div className="al-hack-hero-main">
-                  <span className="al-hack-hero-kicker">Hackatón futuro</span>
+                  <span className="al-hack-hero-kicker">Próximo evento o reto</span>
                   <p className="al-hack-hero-title">{featuredHackathon.name}</p>
                   {featuredHackathon.organizer && <p className="al-hack-hero-org">{featuredHackathon.organizer}</p>}
                   {(featuredHackathon.start_at || featuredHackathon.end_at) && (
@@ -3249,11 +3249,11 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   <div className="al-hack-hero-actions">
                     {featuredHasRuta ? (
                       <Link href={`/ruta/${featuredHackathon.id_slug}`} className="al-hack-hero-btn-primary">
-                        <PlayCircle className="h-4 w-4" />Entrar al hackatón
+                        <PlayCircle className="h-4 w-4" />Abrir preparación
                       </Link>
                     ) : featuredHackathon.url ? (
                       <a href={featuredHackathon.url} target="_blank" rel="noreferrer" className="al-hack-hero-btn-primary">
-                        <ExternalLink className="h-4 w-4" />Entrar al hackatón
+                        <ExternalLink className="h-4 w-4" />Abrir convocatoria
                       </a>
                     ) : null}
                     {featuredHackathon.requiredCompetencies && featuredHackathon.requiredCompetencies.length > 0 && (
@@ -3280,7 +3280,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
 
             <div className="al-hack-count-row">
               <p className="al-hack-count-text">
-                Mostrando {filtered.length} {filtered.length === 1 ? "hackathon" : "hackathons"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
+                Mostrando {filtered.length} {filtered.length === 1 ? "evento o reto" : "eventos y retos"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
               </p>
               <ViewToggle value={viewMode} onChange={setViewMode} />
             </div>
@@ -3343,7 +3343,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                             <ListChecks className="h-3.5 w-3.5" />Ver detalles
                           </button>
                         )}
-                        <button type="button" className="al-hack-btn" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Hackathon" })}>
+                        <button type="button" className="al-hack-btn" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" })}>
                           <Plus className="h-3.5 w-3.5" />Crear tarea
                         </button>
                         {!isHackathonArchived(item) && (
@@ -3424,7 +3424,7 @@ function HackathonsEmptyState({ variant, onClearFilters }: { variant: "sin_resul
         <div className="al-hack-empty">
           <span className="al-hack-empty-icon"><Search className="h-6 w-6" /></span>
           <p className="al-hack-empty-title">Sin resultados</p>
-          <p className="al-hack-empty-desc">Ningún hackathon coincide con tu búsqueda o filtros.</p>
+          <p className="al-hack-empty-desc">Ningún evento o reto coincide con tu búsqueda o filtros.</p>
           <button type="button" className="al-hack-empty-btn" onClick={onClearFilters}>Quitar filtros</button>
         </div>
       </div>
@@ -3434,13 +3434,13 @@ function HackathonsEmptyState({ variant, onClearFilters }: { variant: "sin_resul
     <div className="al-hack-empty-wrap al-hack-empty-two">
       <div className="al-hack-empty">
         <Image src="/assets/hackathons/hackathons-empty-sin-datos.png" alt="" width={900} height={295} sizes="280px" className="al-hack-empty-illustration" />
-        <p className="al-hack-empty-title">¡Sin hackatones disponibles!</p>
-        <p className="al-hack-empty-desc">Vuelve pronto para nuevos eventos de programación.</p>
+        <p className="al-hack-empty-title">Sin eventos o retos disponibles</p>
+        <p className="al-hack-empty-desc">Vuelve pronto para descubrir nuevas convocatorias relacionadas con tu ciclo.</p>
       </div>
       <div className="al-hack-empty">
         <Image src="/assets/hackathons/hackathons-empty-sin-activos.png" alt="" width={900} height={295} sizes="280px" className="al-hack-empty-illustration" />
         <p className="al-hack-empty-title">¡Aún no te has inscrito!</p>
-        <p className="al-hack-empty-desc">Busca un hackatón y demuestra tus habilidades.</p>
+        <p className="al-hack-empty-desc">Busca un evento o reto y demuestra tus habilidades.</p>
       </div>
     </div>
   );
@@ -3566,7 +3566,7 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
           </>
         ) : (
           <div className="al-modal-step-scroll">
-            <EmptyText>No hay aptitudes registradas todavía para este hackathon.</EmptyText>
+            <EmptyText>No hay aptitudes registradas todavía para este evento o reto.</EmptyText>
           </div>
         )}
         <div className="al-modal-footer">
@@ -3894,7 +3894,7 @@ function CompanyCard({ company, onToggleFavorite }: { company: Company; onToggle
 }
 
 
-const techCourseCategories = new Set(["curso", "fp"]);
+const techCourseCategories = new Set(["curso"]);
 const techHackathonCategories = new Set(["hackathon_reto"]);
 const techEventCategories = new Set(["evento_tech", "reto_programacion", "concurso_programacion"]);
 
@@ -3903,13 +3903,12 @@ function getDisplayCourses(courses: Course[], items: TechOpportunity[], fpItems:
   const fromTech = items
     .filter(isTechCourse)
     .map(techOpportunityToCourse)
-    .filter((course) => !seen.has(courseIdentityKey(course)));
-  fromTech.forEach((course) => seen.add(courseIdentityKey(course)));
+    .filter((course) => addUniqueIdentity(seen, courseIdentityKey(course)));
 
   const fromFp = fpItems
     .filter(isFpCourseLike)
     .map(fpItemToCourse)
-    .filter((course) => !seen.has(courseIdentityKey(course)));
+    .filter((course) => addUniqueIdentity(seen, courseIdentityKey(course)));
 
   return [...fromTech, ...fromFp, ...courses].sort(sortCoursesForDisplay);
 }
@@ -3919,13 +3918,12 @@ function getDisplayHackathons(hackathons: Hackathon[], items: TechOpportunity[],
   const fromTech = items
     .filter(isTechHackathonOrEvent)
     .map(techOpportunityToHackathon)
-    .filter((hackathon) => !seen.has(hackathonIdentityKey(hackathon)));
-  fromTech.forEach((hackathon) => seen.add(hackathonIdentityKey(hackathon)));
+    .filter((hackathon) => addUniqueIdentity(seen, hackathonIdentityKey(hackathon)));
 
   const fromFp = fpItems
     .filter(isFpHackathonLike)
     .map(fpItemToHackathon)
-    .filter((hackathon) => !seen.has(hackathonIdentityKey(hackathon)));
+    .filter((hackathon) => addUniqueIdentity(seen, hackathonIdentityKey(hackathon)));
 
   return [...fromTech, ...fromFp, ...hackathons].sort(sortHackathonsForDisplay);
 }
@@ -4188,8 +4186,20 @@ function hackathonIdentityKey(hackathon: Hackathon) {
 }
 
 function normalizedIdentity(...values: Array<string | undefined | null>) {
-  const value = values.find((item) => item && String(item).trim());
-  return String(value || "").trim().toLowerCase();
+  const value = [...values].reverse().find((item) => item && String(item).trim());
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\b(edicion|edition)\s+\d+\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function addUniqueIdentity(seen: Set<string>, identity: string) {
+  if (!identity || seen.has(identity)) return false;
+  seen.add(identity);
+  return true;
 }
 
 function sortCoursesForDisplay(a: Course, b: Course) {

@@ -13,8 +13,8 @@ unauthenticated publisher.
 Require deterministic per-item routing plus human approval before delivery.
 Radar freezes approved items into a persistent batch and signs each request
 with HMAC-SHA256 over the timestamp, delivery identifier and raw body. AL-LIO
-enforces a five-minute replay window, schema version 2, transactional ingestion
-and delivery/item idempotency.
+enforces a five-minute replay window, schema version 3, transactional ingestion,
+explicit content destinations and delivery/item idempotency.
 
 ## Consequences
 

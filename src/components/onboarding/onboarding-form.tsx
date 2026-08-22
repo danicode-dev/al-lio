@@ -16,7 +16,7 @@ const INTEREST_META: Record<
   herramientas: { label: "Herramientas", icon: Wrench, accent: "#E15D2D" },
   cursos: { label: "Cursos", icon: BookOpen, accent: "#2F6FED" },
   portfolio: { label: "Portfolio y evidencias", icon: Folder, accent: "#E15D2D" },
-  hackathons: { label: "Hackathons y convocatorias", icon: Trophy, accent: "#D6A419" },
+  hackathons: { label: "Eventos y retos", icon: Trophy, accent: "#D6A419" },
   organizacion: { label: "Organización", icon: Calendar, accent: "#4C7A68" },
 };
 

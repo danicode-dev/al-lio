@@ -56,6 +56,15 @@ if (learningBlocMigration) {
   check("existing learning notes are backfilled into Bloc", learningBlocMigration.sql.includes("learning_note_groups") && learningBlocMigration.sql.includes("fp_learning_notes"));
 }
 
+const radarMultidestinationMigration = migrations.find((migration) => migration.version === "0005_radar_multidestination");
+check("multidestination Radar migration exists", Boolean(radarMultidestinationMigration));
+if (radarMultidestinationMigration) {
+  check("Radar destinations and semantic keys are persisted", radarMultidestinationMigration.sql.includes("destination") && radarMultidestinationMigration.sql.includes("semantic_key"));
+  check("global catalogue content is deduplicated", radarMultidestinationMigration.sql.includes("radar_semantic_key") && radarMultidestinationMigration.sql.includes("unique index"));
+  check("course and event content is cycle-scoped", radarMultidestinationMigration.sql.includes("fp_content_cycle_fit") && radarMultidestinationMigration.sql.includes("target_cycle_codes"));
+  check("existing Radar content is backfilled", radarMultidestinationMigration.sql.includes("insert into public.fp_content_items") && radarMultidestinationMigration.sql.includes("update public.radar_items"));
+}
+
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 check("postgres:migrate usa el runner versionado", packageJson.scripts?.["postgres:migrate"] === "node scripts/postgres/migrate.mjs");
 check("existe importador versionado de competencias", packageJson.scripts?.["import:learning-competencies"] === "node scripts/import-learning-competencies.mjs");

@@ -62,6 +62,7 @@ export async function ingestRadarDelivery(delivery: RadarDelivery, rawBody: stri
 
     for (const item of delivery.items) {
       const radarItemId = await upsertRadarItem(client, item);
+      if (item.destination !== "news") await upsertRadarCatalogItem(client, item);
       await client.query(
         `INSERT INTO public.radar_delivery_items (delivery_id, radar_item_id)
          VALUES ($1, $2) ON CONFLICT DO NOTHING`,
@@ -81,6 +82,7 @@ async function upsertRadarItem(client: PoolClient, item: RadarDeliveryItem): Pro
     item.kind, item.locality, item.province, item.targetCycleCodes, item.moduleCodes,
     item.topics, item.matchedRuleIds, item.matchedKeywords, item.trustTier, item.reviewStatus,
     item.reviewedBy, item.reviewedAt, item.reviewReason, item.sourceUrl, item.contentHash,
+    item.destination, item.semanticKey,
   ];
   const result = await client.query<{ id: string }>(
     `INSERT INTO public.radar_items (
@@ -88,7 +90,7 @@ async function upsertRadarItem(client: PoolClient, item: RadarDeliveryItem): Pro
        published_at, fetched_at, expires_at, event_starts_at, event_ends_at, registration_url,
        registration_deadline, kind, locality, province, target_cycle_codes, module_codes,
        topics, matched_rule_ids, matched_keywords, trust_tier, review_status, reviewed_by,
-       reviewed_at, review_reason, source_url, content_hash
+       reviewed_at, review_reason, source_url, content_hash, destination, semantic_key
      ) VALUES (${values.map((_, index) => `$${index + 1}`).join(", ")})
      ON CONFLICT (source_id, canonical_url) DO UPDATE SET
        source_name = excluded.source_name,
@@ -116,7 +118,9 @@ async function upsertRadarItem(client: PoolClient, item: RadarDeliveryItem): Pro
        reviewed_at = excluded.reviewed_at,
        review_reason = excluded.review_reason,
        source_url = excluded.source_url,
-       content_hash = excluded.content_hash
+       content_hash = excluded.content_hash,
+       destination = excluded.destination,
+       semantic_key = excluded.semantic_key
      WHERE excluded.fetched_at >= public.radar_items.fetched_at
      RETURNING id::text`,
     values,
@@ -131,6 +135,73 @@ async function upsertRadarItem(client: PoolClient, item: RadarDeliveryItem): Pro
   return existing.rows[0].id;
 }
 
+async function upsertRadarCatalogItem(client: PoolClient, item: RadarDeliveryItem): Promise<void> {
+  const contentType = item.destination === "course"
+    ? "curso_complementario"
+    : /\bhackathons?\b/i.test(item.title)
+      ? "hackathon"
+      : /\b(retos?|challenges?|concursos?|competici[oó]n(?:es)?)\b/i.test(item.title)
+        ? "reto"
+        : "evento";
+  const relevantDate = item.registrationDeadline ?? item.eventStartsAt ?? item.eventEndsAt;
+  const status = item.destination === "course" ? "activo" : relevantDate && Date.parse(relevantDate) >= Date.now() ? "abierto" : "revisar";
+  const contentResult = await client.query<{ id: string }>(
+    `INSERT INTO public.fp_content_items (
+       id_slug, type, title, description, entity, location, province, start_date, end_date,
+       status, source_url, tags, suggested_action, last_reviewed_at, notes, source_year,
+       radar_semantic_key
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::timestamptz::date, $9::timestamptz::date,
+       $10, $11, $12, $13, $14::timestamptz::date, $15, $16, $17)
+     ON CONFLICT (radar_semantic_key) WHERE radar_semantic_key IS NOT NULL DO UPDATE SET
+       type = excluded.type, title = excluded.title, description = excluded.description,
+       entity = excluded.entity, location = excluded.location, province = excluded.province,
+       start_date = excluded.start_date, end_date = excluded.end_date, status = excluded.status,
+       source_url = excluded.source_url, tags = excluded.tags,
+       suggested_action = excluded.suggested_action, last_reviewed_at = excluded.last_reviewed_at,
+       notes = excluded.notes, source_year = excluded.source_year, updated_at = now()
+     RETURNING id::text`,
+    [
+      `radar-${item.destination}-${item.semanticKey.slice(0, 32)}`,
+      contentType,
+      item.title,
+      item.summary,
+      item.sourceName,
+      item.locality,
+      item.province,
+      item.eventStartsAt,
+      item.eventEndsAt ?? item.registrationDeadline,
+      status,
+      item.canonicalUrl,
+      [...new Set([...item.topics, ...item.moduleCodes])],
+      item.destination === "course" ? "Revisar la formación y guardar si encaja con tu objetivo." : "Revisar requisitos y fechas antes de participar.",
+      item.reviewedAt,
+      `Fuente validada por Radar. ${item.reviewReason}`,
+      String(new Date(item.publishedAt ?? item.fetchedAt).getUTCFullYear()),
+      item.semanticKey,
+    ],
+  );
+  const contentId = contentResult.rows[0]?.id;
+  if (!contentId) throw new Error("Radar catalogue upsert did not return an id");
+
+  for (const cycleCode of item.targetCycleCodes) {
+    await client.query(
+      `INSERT INTO public.fp_content_cycle_fit (
+         content_item_id, cycle_code, cycle_group, priority, fit_score, audience_year
+       ) VALUES ($1, $2, $3, $4, $5, NULL)
+       ON CONFLICT (content_item_id, cycle_code) DO UPDATE SET
+         cycle_group = excluded.cycle_group, priority = excluded.priority,
+         fit_score = excluded.fit_score, updated_at = now()`,
+      [
+        contentId,
+        cycleCode,
+        cycleCode === "DAW" || cycleCode === "DAM" ? "DEV" : cycleCode,
+        item.trustTier === "official" || item.trustTier === "first_party" ? "Alta" : "Media",
+        item.trustTier === "official" || item.trustTier === "first_party" ? 5 : 4,
+      ],
+    );
+  }
+}
+
 export async function listRadarItemsForCycle(
   userId: string,
   cycleCode: RadarCycleCode,
@@ -139,7 +210,12 @@ export async function listRadarItemsForCycle(
   const values: unknown[] = [userId, cycleCode];
   const conditions = [
     `$2 = ANY(item.target_cycle_codes)`,
-    `(item.expires_at IS NULL OR item.expires_at > now())`,
+    `item.destination = 'news'`,
+    `item.kind IN ('news', 'legal')`,
+    `(state.status = 'saved' OR item.expires_at IS NULL OR item.expires_at > now())`,
+    `(state.status = 'saved'
+      OR (item.kind = 'news' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '72 hours')
+      OR (item.kind = 'legal' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '30 days'))`,
   ];
 
   if (filters.sourceId) {
@@ -181,12 +257,17 @@ export async function getRadarStatsForCycle(userId: string, cycleCode: RadarCycl
        count(*)::text AS total_items,
        count(*) FILTER (WHERE state.status IS NULL)::text AS new_items,
        count(*) FILTER (WHERE state.status = 'saved')::text AS saved_items,
-       (SELECT max(received_at)::text FROM public.radar_deliveries) AS last_received_at
+       max(item.fetched_at)::text AS last_received_at
      FROM public.radar_items item
      LEFT JOIN public.radar_item_user_states state
        ON state.radar_item_id = item.id AND state.user_id = $1
      WHERE $2 = ANY(item.target_cycle_codes)
-       AND (item.expires_at IS NULL OR item.expires_at > now())`,
+       AND item.destination = 'news'
+       AND item.kind IN ('news', 'legal')
+       AND (state.status = 'saved' OR item.expires_at IS NULL OR item.expires_at > now())
+       AND (state.status = 'saved'
+         OR (item.kind = 'news' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '72 hours')
+         OR (item.kind = 'legal' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '30 days'))`,
     [userId, cycleCode],
   );
   const row = result.rows[0];
@@ -211,7 +292,7 @@ export async function setRadarItemStatus(
      FROM public.radar_items item
      WHERE item.id = $2::bigint
        AND $3 = ANY(item.target_cycle_codes)
-       AND (item.expires_at IS NULL OR item.expires_at > now())
+       AND item.destination = 'news'
      ON CONFLICT (user_id, radar_item_id) DO UPDATE SET status = excluded.status
      RETURNING radar_item_id`,
     [userId, itemId, cycleCode, status],

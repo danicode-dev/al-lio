@@ -88,7 +88,7 @@ export function QuickAdd({ open, setOpen, actions }: QuickAddProps) {
               <QuickAddTab active={type === "hackathon"} onClick={() => changeType("hackathon")} icon={<Trophy className="h-3.5 w-3.5" />}>Reto</QuickAddTab>
             </div>
 
-            <Input name="title" placeholder={type === "task" ? "¿Qué quieres hacer?" : type === "course" ? "Nombre del curso" : "Nombre del reto o hackathon"} autoFocus required />
+            <Input name="title" placeholder={type === "task" ? "¿Qué quieres hacer?" : type === "course" ? "Nombre del curso" : "Nombre del evento o reto"} autoFocus required />
 
             {type === "task" && (
               <>
