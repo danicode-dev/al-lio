@@ -1,62 +1,73 @@
 # Final owner review checklist
 
-Use this order before approving merge, publication, or production deployment.
-Do not continue after a failed blocking step.
+This checklist records the reviewed state for the first AL-LIO release. Open
+boxes are deliberate owner-operated follow-up work rather than hidden release
+claims.
 
-## 1. Repository review
+## 1. Repository and compliance
 
-- [ ] Read the product overview and confirm claims match the current application.
-- [ ] Review the diff in both AL-LIO and Radar; confirm no secret, dump, credential, or personal data is present.
-- [ ] Confirm Spanish UI and curricular data remain intentionally localized.
-- [ ] Confirm engineering documentation, comments, and collaboration files are English.
-- [ ] Confirm the independent Radar boundary is still preserved.
+- [x] Product claims match the deployed application.
+- [x] AL-LIO is public, MIT-licensed and credits Aircury SL.
+- [x] No tracked secret, dump, private key or personal-data file was detected.
+- [x] Engineering source, maintained technical documentation and GitHub
+  collaboration material use English.
+- [x] Spanish UI, curriculum and editorial data remain intentionally localized.
+- [x] The independent Radar boundary remains preserved.
 
 ## 2. Automated verification
 
-- [ ] AL-LIO `npm run ci` passes from a clean checkout.
-- [ ] Radar language validation, lint, type-check, 180 tests, and build pass.
-- [ ] GitHub Actions syntax is accepted after push.
-- [ ] CodeQL and dependency review complete without an unresolved blocking alert.
-- [ ] Branch protection requires the passing CI checks before merge.
+- [x] AL-LIO `npm run ci` passes from a clean installation.
+- [x] Radar `npm run ci` passes, including 180 tests and the production build.
+- [x] GitHub Actions, CodeQL and dependency review passed for merged delivery
+  changes.
+- [x] Production dependency audits report no known vulnerabilities.
+- [x] Markdown links and engineering-language checks pass in both repositories.
+- [x] AL-LIO `main` rejects force pushes and deletions and requires current CI
+  checks before future changes are merged.
 
-## 3. Product review
+## 3. Product verification
 
-- [ ] Test one clean account for every supported cycle: DAW, DAM, AF, TSAF, and MP.
-- [ ] Confirm each account starts without data belonging to another account.
-- [ ] Confirm dashboard, tasks, profile, learning progress, notes, and navigation persist correctly.
-- [ ] Confirm responsive layouts on desktop and mobile.
-- [ ] Capture approved English project screenshots without real personal data.
+- [x] One fictional production account was tested for DAW, DAM, AF, TSAF and MP.
+- [x] Dashboard, tasks, profile, learning progress, notes and navigation persist.
+- [x] News remains Spanish-audience, cycle-filtered and free of general local
+  crime or unrelated newspaper content in the reviewed sample.
+- [x] Desktop and mobile login layouts were checked without console errors.
+- [x] Job Radar rejects unauthenticated access and validates authenticated input.
+- [ ] Select and approve the final public screenshots and presentation copy.
 
-## 4. Radar editorial review
+## 4. Radar editorial controls
 
-- [ ] Inspect every enabled source in the source catalogue.
-- [ ] Confirm sample accepted items are relevant to the assigned cycle.
-- [ ] Confirm unrelated, generic, English-only, stale, and excluded items are rejected.
-- [ ] Confirm every enabled source still requires human approval.
-- [ ] Confirm DAW and DAM remain distinct and AI/Granada never act as cycle codes.
-- [ ] Leave unproven sources pending rather than enabling them for coverage.
+- [x] The authoritative catalogue contains 13 enabled, 11 pending-validation and
+  8 reference-only sources.
+- [x] Every enabled source requires explicit human review.
+- [x] Enabled sources provide at least three reviewed catalogue routes per cycle,
+  including strict shared BOE routing.
+- [x] DAW and DAM remain distinct; AI and Granada are topics, not cycle codes.
+- [x] Pending sources remain disabled until their technical and editorial
+  evidence is complete.
+- [x] The application never displays pending or rejected Radar candidates.
 
-## 5. Operational review
+## 5. Production and recovery
 
-- [ ] Configure external HTTPS, host-capacity, Radar heartbeat, and outbox alerts.
-- [ ] Configure encrypted off-host PostgreSQL and Radar backups.
+- [x] The web image is identified by the reviewed Git commit SHA.
+- [x] Web-only deployment preserved Radar and PostgreSQL container identities.
+- [x] Public liveness, readiness and authentication-boundary checks pass.
+- [x] The previous web image remains available for rollback.
+- [x] SSH public-key access works and KVM recovery is documented.
+- [ ] Configure external monitoring and named alert recipients.
+- [ ] Replicate encrypted backups outside the VPS.
 - [ ] Complete and record an isolated restore exercise.
-- [ ] Confirm named alert recipients and incident escalation.
-- [ ] Complete a private production release record.
-- [ ] Keep the previous images available and rehearse the rollback decision.
 
-## 6. Publication and release
+## 6. Release and presentation
 
-- [ ] Merge through reviewed pull requests after CI succeeds.
-- [ ] Re-run secret and history checks before changing Radar visibility.
-- [ ] Create a release tag only for an approved, committed revision.
-- [ ] Deploy only the intended release unit using the VPS runbook.
-- [ ] Complete the authenticated production smoke test and observation window.
+- [x] Delivery changes were merged through reviewed pull requests.
+- [x] Incompatible automated dependency pull requests were not merged.
+- [x] The first release is recorded as `v0.1.0` after required checks pass.
+- [x] The authenticated production smoke test was completed by the owner.
+- [ ] Approve the final screenshots and presentation narrative.
 
-## Manual gates not solved by repository code
+## Manual follow-up
 
-- External monitoring provider and notification recipients.
-- Encrypted off-host backup destination, keys, retention, and scheduler.
-- Final screenshot selection and presentation copy approval.
-- GitHub branch protection and repository visibility settings.
-- Commit, pull-request review, merge, release tag, and production deployment approval.
+The remaining manual work is limited to presentation approval, external
+monitoring ownership and off-host backup/restore evidence. These controls must
+be completed before claiming full long-term operational readiness.
