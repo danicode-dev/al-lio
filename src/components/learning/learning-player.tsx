@@ -77,7 +77,7 @@ export function LearningPlayer({
       setNotes((current) => [...current, result.note as DbFpLearningNote].sort((a, b) => a.timestamp_seconds - b.timestamp_seconds));
       setNoteBody("");
       if (status !== "completed") setStatus("started");
-      toast.success("Nota guardada");
+      toast.success("Nota guardada en Bloc");
     });
   }
 
@@ -154,7 +154,7 @@ export function LearningPlayer({
             <span className="text-xs font-bold text-[#8a8378]">{notes.length}</span>
           </div>
           <p className="mt-2 text-xs leading-5 text-[#777269]">
-            Se guardan en tu cuenta y puedes retomarlas desde <Link href="/profile#learning-notebook" className="font-extrabold text-[#e15d2d] hover:underline">Perfil</Link>.
+            Se añaden a una nota de <Link href="/bloc" className="font-extrabold text-[#e15d2d] hover:underline">Bloc</Link> con el título del vídeo para que puedas editarlas y exportarlas.
           </p>
 
           <div className="mt-4 max-h-[360px] space-y-3 overflow-y-auto pr-1">

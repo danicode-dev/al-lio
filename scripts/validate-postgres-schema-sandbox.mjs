@@ -77,6 +77,7 @@ if (!existsSync(schemaPath)) {
 }
 
 const schema = readFileSync(schemaPath, "utf-8");
+const migrationFiles = loadMigrationFiles(root).filter((migration) => !migration.baseline);
 
 const { Client } = require("pg");
 const client = new Client({ connectionString });
@@ -104,6 +105,7 @@ const EXPECTED_INDEXES = [
   "fp_learning_competencies_cycle_idx",
   "fp_user_learning_state_user_idx",
   "fp_learning_notes_user_resource_idx",
+  "bloc_notes_user_source_unique_idx",
 ];
 
 let passed = 0;
@@ -120,7 +122,7 @@ try {
   console.log("── Aplicando schema ──");
   await client.query(schema);
   ok("schema.sql aplicado sin errores");
-  for (const migration of loadMigrationFiles(root).filter((migration) => !migration.baseline)) {
+  for (const migration of migrationFiles) {
     await client.query(migration.sql);
     ok(`migración ${migration.version} aplicada sin errores`);
   }
@@ -205,6 +207,37 @@ try {
   `, [userId]);
   ok("INSERT profiles (FK user_id OK)");
 
+  const learningResourceId = `sandbox-learning-${Date.now()}`;
+  await client.query(
+    `INSERT INTO public.fp_learning_resources (
+       id, slug, title, description, provider, language, level, youtube_url,
+       review_status, reviewed_at, reviewed_by, review_reason
+     ) VALUES ($1, $1, 'Curso sandbox', 'Recurso para validar notas', 'Canal sandbox',
+       'es', 'inicial', 'https://youtube.com/watch?v=sandbox123', 'approved',
+       current_date, 'sandbox', 'Validación automatizada')`,
+    [learningResourceId],
+  );
+  await client.query(
+    `INSERT INTO public.fp_learning_notes (user_id, resource_id, timestamp_seconds, body)
+     VALUES ($1, $2, 75, $3)`,
+    [userId, learningResourceId, "Nota <segura> & exportable"],
+  );
+  const learningBlocMigration = migrationFiles.find((migration) => migration.version === "0004_learning_notes_to_bloc");
+  if (!learningBlocMigration) throw new Error("Migration 0004_learning_notes_to_bloc is missing");
+  await client.query(learningBlocMigration.sql);
+  const blocLearningNote = await client.query(
+    `SELECT title, content_html, content_text
+     FROM public.bloc_notes
+     WHERE user_id=$1 AND source_type='learning_resource' AND source_id=$2`,
+    [userId, learningResourceId],
+  );
+  blocLearningNote.rowCount === 1
+    && blocLearningNote.rows[0].title === "Curso sandbox"
+    && blocLearningNote.rows[0].content_html.includes("Nota &lt;segura&gt; &amp; exportable")
+    && blocLearningNote.rows[0].content_text.includes("[1:15]")
+    ? ok("learning notes are backfilled into one safe, exportable Bloc note")
+    : fail("learning notes were not backfilled into Bloc correctly");
+
   const deliveryId = randomUUID();
   await client.query(
     `INSERT INTO public.radar_deliveries (delivery_id, schema_version, payload_hash, item_count)
@@ -239,6 +272,7 @@ try {
   // ── Limpiar datos de prueba ────────────────────────────────────────────────
   console.log("\n── Limpieza ──");
   await client.query(`DELETE FROM public.users WHERE id = $1`, [userId]);
+  await client.query(`DELETE FROM public.fp_learning_resources WHERE id = $1`, [learningResourceId]);
   await client.query(`DELETE FROM public.radar_items WHERE id = $1`, [radarItemId]);
   await client.query(`DELETE FROM public.radar_deliveries WHERE delivery_id = $1`, [deliveryId]);
   ok("datos de prueba eliminados (CASCADE en tablas dependientes)");

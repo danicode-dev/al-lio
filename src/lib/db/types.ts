@@ -409,6 +409,8 @@ export interface DbBlocNote {
   content_html: string;
   content_text: string;
   is_favorite: boolean;
+  source_type: "learning_resource" | null;
+  source_id: string | null;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import {
-  addLearningNote,
+  addLearningNoteToBloc,
   getLearningResourceForCycle,
   upsertLearningProgress,
 } from "@/lib/db/repositories/learning";
@@ -84,12 +84,7 @@ export async function addLearningNoteAction(
   if (!resource) return { error: "resource_not_found", note: null };
 
   try {
-    const note = await addLearningNote(session.uid, resource.id, safeTimestamp, safeBody);
-    await upsertLearningProgress(session.uid, resource.id, {
-      status: resource.status === "completed" ? "completed" : "started",
-      lastPositionSeconds: safeTimestamp,
-      durationSeconds: resource.saved_duration_seconds,
-    });
+    const note = await addLearningNoteToBloc(session.uid, resource, safeTimestamp, safeBody);
     return { error: null, note };
   } catch {
     return { error: "note_save_failed", note: null };

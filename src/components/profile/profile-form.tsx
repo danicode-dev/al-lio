@@ -7,11 +7,8 @@ import {
   BookOpen,
   Calendar,
   CheckCircle2,
-  Clock3,
   Folder,
   GraduationCap,
-  NotebookPen,
-  PlayCircle,
   Trophy,
   Wrench,
   type LucideIcon,
@@ -21,8 +18,6 @@ import { updateProfileAction, type ProfileUpdateState } from "@/lib/profile/onbo
 import { ONBOARDING_INTEREST_OPTIONS } from "@/lib/profile/onboarding-options";
 import type { DbFpCycle, DbProfile } from "@/lib/db/types";
 import type { RoadmapOverview } from "@/lib/fp/roadmap";
-import type { LearningNotebookSummary } from "@/lib/db/repositories/learning";
-import { formatTimestamp } from "@/lib/learning/time";
 import { FieldListbox, type FieldListboxOption } from "@/components/ui/field-listbox";
 
 const INTEREST_META: Record<
@@ -48,13 +43,11 @@ export function ProfileForm({
   profile,
   account,
   learningOverview,
-  learningNotebook,
 }: {
   cycles: DbFpCycle[];
   profile: DbProfile;
   account: { email: string; displayName: string | null };
   learningOverview: RoadmapOverview | null;
-  learningNotebook: LearningNotebookSummary;
 }) {
   const [state, formAction, isPending] = useActionState(updateProfileAction, initialState);
   const [cycleCode, setCycleCode] = useState(profile.cycle_code ?? "");
@@ -250,48 +243,8 @@ export function ProfileForm({
         .al-profile-stat-row:first-of-type { border-top: none; }
         .al-profile-stat-row strong { color: #111111; font-size: 14px; }
 
-        .al-profile-notebook {
-          margin-top: 20px;
-          border: 1px solid #ece7dc;
-          border-radius: 20px;
-          background: white;
-          box-shadow: 0 12px 32px rgba(17, 17, 17, 0.06);
-          padding: clamp(20px, 3vw, 28px);
-          scroll-margin-top: 24px;
-        }
-        .al-profile-notebook-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-        .al-profile-notebook-title { display: flex; align-items: center; gap: 9px; margin: 0; color: #111111; font-size: 16px; font-weight: 800; }
-        .al-profile-notebook-title svg { width: 18px; height: 18px; color: #e15d2d; }
-        .al-profile-notebook-copy { margin: 5px 0 0; color: #777269; font-size: 12px; line-height: 1.6; }
-        .al-profile-notebook-grid { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 22px; margin-top: 20px; }
-        .al-profile-notebook-section h3 { margin: 0 0 10px; color: #625d55; font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
-        .al-profile-notebook-list { display: grid; gap: 9px; }
-        .al-profile-course-link, .al-profile-note-link, .al-profile-note-archived {
-          display: grid;
-          grid-template-columns: auto minmax(0, 1fr) auto;
-          align-items: center;
-          gap: 11px;
-          border: 1px solid #eee9df;
-          border-radius: 13px;
-          padding: 11px 12px;
-          color: #111111;
-          background: #fff;
-        }
-        .al-profile-course-link, .al-profile-note-link { transition: border-color .15s, transform .15s, background .15s; }
-        .al-profile-course-link:hover, .al-profile-note-link:hover { border-color: #efb49b; background: #fffaf7; transform: translateY(-1px); }
-        .al-profile-notebook-icon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; background: #fff0e9; color: #e15d2d; }
-        .al-profile-notebook-icon svg { width: 16px; height: 16px; }
-        .al-profile-notebook-item { min-width: 0; }
-        .al-profile-notebook-item strong { display: block; overflow: hidden; color: #111111; font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
-        .al-profile-notebook-item span { display: block; margin-top: 3px; overflow: hidden; color: #7b756c; font-size: 10.5px; text-overflow: ellipsis; white-space: nowrap; }
-        .al-profile-note-body { display: -webkit-box !important; overflow: hidden !important; white-space: normal !important; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.45; }
-        .al-profile-notebook-time { color: #e15d2d; font-size: 11px; font-weight: 900; }
-        .al-profile-notebook-empty { margin: 0; border-radius: 13px; background: #f7f5f0; padding: 14px; color: #777269; font-size: 12px; line-height: 1.6; }
-        .al-profile-note-archived { opacity: .72; }
-
         @media (max-width: 800px) {
           .al-profile-grid { grid-template-columns: 1fr; }
-          .al-profile-notebook-grid { grid-template-columns: 1fr; }
         }
       `}</style>
 
@@ -413,56 +366,6 @@ export function ProfileForm({
         </div>
       </div>
 
-      <section id="learning-notebook" className="al-profile-notebook">
-        <div className="al-profile-notebook-head">
-          <div>
-            <h2 className="al-profile-notebook-title"><NotebookPen aria-hidden="true" /> Cuaderno de aprendizaje</h2>
-            <p className="al-profile-notebook-copy">Retoma tus cursos y notas desde tu cuenta, siempre vinculados al vídeo y al minuto exacto.</p>
-          </div>
-          <Link href="/roadmap" className="al-profile-roadmap-link">Explorar competencias <ArrowRight className="h-3.5 w-3.5" /></Link>
-        </div>
-
-        <div className="al-profile-notebook-grid">
-          <div className="al-profile-notebook-section">
-            <h3>Continuar aprendiendo</h3>
-            <div className="al-profile-notebook-list">
-              {learningNotebook.inProgress.length ? learningNotebook.inProgress.map((course) => (
-                <Link key={course.resource_id} href={`/aprende/${encodeURIComponent(course.resource_slug)}`} className="al-profile-course-link">
-                  <span className="al-profile-notebook-icon"><PlayCircle aria-hidden="true" /></span>
-                  <span className="al-profile-notebook-item">
-                    <strong>{course.resource_title}</strong>
-                    <span>{course.provider} · {course.competency_title}</span>
-                  </span>
-                  <span className="al-profile-notebook-time">{formatTimestamp(course.last_position_seconds)}</span>
-                </Link>
-              )) : <p className="al-profile-notebook-empty">Empieza un vídeo desde Competencias y aparecerá aquí para continuarlo después.</p>}
-            </div>
-          </div>
-
-          <div className="al-profile-notebook-section">
-            <h3>Notas recientes</h3>
-            <div className="al-profile-notebook-list">
-              {learningNotebook.recentNotes.length ? learningNotebook.recentNotes.map((note) => {
-                const content = (
-                  <>
-                    <span className="al-profile-notebook-icon"><Clock3 aria-hidden="true" /></span>
-                    <span className="al-profile-notebook-item">
-                      <strong className="al-profile-note-body">{note.body}</strong>
-                      <span>{note.resource_title} · {note.provider}{!note.is_available ? " · Recurso archivado" : ""}</span>
-                    </span>
-                    <span className="al-profile-notebook-time">{formatTimestamp(note.timestamp_seconds)}</span>
-                  </>
-                );
-                return note.is_available ? (
-                  <Link key={note.id} href={`/aprende/${encodeURIComponent(note.resource_slug)}?at=${note.timestamp_seconds}`} className="al-profile-note-link">{content}</Link>
-                ) : (
-                  <div key={note.id} className="al-profile-note-archived">{content}</div>
-                );
-              }) : <p className="al-profile-notebook-empty">Las notas que guardes dentro de un vídeo aparecerán aquí.</p>}
-            </div>
-          </div>
-        </div>
-      </section>
     </>
   );
 }
