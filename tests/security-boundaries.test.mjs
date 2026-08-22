@@ -166,3 +166,16 @@ test("Job Radar API routes use non-redirecting authentication and generic errors
     assert.doesNotMatch(source, /error:\s*String\(/);
   }
 });
+
+test("learning saves do not invalidate or recreate the active video route", async () => {
+  const [actionsSource, playerHookSource] = await Promise.all([
+    readFile(new URL("../src/lib/learning/actions.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/ruta/use-youtube-player.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.doesNotMatch(actionsSource, /revalidatePath\(`\/aprende\//);
+  assert.doesNotMatch(
+    playerHookSource,
+    /\[youtubeRef\?\.type,\s*youtubeRef\?\.id,\s*initialTimeSeconds/,
+  );
+});

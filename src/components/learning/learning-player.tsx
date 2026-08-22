@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { ArrowLeft, CheckCircle2, ExternalLink, Save } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ExternalLink, LoaderCircle, RotateCcw, Save } from "lucide-react";
 import { toast } from "sonner";
 import { addLearningNoteAction, saveLearningProgressAction } from "@/lib/learning/actions";
 import { useYouTubePlayer } from "@/components/ruta/use-youtube-player";
@@ -10,16 +10,24 @@ import type { LearningResourceDetail } from "@/lib/db/repositories/learning";
 import type { DbFpLearningNote, FpLearningStatus } from "@/lib/db/types";
 import { formatTimestamp } from "@/lib/learning/time";
 
-export function LearningPlayer({ resource, initialNotes }: { resource: LearningResourceDetail; initialNotes: DbFpLearningNote[] }) {
+export function LearningPlayer({
+  resource,
+  initialNotes,
+  initialSeekSeconds,
+}: {
+  resource: LearningResourceDetail;
+  initialNotes: DbFpLearningNote[];
+  initialSeekSeconds: number | null;
+}) {
   const [status, setStatus] = useState<FpLearningStatus | null>(resource.status);
   const [notes, setNotes] = useState(initialNotes);
   const [noteBody, setNoteBody] = useState("");
   const [isPending, startTransition] = useTransition();
   const lastSavedRef = useRef(resource.last_position_seconds);
   const savingRef = useRef(false);
-  const { youtubeRef, playerContainerRef, currentTime, duration, playerState, seekTo } = useYouTubePlayer(
+  const { youtubeRef, playerContainerRef, playerReady, playerError, currentTime, duration, playerState, seekTo, retryPlayer } = useYouTubePlayer(
     resource.youtube_url,
-    resource.status === "completed" ? 0 : resource.last_position_seconds,
+    initialSeekSeconds ?? (resource.status === "completed" ? 0 : resource.last_position_seconds),
   );
 
   const persist = useCallback(async (nextStatus: FpLearningStatus = "started", force = false) => {
@@ -27,11 +35,14 @@ export function LearningPlayer({ resource, initialNotes }: { resource: LearningR
     const position = Math.max(0, Math.floor(currentTime));
     if (!force && position - lastSavedRef.current < 15) return;
     savingRef.current = true;
-    const result = await saveLearningProgressAction(resource.slug, position, duration > 0 ? Math.floor(duration) : resource.duration_seconds, nextStatus);
-    savingRef.current = false;
-    if (!result.error && result.status) {
-      lastSavedRef.current = position;
-      setStatus(result.status);
+    try {
+      const result = await saveLearningProgressAction(resource.slug, position, duration > 0 ? Math.floor(duration) : resource.duration_seconds, nextStatus);
+      if (!result.error && result.status) {
+        lastSavedRef.current = position;
+        setStatus(result.status);
+      }
+    } finally {
+      savingRef.current = false;
     }
   }, [currentTime, duration, resource.duration_seconds, resource.slug, status]);
 
@@ -105,6 +116,21 @@ export function LearningPlayer({ resource, initialNotes }: { resource: LearningR
             <div className="relative aspect-video overflow-hidden rounded-2xl bg-black">
               <div ref={playerContainerRef} className="absolute inset-0" />
               {!youtubeRef && <div className="absolute inset-0 grid place-items-center text-sm text-white/70">Vídeo no disponible.</div>}
+              {youtubeRef && !playerReady && !playerError && (
+                <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black text-sm font-semibold text-white/75">
+                  <span className="inline-flex items-center gap-2"><LoaderCircle className="h-4 w-4 animate-spin" /> Cargando vídeo...</span>
+                </div>
+              )}
+              {youtubeRef && playerError && (
+                <div className="absolute inset-0 grid place-items-center bg-[#171717] px-6 text-center text-white">
+                  <div>
+                    <p className="text-sm font-semibold">{playerError}</p>
+                    <button type="button" onClick={retryPlayer} className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-[#111111] hover:bg-[#f2eee6]">
+                      <RotateCcw className="h-4 w-4" /> Reintentar
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3 px-2 pb-1 pt-4">
               <a href={resource.youtube_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs font-bold text-[#6b6f72] hover:text-[#111111]">
@@ -127,6 +153,9 @@ export function LearningPlayer({ resource, initialNotes }: { resource: LearningR
             <h2 className="font-extrabold text-[#111111]">Mis notas</h2>
             <span className="text-xs font-bold text-[#8a8378]">{notes.length}</span>
           </div>
+          <p className="mt-2 text-xs leading-5 text-[#777269]">
+            Se guardan en tu cuenta y puedes retomarlas desde <Link href="/profile#learning-notebook" className="font-extrabold text-[#e15d2d] hover:underline">Perfil</Link>.
+          </p>
 
           <div className="mt-4 max-h-[360px] space-y-3 overflow-y-auto pr-1">
             {notes.length === 0 ? (

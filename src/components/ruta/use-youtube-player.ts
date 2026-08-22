@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { parseYouTubeUrl } from "@/lib/utils";
 
 type YouTubePlayerInstance = {
@@ -18,7 +18,11 @@ declare global {
         options: {
           videoId?: string;
           playerVars?: Record<string, number | string>;
-          events?: { onReady?: () => void; onStateChange?: (event: { data: number }) => void };
+          events?: {
+            onReady?: () => void;
+            onStateChange?: (event: { data: number }) => void;
+            onError?: () => void;
+          };
         }
       ) => YouTubePlayerInstance;
     };
@@ -27,22 +31,43 @@ declare global {
 }
 
 let youTubeApiPromise: Promise<void> | null = null;
+const YOUTUBE_API_TIMEOUT_MS = 15_000;
 
 function loadYouTubeApi(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (window.YT?.Player) return Promise.resolve();
   if (youTubeApiPromise) return youTubeApiPromise;
 
-  youTubeApiPromise = new Promise((resolve) => {
+  youTubeApiPromise = new Promise((resolve, reject) => {
+    let settled = false;
     const previous = window.onYouTubeIframeAPIReady;
+    const timeout = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      youTubeApiPromise = null;
+      reject(new Error("youtube_api_timeout"));
+    }, YOUTUBE_API_TIMEOUT_MS);
+
     window.onYouTubeIframeAPIReady = () => {
       previous?.();
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
       resolve();
     };
-    if (!document.getElementById("youtube-iframe-api")) {
+    const existingScript = document.getElementById("youtube-iframe-api") as HTMLScriptElement | null;
+    if (!existingScript) {
       const script = document.createElement("script");
       script.id = "youtube-iframe-api";
       script.src = "https://www.youtube.com/iframe_api";
+      script.onerror = () => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeout);
+        script.remove();
+        youTubeApiPromise = null;
+        reject(new Error("youtube_api_load_failed"));
+      };
       document.head.appendChild(script);
     }
   });
@@ -59,16 +84,19 @@ function loadYouTubeApi(): Promise<void> {
 // the API touches (the mount div, the iframe it creates) is created and torn
 // down imperatively inside the effect, so React never has children to diff there.
 export function useYouTubePlayer(videoUrl: string | null | undefined, initialTimeSeconds = 0) {
-  const youtubeRef = videoUrl ? parseYouTubeUrl(videoUrl) : null;
+  const youtubeRef = useMemo(() => (videoUrl ? parseYouTubeUrl(videoUrl) : null), [videoUrl]);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YouTubePlayerInstance | null>(null);
   const [playerReady, setPlayerReady] = useState(false);
+  const [playerError, setPlayerError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playerState, setPlayerState] = useState(-1);
 
   useEffect(() => {
     setPlayerReady(false);
+    setPlayerError(null);
     setCurrentTime(0);
     setDuration(0);
     setPlayerState(-1);
@@ -86,30 +114,41 @@ export function useYouTubePlayer(videoUrl: string | null | undefined, initialTim
     const playerVars: Record<string, number | string> =
       youtubeRef.type === "playlist" ? { rel: 0, listType: "playlist", list: youtubeRef.id } : { rel: 0 };
 
-    loadYouTubeApi().then(() => {
-      if (cancelled || !window.YT) return;
-      playerRef.current = new window.YT.Player(mountNode, {
-        ...(youtubeRef.type === "video" ? { videoId: youtubeRef.id } : {}),
-        playerVars,
-        events: {
-          onReady: () => {
-            const player = playerRef.current;
-            const playerDuration = player?.getDuration() ?? 0;
-            setDuration(playerDuration);
-            if (initialTimeSeconds > 5 && (!playerDuration || initialTimeSeconds < playerDuration - 10)) {
-              player?.seekTo(initialTimeSeconds, true);
-              setCurrentTime(initialTimeSeconds);
-            }
-            setPlayerReady(true);
-          },
-          onStateChange: (event) => setPlayerState(event.data),
-        },
+    loadYouTubeApi()
+      .then(() => {
+        if (cancelled || !window.YT) return;
+        try {
+          playerRef.current = new window.YT.Player(mountNode, {
+            ...(youtubeRef.type === "video" ? { videoId: youtubeRef.id } : {}),
+            playerVars,
+            events: {
+              onReady: () => {
+                const player = playerRef.current;
+                const playerDuration = player?.getDuration() ?? 0;
+                setDuration(playerDuration);
+                if (initialTimeSeconds > 5 && (!playerDuration || initialTimeSeconds < playerDuration - 10)) {
+                  player?.seekTo(initialTimeSeconds, true);
+                  setCurrentTime(initialTimeSeconds);
+                }
+                setPlayerReady(true);
+              },
+              onStateChange: (event) => setPlayerState(event.data),
+              onError: () => setPlayerError("No se pudo reproducir este vídeo."),
+            },
+          });
+        } catch {
+          setPlayerError("No se pudo iniciar el reproductor.");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setPlayerError("YouTube no ha respondido. Comprueba tu conexión e inténtalo de nuevo.");
       });
-    });
 
     return () => {
       cancelled = true;
-      playerRef.current?.destroy();
+      try {
+        playerRef.current?.destroy();
+      } catch {}
       playerRef.current = null;
       // Whatever is left in `wrapper` (the mountNode, or the iframe the API
       // swapped it for) was never rendered by React, so clearing it manually
@@ -117,7 +156,7 @@ export function useYouTubePlayer(videoUrl: string | null | undefined, initialTim
       wrapper.innerHTML = "";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [youtubeRef?.type, youtubeRef?.id, initialTimeSeconds]);
+  }, [youtubeRef?.type, youtubeRef?.id, retryKey]);
 
   useEffect(() => {
     if (!playerReady) return;
@@ -134,5 +173,19 @@ export function useYouTubePlayer(videoUrl: string | null | undefined, initialTim
     playerRef.current?.seekTo(seconds, true);
   }
 
-  return { youtubeRef, playerContainerRef: wrapperRef, playerReady, currentTime, duration, playerState, seekTo };
+  function retryPlayer() {
+    setRetryKey((current) => current + 1);
+  }
+
+  return {
+    youtubeRef,
+    playerContainerRef: wrapperRef,
+    playerReady,
+    playerError,
+    currentTime,
+    duration,
+    playerState,
+    seekTo,
+    retryPlayer,
+  };
 }

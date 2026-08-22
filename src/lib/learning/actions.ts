@@ -54,10 +54,12 @@ export async function saveLearningProgressAction(
       lastPositionSeconds: status === "completed" ? 0 : safePosition,
       durationSeconds: safeDuration,
     });
-    revalidatePath("/roadmap");
-    revalidatePath(`/roadmap/${resource.competency_slug}`);
-    revalidatePath(`/aprende/${resourceSlug}`);
-    revalidatePath("/dashboard");
+    if (status === "completed") {
+      revalidatePath("/roadmap");
+      revalidatePath(`/roadmap/${resource.competency_slug}`);
+      revalidatePath("/dashboard");
+      revalidatePath("/profile");
+    }
     return { error: null, positionSeconds: state.last_position_seconds, status: state.status };
   } catch {
     return { error: "progress_save_failed", positionSeconds: null, status: null };
@@ -88,7 +90,6 @@ export async function addLearningNoteAction(
       lastPositionSeconds: safeTimestamp,
       durationSeconds: resource.saved_duration_seconds,
     });
-    revalidatePath(`/aprende/${resourceSlug}`);
     return { error: null, note };
   } catch {
     return { error: "note_save_failed", note: null };
