@@ -1,6 +1,6 @@
 import "server-only";
 
-import { query } from "@/lib/db/pool";
+import { query, withTransaction } from "@/lib/db/pool";
 import type {
   DbFpLearningCompetency,
   DbFpLearningNote,
@@ -32,30 +32,6 @@ export type LearningResourceDetail = LearningResourceWithState & {
   competency_slug: string;
   competency_title: string;
   cycle_code: FpCycleCode;
-};
-
-export type LearningNotebookCourse = {
-  resource_id: string;
-  resource_slug: string;
-  resource_title: string;
-  provider: string;
-  competency_title: string;
-  last_position_seconds: number;
-  duration_seconds: number | null;
-  updated_at: string;
-};
-
-export type LearningNotebookNote = DbFpLearningNote & {
-  resource_slug: string;
-  resource_title: string;
-  provider: string;
-  competency_title: string | null;
-  is_available: boolean;
-};
-
-export type LearningNotebookSummary = {
-  inProgress: LearningNotebookCourse[];
-  recentNotes: LearningNotebookNote[];
 };
 
 export async function getLearningCompetenciesForCycle(userId: string, cycleCode: FpCycleCode): Promise<LearningCompetencySummary[]> {
@@ -134,72 +110,81 @@ export async function getLearningNotes(userId: string, resourceId: string): Prom
   return result.rows;
 }
 
-export async function getLearningNotebookSummary(
+export async function addLearningNoteToBloc(
   userId: string,
-  cycleCode: FpCycleCode,
-): Promise<LearningNotebookSummary> {
-  const [coursesResult, notesResult] = await Promise.all([
-    query<LearningNotebookCourse>(
-      `WITH current_courses AS (
-         SELECT DISTINCT ON (state.resource_id)
-           state.resource_id,
-           resource.slug as resource_slug,
-           resource.title as resource_title,
-           resource.provider,
-           competency.title as competency_title,
-           state.last_position_seconds,
-           state.duration_seconds,
-           state.updated_at
-         FROM public.fp_user_learning_state state
-         JOIN public.fp_learning_resources resource
-           ON resource.id=state.resource_id AND resource.is_active=true AND resource.language='es'
-         JOIN public.fp_learning_competency_resources link ON link.resource_id=resource.id
-         JOIN public.fp_learning_competencies competency
-           ON competency.id=link.competency_id AND competency.is_active=true AND competency.cycle_code=$2
-         WHERE state.user_id=$1 AND state.status='started'
-         ORDER BY state.resource_id, competency.sort_order, link.sort_order
-       )
-       SELECT * FROM current_courses
-       ORDER BY updated_at DESC
-       LIMIT 4`,
-      [userId, cycleCode],
-    ),
-    query<LearningNotebookNote>(
-      `SELECT note.*,
-         resource.slug as resource_slug,
-         resource.title as resource_title,
-         resource.provider,
-         current_competency.competency_title,
-         (resource.is_active AND current_competency.competency_title IS NOT NULL) as is_available
-       FROM public.fp_learning_notes note
-       JOIN public.fp_learning_resources resource ON resource.id=note.resource_id
-       LEFT JOIN LATERAL (
-         SELECT competency.title as competency_title
-         FROM public.fp_learning_competency_resources link
-         JOIN public.fp_learning_competencies competency ON competency.id=link.competency_id
-         WHERE link.resource_id=resource.id
-           AND competency.cycle_code=$2
-           AND competency.is_active=true
-         ORDER BY competency.sort_order, link.sort_order
-         LIMIT 1
-       ) current_competency ON true
-       WHERE note.user_id=$1
-       ORDER BY note.updated_at DESC
-       LIMIT 6`,
-      [userId, cycleCode],
-    ),
-  ]);
+  resource: LearningResourceDetail,
+  timestampSeconds: number,
+  body: string,
+): Promise<DbFpLearningNote> {
+  const timestamp = formatLearningTimestamp(timestampSeconds);
+  const resourceHref = `/aprende/${encodeURIComponent(resource.slug)}?at=${timestampSeconds}`;
+  const safeTitle = escapeHtml(resource.title);
+  const safeProvider = escapeHtml(resource.provider);
+  const safeBody = escapeHtml(body).replace(/\r?\n/g, "<br>");
+  const entryHtml = `<hr><p><strong>${timestamp}</strong> · <a href="${resourceHref}">Ir al momento</a></p><p>${safeBody}</p>`;
+  const entryText = `[${timestamp}] ${body}`;
+  const initialHtml = `<p><strong>Vídeo:</strong> ${safeTitle}</p><p><strong>Canal:</strong> ${safeProvider}</p>${entryHtml}`;
+  const initialText = `Vídeo: ${resource.title}\nCanal: ${resource.provider}\n\n${entryText}`;
 
-  return { inProgress: coursesResult.rows, recentNotes: notesResult.rows };
+  return withTransaction(async (client) => {
+    const noteResult = await client.query<DbFpLearningNote>(
+      `INSERT INTO public.fp_learning_notes(user_id, resource_id, timestamp_seconds, body)
+       VALUES ($1,$2,$3,$4) RETURNING *`,
+      [userId, resource.id, timestampSeconds, body],
+    );
+
+    await client.query(
+      `INSERT INTO public.fp_user_learning_state
+         (user_id, resource_id, status, last_position_seconds, duration_seconds, completed_at)
+       VALUES ($1,$2,$3,$4,$5,case when $3='completed' then now() else null end)
+       ON CONFLICT (user_id, resource_id) DO UPDATE SET
+         status=excluded.status,
+         last_position_seconds=excluded.last_position_seconds,
+         duration_seconds=coalesce(excluded.duration_seconds, fp_user_learning_state.duration_seconds),
+         completed_at=case when excluded.status='completed' then coalesce(fp_user_learning_state.completed_at, now()) else null end`,
+      [
+        userId,
+        resource.id,
+        resource.status === "completed" ? "completed" : "started",
+        timestampSeconds,
+        resource.saved_duration_seconds,
+      ],
+    );
+
+    await client.query(
+      `INSERT INTO public.bloc_notes
+         (user_id, title, content_html, content_text, source_type, source_id)
+       VALUES ($1,$2,$3,$4,'learning_resource',$5)
+       ON CONFLICT (user_id, source_type, source_id)
+         WHERE source_type is not null and source_id is not null
+       DO UPDATE SET
+         title=excluded.title,
+         content_html=bloc_notes.content_html || $6,
+         content_text=bloc_notes.content_text || E'\\n\\n' || $7,
+         deleted_at=null`,
+      [userId, resource.title, initialHtml, initialText, resource.id, entryHtml, entryText],
+    );
+
+    return noteResult.rows[0];
+  });
 }
 
-export async function addLearningNote(userId: string, resourceId: string, timestampSeconds: number, body: string): Promise<DbFpLearningNote> {
-  const result = await query<DbFpLearningNote>(
-    `INSERT INTO public.fp_learning_notes(user_id, resource_id, timestamp_seconds, body)
-     VALUES ($1,$2,$3,$4) RETURNING *`,
-    [userId, resourceId, timestampSeconds, body],
-  );
-  return result.rows[0];
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function formatLearningTimestamp(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`
+    : `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
 }
 
 export async function upsertLearningProgress(

@@ -179,3 +179,16 @@ test("learning saves do not invalidate or recreate the active video route", asyn
     /\[youtubeRef\?\.type,\s*youtubeRef\?\.id,\s*initialTimeSeconds/,
   );
 });
+
+test("learning notes are saved atomically and mirrored to Bloc", async () => {
+  const [actionsSource, repositorySource] = await Promise.all([
+    readFile(new URL("../src/lib/learning/actions.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/lib/db/repositories/learning.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(actionsSource, /addLearningNoteToBloc/);
+  assert.match(repositorySource, /withTransaction/);
+  assert.match(repositorySource, /INSERT INTO public\.fp_learning_notes/);
+  assert.match(repositorySource, /INSERT INTO public\.bloc_notes/);
+  assert.match(repositorySource, /ON CONFLICT \(user_id, source_type, source_id\)/);
+});

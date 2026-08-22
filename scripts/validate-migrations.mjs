@@ -48,6 +48,14 @@ if (learningMigration) {
   check("la migración exige trazabilidad editorial", learningMigration.sql.includes("reviewed_by") && learningMigration.sql.includes("review_reason"));
 }
 
+const learningBlocMigration = migrations.find((migration) => migration.version === "0004_learning_notes_to_bloc");
+check("learning notes have a versioned Bloc migration", Boolean(learningBlocMigration));
+if (learningBlocMigration) {
+  check("Bloc notes keep a stable learning resource source", learningBlocMigration.sql.includes("source_type") && learningBlocMigration.sql.includes("source_id"));
+  check("each user has one Bloc note per learning resource", learningBlocMigration.sql.includes("bloc_notes_user_source_unique_idx"));
+  check("existing learning notes are backfilled into Bloc", learningBlocMigration.sql.includes("learning_note_groups") && learningBlocMigration.sql.includes("fp_learning_notes"));
+}
+
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 check("postgres:migrate usa el runner versionado", packageJson.scripts?.["postgres:migrate"] === "node scripts/postgres/migrate.mjs");
 check("existe importador versionado de competencias", packageJson.scripts?.["import:learning-competencies"] === "node scripts/import-learning-competencies.mjs");
