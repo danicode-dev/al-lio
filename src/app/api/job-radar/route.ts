@@ -1,37 +1,44 @@
 import { NextResponse } from "next/server";
-import { getCurrentUserId } from "@/lib/auth/current-user";
+import { tryGetCurrentUserId } from "@/lib/auth/current-user";
 import { getApplications, insertManualApplication } from "@/lib/job-radar/store";
+import { manualApplicationInputSchema } from "@/lib/job-radar/validation";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+function unauthorized() {
+  return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+}
+
+function internalError(operation: string, error: unknown) {
+  console.error(`Job Radar ${operation} failed`, error);
+  return NextResponse.json({ error: "internal_error" }, { status: 500 });
+}
+
 export async function GET() {
   try {
-    const userId = await getCurrentUserId();
+    const userId = await tryGetCurrentUserId();
+    if (!userId) return unauthorized();
     const applications = await getApplications(userId);
-    return NextResponse.json({ applications });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json(
+      { applications },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
+  } catch (error) {
+    return internalError("list", error);
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const userId = await getCurrentUserId();
-    const body = await req.json();
-    const { company_name, company_url, job_title, job_url } = body as Record<string, string>;
-    if (!company_name?.trim() || !company_url?.trim() || !job_title?.trim()) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
+    const userId = await tryGetCurrentUserId();
+    if (!userId) return unauthorized();
+    const parsed = manualApplicationInputSchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
-    const application = await insertManualApplication(userId, {
-      company_name: company_name.trim(),
-      company_url: company_url.trim(),
-      job_title: job_title.trim(),
-      job_url: job_url?.trim() || undefined,
-    });
+    const application = await insertManualApplication(userId, parsed.data);
     return NextResponse.json({ application }, { status: 201 });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+  } catch (error) {
+    return internalError("create", error);
   }
 }

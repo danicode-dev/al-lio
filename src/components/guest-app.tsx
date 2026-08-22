@@ -2038,6 +2038,8 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
                     onChange={(e) => setManualForm((f) => ({ ...f, company_name: e.target.value }))}
                   />
                   <Input
+                    type="url"
+                    inputMode="url"
                     placeholder="URL pagina empleo *"
                     value={manualForm.company_url}
                     onChange={(e) => setManualForm((f) => ({ ...f, company_url: e.target.value }))}
@@ -2048,6 +2050,8 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
                     onChange={(e) => setManualForm((f) => ({ ...f, job_title: e.target.value }))}
                   />
                   <Input
+                    type="url"
+                    inputMode="url"
                     placeholder="URL oferta (opcional)"
                     value={manualForm.job_url}
                     onChange={(e) => setManualForm((f) => ({ ...f, job_url: e.target.value }))}

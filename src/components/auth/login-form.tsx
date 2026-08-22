@@ -418,13 +418,6 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
                 </div>
               </div>
 
-              {/* Forgot password */}
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <button type="button" style={{ fontSize: 14, fontWeight: 500, color: "#E15D2D", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                  ¿Olvidaste tu contraseña?
-                </button>
-              </div>
-
               {/* CTA */}
               <button type="submit" disabled={isPasswordLoginPending} className="al-btn-submit">
                 {isPasswordLoginPending ? (

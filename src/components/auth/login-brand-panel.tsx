@@ -255,7 +255,6 @@ export function LoginBrandPanel() {
                 width={1060}
                 height={360}
                 style={{ width: "clamp(220px, 26vw, 300px)", height: "auto" }}
-                priority
               />
             </div>
 
