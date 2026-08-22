@@ -1,6 +1,6 @@
 /**
- * Crea/refuerza el rol PostgreSQL de runtime con privilegios mínimos.
- * No se ejecuta automáticamente durante build ni arranque.
+ * Creates or reconciles the least-privilege PostgreSQL runtime role.
+ * This operation never runs automatically during build or startup.
  */
 
 import { existsSync, readFileSync } from "node:fs";

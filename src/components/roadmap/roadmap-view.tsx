@@ -58,9 +58,8 @@ export function RoadmapView({ cycleName, modules }: { cycleName: string; modules
     return sorted;
   }
 
-  // Asignaturas propias del ciclo primero (ej. Bases de Datos, Programacion),
-  // los modulos transversales compartidos por varias familias de ciclo (ej.
-  // Ingles, PRE) van despues — asi el alumno no las ve mezcladas.
+  // Show cycle-specific modules first, followed by transversal modules shared
+  // across different cycle families, so students do not see both groups mixed.
   const modulosPropios = ordenarModulos(modules.filter((mod) => !mod.esComun));
   const modulosComunes = ordenarModulos(modules.filter((mod) => mod.esComun));
 

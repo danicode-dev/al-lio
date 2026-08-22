@@ -56,10 +56,9 @@ const ETAPA_ORDER: FpCompetencyEtapa[] = [
   "4_proyecto",
 ];
 
-// Agrupa las habilidades planas de un ciclo en sus modulos formales. Un
-// modulo puede pisar dos etapas (ej. un modulo con contenido de fundamentos
-// y de aplicacion); en ese caso se queda con la etapa mas temprana, porque
-// es cuando el alumno empieza a tocarlo.
+// Group a cycle's flat skill list into formal modules. A module can span two
+// stages; in that case use the earliest stage because that is when the student
+// first encounters it.
 export function buildRoadmapModules(
   cycleSkills: CycleSkill[],
   statusBySkillId: Map<string, RoadmapSkillStatus>,

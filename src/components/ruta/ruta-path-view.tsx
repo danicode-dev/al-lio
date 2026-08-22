@@ -10,14 +10,14 @@ import { formatTimestamp } from "@/lib/learning/time";
 
 type ContentStatus = "saved" | "started" | "completed" | "dismissed";
 
-export type RutaPathNote = {
+export type LearningPathNote = {
   id: string;
   timestampSeconds: number;
   body: string;
   createdAt: string;
 };
 
-export type RutaPathStep = {
+export type LearningPathStep = {
   competencyId: string;
   title: string;
   description: string | null;
@@ -30,16 +30,16 @@ export type RutaPathStep = {
   } | null;
   otherResources: { idSlug: string; title: string; sourceUrl: string }[];
   initialStatus: ContentStatus | null;
-  initialNotes: RutaPathNote[];
+  initialNotes: LearningPathNote[];
 };
 
-export function RutaPathView({
+export function LearningPathView({
   pageTitle,
   steps,
   initialStepIndex,
 }: {
   pageTitle: string;
-  steps: RutaPathStep[];
+  steps: LearningPathStep[];
   initialStepIndex: number;
 }) {
   const router = useRouter();

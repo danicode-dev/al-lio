@@ -25,7 +25,7 @@ const TYPE_LABELS: Record<string, string> = {
   instituto: "Instituto",
 };
 
-export type RutaItem = {
+export type LearningResourceItem = {
   idSlug: string;
   title: string;
   type: string;
@@ -35,7 +35,7 @@ export type RutaItem = {
   videoUrl: string;
 };
 
-export type RutaNote = {
+export type LearningResourceNote = {
   id: string;
   timestampSeconds: number;
   body: string;
@@ -44,13 +44,13 @@ export type RutaNote = {
 
 type ContentStatus = "saved" | "started" | "completed" | "dismissed";
 
-export function RutaView({
+export function LearningResourceView({
   item,
   notes: initialNotes,
   initialStatus,
 }: {
-  item: RutaItem;
-  notes: RutaNote[];
+  item: LearningResourceItem;
+  notes: LearningResourceNote[];
   initialStatus: ContentStatus | null;
 }) {
   const router = useRouter();

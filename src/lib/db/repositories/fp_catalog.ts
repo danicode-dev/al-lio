@@ -107,9 +107,9 @@ export async function getFpContentForProfile(
   return res.rows;
 }
 
-// Todas las habilidades de un ciclo, ordenadas por su posicion en el
-// itinerario completo (no solo las exigidas por un hackathon concreto).
-// Es la base tanto del Roadmap como de la ruta de un hackathon.
+// All skills for a cycle ordered by their position in the complete learning
+// path, not only those required by one hackathon. This powers the Roadmap and
+// hackathon preparation paths.
 export type CycleSkill = DbFpSkill & Omit<DbFpCycleSkill, "skill_id" | "created_at" | "updated_at">;
 
 export async function getCycleSkills(cycleCode: FpCycleCode): Promise<CycleSkill[]> {
@@ -126,12 +126,10 @@ export async function getCycleSkills(cycleCode: FpCycleCode): Promise<CycleSkill
   return res.rows;
 }
 
-// Un modulo es "comun" cuando su codigo aparece en 2+ familias de ciclo
-// (cycle_group) distintas, no solo en 2+ ciclos: DAM y DAW comparten
-// modulos tecnicos (Bases de Datos, Programacion...) porque son la MISMA
-// familia (DEV), y eso sigue siendo una asignatura propia del ciclo. Lo
-// realmente transversal (Ingles, Digitalizacion, PRE...) aparece en
-// familias distintas (DEV, AF, TSAF, MP a la vez).
+// A module is common when its code appears in two or more distinct cycle
+// families, not merely two cycles. DAM and DAW share technical modules because
+// both belong to DEV, so those modules remain cycle-specific. A transversal
+// module spans distinct families such as DEV, AF, TSAF and MP.
 export async function getSharedModuleCodes(): Promise<Set<string>> {
   const res = await query<{ modulo_codigo: string }>(
     `SELECT cs.modulo_codigo
@@ -144,9 +142,9 @@ export async function getSharedModuleCodes(): Promise<Set<string>> {
   return new Set(res.rows.map((row) => row.modulo_codigo));
 }
 
-// content_item_id + link fields se apilan sobre la habilidad canonica
-// (DbFpSkill). El nombre RequiredCompetency se mantiene en el lado
-// cliente porque asi es como ya se llama en el resto de la app.
+// content_item_id and relationship fields extend the canonical DbFpSkill. The
+// RequiredCompetency client name remains for compatibility with existing UI
+// contracts.
 export type RequiredCompetency = DbFpSkill & {
   content_item_id: string;
   obligatoria_para_item: boolean;
@@ -186,10 +184,9 @@ export type CompetencyLearningItem = {
   tipo_relacion: FpItemCompetencyRelation;
 };
 
-// Solo recursos que ENSEÑAN la habilidad (tipo_relacion = 'ensena'). Los
-// que la EXIGEN ('requiere') o la DEMUESTRAN ('demuestra', ej. un
-// proyecto/evidencia) son conceptos distintos y no pertenecen a "aqui
-// tienes para aprender esto".
+// Return only resources that teach the skill (tipo_relacion = 'ensena'). Items
+// that require it ('requiere') or demonstrate it ('demuestra') do not belong in
+// the student's "resources for learning this" list.
 export async function getLearningItemsForCompetencies(
   skillIds: string[],
   cycleCode: FpCycleCode,

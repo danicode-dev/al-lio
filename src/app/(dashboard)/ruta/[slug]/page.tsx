@@ -9,12 +9,12 @@ import {
 import { getResourceNotes } from "@/lib/db/repositories/fp_resource_notes";
 import { buildRutaPathSteps } from "@/lib/fp/ruta-path";
 import { FP_APTITUDE_GATED_TYPES } from "@/lib/data";
-import { RutaView } from "@/components/ruta/ruta-view";
-import { RutaPathView } from "@/components/ruta/ruta-path-view";
+import { LearningResourceView } from "@/components/ruta/ruta-view";
+import { LearningPathView } from "@/components/ruta/ruta-path-view";
 
 export const dynamic = "force-dynamic";
 
-export default async function RutaPage({
+export default async function LearningPathPage({
   params,
   searchParams,
 }: {
@@ -57,7 +57,7 @@ export default async function RutaPage({
 
     const requestedIndex = paso ? steps.findIndex((step) => step.competencyId === paso) : 0;
 
-    return <RutaPathView pageTitle={item.title} steps={steps} initialStepIndex={requestedIndex >= 0 ? requestedIndex : 0} />;
+    return <LearningPathView pageTitle={item.title} steps={steps} initialStepIndex={requestedIndex >= 0 ? requestedIndex : 0} />;
   }
 
   if (!item.video_url) notFound();
@@ -68,7 +68,7 @@ export default async function RutaPage({
   ]);
 
   return (
-    <RutaView
+    <LearningResourceView
       item={{
         idSlug: item.id_slug,
         title: item.title,

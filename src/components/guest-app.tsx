@@ -162,11 +162,9 @@ type RequiredCompetencyLearningItem = {
   user_status?: string | null;
 };
 
-// Habilidad (antes "competencia") exigida por un hackathon/evento. Es la
-// habilidad canonica, la misma independientemente de en que ciclo se haya
-// enlazado — por eso no lleva etapa/nivel_objetivo, que son propiedades
-// de como esa habilidad encaja en el itinerario de UN ciclo concreto, no
-// de la habilidad en si.
+// Canonical skill required by a hackathon or event. The same skill can be
+// linked from several cycles, so stage and target-level information belongs to
+// the cycle relationship rather than the skill itself.
 type RequiredCompetency = {
   id: string;
   titulo: string;
@@ -1804,9 +1802,9 @@ function PortalMark({ platform }: { platform: JobPlatform }) {
   );
 }
 
-// "candidaturas" se queda fuera del MVP a proposito: el tracker ya funciona
-// (tabla job_applications + radar de scraping), pero se oculta hasta que se
-// decida retomarlo. Basta con volver a anadir la fila para reactivarlo.
+// Applications remain outside the MVP intentionally. The job_applications
+// table and collection pipeline already work, but the UI stays hidden until
+// product scope brings it back. Re-add the row to reactivate it.
 const WORK_TABS: ["portals" | "companies" | "candidaturas", string][] = [
   ["portals", "Portales"],
   ["companies", "Empresas"],
@@ -3117,10 +3115,9 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   const featuredProgress = featuredHackathon ? hackathonAptitudeProgress(featuredHackathon) : null;
   const featuredHasRuta = featuredHackathon ? !!(featuredHackathon.id_slug && hackathonHasRutaVideo(featuredHackathon)) : false;
 
-  // Se busca en vivo sobre allHackathons (en vez de guardar el objeto tal
-  // cual al abrir el modal) para que marcar un requisito como hecho se vea
-  // reflejado al instante dentro del modal, sin tener que cerrarlo y
-  // volver a abrirlo.
+  // Resolve against the current allHackathons collection instead of retaining
+  // the object captured when the modal opened. Requirement updates then appear
+  // immediately without closing and reopening the modal.
   const requirementsItem = useMemo(
     () => (requirementsItemId ? allHackathons.find((h) => h.id === requirementsItemId) ?? null : null),
     [requirementsItemId, allHackathons]
@@ -4353,8 +4350,8 @@ function completedTasksOn(tasks: Task[], date: Date): Task[] {
 
 function taskStreakDays(tasks: Task[]): number {
   const cursor = new Date();
-  // Si hoy todavia no se ha completado nada, se cuenta desde ayer para no
-  // romper la racha nada mas entrar por la mañana.
+  // When nothing has been completed today, count from yesterday so opening the
+  // application in the morning does not break an active streak immediately.
   if (completedTasksOn(tasks, cursor).length === 0) cursor.setDate(cursor.getDate() - 1);
   let streak = 0;
   while (completedTasksOn(tasks, cursor).length > 0) {

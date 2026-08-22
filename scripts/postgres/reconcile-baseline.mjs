@@ -1,12 +1,12 @@
 /**
- * Reconcilia una instalación PostgreSQL antigua y sin historial con el
- * baseline inmutable 0001_initial_schema.
+ * Reconciles an older PostgreSQL installation without migration history with
+ * immutable 0001_initial_schema baseline.
  *
- * Este comando es deliberadamente distinto de migrate.mjs:
- * - solo acepta una base existente con tablas y sin schema_migrations;
- * - exige confirmación explícita;
- * - aplica el baseline completo dentro de una única transacción;
- * - no registra el baseline: después deben ejecutarse audit y adopt.
+ * This command is deliberately separate from migrate.mjs:
+ * - it accepts only an existing database with tables and no schema_migrations;
+ * - it requires explicit confirmation;
+ * - it applies the complete baseline in a single transaction;
+ * - it does not record the baseline; audit and adopt must run afterwards.
  */
 
 import { existsSync, readFileSync } from "node:fs";

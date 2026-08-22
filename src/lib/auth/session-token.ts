@@ -11,7 +11,7 @@ function getSecret(): string {
   const secret = process.env.SESSION_SECRET;
   const minimumLength = process.env.NODE_ENV === "production" ? 32 : 16;
   if (!secret || secret.length < minimumLength) {
-    throw new Error(`SESSION_SECRET no está configurado (mínimo ${minimumLength} caracteres)`);
+    throw new Error(`SESSION_SECRET is not configured securely (minimum ${minimumLength} characters)`);
   }
   return secret;
 }

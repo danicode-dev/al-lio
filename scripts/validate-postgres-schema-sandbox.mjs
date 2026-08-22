@@ -1,13 +1,13 @@
 /**
- * Valida el schema PostgreSQL contra un PostgreSQL sandbox temporal.
- * No requiere Supabase. No toca datos reales. No toca VPS de producción.
+ * Validates the PostgreSQL schema against a temporary PostgreSQL sandbox.
+ * It does not require Supabase or touch real data or the production VPS.
  *
  * Uso: node scripts/validate-postgres-schema-sandbox.mjs
  * Requiere: sandbox levantado (npm run postgres:sandbox:up)
- * Por defecto: postgresql://aidraft_sandbox:aidraft_sandbox_password@127.0.0.1:54329/aidraft_sandbox
+ * Default: postgresql://aidraft_sandbox:aidraft_sandbox_password@127.0.0.1:54329/aidraft_sandbox
  *
- * IMPORTANTE: Este script no carga .env ni usa DATABASE_URL para evitar
- * conectar accidentalmente a Supabase, VPS o producción.
+ * IMPORTANT: This script never loads .env or uses DATABASE_URL, preventing an
+ * accidental connection to Supabase, the VPS or production.
  * Override seguro: POSTGRES_SANDBOX_DATABASE_URL=postgresql://...@127.0.0.1:54329/aidraft_sandbox
  */
 
@@ -20,12 +20,12 @@ import { loadMigrationFiles } from "./postgres/migration-files.mjs";
 const require = createRequire(import.meta.url);
 const root = process.cwd();
 
-// No se carga .env ni se lee DATABASE_URL — solo POSTGRES_SANDBOX_DATABASE_URL.
+// Do not load .env or read DATABASE_URL; use POSTGRES_SANDBOX_DATABASE_URL only.
 const SANDBOX_DEFAULT =
   "postgresql://aidraft_sandbox:aidraft_sandbox_password@127.0.0.1:54329/aidraft_sandbox";
 const connectionString = process.env.POSTGRES_SANDBOX_DATABASE_URL ?? SANDBOX_DEFAULT;
 
-// ── Validar que la URL es sandbox antes de conectar ───────────────────────────
+// ── Validate the sandbox URL before connecting ────────────────────────────────
 let parsed;
 try {
   parsed = new URL(connectionString);
@@ -69,7 +69,7 @@ if (detectedUser !== EXPECTED_USER) {
 
 console.log(`\nConectando a: ${parsed.hostname}:${parsed.port}/${detectedDb} (user: ${detectedUser})`);
 
-// ── Verificar schema.sql ──────────────────────────────────────────────────────
+// ── Validate schema.sql ───────────────────────────────────────────────────────
 const schemaPath = join(root, "infra", "postgres", "schema.sql");
 if (!existsSync(schemaPath)) {
   console.error("ERROR: infra/postgres/schema.sql no encontrado.");
@@ -116,7 +116,7 @@ try {
   await client.connect();
   console.log("Conexión establecida.\n");
 
-  // ── Aplicar schema ──────────────────────────────────────────────────────────
+  // ── Apply schema ────────────────────────────────────────────────────────────
   console.log("── Aplicando schema ──");
   await client.query(schema);
   ok("schema.sql aplicado sin errores");
@@ -125,7 +125,7 @@ try {
     ok(`migración ${migration.version} aplicada sin errores`);
   }
 
-  // ── Verificar tablas ────────────────────────────────────────────────────────
+  // ── Validate tables ─────────────────────────────────────────────────────────
   console.log("\n── Tablas ──");
   const tablesRes = await client.query(`
     SELECT table_name
@@ -137,7 +137,7 @@ try {
     existingTables.has(t) ? ok(`tabla ${t}`) : fail(`tabla ${t} no existe`);
   }
 
-  // ── Verificar índices ───────────────────────────────────────────────────────
+  // ── Verify indexes ──────────────────────────────────────────────────────────
   console.log("\n── Índices ──");
   const idxRes = await client.query(`
     SELECT indexname FROM pg_indexes WHERE schemaname = 'public'
@@ -147,7 +147,7 @@ try {
     existingIdx.has(idx) ? ok(`índice ${idx}`) : fail(`índice ${idx} no existe`);
   }
 
-  // ── Verificar función set_updated_at ───────────────────────────────────────
+  // ── Verify the set_updated_at function ─────────────────────────────────────
   console.log("\n── Función y trigger ──");
   const fnRes = await client.query(`
     SELECT proname FROM pg_proc
@@ -166,7 +166,7 @@ try {
     ? ok(`triggers updated_at presentes (${trgRes.rows.length} encontrados)`)
     : fail(`triggers updated_at insuficientes (${trgRes.rows.length}/16+)`);
 
-  // ── Insertar datos mínimos de prueba ───────────────────────────────────────
+  // ── Insert minimal test data ────────────────────────────────────────────────
   console.log("\n── Datos de prueba ──");
   const testEmail = `sandbox-test-${Date.now()}@example.test`;
   const userRes = await client.query(`

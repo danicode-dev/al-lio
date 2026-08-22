@@ -158,10 +158,9 @@ export function BlocNotepad() {
     setLoaded(true);
   }, []);
 
-  // Sincroniza con la base de datos: si el usuario ya tiene notas guardadas
-  // en el servidor, esas mandan. Si no tiene ninguna todavia, sube lo que
-  // haya en localStorage una sola vez. Si algo falla (sin conexion, etc.)
-  // la app se queda funcionando solo con localStorage, como hasta ahora.
+  // Synchronise with the database. Existing server notes are authoritative.
+  // When the user has no server notes, upload localStorage once. If the
+  // connection fails, keep the editor available through localStorage.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -186,7 +185,7 @@ export function BlocNotepad() {
         }
         dbSyncEnabledRef.current = true;
       } catch {
-        // Sin conexion a la base de datos: seguimos con localStorage solamente.
+        // Keep localStorage available when the database cannot be reached.
       }
     })();
     return () => { cancelled = true; };
@@ -230,10 +229,9 @@ export function BlocNotepad() {
 
   const activeNote = useMemo(() => notes.find((note) => note.id === activeId) ?? null, [activeId, notes]);
 
-  // La nota "phantom" (creada solo para que el editor tenga algo a lo que
-  // escribir cuando el usuario no tiene ninguna nota real todavia) no debe
-  // contarse como una nota: no aparece en las listas ni se sube a la BD
-  // hasta que el usuario escriba algo real en ella.
+  // The phantom note gives an empty editor a local target before a real note
+  // exists. It is excluded from lists and the database until the user writes
+  // meaningful content.
   const visibleNotes = useMemo(
     () => (phantomId ? notes.filter((note) => note.id !== phantomId) : notes),
     [notes, phantomId],
@@ -262,10 +260,9 @@ export function BlocNotepad() {
     localStorage.setItem(blocSettingsKey, JSON.stringify(next));
   }
 
-  // Convierte la nota "phantom" en una nota real la primera vez que hay algo
-  // que merezca guardarse: la inserta en la BD (una unica vez, con los datos
-  // ya actualizados) y devuelve true si acaba de promoverla (para que el
-  // llamador no lance ademas un updateDb sobre una fila que aun no existe).
+  // Promote the phantom note on the first meaningful edit. Insert the updated
+  // data exactly once and return true so the caller does not also update a row
+  // that did not exist before this operation.
   function promotePhantomIfNeeded(
     id: string,
     overrides: Partial<Pick<BlocNote, "title" | "contentHtml" | "contentText" | "favorite">> = {},
@@ -363,7 +360,7 @@ export function BlocNotepad() {
 
   function deleteNote(id: string) {
     if (id === phantomId) {
-      // Nunca se llego a guardar: no tiene sentido mandarla a la papelera.
+      // A note that was never persisted does not need a trash operation.
       const fresh = createBlocNote({ title: defaultTitle });
       setNotes((current) => current.map((note) => (note.id === id ? fresh : note)));
       setPhantomId(fresh.id);

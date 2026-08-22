@@ -205,9 +205,9 @@ export type FpCompetencyEtapa =
 
 export type FpItemCompetencyRelation = "requiere" | "ensena" | "demuestra";
 
-// Catalogo canonico de habilidades: una fila por habilidad de verdad, sin
-// duplicar por ciclo (ej. "Git" es una unica fila aunque la necesiten DAW
-// y DAM). Que ciclos la necesitan y donde encaja va en DbFpCycleSkill.
+// Canonical skill catalogue: one row per real skill without cycle duplication.
+// For example, Git remains one row even when DAW and DAM both require it. Cycle
+// placement belongs to DbFpCycleSkill.
 export interface DbFpSkill {
   id: string;
   titulo: string;
@@ -225,9 +225,8 @@ export interface DbFpSkill {
   updated_at: string;
 }
 
-// Donde vive una habilidad dentro del itinerario de un ciclo concreto. Una
-// habilidad compartida entre ciclos tiene una fila por cada ciclo que la
-// necesita, todas con el mismo skill_id.
+// Placement of a skill inside one cycle path. A skill shared by several cycles
+// has one relationship row per cycle and the same skill_id in each row.
 export interface DbFpCycleSkill {
   cycle_code: FpCycleCode;
   skill_id: string;

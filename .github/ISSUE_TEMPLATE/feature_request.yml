@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose a focused student or engineering improvement.
+title: "feature: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Student or operational outcome
+      description: What becomes safer, clearer or more useful?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Proposed scope
+      description: Describe the smallest coherent change.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions that prove completion.
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Security, data and operational risks
+      description: Consider user isolation, migrations, external sources and rollback.

@@ -2,24 +2,23 @@ import "server-only";
 import { getLearningItemsForCompetencies, getUserContentStatesForItems } from "@/lib/db/repositories/fp_catalog";
 import { getResourceNotes } from "@/lib/db/repositories/fp_resource_notes";
 import type { FpCycleCode } from "@/lib/db/types";
-import type { RutaPathStep } from "@/components/ruta/ruta-path-view";
+import type { LearningPathStep } from "@/components/ruta/ruta-path-view";
 
-export type RutaPathSkillInput = {
+export type LearningPathSkillInput = {
   id: string;
   titulo: string;
   descripcion: string | null;
   obligatoria: boolean;
 };
 
-// Ensambla los pasos de RutaPathView a partir de cualquier lista de
-// habilidades (las exigidas por un hackathon, o todas las de un modulo del
-// Roadmap). El origen de la lista no importa aqui: solo necesita id/titulo/
-// descripcion/obligatoria.
+// Assemble LearningPathView steps from any skill list, whether selected by a
+// hackathon or by a Roadmap module. The source is irrelevant here; the builder
+// needs only id, title, description and requirement state.
 export async function buildRutaPathSteps(
   userId: string,
-  skills: RutaPathSkillInput[],
+  skills: LearningPathSkillInput[],
   cycleCode: FpCycleCode
-): Promise<RutaPathStep[]> {
+): Promise<LearningPathStep[]> {
   if (skills.length === 0) return [];
 
   const skillIds = skills.map((skill) => skill.id);

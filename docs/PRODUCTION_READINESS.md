@@ -1,70 +1,79 @@
-# Preparación de producción
+# Production readiness
 
-Este documento separa lo ya automatizado de lo que requiere acceso al VPS o decisiones de producto.
+This document separates repository capabilities from evidence that must be
+re-verified for every production release. A checked box from an old deployment
+is not evidence for a new one.
 
-## Implementado en el repositorio
+## Implemented repository capabilities
 
-- [x] Imagen Next.js standalone y proceso no-root.
-- [x] `.dockerignore` para no enviar secretos ni dumps al builder.
-- [x] Imagen versionable mediante `AL_LIO_IMAGE_TAG`.
-- [x] Healthcheck de liveness y readiness con PostgreSQL.
-- [x] Rotación básica de logs Docker.
-- [x] Persistencia PostgreSQL para noticias, entregas y estado por usuario.
-- [x] Receptor Radar v2 con HMAC, protección contra replay e idempotencia.
-- [x] Filtrado de noticias en servidor por ciclo del perfil autenticado.
-- [x] Publicación limitada a elementos aprobados; fuentes generalistas legacy desactivadas.
-- [x] Servicio Radar separado, no-root y con volumen SQLite persistente.
-- [x] Migraciones ordenadas, transaccionales, con checksum y advisory lock.
-- [x] Rechazo automático de bases existentes no auditadas.
-- [x] Auditoría estricta y adopción explícita del baseline.
-- [x] Rol de runtime PostgreSQL sin permisos administrativos.
-- [x] Backup y restauración temporal verificable.
-- [x] Cookies sensibles `Secure` en producción.
-- [x] Acceso demo cerrado por defecto en producción.
-- [x] Rate limiting básico para contraseña y perfiles demo.
-- [x] Validación de variables antes de iniciar el contenedor.
-- [x] Validadores de migración, integración y despliegue incluidos en CI.
+- Standalone, non-root Next.js production image.
+- Read-only container filesystem with bounded temporary storage.
+- Docker resource, process and log-rotation limits.
+- Separate web, PostgreSQL, Radar and migrator service boundaries.
+- Liveness and PostgreSQL readiness endpoints.
+- Signed sessions and secure production cookie settings.
+- Password and demo-access rate limiting.
+- Production demo access disabled by default.
+- Ordered, transactional and checksummed PostgreSQL migrations.
+- Explicit rejection of unaudited legacy databases.
+- Restricted application database role and separate migration credentials.
+- PostgreSQL backup and isolated restore-verification scripts.
+- Radar SQLite persistence and restart-safe delivery outbox.
+- HMAC-authenticated Radar webhook with replay protection and idempotency.
+- Transactional Radar batch ingestion and server-side cycle filtering.
+- Human review required for every currently enabled Radar source.
+- Runtime, migration, Radar-integration and deployment validators.
 
-## P0 antes del primer despliegue
+## Per-release blocking gates
 
-- [ ] Inventariar commit, contenedores, volúmenes, recursos y schema del VPS.
-- [ ] Rotar o confirmar secretos de al menos 32 caracteres.
-- [ ] Crear backup y restaurarlo correctamente.
-- [ ] Ensayar la auditoría del baseline sobre una copia del VPS.
-- [ ] Crear una migración de reconciliación si aparece cualquier diferencia.
-- [ ] Adoptar el baseline solo después del ensayo.
-- [ ] Crear `al_lio_app` y comprobar sus privilegios.
-- [ ] Archivar los JSON legacy de `/app/data` sin reintroducirlos en runtime.
-- [ ] Generar y configurar el mismo `AL_LIO_RADAR_WEBHOOK_SECRET` en ambos servicios.
-- [ ] Fijar y registrar los SHA exactos de AL-LÍO y AL-LÍO Radar.
-- [ ] Aplicar y verificar `0002_radar_news.sql` primero sobre la restauración de ensayo.
-- [ ] Aprobar un candidato controlado y confirmar su entrega, ciclo y visualización.
-- [ ] Ejecutar smoke test de todos los flujos críticos.
-- [ ] Guardar backup cifrado fuera del VPS.
+Before changing production, the operator must record evidence for every item:
 
-## P1 para usuarios reales
+- [ ] The web and Radar release SHAs were reviewed and belong to their expected branches.
+- [ ] The working trees are clean and the resolved Docker image tags match those SHAs.
+- [ ] Required secrets exist, are not committed and satisfy the minimum length checks.
+- [ ] The current containers, volumes, database migration status and external network were inventoried.
+- [ ] A fresh PostgreSQL backup completed and restored successfully in isolation.
+- [ ] The Radar volume was backed up with its writer stopped.
+- [ ] Pending migrations were rehearsed against restored data.
+- [ ] The application database role retains only runtime privileges.
+- [ ] The candidate images were built before stopping or replacing healthy services.
+- [ ] `/api/health` and `/api/ready` succeeded internally and over HTTPS.
+- [ ] Login, dashboard, tasks, profile, Calendar boundary and cycle-filtered news were smoke-tested.
+- [ ] Radar health, review queue and one controlled approved delivery were verified.
+- [ ] The previous application and Radar image references remain available for rollback.
+- [ ] Backup evidence exists outside the VPS failure boundary.
 
-- [ ] Automatizar backup diario y retención 7/4 sin guardar credenciales en cron.
-- [ ] Añadir monitor externo para `/api/health` y `/api/ready`.
-- [ ] Centralizar errores de servidor sin datos sensibles.
-- [ ] Añadir pruebas de autorización por usuario y manipulación de IDs.
-- [ ] Automatizar backup diario del volumen `al_lio_radar_data`.
-- [ ] Medir aprobaciones y rechazos por fuente antes de permitir cualquier autoaprobación.
-- [ ] Reiniciar los datos demo periódicamente o usar una base demo separada.
-- [ ] Diseñar revocación/rotación de sesiones activas.
-- [ ] Revisar cabeceras CSP/HSTS y política de orígenes en Caddy.
-- [ ] Fijar versiones de imágenes Docker y planificar actualizaciones.
+Use [`DEPLOY_VPS.md`](DEPLOY_VPS.md) for the exact sequence. Failure of a
+blocking gate stops the release; it is not converted into a warning.
 
-## P2 de rendimiento y mantenibilidad
+## User-data readiness
 
-- [ ] Sustituir `getGlobalStore()` del layout por carga específica por página.
-- [ ] Extraer las pantallas restantes de `guest-app.tsx`.
-- [ ] Paginar listados y evitar `SELECT *` en rutas calientes.
-- [ ] Cachear únicamente catálogos compartidos con invalidación explícita.
-- [ ] Configurar `pg_stat_statements` y revisar consultas lentas.
-- [ ] Medir Web Vitals y presupuesto de JavaScript por ruta.
-- [ ] Añadir pruebas E2E de login, tareas, Bloc, Calendario y navegación móvil.
+Before inviting additional real users, verify and retain evidence for:
 
-## Criterio para declarar producción lista
+- external monitoring of `/api/health` and `/api/ready`;
+- automated encrypted off-host PostgreSQL and Radar backups;
+- regular restore exercises;
+- user-to-user authorisation and identifier-tampering tests;
+- active-session rotation and revocation policy;
+- redacted server error reporting;
+- CSP, HSTS and Caddy origin policy;
+- documented retention and deletion expectations;
+- a tested incident-response and secret-rotation procedure.
 
-La release puede considerarse lista cuando todos los P0 estén cerrados, CI esté verde, el ensayo sobre backup funcione y exista rollback probado de imagen. Para uso con datos personales reales también deben cerrarse monitorización, backup externo y pruebas de autorización de P1.
+## Performance and maintainability backlog
+
+- Replace global dashboard loading with page-specific queries.
+- Continue extracting historical surfaces from `guest-app.tsx`.
+- Paginate large lists and remove `SELECT *` from hot paths.
+- Add explicit caching only for shared catalogues with controlled invalidation.
+- Measure slow PostgreSQL queries and route-level Web Vitals.
+- Define a JavaScript budget per critical route.
+- Add browser end-to-end coverage for login, tasks, Bloc, Calendar, profile and
+  mobile navigation.
+
+## Release-ready definition
+
+A release is production-ready only when repository verification passes, every
+blocking gate has current evidence, backup restoration succeeds and the
+previous application version remains recoverable. A healthy container alone is
+not sufficient evidence.

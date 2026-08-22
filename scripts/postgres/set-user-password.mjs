@@ -1,20 +1,20 @@
 /**
- * al-lio PostgreSQL — establece password_hash en public.users para un usuario existente.
- * Utilidad manual de administración; no forma parte del pipeline automático.
+ * AL-LIO PostgreSQL: sets password_hash for an existing public.users row.
+ * This is a manual administrative utility, not part of an automatic pipeline.
  *
  * Variables obligatorias:
- *   DATABASE_URL                              — URL de conexión PostgreSQL
+ *   DATABASE_URL                              — PostgreSQL connection URL
  *   AL_LIO_SET_PASSWORD_CONFIRMATION=SET_POSTGRES_USER_PASSWORD
- *   AL_LIO_USER_EMAIL                         — email del usuario a actualizar
- *   AL_LIO_USER_PASSWORD                      — contraseña nueva en texto plano
+ *   AL_LIO_USER_EMAIL                         — email address of the user to update
+ *   AL_LIO_USER_PASSWORD                      — new plaintext password
  *
- * No imprime la contraseña ni DATABASE_URL.
+ * The command never prints the password or DATABASE_URL.
  *
  * Uso:
  *   DATABASE_URL=postgresql://... \
  *   AL_LIO_SET_PASSWORD_CONFIRMATION=SET_POSTGRES_USER_PASSWORD \
- *   AL_LIO_USER_EMAIL=usuario@example.com \
- *   AL_LIO_USER_PASSWORD=<contraseña> \
+ *   AL_LIO_USER_EMAIL=user@example.com \
+ *   AL_LIO_USER_PASSWORD=<password> \
  *   node scripts/postgres/set-user-password.mjs
  */
 
@@ -38,7 +38,7 @@ if (!dbUrl) {
   process.exit(1);
 }
 
-// Validar que no apunta al sandbox (puerto 54329)
+// Reject the isolated sandbox database (port 54329).
 const parsed = new URL(dbUrl);
 if (["localhost", "127.0.0.1"].includes(parsed.hostname) && parsed.port === "54329") {
   console.error(
@@ -71,7 +71,7 @@ try {
   await client.connect();
   console.log(`\nConectado a PostgreSQL. Host: ${parsed.hostname}`);
 
-  // Verificar que el usuario existe
+  // Verify that the user exists.
   const checkRes = await client.query(
     `SELECT id, email FROM public.users WHERE email = $1`,
     [email]

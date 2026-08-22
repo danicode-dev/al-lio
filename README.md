@@ -1,187 +1,209 @@
 # AL-LÍO
 
-AL-LÍO es una aplicación web para centralizar tareas, calendario, cursos, hackathons, oportunidades, noticias y enlaces de trabajo en un único panel.
+AL-LIO is an open-source student workspace that turns scattered academic,
+career and training information into clear next actions.
 
-[Demo pública](https://al-lio.danielcode.dev) · [Documentación](docs/) · [Runbook VPS](docs/DEPLOY_VPS.md)
+It combines planning, vocational-skills learning, curated opportunities,
+cycle-specific news and progress tracking in one Spanish-language product for
+Higher Vocational Education students.
 
-## Créditos
+[Live application](https://al-lio.danielcode.dev) · [Documentation](docs/README.md) · [VPS runbook](docs/DEPLOY_VPS.md)
 
-AL-LÍO se desarrolla con el apoyo de la beca [Aircury's Summer of Code](https://www.aircury.es) de Aircury SL.
+> The product interface and educational content are intentionally in Spanish.
+> Source code, technical documentation and engineering collaboration use
+> English.
 
-## Estado Actual
+## Who AL-LIO serves
 
-- Aplicación Next.js 15 con App Router.
-- Dashboard privado con módulos de tareas, calendario, cursos, hackathons, oportunidades, noticias, enlaces y fuentes.
-- Persistencia en PostgreSQL propio mediante `pg`.
-- Sesión propia firmada en cookie `al_lio_session`.
-- Acceso funcional mediante Google OAuth.
-- Integración con Google Calendar desde servidor.
-- Despliegue preparado para VPS con Docker Compose y Caddy.
-- Demo pública activa en `https://al-lio.danielcode.dev`.
+The current curriculum model supports five Spanish Higher Vocational
+Education programmes:
 
-El login por email/password todavía no debe documentarse como funcional. La base de datos ya contempla `password_hash`, pero el flujo de producto se cerrará en una PR posterior.
+| Code | Programme |
+|---|---|
+| `DAW` | Web Application Development |
+| `DAM` | Multiplatform Application Development |
+| `AF` | Administration and Finance |
+| `TSAF` | Teaching and Socio-Sports Animation |
+| `MP` | Marketing and Advertising |
 
-## Producto
+Each authenticated user has one cycle profile. News, learning competencies and
+recommended resources are filtered on the server for that profile.
 
-El objetivo del producto es ayudar al usuario a convertir información dispersa en acciones concretas:
+## What the product provides
 
-- qué requiere atención esta semana;
-- qué oportunidades o convocatorias encajan con su perfil;
-- qué tareas, evidencias o próximos pasos debe registrar.
+- A private dashboard with weekly priorities and progress.
+- Personal tasks, calendar entries and a persistent notes workspace.
+- Competency-based learning paths with curated Spanish video resources.
+- Courses, hackathons, companies and employment-oriented opportunities.
+- Cycle-specific news reviewed through the independent AL-LIO Radar service.
+- Google Calendar connection through server-side OAuth.
+- Profile and onboarding state persisted in PostgreSQL.
 
-El proyecto nació como herramienta personal y se está preparando como versión profesional abierta para estudiantes.
+## What makes the news feed different
 
-## Stack
+AL-LIO does not publish a general newspaper feed. The separate AL-LIO Radar
+service collects
+metadata from a restricted source catalogue, applies deterministic curricular
+rules and requires an auditable human approval before delivery.
 
-- Next.js App Router.
-- React 19.
-- TypeScript.
-- Tailwind CSS.
-- PostgreSQL propio.
-- Google APIs para OAuth y Calendar.
-- Zod.
-- date-fns.
-- lucide-react.
-- Docker Compose.
-- Caddy.
+Radar never writes to AL-LIO PostgreSQL. It delivers approved batches through a
+versioned HTTPS webhook protected by HMAC, replay protection and idempotency.
+AL-LIO then filters every item by the authenticated student's cycle.
 
-El runtime actual no usa Supabase Auth ni Supabase Database.
+## Current status
 
-## Instalación Local
+The application is deployed on a VPS and currently provides:
 
-Requisitos recomendados:
+- Next.js 15 App Router with React 19 and TypeScript;
+- self-hosted PostgreSQL persistence and versioned migrations;
+- signed application sessions;
+- Google OAuth account creation and Calendar access;
+- email/password access for explicitly provisioned accounts;
+- production Docker Compose boundaries for web, Radar and PostgreSQL;
+- liveness and database-readiness endpoints;
+- backup, restore rehearsal and rollback procedures;
+- a separate, persistent Radar scheduler and review queue.
 
-- Node.js 22 LTS.
-- npm.
-- Docker Desktop si se usa PostgreSQL sandbox.
+Self-service email registration is deliberately unavailable: `/register`
+redirects to `/login`. Demo profile access is disabled by default in production
+and must never be presented as a public authentication mechanism.
+
+## Architecture
+
+```text
+Browser
+  -> Caddy / HTTPS
+  -> AL-LIO Next.js
+       -> PostgreSQL
+       -> Google OAuth and Calendar APIs
+
+Approved sources
+  -> AL-LIO Radar
+       -> deterministic classification
+       -> human review
+       -> signed webhook v2
+  -> AL-LIO Next.js
+       -> PostgreSQL
+       -> cycle-filtered student feed
+```
+
+The full system boundaries, diagrams and decisions are maintained in
+[`docs/architecture/`](docs/architecture/README.md).
+
+## Repository layout
+
+```text
+src/        Next.js routes, UI, domain services and integrations
+infra/      Docker, Caddy, PostgreSQL and operational units
+scripts/    validation, imports, migrations and recovery utilities
+csv/        reviewed import datasets and editorial working data
+data/       legacy news snapshots; not the production source of truth
+docs/       maintained product and engineering documentation
+```
+
+AL-LIO Radar remains a separate repository and process so that source
+collection cannot gain direct access to student data or the application
+database. Its application boundary is documented in
+[`docs/AL_LIO_RADAR_INTEGRATION.md`](docs/AL_LIO_RADAR_INTEGRATION.md); the
+repository link will be published after Radar completes its public-release
+safety checklist.
+
+## Requirements
+
+- Git;
+- Node.js 22 LTS;
+- npm;
+- Docker Desktop only when using the local PostgreSQL sandbox.
+
+## Local development
 
 ```bash
+git clone https://github.com/danicode-dev/al-lio.git
+cd al-lio
 npm ci
+cp .env.example .env.local
 npm run dev
 ```
 
-`npm run dev` ejecuta antes `npm run verify:startup`.
+`npm run dev` executes the startup validation before starting Next.js.
 
-Si Next queda en un estado inconsistente por mezclar `next dev`, `next build` o `next start`, usar:
+Run the same startup validation directly with `npm run verify:startup`.
 
-```bash
-npm run dev:clean
-```
+The minimum required local variables are documented in `.env.example`. Never
+commit `.env`, `.env.local`, database dumps, OAuth tokens, session secrets or
+real student data.
 
-## Variables de Entorno
+## Database
 
-Crear `.env.local` a partir de `.env.example`.
+The immutable baseline is `infra/postgres/schema.sql`. Later changes are
+applied through ordered, checksummed migrations protected by a PostgreSQL
+advisory lock.
 
-Variables principales:
-
-```env
-DATABASE_URL=
-SESSION_SECRET=
-TARGET_USER_EMAIL=
-
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=
-GOOGLE_TOKEN_ENCRYPTION_KEY=
-
-INFOJOBS_CLIENT_ID=
-INFOJOBS_CLIENT_SECRET=
-ADZUNA_APP_ID=
-ADZUNA_APP_KEY=
-JOOBLE_API_KEY=
-
-BASE_URL=
-```
-
-Para producción, usar `.env.production.example` como plantilla. No subir `.env`, `.env.local`, dumps ni `migration-artifacts/` a GitHub.
-
-## Base de Datos
-
-Baseline inicial inmutable:
-
-- `infra/postgres/schema.sql`
-
-Sandbox local:
+Start and validate the isolated local sandbox with:
 
 ```bash
 npm run postgres:sandbox:up
 npm run postgres:schema:validate-sandbox
 ```
 
-Consultar y aplicar migraciones sobre una base vacía/versionada:
+Inspect and apply migrations with:
 
 ```bash
 npm run postgres:migrate:status
 npm run postgres:setup
 ```
 
-Una base existente sin historial se bloquea. Debe auditarse y adoptarse de forma explícita después de verificar un backup:
+An existing database without migration history is rejected. Baseline adoption
+is an explicit recovery operation and must only follow a verified backup and a
+successful rehearsal. See [`docs/DEPLOY_VPS.md`](docs/DEPLOY_VPS.md).
 
-```bash
-npm run postgres:baseline:audit
-AL_LIO_BASELINE_RECONCILIATION=RECONCILE_0001_INITIAL_SCHEMA npm run postgres:baseline:reconcile
-AL_LIO_BASELINE_CONFIRMATION=ADOPT_0001_INITIAL_SCHEMA npm run postgres:baseline:adopt
-```
+## Verification
 
-`postgres:baseline:reconcile` se reserva para instalaciones legacy ensayadas sobre una restauración. Después de ejecutarlo siempre deben repetirse `audit` y `adopt`; nunca sustituye una migración normal.
-
-Importadores disponibles:
-
-```bash
-npm run import:opportunities
-npm run import:courses
-npm run import:hackathons
-```
-
-## Verificación
-
-Chequeo mínimo:
-
-```bash
-npm run verify:startup
-```
-
-Chequeo recomendado antes de PR:
+Fast local verification:
 
 ```bash
 npm run verify:cheap
 ```
 
-Validación específica de producción VPS:
+Full repository verification:
+
+```bash
+npm run ci
+```
+
+Production-boundary validation:
 
 ```bash
 npm run validate:production-deploy
 ```
 
-Algunos validadores históricos de migración siguen existiendo para contexto y no deben confundirse con el estado final del producto.
+## Production
 
-## Despliegue
+The supported deployment target is a single VPS running Docker Compose behind
+Caddy. Images are identified by reviewed Git commit SHAs. Database changes use
+the dedicated migrator profile; normal application startup never applies
+migrations implicitly.
 
-Destino actual:
+Use the controlled procedure in [`docs/DEPLOY_VPS.md`](docs/DEPLOY_VPS.md).
+Do not deploy from an uncommitted working tree and do not rebuild Radar or
+PostgreSQL for a web-only release.
 
-- VPS propio.
-- Docker Compose.
-- Contenedor `al_lio_web`.
-- Contenedor `al_lio_postgres`.
-- Red externa `danicode_web`.
-- Caddy como reverse proxy.
-- Dominio `https://al-lio.danielcode.dev`.
+## Documentation
 
-Guía operativa:
+Start with [`docs/README.md`](docs/README.md). It links the maintained product,
+architecture, integration, source-governance and operations documents.
 
-- `docs/DEPLOY_VPS.md`
+## Security
 
-## Documentación
+Please read [`SECURITY.md`](SECURITY.md) before reporting a vulnerability. Do
+not disclose secrets, OAuth tokens, personal data or exploitable details in a
+public issue.
 
-- `docs/README.md` - índice de documentación actual.
-- `docs/01_PRODUCT_SPEC.md` - especificación de producto vigente.
-- `docs/02_ARCHITECTURE_AND_STACK.md` - arquitectura actual.
-- `docs/DEPLOY_VPS.md` - despliegue VPS.
-- `docs/PRODUCTION_READINESS.md` - checklist de seguridad, recuperación y optimización.
-- `docs/PROJECT_STRUCTURE.md` - estructura del repositorio.
+## Acknowledgement
 
-Alias ASCII usado en algunos scripts y checks: `Al-Lio`.
+AL-LIO was developed with mentoring and financial support from **Aircury SL**
+through the **Aircury Summer of Code 2026** programme. See [`NOTICE.md`](NOTICE.md).
 
-## Licencia
+## License
 
-Distribuido bajo licencia [MIT](LICENSE).
+AL-LIO is released under the [MIT License](LICENSE).

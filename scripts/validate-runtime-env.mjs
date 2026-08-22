@@ -1,4 +1,4 @@
-/** Valida configuración de runtime sin imprimir secretos. */
+/** Validates runtime configuration without printing secrets. */
 
 const errors = [];
 const production = process.env.NODE_ENV === "production";

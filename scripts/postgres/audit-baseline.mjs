@@ -1,7 +1,7 @@
 /**
- * Compara una base existente con el baseline 0001 usando una base temporal.
- * Solo permite adoptar el baseline si tablas, columnas, constraints, índices
- * y triggers esperados están presentes con el mismo contrato.
+ * Compares an existing database with baseline 0001 through a temporary database.
+ * Baseline adoption is allowed only when the expected tables, columns,
+ * constraints, indexes and triggers match the same contract.
  */
 
 import { existsSync, readFileSync } from "node:fs";

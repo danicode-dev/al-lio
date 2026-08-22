@@ -111,7 +111,7 @@ check(
 );
 check(
   "runbook documents immutable image rollback",
-  runbook.includes("AL_LIO_IMAGE_TAG") && runbook.includes("Rollback de aplicación"),
+  runbook.includes("AL_LIO_IMAGE_TAG") && runbook.includes("Application rollback"),
 );
 
 console.log("\n-- Git staged safety --");
