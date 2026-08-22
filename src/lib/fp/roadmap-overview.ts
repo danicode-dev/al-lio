@@ -17,9 +17,9 @@ import {
 } from "@/lib/fp/roadmap";
 
 /**
- * Resumen de aprendizaje para superficies de producto (Dashboard y Roadmap).
- * La fuente de verdad sigue siendo el estado de los contenidos del alumno;
- * no se inventa una "ultima leccion" que todavia no persistimos.
+ * Learning summary for product surfaces such as Dashboard and Roadmap.
+ * Student content state remains authoritative; do not invent a last lesson
+ * that the application does not persist.
  */
 export async function getRoadmapOverview(
   userId: string,

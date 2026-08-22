@@ -10,7 +10,7 @@ type Testimonial = {
   avatarSrc: string;
 };
 
-// TODO: sustituir por testimonios reales aprobados antes del despliegue público.
+// TODO: Replace with approved real testimonials before public presentation.
 const TESTIMONIALS: Testimonial[] = [
   {
     quote: "Coordinar campañas, deadlines y oportunidades desde un único panel ha cambiado cómo organizo mi semana. Nada se escapa.",
@@ -196,12 +196,12 @@ export function LoginBrandPanel() {
           font-style: italic;
         }
 
-        /* Tablet: máx. 2 testimonios */
+        /* Tablet: show at most two testimonials. */
         @media (max-width: 1100px) and (min-width: 901px) {
           .brand-testimonial:nth-child(3) { display: none; }
         }
 
-        /* ── Módulos — fila editorial borde a borde ── */
+        /* Product areas in an edge-to-edge editorial row. */
         .brand-modules {
           display: flex;
           flex-wrap: nowrap;

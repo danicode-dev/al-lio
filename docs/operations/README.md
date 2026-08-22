@@ -1,0 +1,29 @@
+# Operations handbook
+
+This handbook defines the operational evidence required to run AL-LIO safely.
+It supplements the executable deployment sequence in [`../DEPLOY_VPS.md`](../DEPLOY_VPS.md); it does not replace it.
+
+## Operating principles
+
+- Treat the web application, PostgreSQL, and Radar as separate release units.
+- Deploy only reviewed commit SHAs from clean working trees.
+- Build replacements before stopping healthy services.
+- Back up and rehearse restoration before a migration or destructive action.
+- Keep secrets, dumps, student data, and private operational evidence outside Git.
+- Stop whenever a blocking check is missing or produces ambiguous evidence.
+
+## Maintained runbooks
+
+- [`monitoring.md`](monitoring.md): health signals, alert ownership, and incident triage.
+- [`backup-and-recovery.md`](backup-and-recovery.md): backup boundaries and restore evidence.
+- [`release-and-rollback.md`](release-and-rollback.md): release approval and recovery decisions.
+- [`release-records/TEMPLATE.md`](release-records/TEMPLATE.md): evidence template for every production change.
+- [`../FINAL_REVIEW_CHECKLIST.md`](../FINAL_REVIEW_CHECKLIST.md): owner-facing final review order.
+
+## Repository versus operator responsibilities
+
+The repository provides health endpoints, validation scripts, controlled
+migrations, backup/restore commands, resource limits, and rollback procedures.
+The operator must still configure an external monitoring provider, an encrypted
+off-host backup destination, credentials, notification recipients, retention,
+and evidence storage. Those external values must never be guessed or committed.

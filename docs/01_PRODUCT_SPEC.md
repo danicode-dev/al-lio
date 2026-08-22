@@ -1,63 +1,106 @@
-# Product Spec - AL-LÍO
+# AL-LIO product specification
 
-## Resumen
+## Product statement
 
-AL-LÍO es una aplicación web de orientación, planificación y seguimiento. Centraliza tareas, calendario, cursos, hackathons, oportunidades, noticias y enlaces para que el usuario pueda decidir qué hacer cada semana sin repartir su trabajo entre múltiples herramientas.
+AL-LIO is a private student workspace for planning, vocational-skills
+development and career discovery. It reduces the effort required to turn
+scattered information into a small set of relevant next actions.
 
-## Usuario Actual
+The interface and student-facing content are in Spanish. The product is not a
+generic news portal, a learning-management system or an automated academic
+advisor.
 
-El producto funciona hoy como dashboard privado para un usuario principal con foco en:
+## Supported users
 
-- organización semanal;
-- oportunidades de formación;
-- hackathons y convocatorias;
-- búsqueda de empleo o prácticas;
-- seguimiento de tareas y evidencias.
+The current product serves authenticated Higher Vocational Education students
+with one of these cycle profiles:
 
-## Problema
+- `DAW`: Web Application Development;
+- `DAM`: Multiplatform Application Development;
+- `AF`: Administration and Finance;
+- `TSAF`: Teaching and Socio-Sports Animation;
+- `MP`: Marketing and Advertising.
 
-La información útil está dispersa entre calendarios, portales de empleo, cursos, notas, recordatorios, webs de eventos y enlaces guardados. Esa dispersión hace difícil priorizar y demostrar progreso.
+An administrator role exists for protected operational views. Administration
+is not exposed as a normal student navigation item.
 
-## Solución
+## User outcomes
 
-Un panel único con módulos conectados:
+An authenticated student can:
 
-- Dashboard semanal.
-- Tareas.
-- Calendario local y Google Calendar.
-- Cursos.
-- Hackathons.
-- Oportunidades.
-- Noticias.
-- Enlaces y fuentes.
+- identify tasks and upcoming commitments;
+- follow a competency-based learning path;
+- watch an approved Spanish learning resource and retain progress and notes;
+- discover courses, hackathons, companies and job-oriented opportunities;
+- read news classified for their own cycle;
+- connect Google Calendar;
+- maintain their profile and cycle selection.
 
-## Estado Funcional
+## Main product areas
 
-- Dashboard privado operativo.
-- Datos persistidos en PostgreSQL propio.
-- Sesión propia mediante cookie firmada.
-- Acceso real mediante Google OAuth.
-- Google Calendar conectado desde servidor.
-- Importadores CSV para cursos, hackathons y oportunidades.
-- Caché local versionada para noticias.
-- Despliegue VPS con Docker Compose y Caddy.
+| Area | Purpose |
+|---|---|
+| Dashboard | Summarise priorities, progress and next actions. |
+| Competencies | Organise required and recommended skills by cycle. |
+| Tasks | Persist personal work and completion state. |
+| Bloc | Persist student notes. |
+| News | Show only approved, non-expired items for the user's cycle. |
+| Work | Present companies and employment-oriented links. |
+| Courses | Present reviewed training opportunities. |
+| Hackathons | Present reviewed challenges, events and calls. |
+| Calendar | Combine local planning with optional Google Calendar access. |
+| Profile | Persist identity, cycle and student preferences. |
 
-## Fuera De Alcance Actual
+## Authentication and account lifecycle
 
-Estos puntos no deben presentarse como terminados:
+- Google OAuth can create or update a user and establish an application
+  session.
+- Email/password login works only for accounts that already have a password
+  hash provisioned by an authorised operator.
+- Self-service email registration is not implemented; `/register` redirects to
+  `/login`.
+- Demo profiles are controlled by an environment flag and disabled by default
+  in production.
+- Protected pages require a valid signed session.
 
-- Login email/password completo.
-- Onboarding final por ciclo formativo.
-- Fixtures demo oficiales para candidatura.
-- Suite BDD/Playwright.
-- Licencia y metadata final de entrega.
+The product must never imply that self-service registration, password recovery
+or email verification exists until those flows are implemented and tested.
 
-## Principio De Producto
+## Curated content principles
 
-La app debe ser directa, útil y operativa:
+- Relevance is determined by the student's cycle, not by generic popularity.
+- News requires deterministic curricular matching and human approval in
+  AL-LIO Radar.
+- Learning resources require manual review for language, ownership, direct
+  teaching value and safety.
+- General crime, politics, entertainment, gossip, betting, sensationalism and
+  unrelated local news are outside scope.
+- Editorial labels describe AL-LIO curation and do not replace official
+  curricula or professional accreditation.
 
-- entrar;
-- ver prioridades;
-- abrir oportunidades relevantes;
-- registrar avance;
-- preparar evidencia.
+## Current functional boundary
+
+Implemented:
+
+- VPS-hosted Next.js application;
+- PostgreSQL persistence and versioned migrations;
+- signed sessions, Google OAuth and provisioned password access;
+- user-scoped tasks, notes, profile and content state;
+- Google Calendar integration;
+- cycle-specific learning catalogues;
+- Radar webhook v2 ingestion and server-side cycle filtering;
+- production Docker, health, backup and rollback tooling.
+
+Not yet claimed as complete:
+
+- public self-service email registration;
+- password recovery and email verification;
+- a comprehensive browser end-to-end suite;
+- automatic publication of Radar candidates;
+- complete editorial validation of every pending external source.
+
+## Product rule
+
+AL-LIO should help a student decide what to do next. A feature that adds noise,
+cannot explain its source or cannot preserve user ownership does not belong in
+the product.

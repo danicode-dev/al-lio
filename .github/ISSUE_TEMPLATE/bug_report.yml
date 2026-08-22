@@ -1,0 +1,43 @@
+name: Bug report
+description: Report a reproducible AL-LIO defect without personal data.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include passwords, OAuth tokens, personal data or security vulnerabilities. Use a private security advisory for vulnerabilities.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What happened and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the smallest reproducible sequence using fictional data.
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Revision or environment
+      placeholder: Commit SHA, local, or production
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted evidence
+      description: Logs or screenshots with secrets and personal data removed.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: I removed secrets and personal data.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true

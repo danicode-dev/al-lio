@@ -1,79 +1,74 @@
-# Architecture and Stack
+# Architecture and stack
 
-## Runtime Actual
+This document is the concise runtime reference. Detailed boundaries, diagrams
+and decision records live in [`architecture/`](architecture/README.md).
+
+## Runtime
 
 - Framework: Next.js 15 App Router.
-- Lenguaje: TypeScript.
-- UI: componentes React locales con Tailwind CSS.
-- Base de datos: PostgreSQL propio.
-- Acceso a datos: `pg`.
-- Auth actual: sesión propia firmada en cookie `al_lio_session`.
-- Login actual: Google OAuth.
-- Integraciones: Google Calendar, AL-LÍO Radar mediante webhook HMAC, deep links y APIs de oportunidades cuando hay claves.
-- Deploy: VPS con Docker Compose y Caddy.
+- Language: TypeScript.
+- UI: React 19 with local components and Tailwind CSS.
+- Database: self-hosted PostgreSQL 17.
+- Database access: `pg` with explicit repositories and transactions.
+- Authentication: signed application session cookie.
+- Login: Google OAuth and password access for provisioned accounts.
+- External integration: Google Calendar.
+- Curated news: independent AL-LIO Radar service over signed webhook v2.
+- Deployment: Docker Compose on a VPS behind Caddy.
 
-Supabase ya no es la base de datos ni el sistema de autenticación en runtime.
+Supabase and Vercel are not part of the current runtime.
 
-## Capas Principales
+## Application flow
 
-```txt
+```text
 Browser
   -> Next.js App Router
-  -> Route handlers / server actions
-  -> lib/auth + lib/db + lib/integrations
-  -> PostgreSQL propio
-  -> Google APIs cuando aplica
-
-Fuentes permitidas
-  -> AL-LÍO Radar (recogida, reglas y revisión humana)
-  -> webhook HTTPS firmado
-  -> radar_items en PostgreSQL
-  -> /api/news filtrado por ciclo del perfil
+  -> route handlers / server actions
+  -> authentication, repositories and integrations
+  -> PostgreSQL
 ```
 
-## Carpetas Clave
+## Radar flow
 
-```txt
-app/        rutas, layouts y route handlers
-components/ UI y vistas compartidas
-lib/        auth, datos, integraciones, news, helpers
-infra/      Docker, Caddy y PostgreSQL
-scripts/    checks, importadores, migración y operaciones
-data/       respaldo legacy sin uso en runtime
-csv/        fuentes CSV para importadores
-docs/       documentación activa
+```text
+Approved source catalogue
+  -> fetch under host and content limits
+  -> normalize and deduplicate metadata
+  -> deterministic cycle classification
+  -> human review
+  -> persistent signed outbox
+  -> POST /api/radar/v1/ingest
+  -> transactional PostgreSQL upsert
+  -> server-side profile filtering
 ```
 
-## Rutas Públicas
+Radar never receives user sessions and never connects to AL-LIO PostgreSQL.
 
-- `/`
-- `/login`
-- `/register`
-- `/api/health`
+## Production services
 
-## Rutas Privadas
+| Service | Responsibility | Persistent state |
+|---|---|---|
+| `al_lio_web` | Next.js UI, API, authentication and integrations | PostgreSQL only |
+| `al_lio_postgres` | Application source of truth | `al_lio_postgres_data` |
+| `al_lio_radar` | Scheduled source collection, review queue and delivery | `al_lio_radar_data` |
+| `al_lio_migrator` | Explicit operational migration job | None |
 
-- `/dashboard`
-- `/tasks`
-- `/bloc`
-- `/noticias`
-- `/work`
-- `/courses`
-- `/hackathons`
-- `/calendar`
-- `/links`
-- `/sources`
-- `/settings`
-- `/more`
+`al_lio_web` and PostgreSQL share a private internal network. Radar reaches the
+public HTTPS webhook and has no database network membership.
 
-## Producción
+## Health boundaries
 
-El despliegue esperado usa:
+- `GET /api/health` confirms the web process is alive.
+- `GET /api/ready` confirms the web process can reach PostgreSQL.
+- Radar's container healthcheck verifies that its scheduler heartbeat is
+  recent.
 
-- `infra/Dockerfile`
-- `infra/docker-compose.prod.yml`
-- `infra/Caddyfile.example`
-- `.env.production.example`
-- `docs/DEPLOY_VPS.md`
+## Authoritative sources
 
-El contenedor web (`al_lio_web`) se conecta a PostgreSQL (`al_lio_postgres`) y Caddy publica el dominio `https://al-lio.danielcode.dev`. El contenedor separado `al_lio_radar` conserva su propia cola en SQLite y solo entrega elementos aprobados al endpoint firmado de AL-LÍO; nunca escribe directamente en PostgreSQL.
+- Runtime topology: `infra/docker-compose.prod.yml`.
+- PostgreSQL baseline: `infra/postgres/schema.sql`.
+- Database evolution: `infra/postgres/migrations/`.
+- Radar receiver schema: `src/lib/radar/contract.ts`.
+- Radar sender schema: `al-lio-radar/src/domain/item.ts`.
+- Environment validation: `scripts/validate-runtime-env.mjs` and Radar's
+  `src/config/env.ts`.

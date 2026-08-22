@@ -1,10 +1,16 @@
-# Seed Hackathons
+# Seed hackathon reference
 
-## Objetivo
+## Purpose
 
-Cargar datos iniciales para que la sección Hackathons empiece con contenido útil.
+Provide reviewed starter records for the Hackathons product area. This file is
+an editorial reference, not an automatic live feed. Every event must be
+revalidated before import because eligibility, dates and URLs change.
 
-## Provincias
+The JSON values remain in Spanish because they are localised product content.
+Status and type values are existing import-domain codes and must not be
+translated without updating the importer and database contract.
+
+## Covered locations
 
 - Granada
 - Málaga
@@ -13,7 +19,7 @@ Cargar datos iniciales para que la sección Hackathons empiece con contenido út
 - Córdoba
 - Online / remoto
 
-## Granada
+## Granada records
 
 ```json
 [
@@ -64,7 +70,7 @@ Cargar datos iniciales para que la sección Hackathons empiece con contenido út
 ]
 ```
 
-## Málaga
+## Málaga records
 
 ```json
 [
@@ -115,7 +121,7 @@ Cargar datos iniciales para que la sección Hackathons empiece con contenido út
 ]
 ```
 
-## Almería
+## Almería records
 
 ```json
 [
@@ -144,7 +150,7 @@ Cargar datos iniciales para que la sección Hackathons empiece con contenido út
 ]
 ```
 
-## Jaén
+## Jaén records
 
 ```json
 [
@@ -184,7 +190,7 @@ Cargar datos iniciales para que la sección Hackathons empiece con contenido út
 ]
 ```
 
-## Córdoba
+## Córdoba records
 
 ```json
 [

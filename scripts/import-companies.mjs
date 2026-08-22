@@ -9,8 +9,8 @@ const ROOT = resolve(__dirname, "..");
 const SOURCE_PATH = join(ROOT, "public", "data", "empresas_tech_granada.md");
 const COMPANY_NAMESPACE = "companies-v1";
 
-// Todas las empresas de este listado son de perfil tech/dev. AF, TSAF y MP
-// no tienen todavia empresas reales identificadas — se anaden aqui cuando
+// Every company in this list has a technology or development profile. AF,
+// TSAF and MP do not yet have verified companies; add them here only when
 // existan, en vez de inventar datos.
 const CYCLE_GROUP = "DEV";
 

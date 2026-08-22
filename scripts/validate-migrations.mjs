@@ -1,4 +1,4 @@
-/** Validación estática del contrato de migraciones y seguridad Docker. */
+/** Statically validates the migration and Docker security contract. */
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";

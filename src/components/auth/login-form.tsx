@@ -200,7 +200,7 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
 
           .brand-panel { display: none; }
 
-          /* Fondo oscuro sólido — sin background-image en el panel */
+          /* Solid dark panel without a background image. */
           .login-form-panel {
             animation: none;
             min-height: 100dvh;
@@ -213,7 +213,7 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
             isolation: isolate;
           }
 
-          /* Decoración cinética: capa inferior independiente via ::after */
+          /* Kinetic decoration on an independent ::after layer. */
           .login-form-panel::after {
             content: "";
             position: absolute;
@@ -232,7 +232,7 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
             -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 35%, black 100%);
           }
 
-          /* La tarjeta flota sobre la decoración cinética */
+          /* Keep the card above the kinetic decoration. */
           .login-card {
             position: relative;
             z-index: 1;
@@ -260,7 +260,7 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
             object-fit: contain;
           }
 
-          /* ── Heading / subtítulo centrados ── */
+          /* Centred heading and subtitle. */
           .al-card-heading {
             text-align: center !important;
             color: white !important;
@@ -291,7 +291,7 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           .al-eye-btn    { color: #545050; }
           .al-eye-btn:hover { color: #909090; }
 
-          /* Evita el fondo azul del autocompletado del navegador */
+          /* Prevent the browser's blue autocomplete background. */
           .al-input:-webkit-autofill,
           .al-input:-webkit-autofill:hover,
           .al-input:-webkit-autofill:focus {
@@ -302,7 +302,7 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
             transition: background-color 9999s ease-out 0s;
           }
 
-          /* ── Botón principal ── */
+          /* Primary action. */
           .al-btn-submit {
             height: 54px !important;
             border-radius: 10px !important;

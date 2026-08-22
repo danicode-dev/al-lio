@@ -43,7 +43,7 @@ const KIND_LABELS: Record<NewsItem["kind"], string> = {
   legal: "Normativa",
 };
 
-export function NoticiasView() {
+export function NewsView() {
   const [items, setItems] = useState<NewsItem[]>([]);
   const [status, setStatus] = useState<NewsSyncStatus | null>(null);
   const [loading, setLoading] = useState(true);

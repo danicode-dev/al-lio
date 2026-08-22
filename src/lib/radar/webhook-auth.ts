@@ -1,6 +1,6 @@
 import "server-only";
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { RADAR_TIMESTAMP_TOLERANCE_MS } from "@/lib/radar/contract";
+import { createRadarSignature, radarSignaturesMatch } from "@/lib/radar/signature";
 
 export type RadarWebhookAuthResult =
   | { ok: true; deliveryId: string; timestamp: string }
@@ -27,12 +27,8 @@ export function verifyRadarWebhook(request: Request, rawBody: string, now = new 
     return { ok: false, status: 401, error: "timestamp outside allowed window" };
   }
 
-  const expected = `v1=${createHmac("sha256", secret)
-    .update(`${timestamp}.${deliveryId}.${rawBody}`)
-    .digest("hex")}`;
-  const expectedBuffer = Buffer.from(expected);
-  const actualBuffer = Buffer.from(signature);
-  if (expectedBuffer.length !== actualBuffer.length || !timingSafeEqual(expectedBuffer, actualBuffer)) {
+  const expected = createRadarSignature(secret, timestamp, deliveryId, rawBody);
+  if (!radarSignaturesMatch(expected, signature)) {
     return { ok: false, status: 401, error: "invalid signature" };
   }
 

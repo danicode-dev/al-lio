@@ -1,26 +1,50 @@
-# Gobierno de fuentes formativas
+# Learning-source governance
 
-## Alcance
+## Scope
 
-El catálogo de competencias contiene únicamente vídeos individuales en español. Una competencia puede publicarse solo cuando dispone de al menos un recurso aprobado. La etiqueta `Esencial AL-LIO` describe la selección editorial de la plataforma y no sustituye el currículo oficial del ciclo.
+The competency catalogue publishes individual Spanish-language learning
+resources. A competency becomes visible only when it has at least one approved
+resource.
 
-## Criterios de aceptación
+The label `AL-LIO essential` is an editorial recommendation. It does not
+replace the official curriculum, an accredited qualification or professional
+instruction.
 
-- El vídeo enseña de forma directa la competencia a la que se asocia.
-- El título, el canal y el vídeo están disponibles y coinciden con el catálogo.
-- El contenido está en español y puede seguirse sin adquirir otro producto.
-- Se excluyen noticias generales, entretenimiento, promesas económicas, contenido sensacionalista y vídeos cuyo encaje dependa únicamente de palabras clave.
-- En salud y primeros auxilios se priorizan entidades reconocibles y se indica que el vídeo no sustituye formación práctica acreditada.
-- Las sesiones deportivas de ejemplo se presentan como material de observación y análisis, no como acreditación profesional.
+## Acceptance criteria
 
-## Revisión
+- The resource directly teaches the competency to which it is linked.
+- The title, channel, URL and actual video agree with the catalogue record.
+- The content is in Spanish and can be followed without buying another
+  product.
+- The presenter or publisher is identifiable and sufficiently credible for
+  the subject.
+- The resource avoids unrelated news, entertainment, sensationalism,
+  unrealistic earnings claims and keyword-only relevance.
+- Health and first-aid resources prefer recognised organisations and clearly
+  state that video cannot replace accredited practical training.
+- Example training sessions are observation and analysis material, not a
+  professional qualification.
 
-1. Ejecutar `npm run validate:learning-competencies` antes de importar.
-2. Ejecutar `npm run validate:learning-sources` con acceso a Internet para confirmar disponibilidad y canal.
-3. Revisar manualmente introducción, estructura, idioma, llamadas comerciales y encaje de cada recurso nuevo.
-4. Importar mediante `npm run import:learning-competencies`; el proceso es transaccional e inactiva recursos retirados.
-5. Repetir la revisión editorial cada trimestre o cuando un alumno reporte un recurso.
+## Review workflow
 
-## Retirada inmediata
+1. Run `npm run validate:learning-competencies` before import.
+2. Run `npm run validate:learning-sources` with Internet access to confirm
+   availability and channel ownership.
+3. Manually review the introduction, structure, language, commercial calls to
+   action and direct curricular fit.
+4. Import with `npm run import:learning-competencies`; the operation is
+   transactional and deactivates withdrawn resources.
+5. Repeat editorial review every quarter or when a student reports a resource.
 
-Un recurso se retira si deja de estar disponible, cambia de canal, pasa a otro idioma, contiene afirmaciones peligrosas o deja de enseñar la competencia asignada. Ante una duda editorial se desactiva primero y se busca sustituto después.
+## Immediate withdrawal
+
+A resource is disabled immediately if it becomes unavailable, changes owner or
+language, introduces dangerous claims, becomes primarily commercial or no
+longer teaches the assigned competency. When in doubt, disable first and find a
+replacement second.
+
+## Evidence
+
+Review evidence should record the reviewer, review date, competency, source URL
+and decision. Credentials, private notes and personal student information must
+not be committed with the catalogue.

@@ -1,6 +1,6 @@
 /**
- * al-lio — validador estático de integración PostgreSQL app.
- * No requiere conexión real. Solo comprueba estructura de código.
+ * AL-LIO static PostgreSQL application-integration validator.
+ * It requires no live connection and checks code structure only.
  * Uso: node scripts/validate-postgres-app-integration.mjs
  */
 
@@ -91,7 +91,7 @@ check("La reproducción persiste la posición", learningRepository.includes("las
 check("El layout no carga el store global completo", dashboardLayout.includes("getShellStore") && !dashboardLayout.includes("getGlobalStore"));
 check("Existe boundary de error del dashboard", existsSync(join(root, "src/app/(dashboard)/error.tsx")));
 
-// ── lib/actions.ts usa repositorios para datos ────────────────────────────────
+// ── lib/actions.ts uses repositories for data ────────────────────────────────
 
 console.log("\n── lib/actions.ts ──");
 const actions = read("src/lib/actions.ts");
@@ -116,7 +116,7 @@ check("src/lib/db.ts tiene whitelist de tablas", db.includes("WRITABLE_TABLES"))
 check("src/lib/db.ts no usa supabase", !db.includes("createClient") || db.includes("// createClient"));
 check("src/lib/db.ts no imprime connectionString", !db.includes("console.log(connectionString"));
 
-// ── set-user-password requiere confirmación ───────────────────────────────────
+// ── set-user-password requires explicit confirmation ─────────────────────────
 
 console.log("\n── scripts/postgres/set-user-password.mjs ──");
 const setpwd = read("scripts/postgres/set-user-password.mjs");

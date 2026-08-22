@@ -1,10 +1,10 @@
 /**
  * Ejecutor transaccional de migraciones AL-LIO.
  *
- * - Una base vacía recibe el baseline y queda versionada.
- * - Una base con tablas pero sin historial se rechaza para evitar aplicar un
- *   schema acumulativo sobre producción sin una auditoría previa.
- * - Las migraciones aplicadas se protegen con checksum y advisory lock.
+ * - An empty database receives the baseline and becomes versioned.
+ * - A database with tables but no history is rejected so an accumulated schema
+ *   cannot be applied to production without a prior audit.
+ * - Applied migrations are protected by checksums and an advisory lock.
  */
 
 import { existsSync, readFileSync } from "node:fs";

@@ -1,45 +1,61 @@
-# Project Structure
+# Project structure
 
-## Aplicación
+## Application
 
-Código de la aplicación bajo `src/` (convención oficial de Next.js):
+- `src/app/`: App Router routes, layouts and route handlers.
+- `src/components/`: React components and product views.
+- `src/lib/`: authentication, repositories, domain services and integrations.
+- `src/middleware.ts`: protected-route and session boundary.
+- `public/`: static assets served by Next.js.
 
-- `src/app/` - rutas App Router, layouts y route handlers.
-- `src/components/` - componentes React y vistas de producto.
-- `src/lib/` - autenticación, acceso a datos, integraciones, noticias y utilidades.
-- `src/middleware.ts` - protección de rutas y sesión.
-- `public/` - assets públicos servidos por Next.js (fuera de `src/`, también por convención de Next.js).
+## Data and persistence
 
-## Datos
+- `infra/postgres/schema.sql`: immutable PostgreSQL baseline.
+- `infra/postgres/migrations/`: ordered, checksummed database changes.
+- `csv/`: reviewed import inputs and editorial working datasets.
+- `data/`: legacy news snapshots retained for controlled transition only;
+  production news is stored in PostgreSQL.
 
-- `infra/postgres/schema.sql` - schema PostgreSQL actual.
-- `infra/postgres/migrations/0002_radar_news.sql` - persistencia de entregas, noticias y estado por usuario de AL-LÍO Radar.
-- `csv/` - fuentes CSV para importadores.
-- `data/` - copia legacy conservada solo como respaldo; `/api/news` usa PostgreSQL.
+## Operations
 
-## Operaciones
+- `infra/Dockerfile`: production Next.js image.
+- `infra/docker-compose.prod.yml`: supported VPS topology.
+- `infra/Caddyfile.example`: reverse-proxy example.
+- `infra/systemd/`: reviewed host-level service and timer units.
+- `scripts/`: validation, import, migration, backup and smoke-test commands.
+- `.env.example`: local configuration contract.
+- `.env.production.example`: production configuration contract.
 
-- `infra/` - Dockerfile, Docker Compose, Caddy y PostgreSQL.
-- `scripts/` - validaciones, importadores y utilidades operativas.
-- `.env.example` - plantilla local.
-- `.env.production.example` - plantilla de producción.
-- `README.md` - portada humana del proyecto.
-- `docs/` - documentación activa.
+## Documentation
 
-## No Committing
+- `README.md`: public product and engineering entry point.
+- `docs/`: maintained project documentation.
+- `docs/architecture/decisions/`: accepted architecture decision records.
+- Root governance files: contribution, security, conduct, notice and licence.
 
-No subir:
+## Separate Radar repository
 
-- `.env`
-- `.env.local`
-- `.next/`
-- `node_modules/`
-- `migration-artifacts/`
-- dumps de base de datos;
-- logs temporales;
-- prompts o notas privadas dentro de `public/`;
-- guías operativas para asistentes de IA (`AGENTS.md`, `CLAUDE.md`) - existen en local para quien desarrolle con asistencia de IA, pero no forman parte del repositorio público.
+AL-LIO Radar is intentionally maintained as a separate repository and
+container. Its source catalogue, scraping policy, review queue and SQLite
+outbox do not belong inside the web application. The integration contract is
+documented in both repositories and versioned in code.
 
-## Regla De Limpieza
+## Files that must not be committed
 
-Si un documento describe Supabase, Vercel, Aidraft o TechLife como estado actual, debe actualizarse o retirarse del repositorio antes de aparecer enlazado desde README.
+- `.env` and `.env.local`;
+- `.next/` and `node_modules/`;
+- database dumps and migration rehearsal artifacts;
+- runtime logs and screenshots containing personal data;
+- OAuth tokens, webhook secrets, session secrets and deploy keys;
+- real student, family or employment-application data;
+- private AI-assistant memory or operator credentials.
+
+Local assistant guidance may exist outside Git, but it is not part of the
+public project documentation.
+
+## Placement rule
+
+New files must have one clear owner. Runtime code belongs in `src`, deployment
+material in `infra`, repeatable operator commands in `scripts`, reviewed import
+inputs in `csv` and maintained explanations in `docs`. Generated artifacts do
+not belong in the repository unless they are an intentional public asset.

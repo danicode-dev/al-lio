@@ -1,86 +1,97 @@
-# Integrations and Deep Links
+# Integrations and deep links
 
-## Principio
+## Integration policy
 
-AL-LÍO combina:
+AL-LIO uses the narrowest reliable integration for each external service:
 
-1. APIs reales cuando hay clave y condiciones de uso claras.
-2. RSS cuando basta para obtener información pública.
-3. Deep links cuando no conviene integrar una plataforma.
-4. Entrada manual cuando el usuario necesita guardar una oportunidad concreta.
+1. an official API when credentials and terms are clear;
+2. an official RSS/Atom feed when public metadata is sufficient;
+3. an explicit deep link when the external platform should remain responsible
+   for search and authentication;
+4. manual entry when a student needs to retain a specific opportunity.
 
-## Prohibido
+Private-session automation, credential sharing and aggressive scraping are
+not allowed.
 
-No automatizar sesiones privadas ni hacer scraping agresivo. En particular:
+## Google OAuth and Calendar
 
-- no bots sobre LinkedIn;
-- no scraping de portales cerrados;
-- no Playwright/Selenium para extraer datos de terceros;
-- no almacenamiento de credenciales externas del usuario.
+Google OAuth is used for verified account identity and optional Calendar
+access. OAuth state is validated, tokens are encrypted before being stored in
+the protected cookie boundary and Calendar failures must not make the rest of
+AL-LIO unavailable.
 
-## Plataformas Iniciales
-
-| Plataforma | Tipo | Uso actual |
-|---|---|---|
-| LinkedIn | deeplink | Abrir búsqueda precargada |
-| InfoJobs | API + deeplink | API preparada + búsqueda directa |
-| Indeed | deeplink | Abrir búsqueda precargada |
-| Tecnoempleo | RSS + deeplink | RSS preparado + búsqueda directa |
-| Adzuna | API | API preparada |
-| Jooble | API | API preparada |
-| Remotive | API | API pública para remoto |
-
-## Variables de Entorno
+Production configuration requires exact callback alignment:
 
 ```env
-INFOJOBS_CLIENT_ID=
-INFOJOBS_CLIENT_SECRET=
-ADZUNA_APP_ID=
-ADZUNA_APP_KEY=
-JOOBLE_API_KEY=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=https://al-lio.danielcode.dev/api/google/calendar/callback
+GOOGLE_TOKEN_ENCRYPTION_KEY=
 ```
 
-Las integraciones deben devolver resultados vacíos y no romper la app cuando faltan claves.
+The Calendar connector is exposed only from the Calendar product area. A user
+can disconnect it without losing their AL-LIO account data.
 
-## Modelo Normalizado
+## AL-LIO Radar
+
+Radar is an internal service integration, not a browser integration. It sends
+only reviewed metadata through `POST /api/radar/v1/ingest` using schema version
+2, HMAC authentication, a five-minute timestamp window and stable delivery
+identifiers.
+
+See [`AL_LIO_RADAR_INTEGRATION.md`](AL_LIO_RADAR_INTEGRATION.md) and the
+sender-side contract in the Radar repository.
+
+## Employment platforms
+
+| Platform | Supported mode | Current responsibility |
+|---|---|---|
+| LinkedIn | Deep link | Open an explicit user-controlled search. |
+| InfoJobs | API and deep link | Use the API when configured; otherwise preserve direct search. |
+| Indeed | Deep link | Open an explicit user-controlled search. |
+| Tecnoempleo | RSS and deep link | Use public metadata and direct search where available. |
+| Adzuna | API | Return normalised results when credentials exist. |
+| Jooble | API | Return normalised results when credentials exist. |
+| Remotive | Public API | Return remote opportunities. |
+
+Missing optional credentials must produce an empty or degraded integration
+result, not an application failure.
+
+## Prohibited behaviour
+
+- No bots against LinkedIn or other authenticated platforms.
+- No Playwright or Selenium extraction from third-party private pages.
+- No storage of a student's external platform password.
+- No hidden redirects or affiliate URLs presented as direct sources.
+- No external content may bypass server-side validation and user ownership.
+
+## Normalised opportunity contract
 
 ```ts
 export type NormalizedOpportunity = {
-  source: string
-  source_type: "api" | "rss" | "deeplink" | "manual"
-  title: string
-  company?: string
-  description?: string
-  location?: string
-  province?: string
-  remote?: boolean
-  url: string
-  published_at?: string
-  detected_at?: string
-  category?: string
-  tags?: string[]
-  level?: string
-  salary_min?: number
-  salary_max?: number
-  status?: string
-  score?: number
-  external_id?: string
-  unique_hash?: string
-}
+  source: string;
+  source_type: "api" | "rss" | "deeplink" | "manual";
+  title: string;
+  company?: string;
+  description?: string;
+  location?: string;
+  province?: string;
+  remote?: boolean;
+  url: string;
+  published_at?: string;
+  detected_at?: string;
+  category?: string;
+  tags?: string[];
+  level?: string;
+  salary_min?: number;
+  salary_max?: number;
+  status?: string;
+  score?: number;
+  external_id?: string;
+  unique_hash?: string;
+};
 ```
 
-## Búsquedas Rápidas
-
-Las búsquedas rápidas deben construirse como URLs explícitas, sin ocultar redirecciones ni scraping:
-
-```ts
-buildJobSearchUrl(platform: string, keyword: string, location?: string): string
-```
-
-Ejemplos:
-
-- Desarrollador Web Junior en Granada.
-- Java Junior en Granada.
-- Prácticas DAW en Granada.
-- Desarrollador Full Stack Junior remoto.
-- Programador Junior Andalucía.
+Deep links must be generated as transparent URLs from a keyword and optional
+location. AL-LIO must not imply that a deep-linked result was validated by an
+API when it was not.
