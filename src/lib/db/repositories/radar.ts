@@ -307,6 +307,22 @@ export async function getRadarStatsForCycle(userId: string, cycleCode: RadarCycl
   };
 }
 
+/**
+ * Mutates read/saved state for one item, under the same visibility boundary
+ * as the news list and the detail query:
+ *   - an item the caller has not already saved can only be touched while it
+ *     is still live (cycle, destination, kind, not expired, within the
+ *     freshness window) — this closes an enumeration path where a guessed,
+ *     stale item id could be saved and, from that point on, stay reachable
+ *     through the detail route regardless of authorization;
+ *   - an item the caller has already saved stays reachable and mutable
+ *     (matches the saved-archive behaviour) regardless of freshness;
+ *   - status transitions are monotonic — "saved" never reverts to "read",
+ *     including on a read request that lands after a save request completed.
+ * A false/0-row result means the item does not exist, is not in the
+ * caller's cycle, or is a non-news/stale item never saved by this caller —
+ * these are intentionally indistinguishable.
+ */
 export async function setRadarItemStatus(
   userId: string,
   cycleCode: RadarCycleCode,
@@ -320,7 +336,25 @@ export async function setRadarItemStatus(
      WHERE item.id = $2::bigint
        AND $3 = ANY(item.target_cycle_codes)
        AND item.destination = 'news'
-     ON CONFLICT (user_id, radar_item_id) DO UPDATE SET status = excluded.status
+       AND item.kind IN ('news', 'legal')
+       AND (
+         EXISTS (
+           SELECT 1 FROM public.radar_item_user_states existing
+           WHERE existing.user_id = $1 AND existing.radar_item_id = item.id AND existing.status = 'saved'
+         )
+         OR (
+           (item.expires_at IS NULL OR item.expires_at > now())
+           AND (
+             (item.kind = 'news' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '7 days')
+             OR (item.kind = 'legal' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '30 days')
+           )
+         )
+       )
+     ON CONFLICT (user_id, radar_item_id) DO UPDATE SET
+       status = CASE
+         WHEN public.radar_item_user_states.status = 'saved' THEN 'saved'
+         ELSE excluded.status
+       END
      RETURNING radar_item_id`,
     [userId, itemId, cycleCode, status],
   );
