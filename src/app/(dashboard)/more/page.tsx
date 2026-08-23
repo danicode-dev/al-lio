@@ -21,9 +21,9 @@ const SECTIONS = [
     href: "/dashboard",
     label: "Inicio",
     Icon: Home,
-    cardBg: "bg-blue-50",
-    iconBg: "bg-blue-100",
-    iconColor: "text-blue-500",
+    cardBg: "bg-teal-50",
+    iconBg: "bg-teal-100",
+    iconColor: "text-teal-500",
   },
   {
     href: "/roadmap",
@@ -69,9 +69,9 @@ const SECTIONS = [
     href: "/courses",
     label: "Cursos",
     Icon: GraduationCap,
-    cardBg: "bg-sky-50",
-    iconBg: "bg-sky-100",
-    iconColor: "text-sky-500",
+    cardBg: "bg-fuchsia-50",
+    iconBg: "bg-fuchsia-100",
+    iconColor: "text-fuchsia-500",
   },
   {
     href: "/hackathons",
@@ -112,14 +112,14 @@ export default async function MorePage() {
         <div>
           <h1 className="text-2xl font-bold leading-tight tracking-tight">
             Explora todas{" "}
-            <span className="text-primary">las secciones</span>
+            <span className="text-[#E15D2D]">las secciones</span>
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
             Accede a cualquier parte de Al-Lio
           </p>
         </div>
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-          <Compass className="h-6 w-6 text-primary" />
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#FBE7DD]">
+          <Compass className="h-6 w-6 text-[#E15D2D]" />
         </div>
       </div>
 
