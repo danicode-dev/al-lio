@@ -192,3 +192,54 @@ test("learning notes are saved atomically and mirrored to Bloc", async () => {
   assert.match(repositorySource, /INSERT INTO public\.bloc_notes/);
   assert.match(repositorySource, /ON CONFLICT \(user_id, source_type, source_id\)/);
 });
+
+test("News detail API route authenticates without redirecting, validates the id, and never distinguishes not-found from unauthorized", async () => {
+  const source = await readFile(new URL("../src/app/api/news/[id]/route.ts", import.meta.url), "utf8");
+  assert.match(source, /tryGetCurrentUserId/);
+  assert.doesNotMatch(source, /\bgetCurrentUserId\b/);
+  assert.match(source, /status:\s*401/);
+  assert.match(source, /isValidRadarItemId/);
+  assert.match(source, /status:\s*400/);
+
+  const notFoundMatches = source.match(/status:\s*404/g) ?? [];
+  assert.equal(
+    notFoundMatches.length,
+    1,
+    "the detail route must return exactly one generic not-found response, never a distinct one for cross-cycle or unapproved items",
+  );
+  assert.doesNotMatch(source, /forbidden|cross.?cycle|not.?authorized/i);
+  assert.doesNotMatch(source, /error:\s*String\(/);
+});
+
+test("Radar detail query mirrors the list boundary (cycle, destination, kind, freshness-or-saved) and related items reuse it", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/radar.ts", import.meta.url), "utf8");
+
+  assert.match(source, /export async function getRadarItemDetailForUser/);
+  assert.match(source, /item\.id = \$3::bigint/);
+  assert.match(source, /ANY\(item\.target_cycle_codes\)/);
+  assert.match(source, /item\.destination = 'news'/);
+  assert.match(source, /item\.kind IN \('news', 'legal'\)/);
+  assert.match(source, /state\.status = 'saved'/);
+  assert.match(source, /interval '7 days'/);
+  assert.match(source, /interval '30 days'/);
+
+  assert.match(source, /export async function getRelatedNewsItems/);
+  const relatedFunctionSource = source.slice(source.indexOf("export async function getRelatedNewsItems"));
+  assert.match(relatedFunctionSource, /listRadarItemsForCycle\(/);
+  assert.doesNotMatch(relatedFunctionSource, /FROM public\.radar_items/);
+});
+
+test("News cards link to the internal detail page and keep the existing external source link", async () => {
+  const source = await readFile(new URL("../src/components/noticias/noticias-view.tsx", import.meta.url), "utf8");
+  assert.match(source, /from "next\/link"/);
+  assert.match(source, /href=\{`\/noticias\/\$\{item\.id\}`\}/);
+  assert.match(source, /href=\{item\.url\}/);
+  assert.doesNotMatch(source, /dangerouslySetInnerHTML/);
+});
+
+test("News detail view offers a clear Spanish source action and never injects raw HTML", async () => {
+  const source = await readFile(new URL("../src/components/noticias/news-detail-view.tsx", import.meta.url), "utf8");
+  assert.match(source, /Leer noticia original/);
+  assert.match(source, /Volver a Noticias/);
+  assert.doesNotMatch(source, /dangerouslySetInnerHTML/);
+});
