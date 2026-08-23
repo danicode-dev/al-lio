@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, BookmarkCheck, CheckCircle2, ExternalLink, RefreshCw, Search } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BookmarkCheck, CheckCircle2, ExternalLink, RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { NewsItem } from "@/lib/news/types";
@@ -11,38 +11,49 @@ import {
   KIND_LABELS,
   TRUST_LABELS,
   formatDate,
-  formatDateTime,
   formatModule,
   formatTopic,
 } from "@/components/noticias/noticias-view";
 
 type DetailResponse = { item: NewsItem; related: NewsItem[] };
 
+type ViewState =
+  | { status: "loading" }
+  | { status: "loaded"; data: DetailResponse }
+  | { status: "unavailable" }
+  | { status: "unauthenticated" }
+  | { status: "profile-incomplete" }
+  | { status: "error" };
+
 export function NewsDetailView({ id }: { id: string }) {
-  const [data, setData] = useState<DetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState<ViewState>({ status: "loading" });
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    setState({ status: "loading" });
     try {
       const response = await fetch(`/api/news/${encodeURIComponent(id)}`, { cache: "no-store" });
       if (response.status === 404 || response.status === 400) {
-        setData(null);
+        setState({ status: "unavailable" });
+        return;
+      }
+      if (response.status === 401) {
+        setState({ status: "unauthenticated" });
+        return;
+      }
+      if (response.status === 409) {
+        setState({ status: "profile-incomplete" });
         return;
       }
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = (await response.json()) as DetailResponse;
-      setData(payload);
+      setState({ status: "loaded", data: payload });
       if (payload.item.status === "new") {
         void fetch(`/api/news/${encodeURIComponent(id)}/read`, { method: "PATCH" }).catch(() => undefined);
       }
     } catch (error) {
       console.warn("[noticias/detail] load error", error);
-      setData(null);
-      toast.error("No se pudo cargar la noticia");
-    } finally {
-      setLoading(false);
+      setState({ status: "error" });
     }
   }, [id]);
 
@@ -51,27 +62,27 @@ export function NewsDetailView({ id }: { id: string }) {
   }, [load]);
 
   async function saveItem() {
-    if (!data || data.item.status === "saved" || saving) return;
+    if (state.status !== "loaded" || state.data.item.status === "saved" || saving) return;
     setSaving(true);
-    const previous = data;
-    setData({ ...data, item: { ...data.item, status: "saved" } });
+    const previous = state.data;
+    setState({ status: "loaded", data: { ...previous, item: { ...previous.item, status: "saved" } } });
     try {
       const response = await fetch(`/api/news/${encodeURIComponent(id)}/save`, { method: "PATCH" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       toast.success("Noticia guardada");
     } catch {
-      setData(previous);
+      setState({ status: "loaded", data: previous });
       toast.error("No se pudo guardar la noticia");
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) {
+  if (state.status === "loading") {
     return <EmptyState icon={RefreshCw} title="Cargando noticia..." />;
   }
 
-  if (!data) {
+  if (state.status === "unavailable") {
     return (
       <div className="space-y-4">
         <BackLink />
@@ -84,7 +95,67 @@ export function NewsDetailView({ id }: { id: string }) {
     );
   }
 
-  const { item, related } = data;
+  if (state.status === "unauthenticated") {
+    return (
+      <div className="space-y-4">
+        <BackLink />
+        <EmptyState
+          icon={AlertTriangle}
+          title="Tu sesión ha caducado"
+          description="Vuelve a iniciar sesión para seguir viendo esta noticia."
+        />
+        <p className="text-center">
+          <Link href="/login" className="text-sm font-semibold text-[#c94f21] hover:underline">
+            Iniciar sesión
+          </Link>
+        </p>
+      </div>
+    );
+  }
+
+  if (state.status === "profile-incomplete") {
+    return (
+      <div className="space-y-4">
+        <BackLink />
+        <EmptyState
+          icon={AlertTriangle}
+          title="Falta completar tu perfil"
+          description="Necesitamos tu ciclo formativo para mostrarte esta noticia."
+        />
+        <p className="text-center">
+          <Link href="/onboarding" className="text-sm font-semibold text-[#c94f21] hover:underline">
+            Completar perfil
+          </Link>
+        </p>
+      </div>
+    );
+  }
+
+  if (state.status === "error") {
+    return (
+      <div className="space-y-4">
+        <BackLink />
+        <div role="alert" className="rounded-2xl border border-amber-200 bg-white p-6 text-center shadow-sm">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-amber-100 text-amber-700">
+            <AlertTriangle className="h-5 w-5" />
+          </span>
+          <p className="mt-3 text-sm font-bold text-[#111111]">No hemos podido cargar esta noticia</p>
+          <p className="mt-1 text-xs leading-5 text-[#6b6f72]">
+            Puede ser un problema temporal de conexión. Inténtalo de nuevo.
+          </p>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#E15D2D] px-4 text-sm font-bold text-white transition hover:bg-[#c94f21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D] focus-visible:ring-offset-2"
+          >
+            <RefreshCw className="h-4 w-4" /> Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { item, related } = state.data;
   const summary = item.description?.trim();
   const hasSource = Boolean(item.url && item.url.trim());
 
@@ -121,16 +192,6 @@ export function NewsDetailView({ id }: { id: string }) {
         <p className="text-sm leading-6 text-[#333029]">
           {summary || "Todavía no hay un resumen disponible para esta noticia. Consulta la fuente original para más detalle."}
         </p>
-
-        {item.kind === "event" && (item.eventStartsAt || item.registrationDeadline) && (
-          <div className="rounded-xl border border-[#e5eee9] bg-[#f4f8f6] px-3 py-2 text-[11px] leading-5 text-[#315f4b]">
-            {item.eventStartsAt && <p><span className="font-bold">Comienza:</span> {formatDateTime(item.eventStartsAt)}</p>}
-            {item.eventEndsAt && <p><span className="font-bold">Finaliza:</span> {formatDateTime(item.eventEndsAt)}</p>}
-            {item.registrationDeadline && (
-              <p><span className="font-bold">Inscripción hasta:</span> {formatDateTime(item.registrationDeadline)}</p>
-            )}
-          </div>
-        )}
 
         {(item.topics.length > 0 || item.moduleCodes.length > 0) && (
           <div className="flex flex-wrap gap-1.5">
