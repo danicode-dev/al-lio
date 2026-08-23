@@ -80,6 +80,13 @@ dismissed state without copying the content per user.
 
 Client query parameters cannot grant access to another cycle.
 
+`GET /api/news/[id]` applies the identical boundary to a single item, plus one
+extension: a saved item stays reachable after it ages out of the current
+window, the same way it does in the saved-archive list view. An id that does
+not exist, does not match the caller's cycle, or is not a `news`/`legal`
+destination all produce the same generic not-found response — the endpoint
+never reveals which case applies.
+
 ## Deployment order
 
 When the contract changes:
