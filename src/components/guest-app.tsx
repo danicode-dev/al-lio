@@ -1678,8 +1678,7 @@ const workBrandCss = `
   .al-work-portal-expand { margin-top: 10px; display: grid; gap: 8px; }
   .al-work-portal-field { display: grid; gap: 3px; }
   .al-work-portal-field-label { font-size: 10px; font-weight: 700; color: #9a958a; text-transform: uppercase; letter-spacing: .03em; }
-  .al-work-portal-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
-  .al-work-portal-search-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 10px; border: none; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; text-decoration: none; }
+  .al-work-portal-search-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; height: 34px; padding: 0 14px; border-radius: 10px; border: none; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; text-decoration: none; }
 
   .al-work-portal-link-grid { display: grid; gap: 8px; }
   .al-work-portal-link-card { display: flex; align-items: center; gap: 8px; border: 1px solid #ece7dc; border-radius: 12px; background: white; padding: 8px 10px; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
@@ -1726,18 +1725,16 @@ const QuickJobSearchCard = memo(function QuickJobSearchCard({ platform, expanded
             <span className="al-work-portal-field-label">Qué buscas</span>
             <Input value={query} onChange={(event) => setQuery(event.target.value)} className="h-8 text-xs" placeholder="programador java" aria-label={`Busqueda en ${platform}`} />
           </div>
-          <div className="al-work-portal-row">
-            <div className="al-work-portal-field">
-              <span className="al-work-portal-field-label">Dónde</span>
-              <Select value={scope} onChange={(event) => setScope(event.target.value as "Granada" | "Teletrabajo")} className="h-8 text-xs" aria-label={`Ambito de busqueda en ${platform}`}>
-                <option value="Granada">Granada</option>
-                <option value="Teletrabajo">Teletrabajo</option>
-              </Select>
-            </div>
-            <a href={url} target="_blank" rel="noreferrer" className="al-work-portal-search-btn">
-              Buscar <ExternalLink className="h-3.5 w-3.5" />
-            </a>
+          <div className="al-work-portal-field">
+            <span className="al-work-portal-field-label">Dónde</span>
+            <Select value={scope} onChange={(event) => setScope(event.target.value as "Granada" | "Teletrabajo")} className="h-8 text-xs" aria-label={`Ambito de busqueda en ${platform}`}>
+              <option value="Granada">Granada</option>
+              <option value="Teletrabajo">Teletrabajo</option>
+            </Select>
           </div>
+          <a href={url} target="_blank" rel="noreferrer" className="al-work-portal-search-btn">
+            Buscar <ExternalLink className="h-3.5 w-3.5" />
+          </a>
         </div>
       )}
     </div>
