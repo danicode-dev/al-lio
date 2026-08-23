@@ -243,3 +243,68 @@ test("News detail view offers a clear Spanish source action and never injects ra
   assert.match(source, /Volver a Noticias/);
   assert.doesNotMatch(source, /dangerouslySetInnerHTML/);
 });
+
+test("Read/save mutations require the live-feed boundary before a first save, and never downgrade a saved item", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/radar.ts", import.meta.url), "utf8");
+  const fnSource = source.slice(
+    source.indexOf("export async function setRadarItemStatus"),
+    source.indexOf("export async function getRadarItemDetailForUser"),
+  );
+
+  // Same cycle/destination/kind/freshness boundary as the list and detail queries.
+  assert.match(fnSource, /ANY\(item\.target_cycle_codes\)/);
+  assert.match(fnSource, /item\.destination = 'news'/);
+  assert.match(fnSource, /item\.kind IN \('news', 'legal'\)/);
+  assert.match(fnSource, /item\.expires_at IS NULL OR item\.expires_at > now\(\)/);
+  assert.match(fnSource, /interval '7 days'/);
+  assert.match(fnSource, /interval '30 days'/);
+
+  // A not-yet-saved (stale) item is gated by that boundary; an already-saved one bypasses it,
+  // matching the saved-archive guarantee instead of re-checking freshness on every call.
+  assert.match(fnSource, /existing\.status = 'saved'/);
+
+  // Status transitions are monotonic: saved can never be overwritten back to read.
+  assert.match(fnSource, /WHEN public\.radar_item_user_states\.status = 'saved' THEN 'saved'/);
+
+  // Upsert stays a single idempotent statement under repeated/concurrent calls.
+  assert.match(fnSource, /ON CONFLICT \(user_id, radar_item_id\) DO UPDATE/);
+});
+
+test("News detail view separates unavailable content from a temporary failure, with retry only for the latter", async () => {
+  const source = await readFile(new URL("../src/components/noticias/news-detail-view.tsx", import.meta.url), "utf8");
+
+  // Distinct states instead of collapsing every failure into one null/loading pair.
+  for (const status of ["loading", "loaded", "unavailable", "unauthenticated", "profile-incomplete", "error"]) {
+    assert.match(source, new RegExp(`"${status}"`), `missing view state: ${status}`);
+  }
+
+  // 404/400 map to the generic not-found state, never to the retry-capable error state.
+  const notFoundBranch = source.slice(source.indexOf("status === 404"), source.indexOf("status === 401"));
+  assert.match(notFoundBranch, /status: "unavailable"/);
+
+  // The temporary-failure state offers a real retry action and never claims the item
+  // expired or doesn't belong to the student's cycle (that would be dishonest for a
+  // network/server failure that has nothing to do with authorization or freshness).
+  const errorBranch = source.slice(source.indexOf('state.status === "error"'), source.indexOf("const { item, related } = state.data;"));
+  assert.match(errorBranch, /Reintentar/);
+  assert.match(errorBranch, /onClick=\{\(\) => void load\(\)\}/);
+  assert.doesNotMatch(errorBranch, /caducad|no corresponda a tu ciclo/);
+
+  // The detail query never returns kind === "event" (destination='news', kind IN news/legal
+  // only), so the event-only rendering block from the original draft is unreachable and gone.
+  assert.doesNotMatch(source, /item\.kind === "event"/);
+});
+
+test("The card's internal link no longer duplicates the read mutation; the external source link still marks read", async () => {
+  const source = await readFile(new URL("../src/components/noticias/noticias-view.tsx", import.meta.url), "utf8");
+
+  const internalLinkStart = source.indexOf("href={`/noticias/${item.id}`}");
+  assert.ok(internalLinkStart > -1, "internal detail link not found");
+  const internalLinkTag = source.slice(Math.max(0, internalLinkStart - 20), internalLinkStart + 180);
+  assert.doesNotMatch(internalLinkTag, /onClick/);
+
+  const externalLinkStart = source.indexOf("href={item.url}");
+  assert.ok(externalLinkStart > -1, "external source link not found");
+  const externalLinkTag = source.slice(externalLinkStart, externalLinkStart + 200);
+  assert.match(externalLinkTag, /onClick=\{onRead\}/);
+});
