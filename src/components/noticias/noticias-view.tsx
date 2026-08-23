@@ -62,14 +62,25 @@ export function NewsView() {
     if (quiet) setRefreshing(true);
     else setLoading(true);
     try {
-      const response = await fetch("/api/news?limit=200", { cache: "no-store" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = (await response.json()) as ApiResponse;
-      setItems(data.items ?? []);
-      setStatus(data.status ?? null);
-      lastReceivedAtRef.current = data.status?.lastReceivedAt ?? null;
+      const [currentResponse, savedResponse] = await Promise.all([
+        fetch("/api/news?limit=200", { cache: "no-store" }),
+        fetch("/api/news?status=saved&limit=200", { cache: "no-store" }),
+      ]);
+      if (!currentResponse.ok || !savedResponse.ok) {
+        throw new Error(`HTTP ${currentResponse.status}/${savedResponse.status}`);
+      }
+      const [currentData, savedData] = await Promise.all([
+        currentResponse.json() as Promise<ApiResponse>,
+        savedResponse.json() as Promise<ApiResponse>,
+      ]);
+      const merged = new Map<string, NewsItem>();
+      for (const item of savedData.items ?? []) merged.set(item.id, item);
+      for (const item of currentData.items ?? []) merged.set(item.id, item);
+      setItems(Array.from(merged.values()));
+      setStatus(currentData.status ?? null);
+      lastReceivedAtRef.current = currentData.status?.lastReceivedAt ?? null;
       if (quiet) {
-        const receivedAt = data.status?.lastReceivedAt ?? null;
+        const receivedAt = currentData.status?.lastReceivedAt ?? null;
         toast.success(
           receivedAt && receivedAt !== previousReceivedAt
             ? "Hay nuevas noticias aprobadas"
@@ -135,6 +146,7 @@ export function NewsView() {
 
   const filteredItems = useMemo(() => {
     const filtered = items.filter((item) => {
+      if (statusFilter === "all" && item.status === "saved" && !isCurrentItem(item)) return false;
       if (statusFilter !== "all" && item.status !== statusFilter) return false;
       if (sourceFilter && item.sourceId !== sourceFilter) return false;
       if (!search) return true;
@@ -149,6 +161,9 @@ export function NewsView() {
       return itemDate(second).localeCompare(itemDate(first));
     });
   }, [items, search, sourceFilter, sort, statusFilter]);
+
+  const featuredItem = statusFilter === "saved" ? null : filteredItems.find((item) => item.isFeatured) ?? null;
+  const regularItems = featuredItem ? filteredItems.filter((item) => item.id !== featuredItem.id) : filteredItems;
 
   const activeFilterCount = [statusFilter !== "all", Boolean(sourceFilter), sort !== "date"].filter(Boolean).length;
 
@@ -173,15 +188,15 @@ export function NewsView() {
             )}
           </div>
           <p className="mt-1 text-sm text-[#6b6f72]">
-            Información aprobada y relacionada con tu ciclo formativo.
+            Actualidad reciente, fiable y relacionada con lo que estudias.
           </p>
           <p className="mt-1 text-xs text-[#9a958a]">
-            Radar revisa las fuentes automáticamente cada 12–24 horas; recargar no inicia un nuevo rastreo.
+            Radar revisa las fuentes cada 12 horas; recargar solo consulta la última entrega disponible.
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-[#6b6f72]">
           <ShieldCheck className="h-4 w-4 text-[#1f7a4d]" />
-          Solo fuentes verificadas y contenido revisado
+          Fuentes verificadas y reglas de publicación auditadas
         </div>
       </header>
 
@@ -218,14 +233,14 @@ export function NewsView() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard icon={Newspaper} value={status?.totalItems ?? 0} label="Disponibles" color="#E15D2D" background="#fbe7dd" />
-        <StatCard icon={Bell} value={status?.newItems ?? 0} label="Sin leer" color="#1f7a4d" background="#e7f5ee" />
+        <StatCard icon={Newspaper} value={status?.todayItems ?? 0} label="Publicadas hoy" color="#E15D2D" background="#fbe7dd" />
+        <StatCard icon={Bell} value={status?.totalItems ?? 0} label="Últimos 7 días" color="#1f7a4d" background="#e7f5ee" />
+        <StatCard icon={CheckCircle2} value={status?.newItems ?? 0} label="Sin leer" color="#475569" background="#eef2f6" />
         <StatCard icon={BookmarkCheck} value={status?.savedItems ?? 0} label="Guardadas" color="#b4791f" background="#fdf1dd" />
-        <StatCard icon={ShieldCheck} value={sources.length} label="Fuentes con contenido" color="#475569" background="#eef2f6" />
       </div>
 
       <div className="flex flex-col gap-1 rounded-xl border border-[#ece7dc] bg-[#faf8f3] px-4 py-3 text-xs text-[#6b6f72] sm:flex-row sm:items-center sm:justify-between">
-        <span>Solo aparecen contenidos que ya han superado la revisión editorial.</span>
+        <span>La actualidad caduca a los 7 días; tus noticias guardadas permanecen en su archivo.</span>
         <span className="font-semibold text-[#333029]">
           Última actualización: {status?.lastReceivedAt ? formatDateTime(status.lastReceivedAt) : "todavía no disponible"}
         </span>
@@ -262,7 +277,7 @@ export function NewsView() {
       )}
 
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-[#6b6f72]">Mostrando {filteredItems.length} contenidos aprobados</p>
+        <p className="text-xs text-[#6b6f72]">Mostrando {filteredItems.length} contenidos de {sources.length} fuentes verificadas</p>
         <div className="flex rounded-xl border border-[#ece7dc] bg-white p-1">
           <FilterButton active={viewMode === "list"} onClick={() => setViewMode("list")}>Lista</FilterButton>
           <FilterButton active={viewMode === "grid"} onClick={() => setViewMode("grid")}>Grid</FilterButton>
@@ -275,27 +290,46 @@ export function NewsView() {
         <EmptyState
           icon={Search}
           title="Todavía no hay contenido aprobado"
-          description="El radar solo mostrará información que haya superado la clasificación y revisión de tu ciclo."
+          description="Radar solo mostrará información reciente que supere los controles de relevancia de tu ciclo."
         />
       ) : (
-        <div className={cn("grid gap-3", viewMode === "grid" && "sm:grid-cols-2 xl:grid-cols-3")}>
-          {filteredItems.map((item) => (
-            <NewsCard key={item.id} item={item} onRead={() => void markRead(item)} onSave={() => void saveItem(item)} />
-          ))}
+        <div className="space-y-4">
+          {featuredItem && (
+            <NewsCard
+              item={featuredItem}
+              featured
+              onRead={() => void markRead(featuredItem)}
+              onSave={() => void saveItem(featuredItem)}
+            />
+          )}
+          {regularItems.length > 0 && (
+            <div className={cn("grid gap-3", viewMode === "grid" && "sm:grid-cols-2 xl:grid-cols-3")}>
+              {regularItems.map((item) => (
+                <NewsCard key={item.id} item={item} onRead={() => void markRead(item)} onSave={() => void saveItem(item)} />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function NewsCard({ item, onRead, onSave }: { item: NewsItem; onRead: () => void; onSave: () => void }) {
+function NewsCard({ item, featured = false, onRead, onSave }: {
+  item: NewsItem;
+  featured?: boolean;
+  onRead: () => void;
+  onSave: () => void;
+}) {
   return (
     <article className={cn(
       "flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-[0_8px_20px_rgba(17,17,17,0.04)]",
       item.status === "read" ? "border-[#ece7dc] opacity-70" : "border-[#e6e1d8]",
       item.status === "saved" && "border-[#efb79f] opacity-100",
+      featured && "border-[#e98b67] bg-[#fffaf7] shadow-[0_12px_30px_rgba(225,93,45,0.10)]",
     )}>
       <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold">
+        {featured && <span className="rounded-full bg-[#E15D2D] px-2 py-0.5 text-white">Destacada</span>}
         <span className="text-[#6b6f72]">{item.sourceName}</span>
         <span className={cn(
           "rounded-full px-2 py-0.5",
@@ -332,7 +366,7 @@ function NewsCard({ item, onRead, onSave }: { item: NewsItem; onRead: () => void
 
       <div className="flex flex-wrap gap-1.5">
         {item.topics.slice(0, 3).map((topic) => (
-          <span key={topic} className="rounded-md bg-[#f3ece1] px-2 py-1 text-[10px] text-[#6b6f72]">#{topic}</span>
+          <span key={topic} className="rounded-md bg-[#f3ece1] px-2 py-1 text-[10px] text-[#6b6f72]">#{formatTopic(topic)}</span>
         ))}
         {item.moduleCodes.slice(0, 2).map((moduleCode) => (
           <span key={moduleCode} className="rounded-md bg-[#eef4f1] px-2 py-1 text-[10px] text-[#1f6a4c]">{formatModule(moduleCode)}</span>
@@ -411,6 +445,13 @@ function itemDate(item: NewsItem): string {
   return item.publishedAt ?? item.fetchedAt;
 }
 
+function isCurrentItem(item: NewsItem): boolean {
+  const date = Date.parse(itemDate(item));
+  if (Number.isNaN(date)) return false;
+  const ageDays = (Date.now() - date) / 86_400_000;
+  return ageDays <= (item.kind === "legal" ? 30 : 7);
+}
+
 function formatDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Fecha no indicada";
@@ -431,4 +472,8 @@ function formatDateTime(value: string): string {
 
 function formatModule(value: string): string {
   return value.toLowerCase().replaceAll("_", " ").replace(/^./, (firstCharacter) => firstCharacter.toUpperCase());
+}
+
+function formatTopic(value: string): string {
+  return value.replaceAll("-", " ");
 }

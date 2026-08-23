@@ -26,11 +26,13 @@ export type NewsItem = {
   topics: string[];
   trustTier: NewsTrustTier;
   status: NewsStatus;
+  isFeatured: boolean;
 };
 
 export type NewsSyncStatus = {
   cycleCode: FpCycleCode;
   totalItems: number;
+  todayItems: number;
   newItems: number;
   savedItems: number;
   lastReceivedAt: string | null;

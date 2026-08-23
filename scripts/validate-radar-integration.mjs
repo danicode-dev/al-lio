@@ -39,7 +39,7 @@ check("contract emits schemaVersion 3", contract.includes("RADAR_SCHEMA_VERSION 
 check("receiver keeps schemaVersion 2 rollout compatibility", contract.includes("RADAR_LEGACY_SCHEMA_VERSION = 2") && authentication.includes("RADAR_SUPPORTED_SCHEMA_VERSIONS"));
 check("contract requires explicit destinations and semantic keys", contract.includes("RADAR_DESTINATIONS") && contract.includes("semanticKey"));
 check("contract accepts approved items only", contract.includes('reviewStatus: z.literal("approved")'));
-check("contract requires a complete human-review audit", contract.includes("reviewedBy: z.string().trim().min(1)") && contract.includes("reviewReason: z.string().trim().min(1)"));
+check("contract requires a complete publication audit", contract.includes("reviewedBy: z.string().trim().min(1)") && contract.includes("reviewReason: z.string().trim().min(1)"));
 check("contract restricts known cycle codes", ["DAW", "DAM", "AF", "TSAF", "MP"].every((cycle) => contract.includes(`"${cycle}"`)));
 check("contract permits HTTPS URLs only", contract.includes('protocol === "https:"') && contract.includes("canonicalUrl: httpsUrl"));
 
@@ -52,7 +52,7 @@ check("ingest uses a PostgreSQL transaction", repository.includes("withTransacti
 check("deliveries are idempotent", repository.includes("payload_hash") && repository.includes("duplicate"));
 check("queries filter by cycle in PostgreSQL", repository.includes("ANY(item.target_cycle_codes)"));
 check("queries exclude expired content", repository.includes("item.expires_at IS NULL") && repository.includes("item.expires_at > now()"));
-check("News receives only current news and legal content", repository.includes("item.destination = 'news'") && repository.includes("interval '72 hours'") && repository.includes("interval '30 days'"));
+check("News receives only current news and legal content", repository.includes("item.destination = 'news'") && repository.includes("interval '7 days'") && repository.includes("interval '30 days'") && repository.includes("state.status = 'saved'"));
 check("course and event destinations materialize in the global FP catalogue", repository.includes("upsertRadarCatalogItem") && repository.includes("fp_content_cycle_fit"));
 check("student state is isolated by user", repository.includes("radar_item_user_states") && repository.includes("user_id"));
 
