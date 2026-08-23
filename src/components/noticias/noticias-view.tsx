@@ -347,7 +347,6 @@ function NewsCard({ item, featured = false, onRead, onSave }: {
       <div className="min-w-0 flex-1">
         <Link
           href={`/noticias/${item.id}`}
-          onClick={onRead}
           className="line-clamp-3 text-sm font-semibold leading-5 text-[#111111] hover:text-[#c94f21] hover:underline hover:underline-offset-2"
         >
           {item.title}
