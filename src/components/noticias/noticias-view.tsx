@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
 } from "lucide-react";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { NewsItem, NewsStatus, NewsSyncStatus, NewsTrustTier } from "@/lib/news/types";
@@ -20,7 +21,7 @@ import { toast } from "sonner";
 type ApiResponse = { items: NewsItem[]; status: NewsSyncStatus };
 type SortMode = "date" | "trust";
 
-const TRUST_LABELS: Record<NewsTrustTier, string> = {
+export const TRUST_LABELS: Record<NewsTrustTier, string> = {
   official: "Oficial",
   institutional: "Institucional",
   first_party: "Primera parte",
@@ -36,7 +37,7 @@ const TRUST_WEIGHT: Record<NewsTrustTier, number> = {
   reference: 1,
 };
 
-const KIND_LABELS: Record<NewsItem["kind"], string> = {
+export const KIND_LABELS: Record<NewsItem["kind"], string> = {
   news: "Noticia",
   event: "Evento",
   call: "Convocatoria",
@@ -344,15 +345,12 @@ function NewsCard({ item, featured = false, onRead, onSave }: {
       </div>
 
       <div className="min-w-0 flex-1">
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noreferrer noopener"
-          onClick={onRead}
+        <Link
+          href={`/noticias/${item.id}`}
           className="line-clamp-3 text-sm font-semibold leading-5 text-[#111111] hover:text-[#c94f21] hover:underline hover:underline-offset-2"
         >
           {item.title}
-        </a>
+        </Link>
         {item.description && <p className="mt-1.5 line-clamp-3 text-xs leading-5 text-[#6b6f72]">{item.description}</p>}
       </div>
 
@@ -431,7 +429,7 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
   );
 }
 
-function EmptyState({ icon: Icon, title, description }: { icon: typeof Search; title: string; description?: string }) {
+export function EmptyState({ icon: Icon, title, description }: { icon: typeof Search; title: string; description?: string }) {
   return (
     <div className="flex flex-col items-center gap-2 rounded-2xl border border-[#ece7dc] bg-white px-6 py-12 text-center shadow-sm">
       <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#fbe7dd] text-[#E15D2D]"><Icon className="h-5 w-5" /></span>
@@ -452,13 +450,13 @@ function isCurrentItem(item: NewsItem): boolean {
   return ageDays <= (item.kind === "legal" ? 30 : 7);
 }
 
-function formatDate(value: string): string {
+export function formatDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Fecha no indicada";
   return new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "short", year: "numeric" }).format(date);
 }
 
-function formatDateTime(value: string): string {
+export function formatDateTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Fecha no indicada";
   return new Intl.DateTimeFormat("es-ES", {
@@ -470,10 +468,10 @@ function formatDateTime(value: string): string {
   }).format(date);
 }
 
-function formatModule(value: string): string {
+export function formatModule(value: string): string {
   return value.toLowerCase().replaceAll("_", " ").replace(/^./, (firstCharacter) => firstCharacter.toUpperCase());
 }
 
-function formatTopic(value: string): string {
+export function formatTopic(value: string): string {
   return value.replaceAll("-", " ");
 }

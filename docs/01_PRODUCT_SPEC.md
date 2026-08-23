@@ -44,7 +44,7 @@ An authenticated student can:
 | Competencies | Organise required and recommended skills by cycle. |
 | Tasks | Persist personal work and completion state. |
 | Bloc | Persist student notes. |
-| News | Show only approved, non-expired items for the user's cycle. |
+| News | Show only approved, non-expired items for the user's cycle; each item opens an internal detail page (`/noticias/[id]`) without leaving AL-LIO. |
 | Work | Present companies and employment-oriented links. |
 | Courses | Present reviewed training opportunities. |
 | Events and challenges | Present reviewed challenges, events and calls. |

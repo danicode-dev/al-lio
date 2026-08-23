@@ -69,7 +69,7 @@ single PostgreSQL transaction.
 Delivery to PostgreSQL does not make an item visible to every student. News
 queries join the authenticated user's profile, require the profile cycle to be
 present in `target_cycle_codes`, and accept only current `news` and `legal`
-items. Ordinary news remains visible for 72 hours and legal updates for 30
+items. Ordinary news remains visible for 7 days and legal updates for 30
 days; saved items remain available. Read and saved state is owned per user in
 `radar_item_user_states`.
 
@@ -79,6 +79,19 @@ catalogue. Existing `fp_content_cycle_fit` rows control cycle visibility and
 dismissed state without copying the content per user.
 
 Client query parameters cannot grant access to another cycle.
+
+`GET /api/news/[id]` applies the identical boundary to a single item, plus one
+extension: a saved item stays reachable after it ages out of the current
+window, the same way it does in the saved-archive list view. An id that does
+not exist, does not match the caller's cycle, or is not a `news`/`legal`
+destination all produce the same generic not-found response — the endpoint
+never reveals which case applies.
+
+Marking an item read or saved applies the same boundary before the first
+write: an item the caller has not already saved can only be touched while it
+is still live; once saved, it stays mutable regardless of freshness. Status
+transitions are monotonic — a read request can never downgrade a saved item
+back to read, including one that lands after a save request completes.
 
 ## Deployment order
 

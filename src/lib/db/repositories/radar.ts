@@ -307,6 +307,22 @@ export async function getRadarStatsForCycle(userId: string, cycleCode: RadarCycl
   };
 }
 
+/**
+ * Mutates read/saved state for one item, under the same visibility boundary
+ * as the news list and the detail query:
+ *   - an item the caller has not already saved can only be touched while it
+ *     is still live (cycle, destination, kind, not expired, within the
+ *     freshness window) — this closes an enumeration path where a guessed,
+ *     stale item id could be saved and, from that point on, stay reachable
+ *     through the detail route regardless of authorization;
+ *   - an item the caller has already saved stays reachable and mutable
+ *     (matches the saved-archive behaviour) regardless of freshness;
+ *   - status transitions are monotonic — "saved" never reverts to "read",
+ *     including on a read request that lands after a save request completed.
+ * A false/0-row result means the item does not exist, is not in the
+ * caller's cycle, or is a non-news/stale item never saved by this caller —
+ * these are intentionally indistinguishable.
+ */
 export async function setRadarItemStatus(
   userId: string,
   cycleCode: RadarCycleCode,
@@ -320,11 +336,100 @@ export async function setRadarItemStatus(
      WHERE item.id = $2::bigint
        AND $3 = ANY(item.target_cycle_codes)
        AND item.destination = 'news'
-     ON CONFLICT (user_id, radar_item_id) DO UPDATE SET status = excluded.status
+       AND item.kind IN ('news', 'legal')
+       AND (
+         EXISTS (
+           SELECT 1 FROM public.radar_item_user_states existing
+           WHERE existing.user_id = $1 AND existing.radar_item_id = item.id AND existing.status = 'saved'
+         )
+         OR (
+           (item.expires_at IS NULL OR item.expires_at > now())
+           AND (
+             (item.kind = 'news' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '7 days')
+             OR (item.kind = 'legal' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '30 days')
+           )
+         )
+       )
+     ON CONFLICT (user_id, radar_item_id) DO UPDATE SET
+       status = CASE
+         WHEN public.radar_item_user_states.status = 'saved' THEN 'saved'
+         ELSE excluded.status
+       END
      RETURNING radar_item_id`,
     [userId, itemId, cycleCode, status],
   );
   return Boolean(result.rowCount);
+}
+
+/**
+ * Single-item counterpart of listRadarItemsForCycle. Mirrors the exact same
+ * cycle/destination/kind/freshness boundary, plus the same saved-archive
+ * bypass (a saved item stays reachable after it expires out of the live
+ * feed). Cross-cycle, non-news and unapproved items are indistinguishable
+ * from a nonexistent id to the caller — this returns null for all of them.
+ */
+export async function getRadarItemDetailForUser(
+  userId: string,
+  cycleCode: RadarCycleCode,
+  itemId: string,
+): Promise<NewsItem | null> {
+  const result = await query<RadarItemRow>(
+    `SELECT item.id::text, item.source_id, item.source_name, item.title, item.summary,
+            item.canonical_url, item.kind, item.published_at, item.fetched_at, item.expires_at,
+            item.event_starts_at, item.event_ends_at, item.registration_url,
+            item.registration_deadline, item.locality, item.province, item.target_cycle_codes,
+            item.module_codes, item.topics, item.trust_tier,
+            COALESCE(state.status, 'new')::text AS status
+     FROM public.radar_items item
+     LEFT JOIN public.radar_item_user_states state
+       ON state.radar_item_id = item.id AND state.user_id = $1
+     WHERE item.id = $3::bigint
+       AND $2 = ANY(item.target_cycle_codes)
+       AND item.destination = 'news'
+       AND item.kind IN ('news', 'legal')
+       AND (
+         state.status = 'saved'
+         OR (
+           (item.expires_at IS NULL OR item.expires_at > now())
+           AND (
+             (item.kind = 'news' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '7 days')
+             OR (item.kind = 'legal' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '30 days')
+           )
+         )
+       )
+     LIMIT 1`,
+    [userId, cycleCode, itemId],
+  );
+  const row = result.rows[0];
+  return row ? mapRadarItem(row) : null;
+}
+
+/**
+ * Related items reuse listRadarItemsForCycle verbatim (no new query/rules)
+ * and rank in memory by shared topics/modules, so "related" can never show
+ * anything the live feed itself wouldn't already allow.
+ */
+export async function getRelatedNewsItems(
+  userId: string,
+  cycleCode: RadarCycleCode,
+  currentItem: NewsItem,
+  limit = 4,
+): Promise<NewsItem[]> {
+  const candidates = await listRadarItemsForCycle(userId, cycleCode, { limit: 40 });
+  const currentTopics = new Set(currentItem.topics);
+  const currentModules = new Set(currentItem.moduleCodes);
+  return candidates
+    .filter((candidate) => candidate.id !== currentItem.id)
+    .map((candidate) => ({
+      candidate,
+      score:
+        candidate.topics.filter((topic) => currentTopics.has(topic)).length * 2 +
+        candidate.moduleCodes.filter((moduleCode) => currentModules.has(moduleCode)).length,
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((first, second) => second.score - first.score)
+    .slice(0, limit)
+    .map((entry) => entry.candidate);
 }
 
 function mapRadarItem(row: RadarItemRow): NewsItem {
