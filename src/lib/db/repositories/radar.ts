@@ -33,6 +33,7 @@ type RadarItemRow = {
 
 type RadarStatsRow = {
   total_items: string;
+  today_items: string;
   new_items: string;
   saved_items: string;
   last_received_at: string | null;
@@ -208,15 +209,22 @@ export async function listRadarItemsForCycle(
   filters: NewsListFilters = {},
 ): Promise<NewsItem[]> {
   const values: unknown[] = [userId, cycleCode];
+  const isSavedArchive = filters.status === "saved";
   const conditions = [
     `$2 = ANY(item.target_cycle_codes)`,
     `item.destination = 'news'`,
     `item.kind IN ('news', 'legal')`,
-    `(state.status = 'saved' OR item.expires_at IS NULL OR item.expires_at > now())`,
-    `(state.status = 'saved'
-      OR (item.kind = 'news' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '72 hours')
-      OR (item.kind = 'legal' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '30 days'))`,
   ];
+
+  if (isSavedArchive) {
+    conditions.push(`state.status = 'saved'`);
+  } else {
+    conditions.push(`(item.expires_at IS NULL OR item.expires_at > now())`);
+    conditions.push(`(
+      (item.kind = 'news' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '7 days')
+      OR (item.kind = 'legal' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '30 days')
+    )`);
+  }
 
   if (filters.sourceId) {
     values.push(filters.sourceId);
@@ -248,32 +256,51 @@ export async function listRadarItemsForCycle(
      LIMIT $${values.length}`,
     values,
   );
-  return result.rows.map(mapRadarItem);
+  const items = result.rows.map(mapRadarItem);
+  if (isSavedArchive || items.length === 0) return items;
+  const featuredId = items.reduce((best, candidate) =>
+    featuredScore(candidate) > featuredScore(best) ? candidate : best,
+  ).id;
+  return items.map((item) => ({ ...item, isFeatured: item.id === featuredId }));
 }
 
 export async function getRadarStatsForCycle(userId: string, cycleCode: RadarCycleCode): Promise<NewsSyncStatus> {
   const result = await query<RadarStatsRow>(
     `SELECT
-       count(*)::text AS total_items,
-       count(*) FILTER (WHERE state.status IS NULL)::text AS new_items,
+       count(*) FILTER (WHERE
+         (item.expires_at IS NULL OR item.expires_at > now())
+         AND ((item.kind = 'news' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '7 days')
+           OR (item.kind = 'legal' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '30 days'))
+       )::text AS total_items,
+       count(*) FILTER (WHERE
+         timezone('Europe/Madrid', COALESCE(item.published_at, item.fetched_at))::date = timezone('Europe/Madrid', now())::date
+         AND (item.expires_at IS NULL OR item.expires_at > now())
+       )::text AS today_items,
+       count(*) FILTER (WHERE state.status IS NULL
+         AND (item.expires_at IS NULL OR item.expires_at > now())
+         AND ((item.kind = 'news' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '7 days')
+           OR (item.kind = 'legal' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '30 days'))
+       )::text AS new_items,
        count(*) FILTER (WHERE state.status = 'saved')::text AS saved_items,
-       max(item.fetched_at)::text AS last_received_at
+       max(item.fetched_at) FILTER (WHERE
+         (item.expires_at IS NULL OR item.expires_at > now())
+         AND ((item.kind = 'news' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '7 days')
+           OR (item.kind = 'legal' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '30 days'))
+       )::text AS last_received_at
      FROM public.radar_items item
      LEFT JOIN public.radar_item_user_states state
        ON state.radar_item_id = item.id AND state.user_id = $1
      WHERE $2 = ANY(item.target_cycle_codes)
        AND item.destination = 'news'
        AND item.kind IN ('news', 'legal')
-       AND (state.status = 'saved' OR item.expires_at IS NULL OR item.expires_at > now())
-       AND (state.status = 'saved'
-         OR (item.kind = 'news' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '72 hours')
-         OR (item.kind = 'legal' AND COALESCE(item.published_at, item.fetched_at) >= now() - interval '30 days'))`,
+      `,
     [userId, cycleCode],
   );
   const row = result.rows[0];
   return {
     cycleCode,
     totalItems: Number(row?.total_items ?? 0),
+    todayItems: Number(row?.today_items ?? 0),
     newItems: Number(row?.new_items ?? 0),
     savedItems: Number(row?.saved_items ?? 0),
     lastReceivedAt: row?.last_received_at ?? null,
@@ -323,7 +350,25 @@ function mapRadarItem(row: RadarItemRow): NewsItem {
     topics: row.topics,
     trustTier: row.trust_tier,
     status: row.status,
+    isFeatured: false,
   };
+}
+
+function featuredScore(item: NewsItem): number {
+  const trustWeight: Record<NewsItem["trustTier"], number> = {
+    official: 5,
+    institutional: 4,
+    first_party: 3,
+    sector: 2,
+    reference: 1,
+  };
+  const ageHours = Math.max(0, (Date.now() - Date.parse(itemDate(item))) / 3_600_000);
+  const recency = ageHours <= 24 ? 100 : ageHours <= 72 ? 60 : 20;
+  return recency + trustWeight[item.trustTier] * 8 + Math.min(item.topics.length, 3) * 3 + (item.status === "new" ? 5 : 0);
+}
+
+function itemDate(item: NewsItem): string {
+  return item.publishedAt ?? item.fetchedAt;
 }
 
 function trustOrderSql(): string {
