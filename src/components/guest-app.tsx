@@ -1666,6 +1666,8 @@ const workBrandCss = `
   .al-work-tab { border: none; background: transparent; border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 700; color: #6b6f72; cursor: pointer; transition: background .15s, color .15s; }
   .al-work-tab-active { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; box-shadow: 0 6px 16px rgba(225, 93, 45, 0.25); }
 
+  .al-work-section-title { font-size: 13px; font-weight: 700; color: #333029; margin-bottom: 2px; }
+
   .al-work-portal-grid { display: grid; gap: 10px; align-items: start; }
   .al-work-portal-card { border: 1px solid #ece7dc; border-radius: 14px; background: white; padding: 10px; box-shadow: 0 8px 20px rgba(17, 17, 17, 0.04); transition: border-color .15s, box-shadow .15s; }
   .al-work-portal-card-expanded { border-color: rgba(225, 93, 45, 0.35); box-shadow: 0 10px 24px rgba(225, 93, 45, 0.1); }
@@ -1674,8 +1676,16 @@ const workBrandCss = `
   .al-work-portal-title { font-size: 13.5px; font-weight: 700; color: #111111; }
   .al-work-portal-sub { font-size: 11px; color: #9a958a; }
   .al-work-portal-expand { margin-top: 10px; display: grid; gap: 8px; }
-  .al-work-portal-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .al-work-portal-field { display: grid; gap: 3px; }
+  .al-work-portal-field-label { font-size: 10px; font-weight: 700; color: #9a958a; text-transform: uppercase; letter-spacing: .03em; }
+  .al-work-portal-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
   .al-work-portal-search-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 10px; border: none; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; text-decoration: none; }
+
+  .al-work-portal-link-grid { display: grid; gap: 8px; }
+  .al-work-portal-link-card { display: flex; align-items: center; gap: 8px; border: 1px solid #ece7dc; border-radius: 12px; background: white; padding: 8px 10px; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+  .al-work-portal-link-card:hover { border-color: rgba(225, 93, 45, 0.35); box-shadow: 0 8px 18px rgba(17, 17, 17, 0.05); }
+  .al-work-portal-link-title { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: #333029; }
+  .al-work-portal-link-icon { color: #9a958a; flex-shrink: 0; }
 
   .al-work-companies-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   .al-work-company-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
@@ -1684,11 +1694,11 @@ const workBrandCss = `
   .al-work-company-name { font-size: 14.5px; font-weight: 700; color: #111111; line-height: 1.3; }
   .al-work-company-category { font-size: 11.5px; color: #6b6f72; line-height: 1.4; margin-top: 2px; }
   .al-work-company-note { font-size: 11px; color: #9a958a; }
+  .al-work-company-hint { font-size: 11px; color: #9a958a; line-height: 1.4; }
   .al-work-company-fav { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 999px; border: 1px solid #ece7dc; background: white; color: #c9c3b6; cursor: pointer; flex-shrink: 0; transition: color .15s, border-color .15s, background .15s; }
   .al-work-company-fav-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
   .al-work-company-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
   .al-work-company-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 34px; border-radius: 10px; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; }
-  .al-work-company-btn-outline { border: 1px solid #e4dfd5; color: #333029; background: white; }
   .al-work-company-btn-solid { border: none; color: white; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); }
 
   .al-work-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 16px; text-align: center; border: 1px dashed #e4dfd5; border-radius: 16px; background: white; }
@@ -1712,12 +1722,18 @@ const QuickJobSearchCard = memo(function QuickJobSearchCard({ platform, expanded
       </button>
       {expanded && (
         <div className="al-work-portal-expand">
-          <Input value={query} onChange={(event) => setQuery(event.target.value)} className="h-8 text-xs" placeholder="programador java" aria-label={`Busqueda en ${platform}`} />
+          <div className="al-work-portal-field">
+            <span className="al-work-portal-field-label">Qué buscas</span>
+            <Input value={query} onChange={(event) => setQuery(event.target.value)} className="h-8 text-xs" placeholder="programador java" aria-label={`Busqueda en ${platform}`} />
+          </div>
           <div className="al-work-portal-row">
-            <Select value={scope} onChange={(event) => setScope(event.target.value as "Granada" | "Teletrabajo")} className="h-8 text-xs" aria-label={`Ambito de busqueda en ${platform}`}>
-              <option value="Granada">Granada</option>
-              <option value="Teletrabajo">Teletrabajo</option>
-            </Select>
+            <div className="al-work-portal-field">
+              <span className="al-work-portal-field-label">Dónde</span>
+              <Select value={scope} onChange={(event) => setScope(event.target.value as "Granada" | "Teletrabajo")} className="h-8 text-xs" aria-label={`Ambito de busqueda en ${platform}`}>
+                <option value="Granada">Granada</option>
+                <option value="Teletrabajo">Teletrabajo</option>
+              </Select>
+            </div>
             <a href={url} target="_blank" rel="noreferrer" className="al-work-portal-search-btn">
               Buscar <ExternalLink className="h-3.5 w-3.5" />
             </a>
@@ -1801,6 +1817,26 @@ function PortalMark({ platform }: { platform: JobPlatform }) {
     </span>
   );
 }
+
+// Only these platforms filter reliably through URL query params. The rest
+// link straight to their homepage so the user can search there directly.
+const WORKING_JOB_PLATFORMS: JobPlatform[] = ["LinkedIn", "InfoJobs", "Indeed", "Tecnoempleo", "Jooble"];
+const OTHER_JOB_PLATFORMS: JobPlatform[] = jobPlatforms.filter((platform) => !WORKING_JOB_PLATFORMS.includes(platform));
+
+const PortalLinkCard = memo(function PortalLinkCard({ platform }: { platform: JobPlatform }) {
+  return (
+    <a
+      href={`https://www.${PORTAL_DOMAINS[platform]}`}
+      target="_blank"
+      rel="noreferrer"
+      className="al-work-portal-link-card"
+    >
+      <PortalMark platform={platform} />
+      <span className="al-work-portal-link-title truncate">{platform}</span>
+      <ExternalLink className="al-work-portal-link-icon h-3.5 w-3.5" />
+    </a>
+  );
+});
 
 // Applications remain outside the MVP intentionally. The job_applications
 // table and collection pipeline already work, but the UI stays hidden until
@@ -1933,19 +1969,38 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
       </div>
 
       {tab === "portals" && (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Haz clic en un portal para escribir tu búsqueda y abrirla directamente.
-          </p>
-          <div className="al-work-portal-grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
-            {jobPlatforms.map((platform) => (
-              <QuickJobSearchCard
-                key={platform}
-                platform={platform}
-                expanded={expandedPortal === platform}
-                onToggle={handleToggleWork}
-              />
-            ))}
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <div>
+              <p className="al-work-section-title">Búsqueda rápida</p>
+              <p className="text-sm text-muted-foreground">
+                Estos portales funcionan bien con nuestro buscador. Haz clic, escribe tu puesto y elige Granada o teletrabajo para abrir la búsqueda ya filtrada.
+              </p>
+            </div>
+            <div className="al-work-portal-grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
+              {WORKING_JOB_PLATFORMS.map((platform) => (
+                <QuickJobSearchCard
+                  key={platform}
+                  platform={platform}
+                  expanded={expandedPortal === platform}
+                  onToggle={handleToggleWork}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <p className="al-work-section-title">Otros portales</p>
+              <p className="text-sm text-muted-foreground">
+                Estos no filtran bien desde aquí, así que te llevan directos a su web para que busques allí.
+              </p>
+            </div>
+            <div className="al-work-portal-link-grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
+              {OTHER_JOB_PLATFORMS.map((platform) => (
+                <PortalLinkCard key={platform} platform={platform} />
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -3877,18 +3932,18 @@ function CompanyCard({ company, onToggleFavorite }: { company: Company; onToggle
         </button>
       </div>
       {company.granada_note && <p className="al-work-company-note">{company.granada_note}</p>}
-      <div className="al-work-company-actions">
-        {company.web && (
-          <a href={company.web} target="_blank" rel="noreferrer" className="al-work-company-btn al-work-company-btn-outline">
-            Visitar <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        )}
-        {company.empleo_url && (
-          <a href={company.empleo_url} target="_blank" rel="noreferrer" className="al-work-company-btn al-work-company-btn-solid">
-            Ver empleo <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        )}
-      </div>
+      {company.web ? (
+        <>
+          <p className="al-work-company-hint">En su web puedes ver ofertas de empleo y contactar directamente.</p>
+          <div className="al-work-company-actions">
+            <a href={company.web} target="_blank" rel="noreferrer" className="al-work-company-btn al-work-company-btn-solid">
+              Visitar web <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
+        </>
+      ) : (
+        <p className="al-work-company-hint">Todavía no tenemos web disponible para esta empresa.</p>
+      )}
     </div>
   );
 }
