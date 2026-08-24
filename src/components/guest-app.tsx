@@ -5,7 +5,6 @@ import Link from "next/link";
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlarmClock,
-  Bell,
   Bookmark,
   BookOpen,
   Building2,
@@ -48,16 +47,9 @@ import { toast } from "sonner";
 import { BlocNotepad } from "@/components/bloc/bloc-notepad";
 import {
   CalendarView,
-  TaskCalendar,
-  isCalendarEventDone,
-  loadGoogleCalendarRange,
   sortCalendarEvents as sortEvents,
   type CalendarEvent,
-  type GoogleCalendarEvent,
 } from "@/components/calendar/app-calendar";
-import { DashboardView } from "@/components/dashboard/dashboard-view";
-import { MobileHeaderActions as BrandHeaderActions } from "@/components/mobile-header-actions";
-import { QuickAdd } from "@/components/quick-add";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
 import { APPLICATION_STATUSES, STATUS_LABELS, STATUS_COLORS } from "@/lib/job-radar/types";
@@ -136,219 +128,8 @@ const taskBuckets: Array<{
 const taskBucketIds = taskBuckets.map((bucket) => bucket.id);
 const taskPriorities: TaskPriority[] = ["baja", "media", "alta", "critica"];
 
-const BELL_DISMISSED_KEY = "al-lio.bell.dismissed.v1";
-
-function loadBellDismissed(): string[] {
-  if (typeof window === "undefined") return [];
-  try { return JSON.parse(localStorage.getItem(BELL_DISMISSED_KEY) || "[]"); } catch { return []; }
-}
-
-function saveBellDismissed(keys: string[]) {
-  try { localStorage.setItem(BELL_DISMISSED_KEY, JSON.stringify(keys)); } catch { /* ignore */ }
-}
-
-function NotificationBell({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
-  const [open, setOpen] = useState(false);
-  const [dismissed, setDismissed] = useState<string[]>([]);
-  const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const today = useMemo(() => startOfDay(new Date()), []);
-  const weekLimit = useMemo(() => addDays(today, 7), [today]);
-
-  useEffect(() => {
-    setDismissed(loadBellDismissed());
-  }, []);
-
-  useEffect(() => {
-    let alive = true;
-    loadGoogleCalendarRange(today.toISOString(), weekLimit.toISOString())
-      .then((evs) => { if (alive) setGoogleEvents(evs); })
-      .catch(() => { if (alive) setGoogleEvents([]); });
-    return () => { alive = false; };
-  }, [today, weekLimit]);
-
-  useEffect(() => {
-    if (!open) return;
-    function onPointerDown(e: PointerEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [open]);
-
-  const todayUrgentTasks = useMemo(() => {
-    const now = new Date();
-    return store.tasks.filter((task) => {
-      if (task.status === "completada" || task.status === "cancelada") return false;
-      const due = task.due_at ? new Date(task.due_at) : null;
-      const isOverdue = due && due < now;
-      const isDueToday = due && isSameDay(due, now);
-      const isUrgent = task.priority === "alta" || task.priority === "critica" || task.category === "urgente";
-      return Boolean(isOverdue) || Boolean(isDueToday) || isUrgent;
-    }).slice(0, 5);
-  }, [store.tasks]);
-
-  const allAlerts = useMemo(() => {
-    const localAlerts = getCalendarEvents(store).filter((event) => {
-      if (event.type !== "course" && event.type !== "hackathon") return false;
-      if (isCalendarEventDone(event)) return false;
-      if (isCalendarItemPast(event, store)) return false;
-      const date = parseDate(event.date_at);
-      return Boolean(date) && date! >= today && date! <= weekLimit;
-    });
-
-    const gcalAlerts: CalendarEvent[] = googleEvents
-      .filter((ev) => {
-        const date = parseDate(ev.start);
-        return Boolean(date) && date! >= today && date! <= weekLimit;
-      })
-      .map((ev) => ({
-        id: `gcal-${ev.id}`,
-        type: "event" as const,
-        title: ev.title,
-        date_at: ev.start,
-        status: ev.status,
-        href: ev.htmlLink || "/calendar",
-      }));
-
-    return [...localAlerts, ...gcalAlerts].sort(sortEvents).slice(0, 12);
-  }, [store, googleEvents, today, weekLimit]);
-
-  const alerts = useMemo(
-    () => allAlerts.filter((event) => !dismissed.includes(`${event.type}-${event.id}`)),
-    [allAlerts, dismissed],
-  );
-
-  function persistDismiss(key: string) {
-    setDismissed((prev) => {
-      const next = prev.includes(key) ? prev : [...prev, key];
-      saveBellDismissed(next);
-      return next;
-    });
-  }
-
-  function dismiss(e: React.MouseEvent, key: string) {
-    e.stopPropagation();
-    persistDismiss(key);
-  }
-
-  function addToTasksBucket(e: React.MouseEvent, event: CalendarEvent, bucket: TaskBucket) {
-    e.stopPropagation();
-    actions.addTask({ title: event.title, status: "pendiente", priority: "media", category: bucket, due_at: event.date_at });
-    persistDismiss(`${event.type}-${event.id}`);
-  }
-
-  function markEventDone(e: React.MouseEvent, event: CalendarEvent) {
-    e.stopPropagation();
-    completeCalendarEvent(event, store, actions);
-    persistDismiss(`${event.type}-${event.id}`);
-  }
-
-  return (
-    <div ref={containerRef} className="relative">
-      <button
-        type="button"
-        className="relative inline-flex h-8 w-8 items-center justify-center rounded-md border bg-card/90 text-foreground shadow-sm transition-colors hover:bg-muted"
-        onClick={() => setOpen((o) => !o)}
-        aria-label="Alertas de la semana"
-        title="Alertas de esta semana"
-      >
-        <Bell className="h-4 w-4" />
-        {alerts.length > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white">
-            {alerts.length}
-          </span>
-        )}
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-xl sm:w-80">
-          {todayUrgentTasks.length > 0 && (
-            <>
-              <div className="border-b px-3 py-2.5">
-                <div className="flex items-center gap-2">
-                  <Bell className="h-4 w-4 shrink-0 text-rose-500" />
-                  <h3 className="text-sm font-semibold">Resumen de hoy</h3>
-                </div>
-              </div>
-              <div className="divide-y border-b">
-                {todayUrgentTasks.map((task) => {
-                  const now = new Date();
-                  const due = task.due_at ? new Date(task.due_at) : null;
-                  const isOverdue = due && due < now;
-                  return (
-                    <a key={task.id} href="/tasks" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-3 py-2 hover:bg-muted/60 transition-colors">
-                      <span className={cn("h-2 w-2 shrink-0 rounded-full", isOverdue ? "bg-rose-500" : task.priority === "critica" ? "bg-rose-400" : "bg-amber-400")} />
-                      <span className="flex-1 truncate text-sm">{task.title}</span>
-                      {isOverdue && <span className="shrink-0 text-[10px] font-semibold text-rose-500">Vencida</span>}
-                    </a>
-                  );
-                })}
-              </div>
-            </>
-          )}
-          <div className="border-b px-3 py-2.5">
-            <div className="flex items-center gap-2">
-              <AlarmClock className="h-4 w-4 shrink-0 text-amber-500" />
-              <h3 className="text-sm font-semibold">Proximos 7 dias</h3>
-            </div>
-            <p className="text-xs text-muted-foreground">Cursos, eventos y retos de Google Calendar.</p>
-          </div>
-          <div className="max-h-[420px] overflow-y-auto">
-            {alerts.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-muted-foreground">Sin alertas esta semana</p>
-            ) : (
-              <div className="divide-y">
-                {alerts.map((event) => {
-                  const key = `${event.type}-${event.id}`;
-                  return (
-                    <div key={key} className="px-3 py-2.5">
-                      <p className="text-sm font-medium leading-snug">{event.title}</p>
-                      {event.date_at && <p className="mb-2 text-xs text-muted-foreground">{formatShortDateTime(event.date_at)}</p>}
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {taskBuckets.map((bucket) => (
-                          <button
-                            key={bucket.id}
-                            type="button"
-                            className="inline-flex h-6 items-center rounded bg-muted px-2 text-[11px] font-medium transition-colors hover:bg-muted/70"
-                            onClick={(e) => addToTasksBucket(e, event, bucket.id)}
-                          >
-                            → {bucket.shortTitle}
-                          </button>
-                        ))}
-                        {(event.type === "course" || event.type === "hackathon") && (
-                          <button
-                            type="button"
-                            className="inline-flex h-6 items-center gap-1 rounded bg-emerald-500/10 px-2 text-[11px] font-medium text-emerald-700 transition-colors hover:bg-emerald-500/20"
-                            onClick={(e) => markEventDone(e, event)}
-                          >
-                            <CheckCircle2 className="h-3 w-3" />
-                            Hecho
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="ml-auto inline-flex h-6 items-center gap-1 rounded px-2 text-[11px] text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                          onClick={(e) => dismiss(e, key)}
-                        >
-                          <X className="h-3 w-3" />
-                          Descartar
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function GuestApp({ view }: { view: View }) {
   const { store, actions } = useStore();
-  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   return (
     <div className="space-y-6 pb-20 md:pb-6">
@@ -369,12 +150,8 @@ export function GuestApp({ view }: { view: View }) {
               } as Record<string, string>)[view] ?? view}
             </h1>
           </div>
-          <div className="hidden md:flex items-center gap-2">
-            <BrandHeaderActions />
-          </div>
         </div>
       )}
-      {view === "dashboard" && <Dashboard store={store} actions={actions} />}
       {view === "work" && <Work store={store} actions={actions} />}
       {view === "tasks" && <Tasks store={store} actions={actions} />}
       {view === "courses" && <Courses store={store} actions={actions} />}
@@ -383,37 +160,14 @@ export function GuestApp({ view }: { view: View }) {
         <CalendarView
           events={getCalendarEvents(store)}
           completedTasks={store.tasks}
-          headerActions={(
-            <>
-              <GoogleCalendarStatusControl />
-              <NotificationBell store={store} actions={actions} />
-            </>
-          )}
+          headerActions={<GoogleCalendarStatusControl />}
         />
       )}
       {view === "links" && <LinksView store={store} actions={actions} />}
       {view === "sources" && <Sources />}
       {view === "settings" && <Settings reset={actions.reset} addTask={actions.addTask} />}
       {view === "bloc" && <BlocView />}
-
-      <QuickAdd open={quickAddOpen} setOpen={setQuickAddOpen} actions={actions} />
     </div>
-  );
-}
-
-function Dashboard({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
-  return (
-    <DashboardView
-      store={store}
-      actions={actions}
-      headerActions={(
-        <>
-          <NotificationBell store={store} actions={actions} />
-          <GoogleCalendarStatusControl />
-        </>
-      )}
-      calendar={<TaskCalendar events={getCalendarEvents(store)} />}
-    />
   );
 }
 
@@ -445,37 +199,6 @@ function completeHackathonItem(item: Hackathon, actions: ReturnTypeActions) {
   }
 
   actions.updateHackathon(item.id, { status: "realizado" });
-}
-
-function completeCalendarEvent(event: CalendarEvent, store: Store, actions: ReturnTypeActions) {
-  if (event.type === "task") {
-    actions.updateTask(event.id, { status: "completada", completed_at: nowIso() });
-    return true;
-  }
-
-  const baseId = calendarEventBaseId(event.id);
-
-  if (event.type === "course") {
-    const course = getDisplayCourses(store.courses, store.techOpportunities)
-      .find((item) => item.id === baseId || item.id_slug === baseId || item.id === `tech-${baseId}`);
-    if (!course) return false;
-    completeCourseItem(course, actions);
-    return true;
-  }
-
-  if (event.type === "hackathon") {
-    const hackathon = getDisplayHackathons(store.hackathons, store.techOpportunities)
-      .find((item) => item.id === baseId || item.id_slug === baseId || item.id === `tech-${baseId}`);
-    if (!hackathon) return false;
-    completeHackathonItem(hackathon, actions);
-    return true;
-  }
-
-  return false;
-}
-
-function calendarEventBaseId(id: string) {
-  return id.replace(/-(start|deadline|end)$/, "");
 }
 
 function appendCompletionNote(notes: string | undefined, text: string) {
@@ -3914,24 +3637,6 @@ function isPastActionDate(value?: string | null) {
   return Boolean(date) && startOfDay(date!) < startOfDay(new Date());
 }
 
-function isCalendarItemPast(event: CalendarEvent, store: Store) {
-  const baseId = calendarEventBaseId(event.id);
-
-  if (event.type === "course") {
-    const course = getDisplayCourses(store.courses, store.techOpportunities)
-      .find((item) => item.id === baseId || item.id_slug === baseId || item.id === `tech-${baseId}`);
-    return course ? isCoursePast(course) : isPastActionDate(event.date_at);
-  }
-
-  if (event.type === "hackathon") {
-    const hackathon = getDisplayHackathons(store.hackathons, store.techOpportunities)
-      .find((item) => item.id === baseId || item.id_slug === baseId || item.id === `tech-${baseId}`);
-    return hackathon ? isHackathonPast(hackathon) : isPastActionDate(event.date_at);
-  }
-
-  return false;
-}
-
 function sortTasksByPriority(a: Task, b: Task) {
   const priorityOrder: Record<TaskPriority, number> = { critica: 0, alta: 1, media: 2, baja: 3 };
   const priorityDiff = priorityOrder[getTaskPriority(a)] - priorityOrder[getTaskPriority(b)];
@@ -4061,10 +3766,6 @@ function todayKey() {
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
 function startOfMonth(date: Date) {

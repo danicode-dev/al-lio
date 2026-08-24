@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, ChevronRight, ListTodo, Plus, Trophy, X } from "lucide-react";
+import { BookOpen, ChevronRight, ListTodo, Trophy, X } from "lucide-react";
 
 import type { ReturnTypeActions } from "@/components/store/types";
 import { Button } from "@/components/ui/button";
@@ -143,14 +143,6 @@ export function QuickAdd({ open, setOpen, actions }: QuickAddProps) {
           </QuickAddForm>
         </Card>
       )}
-      <Button
-        size="icon"
-        className="fixed bottom-20 right-4 z-50 h-14 w-14 rounded-full border border-[#f68a62] bg-[#f06a37] text-white shadow-[0_14px_30px_rgba(240,106,55,0.34)] transition hover:scale-105 hover:bg-[#df5725] focus-visible:ring-[#f06a37] md:bottom-5 md:right-5"
-        onClick={() => setOpen(!open)}
-        aria-label="Añadir rápido"
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
     </>
   );
 }

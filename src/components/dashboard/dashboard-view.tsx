@@ -14,11 +14,10 @@ import { DashboardTodo } from "@/components/dashboard/dashboard-todo";
 type DashboardViewProps = {
   store: Store;
   actions: ReturnTypeActions;
-  headerActions: ReactNode;
   calendar: ReactNode;
 };
 
-export function DashboardView({ store, actions, headerActions, calendar }: DashboardViewProps) {
+export function DashboardView({ store, actions, calendar }: DashboardViewProps) {
   const router = useRouter();
   const loadIssues = store.loadIssues ?? [];
   const issueLabels = {
@@ -32,7 +31,7 @@ export function DashboardView({ store, actions, headerActions, calendar }: Dashb
 
   return (
     <div className="space-y-5">
-      <DashboardGreeting userName={store.userName} actions={headerActions} />
+      <DashboardGreeting userName={store.userName} />
 
       {loadIssues.length > 0 && (
         <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 sm:flex-row sm:items-center sm:justify-between">

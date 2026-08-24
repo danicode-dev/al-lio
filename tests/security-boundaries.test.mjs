@@ -383,3 +383,54 @@ test("The merged store fetch loads every section with fail-soft handling (issue 
     assert.match(dataSource, new RegExp(section), `missing fail-soft wrapping for ${section}`);
   }
 });
+
+test("Quick Add, Calendar and Notifications form one shared header action group mounted once per page (issue #91)", async () => {
+  const [headerSource, layoutSource, guestAppSource, quickAddSource, dashboardClientSource, dashboardGreetingSource] = await Promise.all([
+    readFile(new URL("../src/components/student-header-actions.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/quick-add.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/dashboard/dashboard-client.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/dashboard/dashboard-greeting.tsx", import.meta.url), "utf8"),
+  ]);
+
+  // Desktop order: Quick Add, then Calendar, then Notifications.
+  const quickAddIdx = headerSource.indexOf('aria-label="Añadir rápido"');
+  const calendarIdx = headerSource.indexOf('aria-label="Abrir calendario"');
+  const notifIdx = headerSource.search(/aria-label=\{alerts\.length/);
+  assert.ok(quickAddIdx > -1 && calendarIdx > quickAddIdx && notifIdx > calendarIdx, "expected Quick Add, Calendar, Notifications in that order");
+
+  // Every required student page is covered by the route allowlist.
+  for (const route of ["/dashboard", "/roadmap", "/tasks", "/bloc", "/noticias", "/work", "/courses", "/hackathons", "/calendar", "/profile"]) {
+    assert.match(headerSource, new RegExp(`"${route}"`), `missing route in allowlist: ${route}`);
+  }
+  // Admin-only /settings is not part of the allowlist.
+  assert.doesNotMatch(headerSource, /"\/settings"/);
+
+  // Mounted exactly twice in the layout (mobile slot + desktop slot) - the only mount point for the whole tree.
+  const layoutMounts = (layoutSource.match(/<StudentHeaderActions \/>/g) ?? []).length;
+  assert.equal(layoutMounts, 2, "expected exactly one mobile and one desktop mount in the layout");
+
+  // The old per-view/per-route duplicates are gone: no more BrandHeaderActions row,
+  // no more floating QuickAdd mount, no more local NotificationBell in guest-app.tsx.
+  assert.doesNotMatch(guestAppSource, /BrandHeaderActions/);
+  assert.doesNotMatch(guestAppSource, /<QuickAdd\b/);
+  assert.doesNotMatch(guestAppSource, /function NotificationBell/);
+  assert.doesNotMatch(dashboardClientSource, /MobileHeaderActions|headerActions/);
+  assert.doesNotMatch(dashboardGreetingSource, /actions:/);
+
+  // QuickAdd itself no longer renders its own always-on floating trigger.
+  assert.doesNotMatch(quickAddSource, /aria-label="Añadir rápido"/);
+  assert.match(quickAddSource, /export function QuickAdd\(\{ open, setOpen, actions \}: QuickAddProps\)/);
+});
+
+test("The notifications popover meets the accessibility requirements (issue #91)", async () => {
+  const headerSource = await readFile(new URL("../src/components/student-header-actions.tsx", import.meta.url), "utf8");
+
+  assert.match(headerSource, /aria-expanded=\{open\}/);
+  assert.match(headerSource, /aria-controls=\{panelId\}/);
+  assert.match(headerSource, /event\.key !== "Escape"/);
+  assert.match(headerSource, /triggerRef\.current\?\.focus\(\)/);
+  assert.match(headerSource, /addEventListener\("pointerdown", onPointerDown\)/);
+  assert.match(headerSource, /closeButtonRef\.current\?\.focus\(\)/);
+});
