@@ -634,3 +634,66 @@ test("The ruta path stepper reads competency completion from a single explicit s
   assert.equal(isStepDoneMatch[1].trim(), "stepState[index].competencyCompleted", "isStepDone must read only the explicit competency record, not OR in resource status");
   assert.doesNotMatch(isStepDoneMatch[1], /status/, "resource status must not leak into the competency-done signal");
 });
+
+test("The event aptitude modal renders through a body portal with full accessibility wiring (issue #96)", async () => {
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const modalStart = guestAppSource.indexOf("function HackathonRequirementsModal(");
+  const modalEnd = guestAppSource.indexOf("\nfunction hackathonHasRutaVideo", modalStart);
+  assert.ok(modalStart > -1 && modalEnd > modalStart, "could not locate the HackathonRequirementsModal component");
+  const modalSource = guestAppSource.slice(modalStart, modalEnd);
+
+  // Portal: renders outside the normal tree, directly under document.body.
+  assert.match(modalSource, /return createPortal\(/);
+  assert.match(modalSource, /,\s*document\.body\s*\);/, "createPortal must target document.body");
+
+  // Full-viewport lock on both html and body, without layout shift.
+  assert.match(modalSource, /document\.documentElement\.style\.overflow = "hidden"/);
+  assert.match(modalSource, /document\.body\.style\.overflow = "hidden"/);
+  assert.match(modalSource, /document\.body\.style\.paddingRight = `\$\{scrollbarWidth\}px`/);
+
+  // Focus trap: cycles Tab/Shift+Tab inside the dialog, never escapes it.
+  assert.match(modalSource, /function handleDialogKeyDown/);
+  assert.match(modalSource, /event\.shiftKey && document\.activeElement === firstElement/);
+  assert.match(modalSource, /!event\.shiftKey && document\.activeElement === lastElement/);
+
+  // Escape closes, and focus returns to whatever triggered the modal.
+  assert.match(modalSource, /if \(event\.key === "Escape"\) \{\s*onClose\(\);/);
+  assert.match(modalSource, /previouslyFocused\?\.focus\(\)/);
+
+  // Background is inert while the modal is open, restored on close.
+  assert.match(modalSource, /el\.inert = true/);
+  assert.match(modalSource, /el\.inert = false/);
+
+  // aria-labelledby/aria-describedby point at real ids on the title/description.
+  assert.match(modalSource, /aria-labelledby=\{titleId\}/);
+  assert.match(modalSource, /aria-describedby=\{descriptionId\}/);
+  assert.match(modalSource, /id=\{titleId\}/);
+  assert.match(modalSource, /id=\{descriptionId\}/);
+});
+
+test("The event aptitude modal footer always links to an exact internal step, never a dead end (issue #96)", async () => {
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const modalStart = guestAppSource.indexOf("function HackathonRequirementsModal(");
+  const modalEnd = guestAppSource.indexOf("\nfunction hackathonHasRutaVideo", modalStart);
+  const modalSource = guestAppSource.slice(modalStart, modalEnd);
+
+  assert.doesNotMatch(modalSource, /Ruta todavía sin vídeo/, "the dead-end disabled CTA must be gone");
+  assert.match(
+    modalSource,
+    /const rutaHref = item\.id_slug \? `\/ruta\/\$\{item\.id_slug\}\$\{currentStep \? `\?paso=\$\{currentStep\.id\}` : ""\}` : null;/,
+    "must link to the exact current step, falling back to the path overview - never a generic catalogue",
+  );
+  // The link is offered whenever an exact destination is known, not gated
+  // behind the old video-presence dichotomy.
+  assert.doesNotMatch(modalSource, /hasRuta/, "must not resurrect the old video-gated footer CTA");
+});
+
+test("A competency shows at most two external references (issue #96)", async () => {
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const componentStart = guestAppSource.indexOf("function CompetencyRequirement(");
+  const componentEnd = guestAppSource.indexOf("\nfunction LinksView", componentStart);
+  assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the CompetencyRequirement component");
+  const componentSource = guestAppSource.slice(componentStart, componentEnd);
+
+  assert.match(componentSource, /\.filter\(\(li\) => !li\.video_url\)\.slice\(0, 2\)/);
+});
