@@ -241,7 +241,7 @@ try {
   const deliveryId = randomUUID();
   await client.query(
     `INSERT INTO public.radar_deliveries (delivery_id, schema_version, payload_hash, item_count)
-     VALUES ($1, 2, repeat('a', 64), 1)`,
+     VALUES ($1, 3, repeat('a', 64), 1)`,
     [deliveryId],
   );
   const radarItemRes = await client.query(
@@ -249,12 +249,12 @@ try {
        schema_version, source_id, source_name, external_id, canonical_url, title, summary,
        fetched_at, kind, target_cycle_codes, module_codes, topics, matched_rule_ids,
        matched_keywords, trust_tier, review_status, reviewed_by, reviewed_at, review_reason,
-       source_url, content_hash
+       source_url, content_hash, destination, semantic_key
      ) VALUES (
-       2, 'sandbox-source', 'Sandbox Source', 'external-1', $1, 'Noticia DAW de prueba', '',
+       3, 'sandbox-source', 'Sandbox Source', 'external-1', $1, 'Noticia DAW de prueba', '',
        now(), 'news', array['DAW'], array['CLIENTE'], array['javascript'], array['sandbox-rule'],
        array['javascript'], 'official', 'approved', 'sandbox', now(), 'Contenido verificado',
-       'https://example.test/feed', repeat('b', 64)
+       'https://example.test/feed', repeat('b', 64), 'news', repeat('c', 64)
      ) RETURNING id`,
     [`https://example.test/${deliveryId}`],
   );
