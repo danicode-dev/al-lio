@@ -83,6 +83,7 @@ export async function markResourceStatusAction(
     revalidatePath(`/ruta/${idSlug}`);
     revalidatePath("/roadmap");
     revalidatePath("/dashboard");
+    revalidatePath("/courses");
     return { error: null, status: state.status };
   } catch {
     return { error: "status_save_failed", status: null };

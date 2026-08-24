@@ -171,21 +171,6 @@ export function GuestApp({ view }: { view: View }) {
   );
 }
 
-function completeCourseItem(item: Course, actions: ReturnTypeActions) {
-  if (item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items" || item.id.startsWith("tech-") || item.id.startsWith("fp-")) {
-    const data = courseAddPayload(item);
-    actions.addCourse({
-      ...data,
-      status: "terminado",
-      sourceTable: undefined,
-      notes: appendCompletionNote(item.notes, "Marcado como terminado desde D1OS."),
-    }).catch(() => {});
-    return;
-  }
-
-  actions.updateCourse(item.id, { status: "terminado" });
-}
-
 function completeHackathonItem(item: Hackathon, actions: ReturnTypeActions) {
   if (item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items" || item.id.startsWith("tech-") || item.id.startsWith("fp-")) {
     const data = hackathonAddPayload(item);
@@ -203,13 +188,6 @@ function completeHackathonItem(item: Hackathon, actions: ReturnTypeActions) {
 
 function appendCompletionNote(notes: string | undefined, text: string) {
   return [notes, text].filter(Boolean).join("\n\n");
-}
-
-function courseAddPayload(item: Course) {
-  const data: Partial<Course> = { ...item };
-  delete data.id;
-  delete data.created_at;
-  return data as Omit<Course, "id" | "created_at">;
 }
 
 function hackathonAddPayload(item: Hackathon) {
@@ -2171,7 +2149,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-count-text { font-size: 12px; color: #6b6f72; }
         .al-course-grid { display: grid; gap: 12px; }
         .al-course-grid-2 { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-        .al-course-card { position: relative; display: flex; flex-direction: column; gap: 8px; background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 13px; }
+        .al-course-card { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 13px; }
         .al-course-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
         .al-course-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; }
         .al-course-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; }
@@ -2247,8 +2225,8 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                     <div key={item.id} className="al-course-card">
                       <div className="al-course-card-top">
                         <div className="min-w-0">
-                          <p className="al-course-card-title">{item.title}</p>
-                          {(item.entidad || item.platform) && <p className="al-course-card-org">{item.entidad || item.platform}</p>}
+                          <p className="al-course-card-title line-clamp-2" title={item.title}>{item.title}</p>
+                          {(item.entidad || item.platform) && <p className="al-course-card-org line-clamp-1" title={item.entidad || item.platform}>{item.entidad || item.platform}</p>}
                         </div>
                         <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
                       </div>
@@ -2258,15 +2236,15 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                         </p>
                       )}
                       <div className="flex flex-wrap gap-1.5">
-                        {place && <ChipTag icon="pin">{place}</ChipTag>}
-                        {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
-                        {item.prioridad && <ChipTag className={coursePriorityClass(item.prioridad)}>{priorityText(item.prioridad)}</ChipTag>}
+                        {place && <ChipTag icon="pin" className="max-w-full break-words">{place}</ChipTag>}
+                        {item.modalidad && <ChipTag className="max-w-full break-words">{item.modalidad}</ChipTag>}
+                        {item.prioridad && <ChipTag className={cn("max-w-full break-words", coursePriorityClass(item.prioridad))}>{priorityText(item.prioridad)}</ChipTag>}
                       </div>
-                      {item.requisitos_resumen && <p className="al-course-card-desc line-clamp-2">{item.requisitos_resumen}</p>}
+                      {item.requisitos_resumen && <p className="al-course-card-desc line-clamp-2" title={item.requisitos_resumen}>{item.requisitos_resumen}</p>}
                       <div className="al-course-card-actions">
                         {url && <a href={url} target="_blank" rel="noreferrer" className="al-course-btn"><ExternalLink className="h-3.5 w-3.5" />Abrir</a>}
                         {!isCourseArchived(item) && (
-                          <button type="button" className="al-course-btn" onClick={() => completeCourseItem(item, actions)}>
+                          <button type="button" className="al-course-btn" onClick={() => actions.completeCourse(item).catch(() => {})}>
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             Terminado
                           </button>
@@ -3352,7 +3330,7 @@ function fpItemToCourse(item: FpCatalogItem): Course {
     category: item.type,
     start_at: item.start_date ?? "",
     deadline_at: item.end_date ?? "",
-    status: normalizeCourseStatus(item.status),
+    status: fpUserStatusToCourseStatus(item.user_status) ?? normalizeCourseStatus(item.status),
     entidad: item.entity ?? undefined,
     area: item.type,
     modalidad: item.delivery_mode ?? undefined,
@@ -3491,6 +3469,17 @@ function normalizeCourseStatus(value?: string | null): Course["status"] {
   if (normalized.includes("descart")) return "descartado";
   if (normalized.includes("curso") || normalized.includes("abiert")) return "empezado";
   return "pendiente";
+}
+
+// The per-user fp_user_content_state status (saved/started/completed/dismissed)
+// takes priority over the catalogue's own display status once the student has
+// actually interacted with the item - "saved" alone isn't a lifecycle verdict,
+// so it falls through to the catalogue status like an untouched item would.
+function fpUserStatusToCourseStatus(userStatus?: string | null): Course["status"] | undefined {
+  if (userStatus === "completed") return "terminado";
+  if (userStatus === "dismissed") return "descartado";
+  if (userStatus === "started") return "empezado";
+  return undefined;
 }
 
 function normalizeHackathonStatus(value?: string | null): Hackathon["status"] {

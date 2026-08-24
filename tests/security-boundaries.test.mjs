@@ -505,3 +505,80 @@ test("Quick Add awaits persistence, blocks duplicate submits and keeps entered v
   // values regardless of whether persistence actually succeeded.
   assert.doesNotMatch(quickAddSource, /currentTarget\.reset\(\)/);
 });
+
+test("Course completion routes each origin through its own persistence path with rollback (issue #94)", async () => {
+  const storeSource = await readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const completeCourseStart = storeSource.indexOf("completeCourse: async");
+  const completeCourseEnd = storeSource.indexOf("addHackathon: async", completeCourseStart);
+  assert.ok(completeCourseStart > -1 && completeCourseEnd > completeCourseStart, "could not locate the completeCourse action body");
+  const completeCourseSource = storeSource.slice(completeCourseStart, completeCourseEnd);
+
+  // fp_content_items: routed through fp_user_content_state, not copied into
+  // the courses table.
+  const fpStart = completeCourseSource.indexOf('"fp_content_items"');
+  const fpEnd = completeCourseSource.indexOf('"tech_opportunities"');
+  const fpBranch = completeCourseSource.slice(fpStart, fpEnd);
+  assert.match(fpBranch, /await markResourceStatusAction\(idSlug, "completed"\)/);
+  assert.doesNotMatch(fpBranch, /insertDb\("courses"/);
+  assert.match(fpBranch, /user_status: null, user_completed_at: null/, "fp branch must roll back the optimistic completion on failure");
+  assert.match(fpBranch, /throw error;|throw new Error/);
+
+  // tech_opportunities: checks for an existing row by id_slug before ever
+  // inserting (the idempotent-retry / no-duplicate requirement), and forwards
+  // id_slug on insert so the DB's unique (user_id, id_slug) index is actually
+  // effective.
+  const techBranch = completeCourseSource.slice(fpEnd);
+  assert.match(techBranch, /store\.courses\.find\(\(c\) => c\.id_slug === idSlug\)/);
+  assert.match(techBranch, /id_slug: idSlug \|\| null/);
+  assert.match(techBranch, /courses: current\.courses\.filter\(\(c\) => c\.id !== id\)/, "tech branch must roll back the optimistic insert on failure");
+
+  // Every branch normalizes optional dates before writing and re-throws on
+  // failure so the caller (the card's onClick) sees the rejection. Four
+  // distinct persistence paths re-throw: fp, tech-existing-row,
+  // tech-new-row, and the plain already-user-owned row.
+  for (const field of ['start_date: course\\.start_at \\|\\| null', 'deadline: course\\.deadline_at \\|\\| null']) {
+    assert.match(completeCourseSource, new RegExp(field));
+  }
+  assert.equal((completeCourseSource.match(/throw error;/g) ?? []).length, 4, "all four persistence paths must re-throw on failure");
+
+  // Plain, already user-owned courses roll back to the exact previous row,
+  // not just an empty/unknown state.
+  const plainBranch = completeCourseSource.slice(completeCourseSource.lastIndexOf("Plain, already user-owned"));
+  assert.match(plainBranch, /patchById\(current\.courses, course\.id, previousCourse\)/);
+});
+
+test("fp course completion is per-user isolated and never mutates the shared courses table (issue #94)", async () => {
+  const actionsSource = await readFile(new URL("../src/lib/fp/resource-notes-actions.ts", import.meta.url), "utf8");
+  const fnSource = actionsSource.slice(actionsSource.indexOf("export async function markResourceStatusAction"));
+
+  assert.match(fnSource, /const session = await getSession\(\);/);
+  assert.match(fnSource, /if \(!session\) redirect\("\/login"\);/);
+  assert.match(fnSource, /getAuthorizedResource\(session\.uid, idSlug\)/, "must resolve the item scoped to the current session's user/cycle");
+  assert.match(fnSource, /upsertFpUserContentState\(session\.uid, item\.id/, "must write scoped to session.uid, not a caller-supplied id");
+  assert.match(fnSource, /revalidatePath\("\/courses"\)/);
+
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.match(guestAppSource, /fpUserStatusToCourseStatus\(item\.user_status\)/, "the Courses view must read the per-user completion state, not just the catalogue's own display status");
+});
+
+test("Course cards clamp title, provider and description consistently and stay inside the grid (issue #94)", async () => {
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const cardStart = guestAppSource.indexOf('key={item.id} className="al-course-card"');
+  const cardEnd = guestAppSource.indexOf("al-course-card-actions", cardStart);
+  assert.ok(cardStart > -1 && cardEnd > cardStart, "could not locate the course card JSX");
+  const cardSource = guestAppSource.slice(cardStart, cardEnd);
+
+  assert.match(cardSource, /al-course-card-title line-clamp-2/);
+  assert.match(cardSource, /al-course-card-org line-clamp-1/);
+  assert.match(cardSource, /al-course-card-desc line-clamp-2/);
+  // Clamping must not hide content with no fallback - each clamped element
+  // keeps the full text reachable via a native accessible title attribute.
+  assert.match(cardSource, /title=\{item\.title\}/);
+  assert.match(cardSource, /title=\{item\.entidad \|\| item\.platform\}/);
+  assert.match(cardSource, /title=\{item\.requisitos_resumen\}/);
+  // Long, unbroken tag/location text wraps instead of overflowing the card.
+  assert.match(cardSource, /className="max-w-full break-words"/);
+
+  const styleSource = guestAppSource.slice(guestAppSource.indexOf(".al-course-card {"), guestAppSource.indexOf(".al-course-card-top"));
+  assert.match(styleSource, /min-width:\s*0/, "the grid cell itself must be allowed to shrink below its content's intrinsic width");
+});

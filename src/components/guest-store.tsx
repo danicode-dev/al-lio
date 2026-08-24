@@ -191,12 +191,110 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       }
     },
     updateCourse: async (id: string, data: Partial<Course>) => {
+      const previousCourse = store.courses.find((course) => course.id === id);
       setStore((current) => ({ ...current, courses: patchById(current.courses, id, data) }));
       const { start_at: startAt, deadline_at: deadlineAt, ...rest } = data;
       const dbData: Record<string, unknown> = { ...rest };
       if (startAt !== undefined) dbData.start_date = startAt || null;
       if (deadlineAt !== undefined) dbData.deadline = deadlineAt || null;
-      await updateDb("courses", id, dbData, ["/courses"]);
+      try {
+        const response = await updateDb("courses", id, dbData, ["/courses", "/dashboard"]);
+        if (!response?.result) throw new Error("Course update was not persisted");
+      } catch (error) {
+        if (previousCourse) {
+          setStore((current) => ({ ...current, courses: patchById(current.courses, id, previousCourse) }));
+        }
+        toast.error("No se pudo actualizar el curso");
+        throw error;
+      }
+    },
+    completeCourse: async (course: Course) => {
+      if (course.sourceTable === "fp_content_items") {
+        const idSlug = course.id_slug;
+        if (!idSlug) {
+          toast.error("No se pudo completar el curso");
+          throw new Error("Missing id_slug for fp course completion");
+        }
+        const completedAt = nowIso();
+        setStore((current) => ({
+          ...current,
+          fpContent: current.fpContent.map((item) => item.id_slug === idSlug ? { ...item, user_status: "completed", user_completed_at: completedAt } : item),
+        }));
+        try {
+          const result = await markResourceStatusAction(idSlug, "completed");
+          if (result.error) throw new Error(result.error);
+          toast.success("Curso completado");
+        } catch (error) {
+          setStore((current) => ({
+            ...current,
+            fpContent: current.fpContent.map((item) => item.id_slug === idSlug ? { ...item, user_status: null, user_completed_at: null } : item),
+          }));
+          toast.error("No se pudo completar el curso");
+          throw error;
+        }
+        return;
+      }
+
+      if (course.sourceTable === "tech_opportunities") {
+        const idSlug = course.id_slug;
+        const existing = idSlug ? store.courses.find((c) => c.id_slug === idSlug) : undefined;
+
+        if (existing) {
+          setStore((current) => ({ ...current, courses: patchById(current.courses, existing.id, { status: "terminado" }) }));
+          try {
+            const response = await updateDb("courses", existing.id, { status: "terminado" }, ["/courses", "/dashboard"]);
+            if (!response?.result) throw new Error("Course was not persisted");
+            toast.success("Curso completado");
+          } catch (error) {
+            setStore((current) => ({ ...current, courses: patchById(current.courses, existing.id, existing) }));
+            toast.error("No se pudo completar el curso");
+            throw error;
+          }
+          return;
+        }
+
+        const id = makeId();
+        const notes = [course.notes, "Marcado como terminado desde AL-LÍO."].filter(Boolean).join("\n\n");
+        setStore((current) => ({
+          ...current,
+          courses: [{ ...course, id, created_at: nowIso(), status: "terminado", sourceTable: undefined, notes }, ...current.courses],
+        }));
+        try {
+          const response = await insertDb("courses", {
+            id,
+            id_slug: idSlug || null,
+            title: course.title,
+            platform: course.platform || null,
+            url: course.url || null,
+            start_date: course.start_at || null,
+            deadline: course.deadline_at || null,
+            status: "terminado",
+            notes: notes || null,
+          }, ["/courses", "/dashboard"]);
+          if (!response?.result) throw new Error("Course was not persisted");
+          toast.success("Curso completado");
+        } catch (error) {
+          setStore((current) => ({ ...current, courses: current.courses.filter((c) => c.id !== id) }));
+          toast.error("No se pudo completar el curso");
+          throw error;
+        }
+        return;
+      }
+
+      // Plain, already user-owned course row.
+      const previousCourse = store.courses.find((c) => c.id === course.id);
+      setStore((current) => ({ ...current, courses: patchById(current.courses, course.id, { status: "terminado" }) }));
+      try {
+        const response = await updateDb("courses", course.id, { status: "terminado" }, ["/courses", "/dashboard"]);
+        if (!response?.result) throw new Error("Course was not persisted");
+        toast.success("Curso completado");
+      } catch (error) {
+        if (previousCourse) {
+          setStore((current) => ({ ...current, courses: patchById(current.courses, course.id, previousCourse) }));
+        }
+        toast.error("No se pudo completar el curso");
+        throw error;
+      }
     },
     addHackathon: async (data: Omit<Hackathon, "id" | "created_at">) => {
       const id = makeId();
