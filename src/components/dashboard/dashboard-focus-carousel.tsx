@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BriefcaseBusiness, CalendarClock, ChevronLeft, ChevronRight, Compass, Sparkles, Trophy } from "lucide-react";
 import type { Store } from "@/components/store/types";
+import { buildFeaturedHackathonCards, buildUpcomingFeed, selectDashboardTodoTasks, type FeedItem } from "@/lib/dashboard/upcoming-feed";
 
 type CarouselSection = "upcoming" | "opportunities" | "work" | "hackathons";
 
@@ -34,12 +35,30 @@ function shortDate(value?: string | null) {
   return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" }).format(date);
 }
 
-function isActiveTask(status: string) {
-  return status !== "completada" && status !== "cancelada";
+function feedKindLabel(kind: FeedItem["kind"]) {
+  if (kind === "task") return "Tarea";
+  if (kind === "course") return "Curso";
+  return "Evento o reto";
 }
 
-function isArchivedHackathon(status: string) {
-  return status === "realizado" || status === "descartado";
+function feedKindFallbackDetail(kind: FeedItem["kind"]) {
+  if (kind === "task") return "Organización";
+  if (kind === "course") return "Formación";
+  return "Reto tecnológico";
+}
+
+// Shared between the Upcoming and Events/challenges sections - both draw
+// from src/lib/dashboard/upcoming-feed.ts, which returns source-agnostic
+// data (never presentation strings), so the eyebrow/detail formatting lives
+// here rather than duplicated per section.
+function toFocusCard(item: FeedItem): FocusCard {
+  return {
+    id: item.id,
+    eyebrow: `${feedKindLabel(item.kind)} · ${item.date ? shortDate(item.date) : "Guardado"}`,
+    title: item.title,
+    detail: item.detail || feedKindFallbackDetail(item.kind),
+    href: item.href,
+  };
 }
 
 function contentTypeLabel(value: string | null | undefined) {
@@ -56,34 +75,17 @@ function dateSort(a?: string | null, b?: string | null) {
 }
 
 function buildCards(store: Store): Record<CarouselSection, FocusCard[]> {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const inTwoWeeks = new Date(today);
-  inTwoWeeks.setDate(inTwoWeeks.getDate() + 14);
+  const today = new Date();
 
-  const upcoming = [
-    ...store.tasks
-      .filter((task) => isActiveTask(task.status))
-      .filter((task) => {
-        const due = dayValue(task.due_at);
-        return due && due >= today && due <= inTwoWeeks;
-      })
-      .sort((a, b) => dateSort(a.due_at, b.due_at))
-      .map((task) => ({ id: `task-${task.id}`, eyebrow: `Tarea · ${shortDate(task.due_at)}`, title: task.title, detail: task.category || "Organización", href: "/tasks" })),
-    ...store.courses
-      .filter((course) => course.status !== "terminado" && course.status !== "descartado")
-      .filter((course) => {
-        const date = dayValue(course.deadline_at || course.start_at || course.fecha_inicio);
-        return date && date >= today && date <= inTwoWeeks;
-      })
-      .map((course) => ({
-        id: `course-${course.id}`,
-        eyebrow: `Curso · ${shortDate(course.deadline_at || course.start_at || course.fecha_inicio)}`,
-        title: course.title,
-        detail: course.entidad || course.platform || "Formación",
-        href: "/courses",
-      })),
-  ].sort((a, b) => a.eyebrow.localeCompare(b.eyebrow)).slice(0, 3);
+  const todoTaskIds = new Set(selectDashboardTodoTasks(store.tasks).map((task) => task.id));
+  const upcoming = buildUpcomingFeed({
+    tasks: store.tasks,
+    courses: store.courses,
+    hackathons: store.hackathons,
+    fpContent: store.fpContent,
+    todoTaskIds,
+    today,
+  }).slice(0, 3).map(toFocusCard);
 
   const opportunities = store.fpContent
     .filter((item) => item.user_status !== "completed" && item.user_status !== "dismissed")
@@ -115,21 +117,10 @@ function buildCards(store: Store): Record<CarouselSection, FocusCard[]> {
       href: "/work",
     }));
 
-  const hackathons = store.hackathons
-    .filter((hackathon) => !isArchivedHackathon(hackathon.status))
-    .filter((hackathon) => {
-      const date = dayValue(hackathon.registration_deadline_at || hackathon.inscripcion_hasta || hackathon.start_at);
-      return !date || date >= today;
-    })
-    .sort((a, b) => dateSort(a.registration_deadline_at || a.inscripcion_hasta || a.start_at, b.registration_deadline_at || b.inscripcion_hasta || b.start_at))
-    .slice(0, 3)
-    .map((hackathon) => ({
-      id: `hackathon-${hackathon.id}`,
-      eyebrow: `Evento o reto · ${shortDate(hackathon.registration_deadline_at || hackathon.inscripcion_hasta || hackathon.start_at)}`,
-      title: hackathon.name,
-      detail: [hackathon.city || hackathon.province, hackathon.organizer].filter(Boolean).join(" · ") || "Reto tecnológico",
-      href: "/hackathons",
-    }));
+  const hackathons = buildFeaturedHackathonCards({
+    hackathons: store.hackathons,
+    fpContent: store.fpContent,
+  }).map(toFocusCard);
 
   return { upcoming, opportunities, work, hackathons };
 }
@@ -141,12 +132,12 @@ export function DashboardFocusCarousel({ store }: { store: Store }) {
   const active = sections[activeIndex];
   const activeCards = cards[active.id];
   const loadFailed = active.id === "upcoming"
-    ? store.loadIssues?.some((issue) => issue === "tasks" || issue === "courses")
+    ? store.loadIssues?.some((issue) => issue === "tasks" || issue === "courses" || issue === "opportunities")
     : active.id === "opportunities"
       ? store.loadIssues?.includes("opportunities")
       : active.id === "work"
         ? store.loadIssues?.includes("companies")
-        : store.loadIssues?.includes("hackathons");
+        : store.loadIssues?.some((issue) => issue === "hackathons" || issue === "opportunities");
   const emptyCopy = {
     upcoming: {
       title: "No tienes próximos pasos con fecha",
