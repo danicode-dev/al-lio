@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,6 +19,7 @@ export type CalendarEvent = {
   end_at?: string;
   status?: string;
   href: string;
+  description?: string;
 };
 
 export type GoogleCalendarEvent = {
@@ -28,6 +29,7 @@ export type GoogleCalendarEvent = {
   end: string;
   htmlLink?: string;
   status?: string;
+  description?: string;
 };
 
 type CompletedTask = {
@@ -508,22 +510,145 @@ function EventDateTimeFields({ value, onChange }: { value: Date; onChange: (date
 }
 
 function CalendarAgendaRow({ event }: { event: CalendarEvent }) {
-  return (
-    <Link href={event.href} className="flex items-start gap-2 rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-2.5 text-sm transition-colors hover:border-[#e5c7b8] hover:bg-[#fff8f4]">
+  const [detailOpen, setDetailOpen] = useState(false);
+  const timeLabel = calendarTimeLabel(event);
+  const content = (
+    <>
       <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", calendarDotClass(event.type, event.status))} />
       <span className="min-w-0">
         <span className="block truncate font-medium">{event.title}</span>
-        <span className="text-xs text-muted-foreground">{formatTime(event.date_at)}{event.end_at ? ` - ${formatTime(event.end_at)}` : ""} - {calendarTypeLabel(event.type)}</span>
+        <span className="text-xs text-muted-foreground">{timeLabel} - {calendarTypeLabel(event.type)}</span>
       </span>
+    </>
+  );
+
+  if (event.type === "google") {
+    return (
+      <>
+        <button type="button" onClick={() => setDetailOpen(true)} className="flex w-full items-start gap-2 rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-2.5 text-left text-sm transition-colors hover:border-[#e5c7b8] hover:bg-[#fff8f4]">
+          {content}
+        </button>
+        {detailOpen && <GoogleEventDetailDialog event={event} onClose={() => setDetailOpen(false)} />}
+      </>
+    );
+  }
+
+  return (
+    <Link href={event.href} className="flex items-start gap-2 rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-2.5 text-sm transition-colors hover:border-[#e5c7b8] hover:bg-[#fff8f4]">
+      {content}
     </Link>
   );
 }
 
 function CalendarPill({ event }: { event: CalendarEvent }) {
+  const [detailOpen, setDetailOpen] = useState(false);
+  const label = (event.type === "task" && event.date_at ? `${formatTime(event.date_at)} ` : "") + event.title;
+
+  if (event.type === "google") {
+    return (
+      <>
+        <button type="button" onClick={() => setDetailOpen(true)} className={cn("block w-full truncate rounded px-2 py-1 text-left text-[11px] leading-tight", calendarEventClass(event.type, event.status))} title={event.title}>
+          {label}
+        </button>
+        {detailOpen && <GoogleEventDetailDialog event={event} onClose={() => setDetailOpen(false)} />}
+      </>
+    );
+  }
+
   return (
     <Link href={event.href} className={cn("block truncate rounded px-2 py-1 text-[11px] leading-tight", calendarEventClass(event.type, event.status))} title={event.title}>
-      {event.type === "task" && event.date_at ? `${formatTime(event.date_at)} ` : ""}{event.title}
+      {label}
     </Link>
+  );
+}
+
+function GoogleEventDetailDialog({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  const titleId = useId();
+  const detailId = useId();
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
+    function handleKeyDown(keyEvent: KeyboardEvent) {
+      if (keyEvent.key === "Escape") {
+        keyEvent.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (keyEvent.key !== "Tab" || !dialogRef.current) return;
+
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => !element.hasAttribute("hidden"));
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!first || !last) {
+        keyEvent.preventDefault();
+        return;
+      }
+      if (!dialogRef.current.contains(document.activeElement)) {
+        keyEvent.preventDefault();
+        (keyEvent.shiftKey ? last : first).focus();
+        return;
+      }
+      if (keyEvent.shiftKey && document.activeElement === first) {
+        keyEvent.preventDefault();
+        last.focus();
+      } else if (!keyEvent.shiftKey && document.activeElement === last) {
+        keyEvent.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
+    };
+  }, []);
+
+  return (
+    <>
+      <button type="button" aria-label="Cerrar evento" onClick={onClose} className="fixed inset-0 z-50 cursor-default bg-black/30 backdrop-blur-[1px]" />
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={detailId} className="fixed left-1/2 top-1/2 z-[51] max-h-[calc(100dvh-2rem)] w-[min(25rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[18px] border border-[#e4dfd5] bg-white text-[#111111] shadow-[0_22px_50px_rgba(17,17,17,0.24)]">
+        <div className="flex items-center justify-between border-b border-[#f0ece2] px-4 py-3">
+          <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#a43b32]">Evento de Google Calendar</span>
+          <button ref={closeButtonRef} type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-[#f7f3ed] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e15d2d]" aria-label="Cerrar"><X className="h-3.5 w-3.5" /></button>
+        </div>
+        <div className="space-y-2.5 p-4">
+          <h2 id={titleId} className="text-lg font-semibold">{event.title}</h2>
+          <p id={detailId} className="text-sm text-[#6b6f72]">
+            {formatDayTitle(dateKey(event.date_at))}
+            {" · "}
+            {calendarTimeLabel(event)}
+          </p>
+          {event.description && (
+            <p className="whitespace-pre-wrap text-sm text-[#333029]">{event.description}</p>
+          )}
+        </div>
+        <div className="flex items-center justify-between gap-2 border-t border-[#f0ece2] px-4 py-3">
+          {event.href && event.href !== "/calendar" ? (
+            <a href={event.href} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#e15d2d] underline underline-offset-2 hover:text-[#c6491d]">
+              Ver en Google Calendar
+            </a>
+          ) : <span />}
+          <Button variant="ghost" size="sm" onClick={onClose}>Cerrar</Button>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -548,6 +673,7 @@ function useGoogleCalendarEvents(month: Date, refreshKey = 0) {
     end_at: event.end,
     status: event.status,
     href: event.htmlLink || "/calendar",
+    description: event.description,
   })), [events]);
 }
 
@@ -665,6 +791,17 @@ function formatTime(value?: string) {
   const date = parseDate(value);
   if (!date) return "";
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function isDateOnly(value?: string) {
+  return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
+}
+
+function calendarTimeLabel(event: Pick<CalendarEvent, "type" | "date_at" | "end_at">) {
+  if (event.type === "google" && isDateOnly(event.date_at)) return "Todo el día";
+  const start = formatTime(event.date_at);
+  const end = event.end_at ? formatTime(event.end_at) : "";
+  return end ? `${start} - ${end}` : start;
 }
 
 function formatLongDate(value?: string) {
