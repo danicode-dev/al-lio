@@ -1,22 +1,22 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNav } from "@/components/bottom-nav";
-import { getShellStore } from "@/lib/data";
+import { getGlobalStore } from "@/lib/data";
 import { isCurrentUserAdmin } from "@/lib/auth/authorization";
 import { StoreProvider } from "@/components/guest-store";
-import { MobileHeaderActions } from "@/components/mobile-header-actions";
+import { StudentHeaderActions } from "@/components/student-header-actions";
 import { DailyAlerts } from "@/components/daily-alerts";
-import type { Store } from "@/components/guest-app";
+import type { Store } from "@/components/store/types";
 import Image from "next/image";
 import { Toaster } from "sonner";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [shellStore, isAdmin] = await Promise.all([
-    getShellStore(),
+  const [globalStore, isAdmin] = await Promise.all([
+    getGlobalStore(),
     isCurrentUserAdmin(),
   ]);
-  const store = shellStore as unknown as Store;
+  const store = globalStore as unknown as Store;
 
   return (
     <StoreProvider initialStore={store}>
@@ -34,7 +34,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 priority
               />
             </div>
-            <MobileHeaderActions />
+            <StudentHeaderActions />
+          </div>
+          <div className="hidden items-center justify-end gap-2 px-8 pt-6 md:flex">
+            <StudentHeaderActions />
           </div>
           <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8">
             {children}

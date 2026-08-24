@@ -67,9 +67,16 @@ for (const text of ["AL-LÍO", "npm run verify:startup", "docs/README.md"]) {
 }
 
 const guestApp = readFileSync(join(root, "src/components/guest-app.tsx"), "utf8");
-for (const text of ["techlife.bloc.D1OS.v1", "techlife.app.settings.D1OS.v1", "progress_notes", "techOpportunities"]) {
+for (const text of ["techlife.bloc.D1OS.v1", "techlife.app.settings.D1OS.v1", "techOpportunities"]) {
   if (!guestApp.includes(text)) {
     fail(`components/guest-app.tsx deberia contener: ${text}`);
+  }
+}
+
+const guestStore = readFileSync(join(root, "src/components/guest-store.tsx"), "utf8");
+for (const text of ["progress_notes", "export function StoreProvider", "export function useStore"]) {
+  if (!guestStore.includes(text)) {
+    fail(`components/guest-store.tsx deberia contener: ${text}`);
   }
 }
 

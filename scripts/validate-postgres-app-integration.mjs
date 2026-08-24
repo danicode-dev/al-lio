@@ -68,10 +68,15 @@ check("Google callback no usa Supabase", !googleCallback.includes("@supabase") &
 
 console.log("\n── lib/data.ts ──");
 const data = read("src/lib/data.ts");
+const dashboardLayout = read("src/app/(dashboard)/layout.tsx");
+const dashboardPage = read("src/app/(dashboard)/dashboard/page.tsx");
 check("src/lib/data.ts importa repositorios", data.includes("@/lib/db/repositories/"));
 check("src/lib/data.ts no usa .from() de Supabase para datos", !data.includes(".from(\"tasks\"") && !data.includes(".from(\"courses\"") && !data.includes(".from(\"hackathons\""));
-check("Dashboard usa un loader especifico", data.includes("export async function getDashboardStore"));
-check("Shell usa un loader minimo y tolerante", data.includes("export const getShellStore"));
+check("La aplicacion autenticada usa un loader global cacheado", data.includes("export const getGlobalStore = cache(async () =>"));
+check("El loader global deriva el usuario de la sesion", data.includes("const userId = session.uid"));
+check("El loader global conserva fallbacks por seccion", data.includes("loadStoreSection") && data.includes("loadIssues: [...new Set(issues)]"));
+check("El layout monta el store autenticado una sola vez", dashboardLayout.includes("getGlobalStore") && dashboardLayout.includes("<StoreProvider initialStore={store}>") && !dashboardLayout.includes("getShellStore"));
+check("Dashboard reutiliza el store del layout", !dashboardPage.includes("getGlobalStore") && !dashboardPage.includes("getDashboardStore") && dashboardPage.includes("<DashboardClient />"));
 
 console.log("\n── Aislamiento de contenido FP ──");
 const fpCatalog = read("src/lib/db/repositories/fp_catalog.ts");
@@ -79,7 +84,6 @@ const manifest = read("src/app/manifest.ts");
 const resourceActions = read("src/lib/fp/resource-notes-actions.ts");
 const learningRepository = read("src/lib/db/repositories/learning.ts");
 const learningActions = read("src/lib/learning/actions.ts");
-const dashboardLayout = read("src/app/(dashboard)/layout.tsx");
 const techOpportunities = read("src/lib/db/repositories/tech_opportunities.ts");
 check("El catalogo filtra por cycle_code exacto", fpCatalog.includes('"fit.cycle_code = $3"'));
 check("Los recursos formativos filtran por cycle_code", fpCatalog.includes("AND fit.cycle_code = $2"));
@@ -89,7 +93,7 @@ check("Las acciones consultan el perfil antes del recurso", resourceActions.incl
 check("Los cursos de competencias filtran por ciclo", learningRepository.includes("competency.cycle_code=$3"));
 check("El progreso valida usuario y ciclo antes de escribir", learningActions.includes("getAuthorizedResource") && learningActions.includes("getLearningResourceForCycle"));
 check("La reproducción persiste la posición", learningRepository.includes("last_position_seconds"));
-check("El layout no carga el store global completo", dashboardLayout.includes("getShellStore") && !dashboardLayout.includes("getGlobalStore"));
+check("El layout comparte el store global con todas las rutas autenticadas", dashboardLayout.includes("getGlobalStore") && dashboardLayout.includes("StoreProvider"));
 check("Existe boundary de error del dashboard", existsSync(join(root, "src/app/(dashboard)/error.tsx")));
 check("Los grados FP no se sirven como cursos complementarios", techOpportunities.includes("<> 'fp'"));
 

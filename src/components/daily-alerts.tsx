@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/components/guest-store";
-import type { Store } from "@/components/guest-app";
+import type { Store } from "@/components/store/types";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
