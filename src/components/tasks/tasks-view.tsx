@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { CalendarDays, Check, Circle, ListChecks, ListTodo, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { useStore } from "@/components/guest-store";
@@ -23,7 +23,7 @@ export function TasksView() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<keyof typeof categoryMeta>("diario");
-  const [priority, setPriority] = useState<"baja" | "media" | "alta">("media");
+  const [priority, setPriority] = useState<Task["priority"]>("media");
   const [dueAt, setDueAt] = useState("");
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
@@ -90,6 +90,7 @@ export function TasksView() {
               <option value="baja">Prioridad baja</option>
               <option value="media">Prioridad media</option>
               <option value="alta">Prioridad alta</option>
+              <option value="critica">Prioridad crítica</option>
             </select>
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_190px_auto]">
@@ -128,8 +129,8 @@ export function TasksView() {
         <EditTaskDialog
           task={editingTask}
           onClose={() => setEditingTask(null)}
-          onSave={(data) => {
-            actions.updateTask(editingTask.id, data);
+          onSave={async (data) => {
+            await actions.updateTask(editingTask.id, data);
             setEditingTask(null);
           }}
         />
@@ -156,36 +157,81 @@ function TaskRow({ task, onToggle, onEdit, onDelete }: { task: Task; onToggle: (
         {task.due_at && <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#8e887e]"><CalendarDays className="h-3.5 w-3.5" />{formatDate(task.due_at)}</p>}
       </div>
       <div className="flex shrink-0 items-center gap-1">
-        <button type="button" onClick={onEdit} className="grid h-9 w-9 place-items-center rounded-xl text-[#aaa399] transition hover:bg-[#fff0e9] hover:text-[#e15d2d]" aria-label={`Editar ${task.title}`}><Pencil className="h-4 w-4" /></button>
+        {!completed && <button type="button" onClick={onEdit} className="grid h-9 w-9 place-items-center rounded-xl text-[#aaa399] transition hover:bg-[#fff0e9] hover:text-[#e15d2d]" aria-label={`Editar ${task.title}`}><Pencil className="h-4 w-4" /></button>}
         <button type="button" onClick={onDelete} className="grid h-9 w-9 place-items-center rounded-xl text-[#aaa399] transition hover:bg-red-50 hover:text-red-600" aria-label={`Eliminar ${task.title}`}><Trash2 className="h-4 w-4" /></button>
       </div>
     </article>
   );
 }
 
-function EditTaskDialog({ task, onClose, onSave }: { task: Task; onClose: () => void; onSave: (data: Partial<Task>) => void }) {
+function EditTaskDialog({ task, onClose, onSave }: { task: Task; onClose: () => void; onSave: (data: Partial<Task>) => Promise<void> }) {
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? "");
   const [category, setCategory] = useState<keyof typeof categoryMeta>(
     (task.category as keyof typeof categoryMeta) in categoryMeta ? (task.category as keyof typeof categoryMeta) : "diario",
   );
-  const [priority, setPriority] = useState<"baja" | "media" | "alta">(task.priority === "critica" ? "alta" : task.priority);
-  const [dueAt, setDueAt] = useState(task.due_at ? task.due_at.slice(0, 10) : "");
+  const [priority, setPriority] = useState<Task["priority"]>(task.priority);
+  const [dueDate, setDueDate] = useState(task.due_at ? task.due_at.slice(0, 10) : "");
+  const [dueTime, setDueTime] = useState(task.due_at?.includes("T") ? task.due_at.slice(11, 16) : "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    const previousActiveElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      previousActiveElement?.focus();
+    };
+  }, []);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const cleanTitle = title.trim();
-    if (!cleanTitle) return;
-    onSave({ title: cleanTitle, description: description.trim(), category, priority, due_at: dueAt });
+    if (!cleanTitle || saving) return;
+    setSaving(true);
+    setError("");
+    try {
+      const dueAt = dueDate ? `${dueDate}${dueTime ? `T${dueTime}` : ""}` : "";
+      await onSave({ title: cleanTitle, description: description.trim(), category, priority, due_at: dueAt });
+    } catch {
+      setError("No se pudo guardar la tarea. Revisa tu conexión e inténtalo de nuevo.");
+      setSaving(false);
+    }
+  }
+
+  function handleDialogKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape" && !saving) {
+      onClose();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusableElements = dialogRef.current?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (!focusableElements?.length) return;
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
   }
 
   return (
     <>
-      <button type="button" aria-label="Cerrar edicion" onClick={onClose} className="fixed inset-0 z-50 cursor-default bg-black/30 backdrop-blur-[1px]" />
-      <div role="dialog" aria-modal="true" aria-labelledby="edit-task-title" className="fixed left-1/2 top-1/2 z-[51] max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[18px] border border-[#e4dfd5] bg-white text-[#111111] shadow-[0_22px_50px_rgba(17,17,17,0.24)]">
+      <button type="button" aria-label="Cerrar edición" onClick={saving ? undefined : onClose} className="fixed inset-0 z-50 cursor-default bg-black/30 backdrop-blur-[1px]" />
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} onKeyDown={handleDialogKeyDown} className="fixed left-1/2 top-1/2 z-[51] max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[18px] border border-[#e4dfd5] bg-white text-[#111111] shadow-[0_22px_50px_rgba(17,17,17,0.24)]">
         <div className="flex items-center justify-between border-b border-[#f0ece2] px-4 py-3">
-          <span id="edit-task-title" className="text-sm font-extrabold">Editar tarea</span>
-          <button type="button" onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full text-[#aaa399] transition hover:bg-[#f7f4ee] hover:text-[#333029]" aria-label="Cerrar">
+          <span id={titleId} className="text-sm font-extrabold">Editar tarea</span>
+          <button type="button" onClick={onClose} disabled={saving} className="flex h-7 w-7 items-center justify-center rounded-full text-[#aaa399] transition hover:bg-[#f7f4ee] hover:text-[#333029] disabled:cursor-not-allowed disabled:opacity-50" aria-label="Cerrar">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -201,13 +247,18 @@ function EditTaskDialog({ task, onClose, onSave }: { task: Task; onClose: () => 
               <option value="baja">Prioridad baja</option>
               <option value="media">Prioridad media</option>
               <option value="alta">Prioridad alta</option>
+              <option value="critica">Prioridad crítica</option>
             </select>
           </div>
           <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={3} placeholder="Contexto o notas (opcional)" className="w-full resize-none rounded-xl border border-[#e5d7cd] bg-white px-3 py-2 text-sm text-[#333029] outline-none placeholder:text-[#a59f94] focus:border-[#f06a37]" />
-          <input type="date" value={dueAt} onChange={(event) => setDueAt(event.target.value)} aria-label="Fecha de la tarea" className="h-11 w-full rounded-xl border border-[#e5d7cd] bg-white px-3 text-sm text-[#333029] outline-none focus:border-[#f06a37]" />
+          <div className="grid grid-cols-2 gap-3">
+            <input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} aria-label="Fecha de la tarea" className="h-11 w-full rounded-xl border border-[#e5d7cd] bg-white px-3 text-sm text-[#333029] outline-none focus:border-[#f06a37]" />
+            <input type="time" value={dueTime} onChange={(event) => setDueTime(event.target.value)} disabled={!dueDate} aria-label="Hora de la tarea (opcional)" className="h-11 w-full rounded-xl border border-[#e5d7cd] bg-white px-3 text-sm text-[#333029] outline-none focus:border-[#f06a37] disabled:cursor-not-allowed disabled:bg-[#f7f4ee] disabled:text-[#aaa399]" />
+          </div>
+          {error && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={onClose} className="h-10 rounded-xl px-4 text-sm font-semibold text-[#777269] transition hover:bg-[#f7f4ee]">Cancelar</button>
-            <button type="submit" disabled={!title.trim()} className="h-10 rounded-xl bg-[#f06a37] px-5 text-sm font-extrabold text-white transition hover:bg-[#df5725] disabled:cursor-not-allowed disabled:opacity-50">Guardar</button>
+            <button type="button" onClick={onClose} disabled={saving} className="h-10 rounded-xl px-4 text-sm font-semibold text-[#777269] transition hover:bg-[#f7f4ee] disabled:cursor-not-allowed disabled:opacity-50">Cancelar</button>
+            <button type="submit" disabled={!title.trim() || saving} className="h-10 rounded-xl bg-[#f06a37] px-5 text-sm font-extrabold text-white transition hover:bg-[#df5725] disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Guardando…" : "Guardar"}</button>
           </div>
         </form>
       </div>

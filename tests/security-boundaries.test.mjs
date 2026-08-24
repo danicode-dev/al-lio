@@ -308,3 +308,32 @@ test("The card's internal link no longer duplicates the read mutation; the exter
   const externalLinkTag = source.slice(externalLinkStart, externalLinkStart + 200);
   assert.match(externalLinkTag, /onClick=\{onRead\}/);
 });
+
+test("Task editing preserves critical priority and optional due time", async () => {
+  const source = await readFile(new URL("../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /useState<Task\["priority"\]>\(task\.priority\)/);
+  assert.match(source, /<option value="critica">Prioridad crítica<\/option>/);
+  assert.match(source, /task\.due_at\?\.includes\("T"\)/);
+  assert.match(source, /type="time"/);
+  assert.match(source, /`\$\{dueDate\}\$\{dueTime \? `T\$\{dueTime\}` : ""\}`/);
+  assert.doesNotMatch(source, /task\.priority === "critica" \? "alta"/);
+});
+
+test("Task edit waits for persistence and keeps the dialog open after failure", async () => {
+  const [viewSource, storeSource, legacyStoreSource] = await Promise.all([
+    readFile(new URL("../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(viewSource, /await actions\.updateTask\(editingTask\.id, data\);\s+setEditingTask\(null\);/);
+  assert.match(viewSource, /No se pudo guardar la tarea/);
+  assert.match(viewSource, /\{saving \? "Guardando…" : "Guardar"\}/);
+
+  for (const source of [storeSource, legacyStoreSource]) {
+    assert.match(source, /if \(!response\?\.result\) throw new Error\("Task update was not persisted"\)/);
+    assert.match(source, /patchById\(current\.tasks, id, previousTask\)/);
+    assert.match(source, /throw error;/);
+  }
+});
