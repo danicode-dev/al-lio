@@ -582,3 +582,52 @@ test("Course cards clamp title, provider and description consistently and stay i
   const styleSource = guestAppSource.slice(guestAppSource.indexOf(".al-course-card {"), guestAppSource.indexOf(".al-course-card-top"));
   assert.match(styleSource, /min-width:\s*0/, "the grid cell itself must be allowed to shrink below its content's intrinsic width");
 });
+
+test("Competency completion is authorized against the caller's session and cycle, never a client-supplied user (issue #96)", async () => {
+  const actionsSource = await readFile(new URL("../src/lib/fp/competency-actions.ts", import.meta.url), "utf8");
+  const fnSource = actionsSource.slice(actionsSource.indexOf("export async function markCompetencyCompletedAction"));
+
+  assert.match(fnSource, /const session = await getSession\(\);/);
+  assert.match(fnSource, /if \(!session\) redirect\("\/login"\);/);
+  assert.match(fnSource, /getAuthorizedSkill\(session\.uid, skillId\)/, "must resolve the skill scoped to the current session's user/cycle");
+  assert.match(fnSource, /markUserCompetencyCompleted\(session\.uid, skillId\)/, "must write scoped to session.uid, not a caller-supplied id");
+
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.match(guestAppSource, /return !!competency\.completed;/, "isCompetencyDone must read the explicit per-user competency record, not infer from resource status");
+});
+
+test("A competency with no linked learning item can still be marked complete (issue #96)", async () => {
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const componentStart = guestAppSource.indexOf("function CompetencyRequirement(");
+  const componentEnd = guestAppSource.indexOf("\nfunction LinksView", componentStart);
+  assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the CompetencyRequirement component");
+  const componentSource = guestAppSource.slice(componentStart, componentEnd);
+
+  assert.match(componentSource, /actions\.markCompetencyCompleted\(competency\.id\)/, "marking done must write an explicit competency record, not loop over learningItems");
+  assert.doesNotMatch(componentSource, /for \(const learningItem of competency\.learningItems\)/, "must not infer completion from marking every linked resource done");
+  assert.doesNotMatch(componentSource, /competency\.learningItems\.length > 0 &&/, "the mark-done control must not be gated behind having at least one linked resource");
+});
+
+test("markCompetencyCompleted optimistically completes and rolls back on failure (issue #96)", async () => {
+  const storeSource = await readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const start = storeSource.indexOf("markCompetencyCompleted: (skillId: string) =>");
+  const end = storeSource.indexOf("reset: () =>", start);
+  assert.ok(start > -1 && end > start, "could not locate the markCompetencyCompleted action body");
+  const actionSource = storeSource.slice(start, end);
+
+  assert.match(actionSource, /setStore\(\(current\) => \(\{ \.\.\.current, fpContent: patchCompetencies\(current\.fpContent, true\) \}\)\);/, "must optimistically mark the competency completed before the request resolves");
+  assert.match(actionSource, /void markCompetencyCompletedAction\(skillId\)\.then\(\(result\) => \{/);
+  assert.match(actionSource, /if \(!result\.error\) return;/);
+  assert.match(actionSource, /patchCompetencies\(current\.fpContent, false\)/, "must roll back to not-completed on failure");
+  assert.match(actionSource, /toast\.error\("No se pudo guardar"\);/);
+});
+
+test("The ruta path stepper reflects explicit competency completion, not just resource status (issue #96)", async () => {
+  const rutaPathSource = await readFile(new URL("../src/lib/fp/ruta-path.ts", import.meta.url), "utf8");
+  assert.match(rutaPathSource, /getUserCompetencyStatesForSkills\(userId, skillIds\)/);
+  assert.match(rutaPathSource, /competencyCompleted: competencyCompletedSet\.has\(skill\.id\)/);
+
+  const viewSource = await readFile(new URL("../src/components/ruta/ruta-path-view.tsx", import.meta.url), "utf8");
+  assert.match(viewSource, /competencyCompleted: boolean;/);
+  assert.match(viewSource, /const isStepDone = \(index: number\) => stepState\[index\]\.competencyCompleted \|\| stepState\[index\]\.status === "completed";/);
+});

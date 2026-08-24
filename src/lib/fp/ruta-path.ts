@@ -1,5 +1,9 @@
 import "server-only";
-import { getLearningItemsForCompetencies, getUserContentStatesForItems } from "@/lib/db/repositories/fp_catalog";
+import {
+  getLearningItemsForCompetencies,
+  getUserCompetencyStatesForSkills,
+  getUserContentStatesForItems,
+} from "@/lib/db/repositories/fp_catalog";
 import { getResourceNotes } from "@/lib/db/repositories/fp_resource_notes";
 import type { FpCycleCode } from "@/lib/db/types";
 import type { LearningPathStep } from "@/components/ruta/ruta-path-view";
@@ -35,9 +39,10 @@ export async function buildRutaPathSteps(
     .map((step) => step.primaryItem?.id)
     .filter((id): id is string => Boolean(id));
 
-  const [statusMap, notesArrays] = await Promise.all([
+  const [statusMap, notesArrays, competencyCompletedSet] = await Promise.all([
     getUserContentStatesForItems(userId, primaryContentIds),
     Promise.all(primaryContentIds.map((id) => getResourceNotes(userId, id))),
+    getUserCompetencyStatesForSkills(userId, skillIds),
   ]);
   const notesByContentId = new Map(primaryContentIds.map((id, index) => [id, notesArrays[index]]));
 
@@ -46,6 +51,7 @@ export async function buildRutaPathSteps(
     title: skill.titulo,
     description: skill.descripcion,
     obligatoria: skill.obligatoria,
+    competencyCompleted: competencyCompletedSet.has(skill.id),
     primary: primaryItem
       ? {
           idSlug: primaryItem.id_slug,

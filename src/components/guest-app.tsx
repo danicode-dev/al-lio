@@ -2912,7 +2912,7 @@ function hackathonHasRutaVideo(item: Hackathon): boolean {
 }
 
 function isCompetencyDone(competency: RequiredCompetency): boolean {
-  return competency.learningItems.some((learningItem) => learningItem.user_status === "completed");
+  return !!competency.completed;
 }
 
 function hackathonAptitudeProgress(item: Hackathon): { done: number; total: number } {
@@ -2943,9 +2943,7 @@ function CompetencyRequirement({
   const docItems = competency.learningItems.filter((li) => !li.video_url);
 
   function markDone() {
-    for (const learningItem of competency.learningItems) {
-      actions.markLearningItemDone(learningItem.id_slug);
-    }
+    actions.markCompetencyCompleted(competency.id);
     onMarkDone?.();
   }
 
@@ -2974,16 +2972,14 @@ function CompetencyRequirement({
           ))}
         </div>
       )}
-      {competency.learningItems.length > 0 && (
-        done ? (
-          <span className="al-modal-mark-done al-modal-mark-done-active">
-            <CheckCircle2 className="h-3.5 w-3.5" />Marcado como hecho
-          </span>
-        ) : (
-          <button type="button" className="al-modal-mark-done" onClick={markDone}>
-            <Check className="h-3.5 w-3.5" />Marcar como hecho
-          </button>
-        )
+      {done ? (
+        <span className="al-modal-mark-done al-modal-mark-done-active">
+          <CheckCircle2 className="h-3.5 w-3.5" />Marcado como hecho
+        </span>
+      ) : (
+        <button type="button" className="al-modal-mark-done" onClick={markDone}>
+          <Check className="h-3.5 w-3.5" />Marcar como hecho
+        </button>
       )}
     </div>
   );
