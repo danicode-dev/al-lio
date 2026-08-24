@@ -44,6 +44,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
+import { fpUserStatusToHackathonStatus, isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
 import { toast } from "sonner";
 import { BlocNotepad } from "@/components/bloc/bloc-notepad";
 import {
@@ -170,32 +171,6 @@ export function GuestApp({ view }: { view: View }) {
       {view === "bloc" && <BlocView />}
     </div>
   );
-}
-
-function completeHackathonItem(item: Hackathon, actions: ReturnTypeActions) {
-  if (item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items" || item.id.startsWith("tech-") || item.id.startsWith("fp-")) {
-    const data = hackathonAddPayload(item);
-    actions.addHackathon({
-      ...data,
-      status: "realizado",
-      sourceTable: undefined,
-      notes: appendCompletionNote(item.notes, "Marcado como realizado desde D1OS."),
-    }).catch(() => {});
-    return;
-  }
-
-  actions.updateHackathon(item.id, { status: "realizado" });
-}
-
-function appendCompletionNote(notes: string | undefined, text: string) {
-  return [notes, text].filter(Boolean).join("\n\n");
-}
-
-function hackathonAddPayload(item: Hackathon) {
-  const data: Partial<Hackathon> = { ...item };
-  delete data.id;
-  delete data.created_at;
-  return data as Omit<Hackathon, "id" | "created_at">;
 }
 
 function GoogleCalendarStatusControl() {
@@ -2339,11 +2314,24 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
   const [requirementsItemId, setRequirementsItemId] = useState<string | null>(null);
+  const [pendingCompleteId, setPendingCompleteId] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
     return () => clearTimeout(t);
   }, [searchInput]);
+
+  async function handleCompleteHackathon(item: Hackathon) {
+    if (pendingCompleteId) return;
+    setPendingCompleteId(item.id);
+    try {
+      await actions.completeHackathon(item);
+    } catch {
+      // Store action already surfaced a toast and rolled back optimistic state.
+    } finally {
+      setPendingCompleteId(null);
+    }
+  }
 
   const sorted = useMemo(() => [...allHackathons].sort((a, b) => {
     const da = (a.start_at || "").slice(0, 10);
@@ -2422,10 +2410,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   }
 
   const featuredHackathon = useMemo(() => {
-    const open = activos.filter((h) => h.status === "inscripcion_abierta");
-    const pool = open.length > 0 ? open : activos;
-    if (pool.length === 0) return null;
-    return [...pool].sort((a, b) => (a.start_at || "9999-99-99").localeCompare(b.start_at || "9999-99-99"))[0];
+    return selectFeaturedHackathon(activos);
   }, [activos]);
   const featuredProgress = featuredHackathon ? hackathonAptitudeProgress(featuredHackathon) : null;
   const featuredHasRuta = featuredHackathon ? !!(featuredHackathon.id_slug && hackathonHasRutaVideo(featuredHackathon)) : false;
@@ -2477,6 +2462,10 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-hero-progress-bar { margin-top: 10px; height: 8px; border-radius: 999px; background: #f3ece1; overflow: hidden; }
         .al-hack-hero-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #F06A37, #E15D2D); transition: width 0.3s ease; }
         .al-hack-hero-side-hint { margin-top: 10px; font-size: 11.5px; color: #6b6f72; line-height: 1.4; }
+        .al-hack-hero-empty { align-items: center; justify-content: center; text-align: center; gap: 8px; padding: clamp(24px, 4vw, 36px); }
+        .al-hack-hero-empty-title { font-size: 15px; font-weight: 700; color: #111111; }
+        .al-hack-hero-empty-desc { font-size: 12.5px; color: #6b6f72; max-width: 46ch; line-height: 1.5; }
+        .al-hack-prep-ready { display: inline-flex; align-items: center; gap: 5px; }
         .al-hack-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .al-hack-count-text { font-size: 12px; color: #6b6f72; }
         .al-hack-grid { display: grid; gap: 12px; }
@@ -2544,7 +2533,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
               </div>
             </div>
 
-            {featuredHackathon && (
+            {featuredHackathon ? (
               <div className="al-hack-hero">
                 <div className="al-hack-hero-main">
                   <span className="al-hack-hero-kicker">Próximo evento o reto</span>
@@ -2587,6 +2576,16 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   </div>
                 )}
               </div>
+            ) : (
+              <div className="al-hack-hero al-hack-hero-empty">
+                <CheckCircle2 className="h-6 w-6 text-[#1f7a4d]" />
+                <p className="al-hack-hero-empty-title">Sin próximo evento o reto pendiente</p>
+                <p className="al-hack-hero-empty-desc">
+                  {activos.length > 0
+                    ? "Has completado la preparación de todos tus eventos activos. En cuanto marques uno como realizado, o tengas otro con preparación pendiente, aparecerá aquí."
+                    : "En cuanto guardes o te inscribas en un evento o reto, aparecerá aquí."}
+                </p>
+              </div>
             )}
 
             <div className="al-hack-count-row">
@@ -2613,6 +2612,11 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                         </div>
                         <div className="flex shrink-0 items-center gap-1.5">
                           <Badge className={cn("shrink-0", hackathonStatusClass(item.status))}>{hackathonStatusLabel(item.status)}</Badge>
+                          {!isHackathonArchived(item) && isPreparationComplete(item) && (
+                            <Badge className="al-hack-prep-ready shrink-0 al-hack-chip-green">
+                              <CheckCircle2 className="h-3 w-3" />Preparación lista
+                            </Badge>
+                          )}
                           {canFavorite && (
                             <button
                               type="button"
@@ -2657,9 +2661,15 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                         <button type="button" className="al-hack-btn" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" }).catch(() => {})}>
                           <Plus className="h-3.5 w-3.5" />Crear tarea
                         </button>
-                        {!isHackathonArchived(item) && (
-                          <button type="button" className="al-hack-btn" onClick={() => completeHackathonItem(item, actions)}>
-                            <CheckCircle2 className="h-3.5 w-3.5" />Realizado
+                        {!isHackathonArchived(item) && item.sourceTable !== "tech_opportunities" && (
+                          <button
+                            type="button"
+                            className="al-hack-btn"
+                            disabled={pendingCompleteId === item.id}
+                            onClick={() => handleCompleteHackathon(item)}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            {pendingCompleteId === item.id ? "Guardando…" : "Realizado"}
                           </button>
                         )}
                         {!readOnlyTechItem && item.status === "revisar_futura_edicion" && (
@@ -3436,7 +3446,7 @@ function fpItemToHackathon(item: FpCatalogItem): Hackathon {
     type: item.type,
     modalidad: item.delivery_mode ?? undefined,
     localidad: item.location ?? undefined,
-    status: normalizeHackathonStatus(item.status),
+    status: fpUserStatusToHackathonStatus(item.user_status) ?? normalizeHackathonStatus(item.status),
     priority: (item.priority.toLowerCase() as Hackathon["priority"]),
     start_at: item.start_date ?? "",
     end_at: item.end_date ?? "",

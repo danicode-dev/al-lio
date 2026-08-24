@@ -333,6 +333,52 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       if (registrationDeadlineAt !== undefined) dbData.registration_deadline = registrationDeadlineAt || null;
       await updateDb("hackathons", id, dbData, ["/hackathons"]);
     },
+    completeHackathon: async (item: Hackathon) => {
+      if (item.sourceTable === "fp_content_items") {
+        const idSlug = item.id_slug;
+        if (!idSlug) {
+          toast.error("No se pudo marcar el evento como realizado");
+          throw new Error("Missing id_slug for fp hackathon completion");
+        }
+        const completedAt = nowIso();
+        setStore((current) => ({
+          ...current,
+          fpContent: current.fpContent.map((content) => content.id_slug === idSlug ? { ...content, user_status: "completed", user_completed_at: completedAt } : content),
+        }));
+        try {
+          const result = await markResourceStatusAction(idSlug, "completed");
+          if (result.error) throw new Error(result.error);
+          toast.success("Evento marcado como realizado");
+        } catch (error) {
+          setStore((current) => ({
+            ...current,
+            fpContent: current.fpContent.map((content) => content.id_slug === idSlug ? { ...content, user_status: null, user_completed_at: null } : content),
+          }));
+          toast.error("No se pudo marcar el evento como realizado");
+          throw error;
+        }
+        return;
+      }
+
+      // Plain, already user-owned hackathon row (sourceTable is "hackathons"
+      // or undefined). tech_opportunities-sourced items never reach this
+      // branch - the UI does not offer "Realizado" for them, since there is
+      // no safe per-user completion table for that source, unlike
+      // fp_content_items's fp_user_content_state.
+      const previousHackathon = store.hackathons.find((hackathon) => hackathon.id === item.id);
+      setStore((current) => ({ ...current, hackathons: patchById(current.hackathons, item.id, { status: "realizado" }) }));
+      try {
+        const response = await updateDb("hackathons", item.id, { status: "realizado" }, ["/hackathons"]);
+        if (!response?.result) throw new Error("Hackathon was not persisted");
+        toast.success("Evento marcado como realizado");
+      } catch (error) {
+        if (previousHackathon) {
+          setStore((current) => ({ ...current, hackathons: patchById(current.hackathons, item.id, previousHackathon) }));
+        }
+        toast.error("No se pudo marcar el evento como realizado");
+        throw error;
+      }
+    },
     addLink: async (data: Omit<QuickLink, "id" | "created_at">) => {
       const id = makeId();
       setStore((current) => ({ ...current, links: [{ id, created_at: nowIso(), ...data }, ...current.links] }));
