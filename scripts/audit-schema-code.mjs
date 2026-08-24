@@ -18,6 +18,8 @@ function requireIncludes(file, content, expected) {
 
 const schema = read("infra/postgres/schema.sql");
 const guestApp = read("src/components/guest-app.tsx");
+const guestStore = read("src/components/guest-store.tsx");
+const storeTypes = read("src/components/store/types.ts");
 const actions = read("src/lib/actions.ts");
 
 const requiredTables = [
@@ -86,11 +88,17 @@ for (const column of ["cycle_code", "cycle_group", "academic_year", "interests",
   requireIncludes("infra/postgres/schema.sql", schema, column);
 }
 
-requireIncludes("src/components/guest-app.tsx", guestApp, 'type TaskPriority = "alta" | "media" | "baja" | "critica"');
-requireIncludes("src/components/guest-app.tsx", guestApp, 'return normalized === "critica" ? "alta" : normalized');
-requireIncludes("src/components/guest-app.tsx", guestApp, "getDisplayCourses(store.courses, store.techOpportunities)");
-requireIncludes("src/components/guest-app.tsx", guestApp, "getDisplayHackathons(store.hackathons, store.techOpportunities)");
+requireIncludes("src/components/store/types.ts", storeTypes, 'export type TaskPriority = "alta" | "media" | "baja" | "critica"');
+requireIncludes("src/components/guest-store.tsx", guestStore, 'return normalized === "critica" ? "alta" : normalized');
+requireIncludes("src/components/guest-store.tsx", guestStore, "export function StoreProvider");
+requireIncludes("src/components/guest-store.tsx", guestStore, "export function useStore");
+requireIncludes("src/components/guest-app.tsx", guestApp, "getDisplayCourses(store.courses, store.techOpportunities, store.fpContent)");
+requireIncludes("src/components/guest-app.tsx", guestApp, "getDisplayHackathons(store.hackathons, store.techOpportunities, store.fpContent)");
 requireIncludes("src/components/guest-app.tsx", guestApp, "...store.techOpportunities.flatMap(techOpportunityToCalendarEvents)");
+
+if (guestApp.includes("createContext") || guestApp.includes("function StoreProvider") || guestApp.includes("function useStore")) {
+  fail("src/components/guest-app.tsx no debe volver a definir el store autenticado");
+}
 
 if (actions.includes('revalidatePath("/dashboard")') || guestApp.includes('revalidatePath("/dashboard")')) {
   fail('No debe existir revalidatePath("/dashboard"); rompe foco y refresca el layout completo');
