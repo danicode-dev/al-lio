@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { CalendarDays, Check, Circle, ListChecks, ListTodo, Plus, Trash2, X } from "lucide-react";
+import { CalendarDays, Check, Circle, ListChecks, ListTodo, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { useStore } from "@/components/guest-store";
 import type { Store } from "@/components/guest-app";
@@ -25,6 +25,7 @@ export function TasksView() {
   const [category, setCategory] = useState<keyof typeof categoryMeta>("diario");
   const [priority, setPriority] = useState<"baja" | "media" | "alta">("media");
   const [dueAt, setDueAt] = useState("");
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const counts = useMemo(() => {
     const completed = store.tasks.filter(isCompleted).length;
@@ -118,15 +119,26 @@ export function TasksView() {
           <EmptyState title={filter === "completed" ? "Todavía no has completado tareas" : "No tienes tareas pendientes"} description={filter === "completed" ? "Cuando completes una tarea aparecerá aquí." : "Puedes crear una nueva y empezar con algo pequeño."} />
         ) : (
           <div className="divide-y divide-[#f0ece2]">
-            {visibleTasks.map((task) => <TaskRow key={task.id} task={task} onToggle={() => actions.updateTask(task.id, isCompleted(task) ? { status: "pendiente", completed_at: "" } : { status: "completada", completed_at: new Date().toISOString() })} onDelete={() => actions.deleteTask(task.id)} />)}
+            {visibleTasks.map((task) => <TaskRow key={task.id} task={task} onToggle={() => actions.updateTask(task.id, isCompleted(task) ? { status: "pendiente", completed_at: "" } : { status: "completada", completed_at: new Date().toISOString() })} onEdit={() => setEditingTask(task)} onDelete={() => actions.deleteTask(task.id)} />)}
           </div>
         )}
       </section>
+
+      {editingTask && (
+        <EditTaskDialog
+          task={editingTask}
+          onClose={() => setEditingTask(null)}
+          onSave={(data) => {
+            actions.updateTask(editingTask.id, data);
+            setEditingTask(null);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function TaskRow({ task, onToggle, onDelete }: { task: Task; onToggle: () => void; onDelete: () => void }) {
+function TaskRow({ task, onToggle, onEdit, onDelete }: { task: Task; onToggle: () => void; onEdit: () => void; onDelete: () => void }) {
   const completed = isCompleted(task);
   const category = categoryMeta[task.category as keyof typeof categoryMeta] ?? categoryMeta.diario;
   return (
@@ -143,8 +155,63 @@ function TaskRow({ task, onToggle, onDelete }: { task: Task; onToggle: () => voi
         {task.description && <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#777269]">{task.description}</p>}
         {task.due_at && <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#8e887e]"><CalendarDays className="h-3.5 w-3.5" />{formatDate(task.due_at)}</p>}
       </div>
-      <button type="button" onClick={onDelete} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-[#aaa399] transition hover:bg-red-50 hover:text-red-600" aria-label={`Eliminar ${task.title}`}><Trash2 className="h-4 w-4" /></button>
+      <div className="flex shrink-0 items-center gap-1">
+        <button type="button" onClick={onEdit} className="grid h-9 w-9 place-items-center rounded-xl text-[#aaa399] transition hover:bg-[#fff0e9] hover:text-[#e15d2d]" aria-label={`Editar ${task.title}`}><Pencil className="h-4 w-4" /></button>
+        <button type="button" onClick={onDelete} className="grid h-9 w-9 place-items-center rounded-xl text-[#aaa399] transition hover:bg-red-50 hover:text-red-600" aria-label={`Eliminar ${task.title}`}><Trash2 className="h-4 w-4" /></button>
+      </div>
     </article>
+  );
+}
+
+function EditTaskDialog({ task, onClose, onSave }: { task: Task; onClose: () => void; onSave: (data: Partial<Task>) => void }) {
+  const [title, setTitle] = useState(task.title);
+  const [description, setDescription] = useState(task.description ?? "");
+  const [category, setCategory] = useState<keyof typeof categoryMeta>(
+    (task.category as keyof typeof categoryMeta) in categoryMeta ? (task.category as keyof typeof categoryMeta) : "diario",
+  );
+  const [priority, setPriority] = useState<"baja" | "media" | "alta">(task.priority === "critica" ? "alta" : task.priority);
+  const [dueAt, setDueAt] = useState(task.due_at ? task.due_at.slice(0, 10) : "");
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const cleanTitle = title.trim();
+    if (!cleanTitle) return;
+    onSave({ title: cleanTitle, description: description.trim(), category, priority, due_at: dueAt });
+  }
+
+  return (
+    <>
+      <button type="button" aria-label="Cerrar edicion" onClick={onClose} className="fixed inset-0 z-50 cursor-default bg-black/30 backdrop-blur-[1px]" />
+      <div role="dialog" aria-modal="true" aria-labelledby="edit-task-title" className="fixed left-1/2 top-1/2 z-[51] max-h-[calc(100dvh-2rem)] w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[18px] border border-[#e4dfd5] bg-white text-[#111111] shadow-[0_22px_50px_rgba(17,17,17,0.24)]">
+        <div className="flex items-center justify-between border-b border-[#f0ece2] px-4 py-3">
+          <span id="edit-task-title" className="text-sm font-extrabold">Editar tarea</span>
+          <button type="button" onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full text-[#aaa399] transition hover:bg-[#f7f4ee] hover:text-[#333029]" aria-label="Cerrar">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <form onSubmit={submit} className="space-y-3 p-4">
+          <input value={title} onChange={(event) => setTitle(event.target.value)} autoFocus required placeholder="¿Qué necesitas hacer?" className="h-11 w-full rounded-xl border border-[#e5d7cd] bg-white px-3 text-sm font-semibold text-[#25221d] outline-none placeholder:font-normal placeholder:text-[#a59f94] focus:border-[#f06a37] focus:ring-2 focus:ring-[#f06a37]/15" />
+          <div className="grid grid-cols-2 gap-3">
+            <select value={category} onChange={(event) => setCategory(event.target.value as keyof typeof categoryMeta)} className="h-11 rounded-xl border border-[#e5d7cd] bg-white px-3 text-sm text-[#333029] outline-none focus:border-[#f06a37]">
+              <option value="diario">Hoy</option>
+              <option value="urgente">Prioritario</option>
+              <option value="semanal">Esta semana</option>
+            </select>
+            <select value={priority} onChange={(event) => setPriority(event.target.value as typeof priority)} className="h-11 rounded-xl border border-[#e5d7cd] bg-white px-3 text-sm text-[#333029] outline-none focus:border-[#f06a37]">
+              <option value="baja">Prioridad baja</option>
+              <option value="media">Prioridad media</option>
+              <option value="alta">Prioridad alta</option>
+            </select>
+          </div>
+          <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={3} placeholder="Contexto o notas (opcional)" className="w-full resize-none rounded-xl border border-[#e5d7cd] bg-white px-3 py-2 text-sm text-[#333029] outline-none placeholder:text-[#a59f94] focus:border-[#f06a37]" />
+          <input type="date" value={dueAt} onChange={(event) => setDueAt(event.target.value)} aria-label="Fecha de la tarea" className="h-11 w-full rounded-xl border border-[#e5d7cd] bg-white px-3 text-sm text-[#333029] outline-none focus:border-[#f06a37]" />
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={onClose} className="h-10 rounded-xl px-4 text-sm font-semibold text-[#777269] transition hover:bg-[#f7f4ee]">Cancelar</button>
+            <button type="submit" disabled={!title.trim()} className="h-10 rounded-xl bg-[#f06a37] px-5 text-sm font-extrabold text-white transition hover:bg-[#df5725] disabled:cursor-not-allowed disabled:opacity-50">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </>
   );
 }
 
