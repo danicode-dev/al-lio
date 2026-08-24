@@ -622,12 +622,15 @@ test("markCompetencyCompleted optimistically completes and rolls back on failure
   assert.match(actionSource, /toast\.error\("No se pudo guardar"\);/);
 });
 
-test("The ruta path stepper reflects explicit competency completion, not just resource status (issue #96)", async () => {
+test("The ruta path stepper reads competency completion from a single explicit source, never inferred from resource status (issue #96)", async () => {
   const rutaPathSource = await readFile(new URL("../src/lib/fp/ruta-path.ts", import.meta.url), "utf8");
   assert.match(rutaPathSource, /getUserCompetencyStatesForSkills\(userId, skillIds\)/);
   assert.match(rutaPathSource, /competencyCompleted: competencyCompletedSet\.has\(skill\.id\)/);
 
   const viewSource = await readFile(new URL("../src/components/ruta/ruta-path-view.tsx", import.meta.url), "utf8");
   assert.match(viewSource, /competencyCompleted: boolean;/);
-  assert.match(viewSource, /const isStepDone = \(index: number\) => stepState\[index\]\.competencyCompleted \|\| stepState\[index\]\.status === "completed";/);
+  const isStepDoneMatch = viewSource.match(/const isStepDone = \(index: number\) => ([^;]+);/);
+  assert.ok(isStepDoneMatch, "could not locate the isStepDone definition");
+  assert.equal(isStepDoneMatch[1].trim(), "stepState[index].competencyCompleted", "isStepDone must read only the explicit competency record, not OR in resource status");
+  assert.doesNotMatch(isStepDoneMatch[1], /status/, "resource status must not leak into the competency-done signal");
 });

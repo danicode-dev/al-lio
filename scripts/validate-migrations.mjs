@@ -71,6 +71,7 @@ if (competencyStateMigration) {
   check("the migration creates fp_user_competency_state", competencyStateMigration.sql.includes("fp_user_competency_state"));
   check("completion is scoped to a user and a skill", competencyStateMigration.sql.includes("references public.users(id)") && competencyStateMigration.sql.includes("references public.fp_skills(id)"));
   check("the migration uses a composite primary key", competencyStateMigration.sql.includes("primary key (user_id, skill_id)"));
+  check("the migration keeps updated_at current via a trigger", competencyStateMigration.sql.includes("set_fp_user_competency_state_updated_at"));
 }
 
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));

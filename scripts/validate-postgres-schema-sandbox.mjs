@@ -86,6 +86,7 @@ const EXPECTED_TABLES = [
   "users", "profiles", "sources", "quick_searches", "opportunities",
   "hackathons", "courses", "tech_opportunities", "tasks", "reminders", "quick_links",
   "fp_cycles", "fp_content_items", "fp_content_cycle_fit", "fp_user_content_state",
+  "fp_skills", "fp_user_competency_state",
   "radar_deliveries", "radar_items", "radar_delivery_items", "radar_item_user_states",
   "fp_learning_competencies", "fp_learning_resources", "fp_learning_competency_resources",
   "fp_user_learning_state", "fp_learning_notes",
@@ -206,6 +207,68 @@ try {
     VALUES ($1, 'Sandbox User')
   `, [userId]);
   ok("INSERT profiles (FK user_id OK)");
+
+  // ── fp_user_competency_state: insert, upsert, trigger, FK, cascade (issue #96) ──
+  console.log("\n── fp_user_competency_state ──");
+  const skillId = `sandbox-skill-${Date.now()}`;
+  await client.query(`INSERT INTO public.fp_skills (id, titulo) VALUES ($1, 'Sandbox skill')`, [skillId]);
+  ok("INSERT fp_skills (sandbox skill)");
+
+  const competencyInsertRes = await client.query(
+    `INSERT INTO public.fp_user_competency_state (user_id, skill_id) VALUES ($1, $2) RETURNING updated_at`,
+    [userId, skillId],
+  );
+  ok("INSERT fp_user_competency_state (row existence marks the competency completed)");
+
+  await client.query("SELECT pg_sleep(0.01)");
+  const beforeTriggerUpdate = competencyInsertRes.rows[0].updated_at;
+  await client.query(
+    `UPDATE public.fp_user_competency_state SET completed_at = now() WHERE user_id = $1 AND skill_id = $2`,
+    [userId, skillId],
+  );
+  const afterTriggerRes = await client.query(
+    `SELECT updated_at FROM public.fp_user_competency_state WHERE user_id = $1 AND skill_id = $2`,
+    [userId, skillId],
+  );
+  afterTriggerRes.rows[0].updated_at > beforeTriggerUpdate
+    ? ok("trigger set_fp_user_competency_state_updated_at fires on UPDATE")
+    : fail("updated_at did NOT advance on UPDATE - trigger missing or broken");
+
+  await client.query(
+    `INSERT INTO public.fp_user_competency_state (user_id, skill_id)
+     VALUES ($1, $2)
+     ON CONFLICT (user_id, skill_id) DO UPDATE SET updated_at = now()`,
+    [userId, skillId],
+  );
+  const competencyRowCount = await client.query(
+    `SELECT count(*)::int AS count FROM public.fp_user_competency_state WHERE user_id = $1 AND skill_id = $2`,
+    [userId, skillId],
+  );
+  competencyRowCount.rows[0].count === 1
+    ? ok("ON CONFLICT (user_id, skill_id) upserts in place instead of duplicating the row")
+    : fail(`expected exactly 1 row after upsert, found ${competencyRowCount.rows[0].count}`);
+
+  let competencyFkRejected = false;
+  try {
+    await client.query(
+      `INSERT INTO public.fp_user_competency_state (user_id, skill_id) VALUES ($1, 'sandbox-skill-does-not-exist')`,
+      [userId],
+    );
+  } catch (err) {
+    competencyFkRejected = err.code === "23503"; // foreign_key_violation
+  }
+  competencyFkRejected
+    ? ok("FK rejects an unknown skill_id")
+    : fail("FK did not reject an unknown skill_id");
+
+  await client.query(`DELETE FROM public.fp_skills WHERE id = $1`, [skillId]);
+  const competencyAfterSkillDelete = await client.query(
+    `SELECT count(*)::int AS count FROM public.fp_user_competency_state WHERE user_id = $1 AND skill_id = $2`,
+    [userId, skillId],
+  );
+  competencyAfterSkillDelete.rows[0].count === 0
+    ? ok("ON DELETE CASCADE removes competency state when the skill is deleted")
+    : fail("competency state row survived skill deletion (cascade broken)");
 
   const learningResourceId = `sandbox-learning-${Date.now()}`;
   await client.query(

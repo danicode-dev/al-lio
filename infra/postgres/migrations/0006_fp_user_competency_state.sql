@@ -12,4 +12,12 @@ create table if not exists public.fp_user_competency_state (
   primary key (user_id, skill_id)
 );
 
-create index if not exists fp_user_competency_state_user_id_idx on public.fp_user_competency_state(user_id);
+-- No separate user_id index: the (user_id, skill_id) primary key's b-tree
+-- already serves user_id-only lookups via the leftmost-prefix rule, and
+-- every current query filters on skill_id too, so a redundant single-column
+-- index would add write cost with no matching read pattern to justify it.
+
+drop trigger if exists set_fp_user_competency_state_updated_at on public.fp_user_competency_state;
+create trigger set_fp_user_competency_state_updated_at
+  before update on public.fp_user_competency_state
+  for each row execute function public.set_updated_at();

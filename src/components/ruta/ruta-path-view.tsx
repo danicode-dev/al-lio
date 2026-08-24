@@ -57,7 +57,10 @@ export function LearningPathView({
   const current = stepState[activeIndex];
   const { youtubeRef, playerContainerRef, currentTime, seekTo } = useYouTubePlayer(step.primary?.videoUrl);
 
-  const isStepDone = (index: number) => stepState[index].competencyCompleted || stepState[index].status === "completed";
+  // The explicit per-user competency record is the only source of truth for
+  // "is this step done" - watching/completing the linked resource (status)
+  // is separate progress and must not be read as competency completion.
+  const isStepDone = (index: number) => stepState[index].competencyCompleted;
   const trackableCount = steps.length;
   const completedCount = stepState.filter((_, i) => isStepDone(i)).length;
   const progressPercent = trackableCount > 0 ? Math.round((completedCount / trackableCount) * 100) : 0;
