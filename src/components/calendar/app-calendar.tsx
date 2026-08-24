@@ -19,6 +19,7 @@ export type CalendarEvent = {
   end_at?: string;
   status?: string;
   href: string;
+  description?: string;
 };
 
 export type GoogleCalendarEvent = {
@@ -28,6 +29,7 @@ export type GoogleCalendarEvent = {
   end: string;
   htmlLink?: string;
   status?: string;
+  description?: string;
 };
 
 type CompletedTask = {
@@ -508,22 +510,87 @@ function EventDateTimeFields({ value, onChange }: { value: Date; onChange: (date
 }
 
 function CalendarAgendaRow({ event }: { event: CalendarEvent }) {
-  return (
-    <Link href={event.href} className="flex items-start gap-2 rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-2.5 text-sm transition-colors hover:border-[#e5c7b8] hover:bg-[#fff8f4]">
+  const [detailOpen, setDetailOpen] = useState(false);
+  const content = (
+    <>
       <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", calendarDotClass(event.type, event.status))} />
       <span className="min-w-0">
         <span className="block truncate font-medium">{event.title}</span>
         <span className="text-xs text-muted-foreground">{formatTime(event.date_at)}{event.end_at ? ` - ${formatTime(event.end_at)}` : ""} - {calendarTypeLabel(event.type)}</span>
       </span>
+    </>
+  );
+
+  if (event.type === "google") {
+    return (
+      <>
+        <button type="button" onClick={() => setDetailOpen(true)} className="flex w-full items-start gap-2 rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-2.5 text-left text-sm transition-colors hover:border-[#e5c7b8] hover:bg-[#fff8f4]">
+          {content}
+        </button>
+        {detailOpen && <GoogleEventDetailDialog event={event} onClose={() => setDetailOpen(false)} />}
+      </>
+    );
+  }
+
+  return (
+    <Link href={event.href} className="flex items-start gap-2 rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-2.5 text-sm transition-colors hover:border-[#e5c7b8] hover:bg-[#fff8f4]">
+      {content}
     </Link>
   );
 }
 
 function CalendarPill({ event }: { event: CalendarEvent }) {
+  const [detailOpen, setDetailOpen] = useState(false);
+  const label = (event.type === "task" && event.date_at ? `${formatTime(event.date_at)} ` : "") + event.title;
+
+  if (event.type === "google") {
+    return (
+      <>
+        <button type="button" onClick={() => setDetailOpen(true)} className={cn("block w-full truncate rounded px-2 py-1 text-left text-[11px] leading-tight", calendarEventClass(event.type, event.status))} title={event.title}>
+          {label}
+        </button>
+        {detailOpen && <GoogleEventDetailDialog event={event} onClose={() => setDetailOpen(false)} />}
+      </>
+    );
+  }
+
   return (
     <Link href={event.href} className={cn("block truncate rounded px-2 py-1 text-[11px] leading-tight", calendarEventClass(event.type, event.status))} title={event.title}>
-      {event.type === "task" && event.date_at ? `${formatTime(event.date_at)} ` : ""}{event.title}
+      {label}
     </Link>
+  );
+}
+
+function GoogleEventDetailDialog({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
+  return (
+    <>
+      <button type="button" aria-label="Cerrar evento" onClick={onClose} className="fixed inset-0 z-50 cursor-default bg-black/30 backdrop-blur-[1px]" />
+      <div role="dialog" aria-modal="true" aria-labelledby="google-event-title" className="fixed left-1/2 top-1/2 z-[51] max-h-[calc(100dvh-2rem)] w-[min(25rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[18px] border border-[#e4dfd5] bg-white text-[#111111] shadow-[0_22px_50px_rgba(17,17,17,0.24)]">
+        <div className="flex items-center justify-between border-b border-[#f0ece2] px-4 py-3">
+          <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#a43b32]">Evento de Google Calendar</span>
+          <button type="button" onClick={onClose} className="flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-foreground" aria-label="Cerrar"><X className="h-3.5 w-3.5" /></button>
+        </div>
+        <div className="space-y-2.5 p-4">
+          <h2 id="google-event-title" className="text-lg font-semibold">{event.title}</h2>
+          <p className="text-sm text-[#6b6f72]">
+            {formatDayTitle(dateKey(event.date_at))}
+            {" · "}
+            {formatTime(event.date_at)}{event.end_at ? ` - ${formatTime(event.end_at)}` : ""}
+          </p>
+          {event.description && (
+            <p className="whitespace-pre-wrap text-sm text-[#333029]">{event.description}</p>
+          )}
+        </div>
+        <div className="flex items-center justify-between gap-2 border-t border-[#f0ece2] px-4 py-3">
+          {event.href && event.href !== "/calendar" ? (
+            <a href={event.href} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#e15d2d] underline underline-offset-2 hover:text-[#c6491d]">
+              Ver en Google Calendar
+            </a>
+          ) : <span />}
+          <Button variant="ghost" size="sm" onClick={onClose}>Cerrar</Button>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -548,6 +615,7 @@ function useGoogleCalendarEvents(month: Date, refreshKey = 0) {
     end_at: event.end,
     status: event.status,
     href: event.htmlLink || "/calendar",
+    description: event.description,
   })), [events]);
 }
 
