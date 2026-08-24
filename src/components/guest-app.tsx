@@ -372,7 +372,7 @@ const taskPriorities: TaskPriority[] = ["baja", "media", "alta", "critica"];
 
 export type ReturnTypeActions = {
   addTask: (data: Omit<Task, "id" | "created_at" | "progress_notes"> & { progress_notes?: ProgressNote[] }) => void;
-  updateTask: (id: string, data: Partial<Task>) => void;
+  updateTask: (id: string, data: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => void;
   addTaskNote: (id: string, text: string) => void;
   addCourse: (data: Omit<Course, "id" | "created_at">) => void;
@@ -442,6 +442,7 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       }
     },
     updateTask: async (id: string, data: Partial<Task>) => {
+      const previousTask = store.tasks.find((task) => task.id === id);
       const normalizedData = {
         ...data,
         ...(data.category !== undefined ? { category: toTaskBucket(data.category) } : {}),
@@ -456,7 +457,16 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       if (data.completed_at !== undefined) dbData.completed_at = data.completed_at || null;
       if (data.category !== undefined) dbData.category = toTaskBucket(data.category);
       if (data.priority !== undefined) dbData.priority = toDbTaskPriority(data.priority);
-      await updateDb("tasks", id, dbData, ["/tasks", "/calendar"]);
+      try {
+        const response = await updateDb("tasks", id, dbData, ["/tasks", "/calendar"]);
+        if (!response?.result) throw new Error("Task update was not persisted");
+      } catch (error) {
+        if (previousTask) {
+          setStore((current) => ({ ...current, tasks: patchById(current.tasks, id, previousTask) }));
+        }
+        toast.error("No se pudo actualizar la tarea");
+        throw error;
+      }
     },
     deleteTask: async (id: string) => {
       setStore((current) => ({ ...current, tasks: current.tasks.filter((task) => task.id !== id) }));
