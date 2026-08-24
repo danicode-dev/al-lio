@@ -47,7 +47,7 @@ export function TasksView() {
       status: "pendiente",
       priority,
       category,
-    });
+    }).catch(() => {});
     setTitle("");
     setDescription("");
     setCategory("diario");

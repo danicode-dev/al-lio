@@ -33,7 +33,7 @@ export function DashboardTodo({ store, actions }: { store: Store; actions: Retur
       status: "pendiente",
       priority: "media",
       category: "diario",
-    });
+    }).catch(() => {});
     setTitle("");
     setNotes("");
     setComposerOpen(false);

@@ -191,13 +191,13 @@ export type Store = {
 };
 
 export type ReturnTypeActions = {
-  addTask: (data: Omit<Task, "id" | "created_at" | "progress_notes"> & { progress_notes?: ProgressNote[] }) => void;
+  addTask: (data: Omit<Task, "id" | "created_at" | "progress_notes"> & { progress_notes?: ProgressNote[] }) => Promise<void>;
   updateTask: (id: string, data: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => void;
   addTaskNote: (id: string, text: string) => void;
-  addCourse: (data: Omit<Course, "id" | "created_at">) => void;
+  addCourse: (data: Omit<Course, "id" | "created_at">) => Promise<void>;
   updateCourse: (id: string, data: Partial<Course>) => void;
-  addHackathon: (data: Omit<Hackathon, "id" | "created_at">) => void;
+  addHackathon: (data: Omit<Hackathon, "id" | "created_at">) => Promise<void>;
   updateHackathon: (id: string, data: Partial<Hackathon>) => void;
   addLink: (data: Omit<QuickLink, "id" | "created_at">) => void;
   toggleFpFavorite: (idSlug: string, nextValue: boolean) => void;

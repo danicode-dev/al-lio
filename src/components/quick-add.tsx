@@ -21,53 +21,66 @@ type QuickAddProps = {
 export function QuickAdd({ open, setOpen, actions }: QuickAddProps) {
   const [type, setType] = useState<QuickAddType>("task");
   const [showDates, setShowDates] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   function changeType(nextType: QuickAddType) {
     setType(nextType);
     setShowDates(false);
   }
 
-  function submit(form: FormData) {
+  async function submit(form: FormData) {
+    if (submitting) return;
     const title = valueOf(form, "title");
     if (!title) return;
 
-    if (type === "task") {
-      actions.addTask({
-        title,
-        description: valueOf(form, "notes"),
-        due_at: "",
-        status: "pendiente",
-        priority: "media",
-        category: "diario",
-      });
+    setSubmitting(true);
+    try {
+      if (type === "task") {
+        await actions.addTask({
+          title,
+          description: valueOf(form, "notes"),
+          due_at: "",
+          status: "pendiente",
+          priority: "media",
+          category: "diario",
+        });
+      }
+      if (type === "course") {
+        await actions.addCourse({
+          title,
+          platform: valueOf(form, "platform"),
+          url: valueOf(form, "url"),
+          start_at: valueOf(form, "start_at"),
+          deadline_at: valueOf(form, "deadline_at"),
+          status: "pendiente",
+          notes: valueOf(form, "notes"),
+        });
+      }
+      if (type === "hackathon") {
+        await actions.addHackathon({
+          name: title,
+          organizer: valueOf(form, "organizer"),
+          province: "Granada",
+          city: valueOf(form, "city"),
+          status: "revisar_futura_edicion",
+          priority: "media",
+          start_at: valueOf(form, "start_at"),
+          end_at: valueOf(form, "end_at"),
+          registration_deadline_at: valueOf(form, "registration_deadline_at"),
+          url: valueOf(form, "url"),
+          notes: valueOf(form, "notes"),
+        });
+      }
+      // Closing unmounts the form, which clears it; on failure we fall through
+      // to `finally` instead, keeping the dialog and the entered values so the
+      // user can retry - the store action already showed a specific error toast.
+      setOpen(false);
+    } catch {
+      // Swallow - the failing action already rolled back its optimistic entry
+      // and surfaced a toast. Keep the dialog open for retry.
+    } finally {
+      setSubmitting(false);
     }
-    if (type === "course") {
-      actions.addCourse({
-        title,
-        platform: valueOf(form, "platform"),
-        url: valueOf(form, "url"),
-        start_at: valueOf(form, "start_at"),
-        deadline_at: valueOf(form, "deadline_at"),
-        status: "pendiente",
-        notes: valueOf(form, "notes"),
-      });
-    }
-    if (type === "hackathon") {
-      actions.addHackathon({
-        name: title,
-        organizer: valueOf(form, "organizer"),
-        province: "Granada",
-        city: valueOf(form, "city"),
-        status: "revisar_futura_edicion",
-        priority: "media",
-        start_at: valueOf(form, "start_at"),
-        end_at: valueOf(form, "end_at"),
-        registration_deadline_at: valueOf(form, "registration_deadline_at"),
-        url: valueOf(form, "url"),
-        notes: valueOf(form, "notes"),
-      });
-    }
-    setOpen(false);
   }
 
   return (
@@ -139,7 +152,9 @@ export function QuickAdd({ open, setOpen, actions }: QuickAddProps) {
               </>
             )}
 
-            <Button className="w-full bg-[#f06a37] text-white hover:bg-[#df5725]">{type === "task" ? "Añadir tarea" : type === "course" ? "Añadir curso" : "Añadir reto"}</Button>
+            <Button disabled={submitting} className="w-full bg-[#f06a37] text-white hover:bg-[#df5725] disabled:opacity-60">
+              {submitting ? "Guardando…" : type === "task" ? "Añadir tarea" : type === "course" ? "Añadir curso" : "Añadir reto"}
+            </Button>
           </QuickAddForm>
         </Card>
       )}
@@ -148,7 +163,7 @@ export function QuickAdd({ open, setOpen, actions }: QuickAddProps) {
 }
 
 function QuickAddForm({ children, action }: { children: React.ReactNode; action: (data: FormData) => void }) {
-  return <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); action(new FormData(event.currentTarget)); event.currentTarget.reset(); }}>{children}</form>;
+  return <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); action(new FormData(event.currentTarget)); }}>{children}</form>;
 }
 
 function QuickAddTab({ active, children, icon, onClick }: { active: boolean; children: React.ReactNode; icon: React.ReactNode; onClick: () => void }) {

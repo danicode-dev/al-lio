@@ -179,7 +179,7 @@ function completeCourseItem(item: Course, actions: ReturnTypeActions) {
       status: "terminado",
       sourceTable: undefined,
       notes: appendCompletionNote(item.notes, "Marcado como terminado desde D1OS."),
-    });
+    }).catch(() => {});
     return;
   }
 
@@ -194,7 +194,7 @@ function completeHackathonItem(item: Hackathon, actions: ReturnTypeActions) {
       status: "realizado",
       sourceTable: undefined,
       notes: appendCompletionNote(item.notes, "Marcado como realizado desde D1OS."),
-    });
+    }).catch(() => {});
     return;
   }
 
@@ -705,7 +705,7 @@ function QuickTaskForm({
       status: "pendiente",
       priority,
       category: bucket,
-    });
+    }).catch(() => {});
     setOpen(false);
     setDueAt(bucket === "semanal" ? addDaysKeepingTime(toDatetimeLocalValue(new Date()), 3) : toDatetimeLocalValue(new Date()));
   }
@@ -2675,7 +2675,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                             <ListChecks className="h-3.5 w-3.5" />Ver detalles
                           </button>
                         )}
-                        <button type="button" className="al-hack-btn" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" })}>
+                        <button type="button" className="al-hack-btn" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" }).catch(() => {})}>
                           <Plus className="h-3.5 w-3.5" />Crear tarea
                         </button>
                         {!isHackathonArchived(item) && (

@@ -103,19 +103,22 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       const priority = normalizeTaskPriority(data.priority);
       setStore((current) => ({ ...current, tasks: [{ id, created_at: nowIso(), progress_notes: [], ...data, category, priority }, ...current.tasks] }));
       try {
-        await insertDb("tasks", {
+        const response = await insertDb("tasks", {
           id,
           title: data.title,
-          description: data.description,
+          description: data.description || null,
           due_date: data.due_at || null,
           reminder_at: data.reminder_at || null,
           priority: toDbTaskPriority(priority),
           status: data.status,
           category,
-        }, ["/tasks", "/calendar"]);
+        }, ["/tasks", "/calendar", "/dashboard"]);
+        if (!response?.result) throw new Error("Task was not persisted");
         toast.success("Tarea creada");
-      } catch {
+      } catch (error) {
+        setStore((current) => ({ ...current, tasks: current.tasks.filter((task) => task.id !== id) }));
         toast.error("Error al crear la tarea");
+        throw error;
       }
     },
     updateTask: async (id: string, data: Partial<Task>) => {
@@ -169,10 +172,22 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       const id = makeId();
       setStore((current) => ({ ...current, courses: [{ id, created_at: nowIso(), ...data }, ...current.courses] }));
       try {
-        await insertDb("courses", { id, title: data.title, platform: data.platform, url: data.url, start_date: data.start_at, deadline: data.deadline_at, status: data.status, notes: data.notes }, ["/courses"]);
+        const response = await insertDb("courses", {
+          id,
+          title: data.title,
+          platform: data.platform || null,
+          url: data.url || null,
+          start_date: data.start_at || null,
+          deadline: data.deadline_at || null,
+          status: data.status,
+          notes: data.notes || null,
+        }, ["/courses", "/dashboard"]);
+        if (!response?.result) throw new Error("Course was not persisted");
         toast.success("Curso añadido");
-      } catch {
+      } catch (error) {
+        setStore((current) => ({ ...current, courses: current.courses.filter((course) => course.id !== id) }));
         toast.error("Error al añadir el curso");
+        throw error;
       }
     },
     updateCourse: async (id: string, data: Partial<Course>) => {
@@ -187,10 +202,27 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       const id = makeId();
       setStore((current) => ({ ...current, hackathons: [{ id, created_at: nowIso(), ...data }, ...current.hackathons] }));
       try {
-        await insertDb("hackathons", { id, name: data.name, organizer: data.organizer, province: data.province, city: data.city, type: "hackathon", status: data.status || "revisar_futura_edicion", event_start_date: data.start_at, event_end_date: data.end_at, registration_deadline: data.registration_deadline_at, url: data.url, notes: data.notes, priority: data.priority }, ["/hackathons"]);
+        const response = await insertDb("hackathons", {
+          id,
+          name: data.name,
+          organizer: data.organizer || null,
+          province: data.province,
+          city: data.city || null,
+          type: "hackathon",
+          status: data.status || "revisar_futura_edicion",
+          event_start_date: data.start_at || null,
+          event_end_date: data.end_at || null,
+          registration_deadline: data.registration_deadline_at || null,
+          url: data.url || null,
+          notes: data.notes || null,
+          priority: data.priority,
+        }, ["/hackathons", "/calendar", "/dashboard"]);
+        if (!response?.result) throw new Error("Hackathon was not persisted");
         toast.success("Evento o reto añadido");
-      } catch {
+      } catch (error) {
+        setStore((current) => ({ ...current, hackathons: current.hackathons.filter((hackathon) => hackathon.id !== id) }));
         toast.error("Error al añadir el evento o reto");
+        throw error;
       }
     },
     updateHackathon: async (id: string, data: Partial<Hackathon>) => {
