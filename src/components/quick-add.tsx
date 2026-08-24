@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { BookOpen, ChevronRight, ListTodo, Plus, Trophy, X } from "lucide-react";
 
-import type { ReturnTypeActions } from "@/components/guest-app";
+import type { ReturnTypeActions } from "@/components/store/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

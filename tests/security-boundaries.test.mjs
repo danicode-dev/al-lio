@@ -321,19 +321,65 @@ test("Task editing preserves critical priority and optional due time", async () 
 });
 
 test("Task edit waits for persistence and keeps the dialog open after failure", async () => {
-  const [viewSource, storeSource, legacyStoreSource] = await Promise.all([
+  const [viewSource, storeSource] = await Promise.all([
     readFile(new URL("../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(viewSource, /await actions\.updateTask\(editingTask\.id, data\);\s+setEditingTask\(null\);/);
   assert.match(viewSource, /No se pudo guardar la tarea/);
   assert.match(viewSource, /\{saving \? "Guardando…" : "Guardar"\}/);
 
-  for (const source of [storeSource, legacyStoreSource]) {
-    assert.match(source, /if \(!response\?\.result\) throw new Error\("Task update was not persisted"\)/);
-    assert.match(source, /patchById\(current\.tasks, id, previousTask\)/);
-    assert.match(source, /throw error;/);
+  assert.match(storeSource, /if \(!response\?\.result\) throw new Error\("Task update was not persisted"\)/);
+  assert.match(storeSource, /patchById\(current\.tasks, id, previousTask\)/);
+  assert.match(storeSource, /throw error;/);
+});
+
+test("The authenticated student tree owns exactly one store provider (issue #90)", async () => {
+  const [guestAppSource, guestStoreSource, storedGuestAppSource, dashboardClientSource, layoutSource] = await Promise.all([
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/stored-guest-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/dashboard/dashboard-client.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+  ]);
+
+  // guest-app.tsx must not define its own context/provider/mutations anymore -
+  // it consumes the canonical one from guest-store.tsx.
+  assert.doesNotMatch(guestAppSource, /createContext/);
+  assert.doesNotMatch(guestAppSource, /export function StoreProvider/);
+  assert.doesNotMatch(guestAppSource, /export function useStore/);
+  assert.match(guestAppSource, /import \{ useStore \} from "@\/components\/guest-store";/);
+
+  // guest-store.tsx is the sole canonical implementation.
+  assert.match(guestStoreSource, /export function StoreProvider/);
+  assert.match(guestStoreSource, /export function useStore/);
+
+  // Only the layout mounts a StoreProvider; StoredGuestApp and DashboardClient
+  // are pure consumers of the ambient context, not additional mount points.
+  assert.match(layoutSource, /<StoreProvider initialStore=\{store\}>/);
+  assert.doesNotMatch(storedGuestAppSource, /StoreProvider/);
+  assert.doesNotMatch(dashboardClientSource, /StoreProvider/);
+});
+
+test("The merged store fetch loads every section with fail-soft handling (issue #90)", async () => {
+  const dataSource = await readFile(new URL("../src/lib/data.ts", import.meta.url), "utf8");
+
+  // getShellStore/getDashboardStore no longer exist as separate, nested fetches.
+  assert.doesNotMatch(dataSource, /export const getShellStore/);
+  assert.doesNotMatch(dataSource, /export async function getDashboardStore/);
+  assert.match(dataSource, /export const getGlobalStore = cache\(async \(\) => \{/);
+
+  for (const section of [
+    'loadStoreSection\\("tasks"',
+    'loadStoreSection\\("courses"',
+    'loadStoreSection\\("hackathons"',
+    'loadStoreSection\\("opportunities", getAllTechOpportunities',
+    'loadStoreSection\\("opportunities", getFpContentForProfile',
+    'loadStoreSection\\("companies", getCompaniesByCycleGroup',
+    'loadStoreSection\\("companies", getFavoriteCompanyIds',
+    'loadStoreSection\\("roadmap"',
+  ]) {
+    assert.match(dataSource, new RegExp(section), `missing fail-soft wrapping for ${section}`);
   }
 });

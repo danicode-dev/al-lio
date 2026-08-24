@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { ArrowRight, Check, ListTodo, MessageSquareText, Plus, X } from "lucide-react";
-import type { ReturnTypeActions, Store } from "@/components/guest-app";
+import type { ReturnTypeActions, Store } from "@/components/store/types";
 import { dashboardLightSurface } from "@/components/dashboard/dashboard-surface";
 
 function isCompleted(status: string) {

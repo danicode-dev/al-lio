@@ -24,28 +24,34 @@ export const FP_APTITUDE_GATED_TYPES = new Set(["hackathon", "evento", "reto", "
 
 export type StoreLoadSection = "tasks" | "courses" | "hackathons" | "opportunities" | "companies" | "roadmap";
 
-export async function getGlobalStore() {
+export const getGlobalStore = cache(async () => {
   const session = await getSession();
   if (!session) redirect("/login");
 
   const userId = session.uid;
 
-  const profile = await getProfileByUser(userId);
+  const [profile, pgUser] = await Promise.all([
+    getProfileByUser(userId),
+    getUserById(userId),
+  ]);
   if (!profile || !profile.onboarding_completed_at) redirect("/onboarding");
 
-  const [tasks, courses, hackathons, techOpportunities, opportunities, links, pgUser, fpContent, dbCompanies, favoriteCompanyIds, roadmap] =
+  const issues: StoreLoadSection[] = [];
+
+  const [tasks, courses, hackathons, techOpportunities, opportunities, links, fpContent, dbCompanies, favoriteCompanyIds, roadmap] =
     await Promise.all([
-      getTasksByUser(userId),
-      getCoursesByUser(userId),
-      getHackathonsByUser(userId),
-      getAllTechOpportunities(),
+      loadStoreSection("tasks", getTasksByUser(userId), [], issues),
+      loadStoreSection("courses", getCoursesByUser(userId), [], issues),
+      loadStoreSection("hackathons", getHackathonsByUser(userId), [], issues),
+      loadStoreSection("opportunities", getAllTechOpportunities(), [], issues),
       getOpportunitiesByUser(userId),
       getQuickLinksByUser(userId),
-      getUserById(userId),
-      getFpContentForProfile(userId, profile),
-      profile.cycle_group ? getCompaniesByCycleGroup(profile.cycle_group) : Promise.resolve([]),
-      getFavoriteCompanyIds(userId),
-      getLearningOverview(userId, profile),
+      loadStoreSection("opportunities", getFpContentForProfile(userId, profile), [], issues),
+      profile.cycle_group
+        ? loadStoreSection("companies", getCompaniesByCycleGroup(profile.cycle_group), [], issues)
+        : Promise.resolve([]),
+      loadStoreSection("companies", getFavoriteCompanyIds(userId), new Set<string>(), issues),
+      loadStoreSection("roadmap", getLearningOverview(userId, profile), null, issues),
     ]);
 
   const aptitudeGatedItemIds = fpContent
@@ -69,17 +75,7 @@ export async function getGlobalStore() {
   return {
     version: 2 as const,
     userName,
-    tasks: tasks.map((t) => ({
-      ...t,
-      due_date: ymd(t.due_date),
-      due_at: ymd(t.due_date),
-      category: t.category ?? "diario",
-      reminder_at: iso(t.reminder_at),
-      progress_notes: Array.isArray(t.progress_notes) ? t.progress_notes : [],
-      completed_at: iso(t.completed_at),
-      created_at: iso(t.created_at),
-      updated_at: iso(t.updated_at),
-    })),
+    tasks: serializeTasks(tasks),
     opportunities: opportunities.map((o) => ({
       ...o,
       published_at: iso(o.published_at),
@@ -97,18 +93,7 @@ export async function getGlobalStore() {
         updated_at: iso(item.updated_at),
       })),
     ),
-    courses: courses.map((c) => ({
-      ...c,
-      start_date: ymd(c.start_date),
-      deadline: ymd(c.deadline),
-      deadline_at: ymd(c.deadline),
-      start_at: ymd(c.start_date),
-      fecha_inicio: ymd(c.fecha_inicio),
-      fecha_fin: ymd(c.fecha_fin),
-      ultima_revision: ymd(c.ultima_revision),
-      created_at: iso(c.created_at),
-      updated_at: iso(c.updated_at),
-    })),
+    courses: serializeCourses(courses),
     fpContent: fpContent.map((item) => ({
       ...item,
       start_date: ymd(item.start_date),
@@ -127,22 +112,7 @@ export async function getGlobalStore() {
         })),
       })),
     })),
-    hackathons: hackathons.map((h) => ({
-      ...h,
-      event_start_date: ymd(h.event_start_date),
-      event_end_date: ymd(h.event_end_date),
-      registration_deadline: ymd(h.registration_deadline),
-      start_at: ymd(h.event_start_date),
-      end_at: ymd(h.event_end_date),
-      registration_deadline_at: ymd(h.registration_deadline),
-      inscripcion_hasta: ymd(h.inscripcion_hasta),
-      ultima_revision: ymd(h.ultima_revision),
-      detected_at: ymd(h.detected_at),
-      last_reviewed_at: ymd(h.last_reviewed_at),
-      next_review_at: ymd(h.next_review_at),
-      created_at: iso(h.created_at),
-      updated_at: iso(h.updated_at),
-    })),
+    hackathons: serializeHackathons(hackathons),
     links: links.map((l) => ({
       ...l,
       created_at: iso(l.created_at),
@@ -159,25 +129,7 @@ export async function getGlobalStore() {
       granada_note: c.granada_note ?? undefined,
       is_favorite: favoriteCompanyIds.has(c.id),
     })),
-    loadIssues: [] as StoreLoadSection[],
-  };
-}
-
-const getStoreContext = cache(async () => {
-  const session = await getSession();
-  if (!session) redirect("/login");
-
-  const [profile, pgUser] = await Promise.all([
-    getProfileByUser(session.uid),
-    getUserById(session.uid),
-  ]);
-  if (!profile || !profile.onboarding_completed_at) redirect("/onboarding");
-
-  const rawName = pgUser?.display_name || session.name || session.email.split("@")[0] || "Invitado";
-  return {
-    session,
-    profile,
-    userName: rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase(),
+    loadIssues: [...new Set(issues)],
   };
 });
 
@@ -242,80 +194,6 @@ function serializeHackathons(hackathons: Awaited<ReturnType<typeof getHackathons
     created_at: iso(hackathon.created_at),
     updated_at: iso(hackathon.updated_at),
   }));
-}
-
-export const getShellStore = cache(async () => {
-  const { session, userName } = await getStoreContext();
-  const issues: StoreLoadSection[] = [];
-  const [tasks, courses, hackathons] = await Promise.all([
-    loadStoreSection("tasks", getTasksByUser(session.uid), [], issues),
-    loadStoreSection("courses", getCoursesByUser(session.uid), [], issues),
-    loadStoreSection("hackathons", getHackathonsByUser(session.uid), [], issues),
-  ]);
-
-  return {
-    version: 2 as const,
-    userName,
-    tasks: serializeTasks(tasks),
-    opportunities: [],
-    techOpportunities: [],
-    courses: serializeCourses(courses),
-    hackathons: serializeHackathons(hackathons),
-    fpContent: [],
-    links: [],
-    reminders: [],
-    roadmap: null,
-    companies: [],
-    loadIssues: issues,
-  };
-});
-
-export async function getDashboardStore() {
-  const [{ session, profile }, shellStore] = await Promise.all([getStoreContext(), getShellStore()]);
-  const issues = [...shellStore.loadIssues];
-  const [techOpportunities, fpContent, dbCompanies, favoriteCompanyIds, roadmap] = await Promise.all([
-    loadStoreSection("opportunities", getAllTechOpportunities(), [], issues),
-    loadStoreSection("opportunities", getFpContentForProfile(session.uid, profile), [], issues),
-    profile.cycle_group
-      ? loadStoreSection("companies", getCompaniesByCycleGroup(profile.cycle_group), [], issues)
-      : Promise.resolve([]),
-    loadStoreSection("companies", getFavoriteCompanyIds(session.uid), new Set<string>(), issues),
-    loadStoreSection("roadmap", getLearningOverview(session.uid, profile), null, issues),
-  ]);
-
-  return {
-    ...shellStore,
-    techOpportunities: sortTechOpportunities(
-      (techOpportunities as unknown as TechOpportunity[]).map((item) => ({
-        ...item,
-        fecha_inicio: ymd(item.fecha_inicio),
-        fecha_fin: ymd(item.fecha_fin),
-        ultima_revision: ymd(item.ultima_revision),
-        created_at: iso(item.created_at),
-        updated_at: iso(item.updated_at),
-      })),
-    ),
-    fpContent: fpContent.map((item) => ({
-      ...item,
-      start_date: ymd(item.start_date),
-      end_date: ymd(item.end_date),
-      last_reviewed_at: ymd(item.last_reviewed_at),
-      created_at: iso(item.created_at),
-      updated_at: iso(item.updated_at),
-      requiredCompetencies: [],
-    })),
-    roadmap,
-    companies: dbCompanies.map((company) => ({
-      id: company.id,
-      nombre: company.nombre,
-      web: company.web ?? undefined,
-      empleo_url: company.empleo_url ?? undefined,
-      categoria: company.categoria ?? undefined,
-      granada_note: company.granada_note ?? undefined,
-      is_favorite: favoriteCompanyIds.has(company.id),
-    })),
-    loadIssues: [...new Set(issues)],
-  };
 }
 
 function iso(value: unknown): string {

@@ -1,6 +1,6 @@
 import type { CalendarEvent } from "@/components/calendar/app-calendar";
 import { sortCalendarEvents } from "@/components/calendar/app-calendar";
-import type { Store } from "@/components/guest-app";
+import type { Store } from "@/components/store/types";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 
 const fpCourseTypes = new Set(["curso_basico", "curso_complementario", "herramienta", "recurso", "evidencia_recomendada"]);

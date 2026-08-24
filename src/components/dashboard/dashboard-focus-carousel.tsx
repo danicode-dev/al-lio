@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BriefcaseBusiness, CalendarClock, ChevronLeft, ChevronRight, Compass, Sparkles, Trophy } from "lucide-react";
-import type { Store } from "@/components/guest-app";
+import type { Store } from "@/components/store/types";
 
 type CarouselSection = "upcoming" | "opportunities" | "work" | "hackathons";
 

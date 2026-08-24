@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { ReturnTypeActions, Store } from "@/components/guest-app";
+import type { ReturnTypeActions, Store } from "@/components/store/types";
 import { DashboardCalendar } from "@/components/dashboard/dashboard-calendar";
 import { DashboardFocusCarousel } from "@/components/dashboard/dashboard-focus-carousel";
 import { DashboardGreeting } from "@/components/dashboard/dashboard-greeting";
