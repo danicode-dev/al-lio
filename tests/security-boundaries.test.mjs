@@ -622,17 +622,26 @@ test("markCompetencyCompleted optimistically completes and rolls back on failure
   assert.match(actionSource, /toast\.error\("No se pudo guardar"\);/);
 });
 
-test("The ruta path stepper reads competency completion from a single explicit source, never inferred from resource status (issue #96)", async () => {
-  const rutaPathSource = await readFile(new URL("../src/lib/fp/ruta-path.ts", import.meta.url), "utf8");
-  assert.match(rutaPathSource, /getUserCompetencyStatesForSkills\(userId, skillIds\)/);
-  assert.match(rutaPathSource, /competencyCompleted: competencyCompletedSet\.has\(skill\.id\)/);
+test("/ruta never depends on fp_user_competency_state - Events aptitude checklist and resource-watching progress are separate systems by design (issue #96)", async () => {
+  const [rutaPathSource, viewSource] = await Promise.all([
+    readFile(new URL("../src/lib/fp/ruta-path.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/ruta/ruta-path-view.tsx", import.meta.url), "utf8"),
+  ]);
 
-  const viewSource = await readFile(new URL("../src/components/ruta/ruta-path-view.tsx", import.meta.url), "utf8");
-  assert.match(viewSource, /competencyCompleted: boolean;/);
-  const isStepDoneMatch = viewSource.match(/const isStepDone = \(index: number\) => ([^;]+);/);
-  assert.ok(isStepDoneMatch, "could not locate the isStepDone definition");
-  assert.equal(isStepDoneMatch[1].trim(), "stepState[index].competencyCompleted", "isStepDone must read only the explicit competency record, not OR in resource status");
-  assert.doesNotMatch(isStepDoneMatch[1], /status/, "resource status must not leak into the competency-done signal");
+  for (const source of [rutaPathSource, viewSource]) {
+    assert.doesNotMatch(source, /competencyCompleted/, "must not read or expose Events aptitude completion");
+    assert.doesNotMatch(source, /fp_user_competency_state/, "must not reference the Events aptitude table");
+    assert.doesNotMatch(source, /getUserCompetencyStatesForSkills/, "must not call the Events aptitude repository function");
+  }
+
+  // Unchanged from before issue #96: /ruta's own progress is derived only
+  // from the linked resource's watch/complete status. Marking an Events
+  // aptitude in the modal must not move this number in either direction.
+  assert.match(viewSource, /const trackableCount = steps\.filter\(\(s\) => s\.primary !== null\)\.length;/);
+  assert.match(
+    viewSource,
+    /const completedCount = stepState\.filter\(\(s, i\) => steps\[i\]\.primary !== null && s\.status === "completed"\)\.length;/,
+  );
 });
 
 test("The event aptitude modal renders through a body portal with full accessibility wiring (issue #96)", async () => {
@@ -660,9 +669,12 @@ test("The event aptitude modal renders through a body portal with full accessibi
   assert.match(modalSource, /if \(event\.key === "Escape"\) \{\s*onClose\(\);/);
   assert.match(modalSource, /previouslyFocused\?\.focus\(\)/);
 
-  // Background is inert while the modal is open, restored on close.
+  // Background is inert while the modal is open. Cleanup restores each
+  // sibling's own prior value (not a hardcoded false), in case something
+  // else already relied on it being inert for an unrelated reason.
   assert.match(modalSource, /el\.inert = true/);
-  assert.match(modalSource, /el\.inert = false/);
+  assert.match(modalSource, /previousInertStates = backgroundSiblings\.map\(\(el\) => el\.inert\)/);
+  assert.match(modalSource, /el\.inert = previousInertStates\[index\]/);
 
   // aria-labelledby/aria-describedby point at real ids on the title/description.
   assert.match(modalSource, /aria-labelledby=\{titleId\}/);

@@ -2781,7 +2781,7 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
   }, [item?.id]);
 
   useEffect(() => {
-    if (!item) return;
+    if (!item?.id) return;
 
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     const previousHtmlOverflow = document.documentElement.style.overflow;
@@ -2795,10 +2795,14 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
 
     // Make everything behind the portal unreachable to assistive tech and
     // keyboard/pointer input while the modal is open. rootRef is excluded
-    // since it IS the modal, appended as its own sibling under body.
+    // since it IS the modal, appended as its own sibling under body. Each
+    // sibling's own prior inert value is captured and restored on cleanup
+    // instead of assuming it was false, in case something else already
+    // relied on it being inert for an unrelated reason.
     const backgroundSiblings = Array.from(document.body.children).filter(
       (el): el is HTMLElement => el instanceof HTMLElement && el !== rootRef.current,
     );
+    const previousInertStates = backgroundSiblings.map((el) => el.inert);
     backgroundSiblings.forEach((el) => { el.inert = true; });
 
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -2808,10 +2812,16 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
       document.documentElement.style.overflow = previousHtmlOverflow;
       document.body.style.overflow = previousBodyOverflow;
       document.body.style.paddingRight = previousPaddingRight;
-      backgroundSiblings.forEach((el) => { el.inert = false; });
+      backgroundSiblings.forEach((el, index) => { el.inert = previousInertStates[index]; });
       previouslyFocused?.focus();
     };
-  }, [item]);
+    // item?.id only - not the item object itself, which the store rebuilds
+    // (new reference, same event) whenever any of its fields change, e.g.
+    // marking an aptitude or navigating between steps. Keying on the full
+    // object would tear down and redo this whole lifecycle - scroll lock,
+    // inert, and focus jumping back to the close button - on every such
+    // update, even though the modal never actually closed and reopened.
+  }, [item?.id]);
 
   function handleDialogKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {

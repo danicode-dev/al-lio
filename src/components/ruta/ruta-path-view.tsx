@@ -31,9 +31,6 @@ export type LearningPathStep = {
   otherResources: { idSlug: string; title: string; sourceUrl: string }[];
   initialStatus: ContentStatus | null;
   initialNotes: LearningPathNote[];
-  // Explicit per-user completion (issue #96), independent of resource status -
-  // a step with no primary resource can still be marked done, from the modal.
-  competencyCompleted: boolean;
 };
 
 export function LearningPathView({
@@ -48,7 +45,7 @@ export function LearningPathView({
   const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(() => Math.min(Math.max(initialStepIndex, 0), steps.length - 1));
   const [stepState, setStepState] = useState(() =>
-    steps.map((step) => ({ status: step.initialStatus, notes: step.initialNotes, competencyCompleted: step.competencyCompleted }))
+    steps.map((step) => ({ status: step.initialStatus, notes: step.initialNotes }))
   );
   const [noteBody, setNoteBody] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -57,12 +54,8 @@ export function LearningPathView({
   const current = stepState[activeIndex];
   const { youtubeRef, playerContainerRef, currentTime, seekTo } = useYouTubePlayer(step.primary?.videoUrl);
 
-  // The explicit per-user competency record is the only source of truth for
-  // "is this step done" - watching/completing the linked resource (status)
-  // is separate progress and must not be read as competency completion.
-  const isStepDone = (index: number) => stepState[index].competencyCompleted;
-  const trackableCount = steps.length;
-  const completedCount = stepState.filter((_, i) => isStepDone(i)).length;
+  const trackableCount = steps.filter((s) => s.primary !== null).length;
+  const completedCount = stepState.filter((s, i) => steps[i].primary !== null && s.status === "completed").length;
   const progressPercent = trackableCount > 0 ? Math.round((completedCount / trackableCount) * 100) : 0;
 
   function goToStep(index: number) {
@@ -453,11 +446,11 @@ export function LearningPathView({
             <p className="al-path-section-title">Tu ruta de aprendizaje</p>
             <div className="al-path-stepper">
               {steps.map((s, index) => {
-                const done = isStepDone(index);
+                const done = stepState[index].status === "completed";
                 const isActive = index === activeIndex;
                 return (
                   <div key={s.competencyId} className="al-path-step-item">
-                    {index > 0 && <div className={`al-path-step-line ${isStepDone(index - 1) ? "al-path-step-line-done" : ""}`} />}
+                    {index > 0 && <div className={`al-path-step-line ${stepState[index - 1].status === "completed" ? "al-path-step-line-done" : ""}`} />}
                     <button type="button" className="al-path-step-btn" onClick={() => goToStep(index)}>
                       <span
                         className={`al-path-step-circle ${done ? "al-path-step-circle-done" : ""} ${isActive && !done ? "al-path-step-circle-active" : ""}`}
