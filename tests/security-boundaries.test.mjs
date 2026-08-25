@@ -1084,3 +1084,47 @@ test("DashboardTodo and DashboardFocusCarousel read the shared pure feed helpers
   assert.match(carouselSource, /"upcoming".*"opportunities".*"work".*"hackathons"/s);
   assert.match(carouselSource, /window\.setInterval\(\(\) => move\(1\), 8000\)/);
 });
+
+// --- issue #103: Dashboard mobile overflow ---
+
+test("DashboardView's layout grids define a shrinkable base track, not only the xl desktop layout (issue #103)", async () => {
+  const source = await readFile(new URL("../src/components/dashboard/dashboard-view.tsx", import.meta.url), "utf8");
+
+  // A Tailwind grid with only an `xl:grid-cols-…` variant has no explicit
+  // grid-template-columns below 1280px, so it falls back to an implicit
+  // auto track that does not shrink below its children's min-content width -
+  // that intrinsic width becoming wider than the viewport is exactly what
+  // produced the reported horizontal overflow. grid-cols-1 (Tailwind's own
+  // `repeat(1, minmax(0, 1fr))`) is the base track that can actually shrink.
+  const gridDivs = [...source.matchAll(/<div className="([^"]*\bgrid\b[^"]*)">/g)].map((m) => m[1]);
+  const withXlCols = gridDivs.filter((className) => className.includes("xl:grid-cols-"));
+  assert.equal(withXlCols.length, 2, "expected the To-do/route/calendar row and the opportunities/progress row");
+  for (const className of withXlCols) {
+    assert.match(className, /\bgrid-cols-1\b/, `grid must define a base grid-cols-1 (got: "${className}")`);
+  }
+});
+
+test("DashboardFocusCarousel's card grid defines a shrinkable base track, not only the sm layout (issue #103)", async () => {
+  const source = await readFile(new URL("../src/components/dashboard/dashboard-focus-carousel.tsx", import.meta.url), "utf8");
+  const match = source.match(/<div className="([^"]*\bgrid\b[^"]*\bsm:grid-cols-3\b[^"]*)">/);
+  assert.ok(match, "expected to find the card grid using sm:grid-cols-3");
+  assert.match(match[1], /\bgrid-cols-1\b/, `card grid must define a base grid-cols-1 (got: "${match[1]}")`);
+});
+
+test("the Dashboard overflow fix does not fall back to hiding overflow globally (issue #103)", async () => {
+  const [globalsCss, layoutSource] = await Promise.all([
+    readFile(new URL("../src/app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.doesNotMatch(globalsCss, /overflow-x:\s*hidden/i, "must not hide horizontal overflow globally in place of a real layout fix");
+  assert.doesNotMatch(layoutSource, /overflow-x-hidden/, "must not hide horizontal overflow globally in place of a real layout fix");
+});
+
+test("desktop's xl three-column composition is untouched (issue #103)", async () => {
+  const source = await readFile(new URL("../src/components/dashboard/dashboard-view.tsx", import.meta.url), "utf8");
+  assert.match(
+    source,
+    /grid grid-cols-1 items-start gap-4 xl:grid-cols-\[minmax\(300px,1\.08fr\)_minmax\(350px,1\.14fr\)_minmax\(260px,\.78fr\)\]/,
+    "the xl: three-column track definition must be byte-for-byte unchanged, only the mobile base was added",
+  );
+});

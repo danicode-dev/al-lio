@@ -203,7 +203,7 @@ export function DashboardFocusCarousel({ store }: { store: Store }) {
         </div>
       </div>
 
-      <div className="mt-5 grid flex-1 gap-2.5 sm:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 flex-1 gap-2.5 sm:grid-cols-3">
         {activeCards.length ? activeCards.map((card) => (
           <Link key={card.id} href={card.href} className="group flex h-full flex-col rounded-xl border border-[#eee9df] bg-[#fcfbf8] p-3 transition hover:-translate-y-0.5 hover:border-[#f1c7b5] hover:bg-white hover:shadow-[0_8px_18px_rgba(37,30,20,0.06)]">
             <p className="truncate text-[11px] font-bold text-[#e15d2d]">{card.eyebrow}</p>
