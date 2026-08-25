@@ -153,6 +153,7 @@ export type Hackathon = {
   incluido_en_readme_original?: boolean;
   ultima_revision?: string;
   url?: string;
+  description?: string;
   notes?: string;
   sourceTable?: "hackathons" | "tech_opportunities" | "fp_content_items";
   requiredCompetencies?: RequiredCompetency[];

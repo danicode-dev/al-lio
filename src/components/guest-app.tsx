@@ -2295,6 +2295,11 @@ function coursePriorityClass(value?: string): string {
   return "al-course-chip-amber";
 }
 
+function hackathonPublicDescription(item: Hackathon) {
+  if (item.description) return item.description;
+  return item.sourceTable === "fp_content_items" ? undefined : item.notes;
+}
+
 function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
   const allHackathons = useMemo(
     () => getDisplayHackathons(store.hackathons, store.techOpportunities, store.fpContent),
@@ -2413,6 +2418,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     return selectFeaturedHackathon(activos);
   }, [activos]);
   const featuredProgress = featuredHackathon ? hackathonAptitudeProgress(featuredHackathon) : null;
+  const featuredDescription = featuredHackathon ? hackathonPublicDescription(featuredHackathon) : undefined;
 
   // Resolve against the current allHackathons collection instead of retaining
   // the object captured when the modal opened. Requirement updates then appear
@@ -2544,7 +2550,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                       {featuredHackathon.end_at ? ` → ${formatDateLabel(featuredHackathon.end_at)}` : ""}
                     </p>
                   )}
-                  {featuredHackathon.notes && <p className="al-hack-hero-desc">{featuredHackathon.notes}</p>}
+                  {featuredDescription && <p className="al-hack-hero-desc">{featuredDescription}</p>}
                   <div className="al-hack-hero-actions">
                     {isSafeHttpUrl(featuredHackathon.url) ? (
                       <a href={featuredHackathon.url} target="_blank" rel="noopener noreferrer" className="al-hack-hero-btn-primary">
@@ -2597,6 +2603,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
                   const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
                   const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
+                  const description = hackathonPublicDescription(item);
                   return (
                     <div key={item.id} className="al-hack-card">
                       <div className="al-hack-card-top">
@@ -2634,7 +2641,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                         {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
                         {item.priority && <ChipTag className={hackPriorityClass(item.priority)}>{priorityText(item.priority)}</ChipTag>}
                       </div>
-                      {item.notes && <p className="al-hack-card-desc line-clamp-2">{item.notes}</p>}
+                      {description && <p className="al-hack-card-desc line-clamp-2">{description}</p>}
                       <div className="al-hack-card-actions">
                         {isSafeHttpUrl(item.url) && (
                           <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-hack-btn al-hack-btn-primary">
@@ -3371,7 +3378,9 @@ function isFpHackathonLike(item: FpCatalogItem) {
 }
 
 function fpItemNotes(item: FpCatalogItem) {
-  return [item.suggested_action, item.notes].filter(Boolean).join("\n\n") || undefined;
+  // `item.notes` contains import and moderation provenance. Keep it out of
+  // student-facing display models; only the suggested action is public copy.
+  return item.suggested_action || undefined;
 }
 
 function fpItemToCourse(item: FpCatalogItem): Course {
@@ -3428,6 +3437,7 @@ function fpItemToHackathon(item: FpCatalogItem): Hackathon {
     practicas_empresa: item.practices === "si",
     tags: item.tags ?? undefined,
     url: item.source_url ?? undefined,
+    description: item.description ?? undefined,
     notes: fpItemNotes(item),
     sourceTable: "fp_content_items",
     requiredCompetencies: item.requiredCompetencies,
