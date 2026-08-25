@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { ArrowLeft, CheckCircle2, ExternalLink, LoaderCircle, RotateCcw, Save } from "lucide-react";
+import { ArrowLeft, CheckCircle2, LoaderCircle, RotateCcw, Save } from "lucide-react";
 import { toast } from "sonner";
 import { addLearningNoteAction, saveLearningProgressAction } from "@/lib/learning/actions";
 import { useYouTubePlayer } from "@/components/ruta/use-youtube-player";
@@ -132,10 +132,7 @@ export function LearningPlayer({
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-3 px-2 pb-1 pt-4">
-              <a href={resource.youtube_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs font-bold text-[#6b6f72] hover:text-[#111111]">
-                <ExternalLink className="h-3.5 w-3.5" /> Abrir en YouTube
-              </a>
+            <div className="flex flex-wrap items-center justify-end gap-3 px-2 pb-1 pt-4">
               <button type="button" onClick={handleComplete} disabled={isPending || status === "completed"} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#e15d2d] px-4 text-sm font-bold text-white transition hover:bg-[#c94f21] disabled:cursor-default disabled:bg-[#8f8a81]">
                 <CheckCircle2 className="h-4 w-4" /> {status === "completed" ? "Completado" : isPending ? "Guardando..." : "Marcar como completado"}
               </button>

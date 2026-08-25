@@ -32,20 +32,3 @@ export function selectAptitudeVideos<T extends { id_slug: string; video_url: str
   );
   return [...withSafeVideo].sort((a, b) => a.id_slug.localeCompare(b.id_slug));
 }
-
-// Legacy /ruta/{eventSlug}?paso={skillId} resolver. Unsafe candidates are
-// filtered out first and never count toward ambiguity - a list containing
-// one real video plus a javascript:/data:/malformed value must still
-// resolve to that one real video, not fall back for looking "ambiguous".
-// Only among the safe candidates: exactly one wins; zero or more than one
-// (there is then no way to know which one the old link meant - duplicates
-// of the same URL still count as more than one, deliberately not deduped)
-// falls back to the event's own official page, and only to /hackathons if
-// even that isn't a safe URL.
-export function resolveLegacyRutaTarget(input: { itemSourceUrl: string | null; exactVideoCandidates: string[] }): string {
-  const safeCandidates = input.exactVideoCandidates.filter((candidate) => isSafeHttpUrl(candidate));
-  if (safeCandidates.length === 1) {
-    return safeCandidates[0];
-  }
-  return isSafeHttpUrl(input.itemSourceUrl) ? input.itemSourceUrl : "/hackathons";
-}

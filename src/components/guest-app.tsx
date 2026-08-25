@@ -2992,17 +2992,20 @@ function CompetencyRequirement({
   onMarkDone?: () => void;
 }) {
   const done = isCompetencyDone(competency);
-  // Every exactly-associated video, not one arbitrarily chosen "primary" -
-  // a competency can genuinely have more than one real course.
-  const videoItems = selectAptitudeVideos(competency.learningItems);
-  const videoItemIds = new Set(videoItems.map((li) => li.id));
-  // At most two non-video references per competency - reliable and
-  // genuinely complementary, not an exhaustive dump of every matched
-  // resource. A resource already shown as a video is never duplicated here,
-  // and an unsafe source_url is never rendered as a link.
-  const docItems = competency.learningItems
-    .filter((li) => !videoItemIds.has(li.id) && isSafeHttpUrl(li.source_url))
-    .slice(0, 2);
+  // Only videos already present in AL-LIO's learning catalogue are clickable.
+  // Legacy references without an internal course stay as short, read-only text.
+  const internalCourses = selectAptitudeVideos(competency.learningItems)
+    .flatMap((item) => item.internal_learning_slug
+      ? [{ ...item, internal_learning_slug: item.internal_learning_slug }]
+      : [])
+    .filter((item, index, items) => items.findIndex((candidate) => candidate.internal_learning_slug === item.internal_learning_slug) === index);
+  const internalCourseIds = new Set(internalCourses.map((item) => item.id));
+  const referenceTitles = [...new Set(
+    competency.learningItems
+      .filter((item) => !internalCourseIds.has(item.id))
+      .map((item) => item.title.trim())
+      .filter(Boolean),
+  )].slice(0, 2);
 
   function markDone() {
     actions.markCompetencyCompleted(competency.id);
@@ -3019,19 +3022,14 @@ function CompetencyRequirement({
       </div>
       {competency.descripcion && <p className="al-modal-req-desc">{competency.descripcion}</p>}
       <div className="al-modal-req-actions">
-        {videoItems.map((learningItem) => (
-          <a key={learningItem.id} href={learningItem.video_url} target="_blank" rel="noopener noreferrer" className="al-modal-req-btn al-modal-req-btn-video">
+        {internalCourses.map((learningItem) => (
+          <Link key={learningItem.id} href={`/aprende/${encodeURIComponent(learningItem.internal_learning_slug)}`} className="al-modal-req-btn al-modal-req-btn-video">
             <Youtube className="h-3 w-3" />
             {learningItem.title}
-          </a>
+          </Link>
         ))}
-        {docItems.map((learningItem) => (
-          <a key={learningItem.id} href={learningItem.source_url} target="_blank" rel="noopener noreferrer" className="al-modal-req-btn">
-            <ExternalLink className="h-3 w-3" />
-            {learningItem.title}
-          </a>
-        ))}
-        {videoItems.length === 0 && docItems.length === 0 && <EmptyText>Todavía no hay recurso curado para esta aptitud.</EmptyText>}
+        {referenceTitles.length > 0 && <EmptyText>Otros recursos: {referenceTitles.join(" · ")}</EmptyText>}
+        {internalCourses.length === 0 && referenceTitles.length === 0 && <EmptyText>Sin curso interno disponible todavía.</EmptyText>}
       </div>
       {done ? (
         <span className="al-modal-mark-done al-modal-mark-done-active">
