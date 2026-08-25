@@ -112,14 +112,14 @@ export default async function MorePage() {
         <div>
           <h1 className="text-2xl font-bold leading-tight tracking-tight">
             Explora todas{" "}
-            <span className="text-[#E15D2D]">las secciones</span>
+            <span className="text-primary">las secciones</span>
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
             Accede a cualquier parte de Al-Lio
           </p>
         </div>
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#FBE7DD]">
-          <Compass className="h-6 w-6 text-[#E15D2D]" />
+          <Compass className="h-6 w-6 text-primary" />
         </div>
       </div>
 

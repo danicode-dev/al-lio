@@ -1679,3 +1679,84 @@ test("import-companies.mjs forwards the review envelope into validateDataset and
   assert.ok(errorGateIndex < dryRunIndex, "the errors.length gate must run before the --dry-run branch");
   assert.ok(dryRunIndex < beginIndex, "the --dry-run branch must return before any transaction is opened");
 });
+
+// --- issue #82: rebrand --primary/--ring away from default shadcn blue ---
+
+test("globals.css's --primary and --ring are the brand terracotta, not the default shadcn blue (issue #82)", async () => {
+  const css = await readFile(new URL("../src/app/globals.css", import.meta.url), "utf8");
+
+  // The old shadcn default (214 84% 38%) must be gone everywhere in this file.
+  assert.doesNotMatch(css, /214\s+84%\s+38%/);
+
+  // #E15D2D converts to hsl(16, 75%, 53%) - both --primary and --ring must
+  // use it, and --primary-foreground stays white (every existing hardcoded
+  // terracotta+white button in the app already assumes white text).
+  assert.match(css, /--primary:\s*16\s+75%\s+53%;/);
+  assert.match(css, /--ring:\s*16\s+75%\s+53%;/);
+  assert.match(css, /--primary-foreground:\s*0\s+0%\s+100%;/);
+
+  // Only primary/ring/primary-foreground changed - every other token is
+  // untouched (guards against scope creep into --accent/--destructive/etc.,
+  // which the issue explicitly says to leave alone unless documented).
+  for (const untouched of [
+    "--background: 42 30% 97%",
+    "--destructive: 0 72% 47%",
+    "--accent: 154 26% 88%",
+    "--muted: 210 18% 92%",
+    "--border: 214 15% 84%",
+  ]) {
+    assert.match(css, new RegExp(untouched.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `expected ${untouched} to be unchanged`);
+  }
+});
+
+test("the #80/#81/daily-alerts hardcoded terracotta overrides now read the fixed --primary token instead of a second, parallel hex value (issue #82)", async () => {
+  const [bottomNav, morePage, dailyAlerts] = await Promise.all([
+    readFile(new URL("../src/components/bottom-nav.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/(dashboard)/more/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/daily-alerts.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(bottomNav, /isActive \? "text-primary" : "text-muted-foreground"/);
+  assert.doesNotMatch(bottomNav, /text-\[#E15D2D\]/i);
+
+  assert.match(morePage, /text-primary/);
+  assert.doesNotMatch(morePage, /text-\[#E15D2D\]/i);
+
+  assert.doesNotMatch(dailyAlerts, /#E15D2D|#e15d2d|#c94f21/, "no hardcoded terracotta hex should remain once the token itself carries the brand color");
+  assert.match(dailyAlerts, /text-primary"/);
+  assert.match(dailyAlerts, /bg-primary text-primary-foreground/);
+  assert.match(dailyAlerts, /accent-primary/);
+
+  // Light terracotta-tint icon badges (bg-[#FBE7DD]) are a deliberate
+  // separate constant, not a --primary alpha blend - left as-is on purpose,
+  // not missed. See docs/architecture/decisions or the PR for the exact
+  // rationale (Tailwind's bg-primary/N opacity modifier does not reproduce
+  // #FBE7DD exactly).
+  for (const source of [bottomNav, morePage, dailyAlerts]) {
+    assert.match(source, /#FBE7DD|#fbe7dd/i, "the light-tint badge background is expected to remain hardcoded");
+  }
+});
+
+test("the Mas page's intentional multi-color per-section grid is untouched by the primary token fix (issue #82)", async () => {
+  const source = await readFile(new URL("../src/app/(dashboard)/more/page.tsx", import.meta.url), "utf8");
+  for (const color of ["teal", "cyan", "indigo", "violet", "emerald", "orange", "fuchsia", "rose", "amber"]) {
+    assert.match(source, new RegExp(`bg-${color}-50`), `expected the deliberate ${color} section card color to remain`);
+  }
+});
+
+test("UI primitives (Button/Input/Select/Textarea) and GuestApp already reference the primary/ring tokens by name, so no component code needed to change (issue #82)", async () => {
+  const [button, input, select, textarea, guestApp] = await Promise.all([
+    readFile(new URL("../src/components/ui/button.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/ui/input.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/ui/select.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/ui/textarea.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(button, /bg-primary text-primary-foreground hover:bg-primary\/90/);
+  assert.match(input, /focus-visible:ring-ring/);
+  assert.match(select, /focus-visible:ring-ring/);
+  assert.match(textarea, /focus-visible:ring-ring/);
+  assert.match(guestApp, /ring-primary\/40/);
+  assert.match(guestApp, /bg-primary text-primary-foreground/);
+});
