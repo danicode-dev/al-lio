@@ -38,7 +38,7 @@ export function BottomNav() {
                   className={cn(
                     "flex items-center justify-center w-11 h-7 rounded-xl transition-all duration-200",
                     isActive
-                      ? "bg-primary/10 dark:bg-primary/20 scale-110"
+                      ? "bg-[#FBE7DD] dark:bg-primary/20 scale-110"
                       : "scale-100",
                   )}
                 >
