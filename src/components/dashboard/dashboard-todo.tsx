@@ -5,6 +5,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { ArrowRight, Check, ListTodo, MessageSquareText, Plus, X } from "lucide-react";
 import type { ReturnTypeActions, Store } from "@/components/store/types";
 import { dashboardLightSurface } from "@/components/dashboard/dashboard-surface";
+import { selectDashboardTodoTasks } from "@/lib/dashboard/upcoming-feed";
 
 function isCompleted(status: string) {
   return status === "completada" || status === "cancelada";
@@ -15,10 +16,7 @@ export function DashboardTodo({ store, actions }: { store: Store; actions: Retur
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
 
-  const latestTasks = useMemo(
-    () => [...store.tasks].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 4),
-    [store.tasks],
-  );
+  const latestTasks = useMemo(() => selectDashboardTodoTasks(store.tasks), [store.tasks]);
   const loadFailed = store.loadIssues?.includes("tasks") ?? false;
 
   function submit(event: FormEvent<HTMLFormElement>) {
