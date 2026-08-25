@@ -51,6 +51,8 @@ imported, but useful for the reviewer to see what was tried and rejected).
   InfoJobs, Indeed, Talent.com, a generic directory, a search engine result,
   a social-media profile, or a link shortener. It's the exact URL the
   "Visitar web" button sends a student to.
+- `fuente` must be an http(s) URL and follows the same blocked-host policy as
+  `web` (enforced by `validateDataset`, not just convention).
 - `empleo`/`tipo_empleo` are optional. When present, `empleo` follows the
   same official-source-only rule as `web`. LinkedIn/InfoJobs/Indeed may be
   used to *discover* a company, never as the value saved in `web`, `empleo`
@@ -126,3 +128,11 @@ its own reviewed decision, not a side effect of adding AF/MP/TSAF.
   "imported into production" — those are separate, owner-only steps.
 - Once reviewed, update `status` to `"approved"` and record who reviewed it
   and when in `reviewedBy`/`reviewedAt`.
+- This is code-enforced, not just a naming convention: `validateDataset`
+  requires `schemaVersion` (currently only `1`), `status` (one of
+  `pending_owner_review`/`approved`), a valid `reviewedAt` (`YYYY-MM-DD`) and
+  a non-empty `reviewedBy` for every group except DEV, and refuses to let
+  anything be written — `--dry-run` or not — while `status` is not exactly
+  `"approved"`. `--dry-run` still runs this and every other check, so a
+  pending dataset can be fully validated ahead of the owner's review; only
+  the write itself stays blocked.

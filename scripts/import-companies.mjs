@@ -59,9 +59,9 @@ async function main() {
   if (!existsSync(sourcePath)) fail(`Source file not found: ${sourcePath}`);
 
   const sourceText = readFileSync(sourcePath, "utf-8");
-  let cycleGroupInFile, rows;
+  let cycleGroupInFile, rows, schemaVersion, status, reviewedAt, reviewedBy;
   try {
-    ({ cycleGroupInFile, rows } = parseDatasetSource(sourceText, sourcePath));
+    ({ cycleGroupInFile, rows, schemaVersion, status, reviewedAt, reviewedBy } = parseDatasetSource(sourceText, sourcePath));
   } catch (error) {
     fail(error.message);
   }
@@ -79,7 +79,16 @@ async function main() {
     const existingRows = await client.query(`SELECT id_slug, cycle_group FROM public.companies`);
     const existingIdentities = new Map(existingRows.rows.map((row) => [row.id_slug, row.cycle_group]));
 
-    const { errors, warnings, records } = validateDataset({ cycleGroupInFile, rows, cycleGroup, existingIdentities });
+    const { errors, warnings, records } = validateDataset({
+      cycleGroupInFile,
+      rows,
+      cycleGroup,
+      existingIdentities,
+      schemaVersion,
+      status,
+      reviewedAt,
+      reviewedBy,
+    });
 
     for (const warning of warnings) console.warn(`WARN: ${warning}`);
 
