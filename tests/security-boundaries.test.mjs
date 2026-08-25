@@ -11,6 +11,11 @@ import {
   applicationUpdateInputSchema,
   manualApplicationInputSchema,
 } from "../src/lib/job-radar/validation.ts";
+import {
+  fpUserStatusToHackathonStatus,
+  isPreparationComplete,
+  selectFeaturedHackathon,
+} from "../src/lib/fp/event-lifecycle.ts";
 
 const validSessionSecret = "session-test-secret-with-32-characters";
 
@@ -708,4 +713,191 @@ test("A competency shows at most two external references (issue #96)", async () 
   const componentSource = guestAppSource.slice(componentStart, componentEnd);
 
   assert.match(componentSource, /\.filter\(\(li\) => !li\.video_url\)\.slice\(0, 2\)/);
+});
+
+// --- issue #95: event lifecycle (preparation, featured rotation, Realizado) ---
+
+function mockCompetency(overrides = {}) {
+  return { id: "skill-1", titulo: "Skill", obligatoria_para_item: true, learningItems: [], completed: false, ...overrides };
+}
+
+function mockHackathon(overrides = {}) {
+  return {
+    id: "fp-event-1",
+    id_slug: "event-1",
+    name: "Evento de prueba",
+    status: "inscripcion_abierta",
+    priority: "media",
+    start_at: "2026-09-01",
+    created_at: "2026-01-01T00:00:00.000Z",
+    sourceTable: "fp_content_items",
+    requiredCompetencies: [],
+    ...overrides,
+  };
+}
+
+test("isPreparationComplete: zero mandatory competencies is never preparation complete (issue #95)", () => {
+  assert.equal(isPreparationComplete(mockHackathon({ requiredCompetencies: [] })), false);
+  assert.equal(
+    isPreparationComplete(mockHackathon({ requiredCompetencies: [mockCompetency({ obligatoria_para_item: false, completed: true })] })),
+    false,
+    "only recommended (non-mandatory) competencies, even if all completed, is not preparation complete",
+  );
+});
+
+test("isPreparationComplete: only true once every mandatory competency is completed (issue #95)", () => {
+  const partiallyDone = mockHackathon({
+    requiredCompetencies: [mockCompetency({ id: "a", completed: true }), mockCompetency({ id: "b", completed: false })],
+  });
+  assert.equal(isPreparationComplete(partiallyDone), false);
+
+  const allMandatoryDone = mockHackathon({
+    requiredCompetencies: [
+      mockCompetency({ id: "a", completed: true }),
+      mockCompetency({ id: "b", completed: true }),
+      // A recommended competency left incomplete must not block preparation.
+      mockCompetency({ id: "c", obligatoria_para_item: false, completed: false }),
+    ],
+  });
+  assert.equal(isPreparationComplete(allMandatoryDone), true);
+});
+
+test("selectFeaturedHackathon: excludes preparation-complete candidates from the pool only (issue #95)", () => {
+  const ready = mockHackathon({ id: "a", start_at: "2026-09-01", requiredCompetencies: [mockCompetency({ completed: true })] });
+  const notReady = mockHackathon({ id: "b", start_at: "2026-09-05", requiredCompetencies: [mockCompetency({ completed: false })] });
+  const featured = selectFeaturedHackathon([ready, notReady]);
+  assert.equal(featured?.id, "b", "the preparation-complete event must not be featured even though it starts sooner");
+
+  // Preparation and attendance are different states: completing preparation
+  // must not change status to "realizado" (that would archive the event).
+  assert.equal(ready.status, "inscripcion_abierta");
+});
+
+test("selectFeaturedHackathon: prefers open registration, falls back to the full pool otherwise (issue #95)", () => {
+  const pending = mockHackathon({ id: "a", status: "pendiente", start_at: "2026-09-01" });
+  const open = mockHackathon({ id: "b", status: "inscripcion_abierta", start_at: "2026-09-10" });
+  assert.equal(selectFeaturedHackathon([pending, open])?.id, "b", "must prefer the open-registration candidate even though it starts later");
+  assert.equal(selectFeaturedHackathon([pending])?.id, "a", "with no open-registration candidate, falls back to the full eligible pool");
+});
+
+test("selectFeaturedHackathon: orders by nearest future date, with a deterministic identity tiebreak (issue #95)", () => {
+  const later = mockHackathon({ id: "z-later", start_at: "2026-09-20" });
+  const sooner = mockHackathon({ id: "a-sooner", start_at: "2026-09-05" });
+  assert.equal(selectFeaturedHackathon([later, sooner])?.id, "a-sooner");
+  assert.equal(selectFeaturedHackathon([sooner, later])?.id, "a-sooner", "order of the input array must not affect the result");
+
+  const tieB = mockHackathon({ id: "b-tie", start_at: "2026-09-05" });
+  const tieA = mockHackathon({ id: "a-tie", start_at: "2026-09-05" });
+  assert.equal(selectFeaturedHackathon([tieB, tieA])?.id, "a-tie", "same-date candidates break the tie by stable id, not array order");
+  assert.equal(selectFeaturedHackathon([tieA, tieB])?.id, "a-tie");
+});
+
+test("selectFeaturedHackathon orders by the nearest actionable registration/start/end date (issue #95)", () => {
+  const earlierRegistration = mockHackathon({
+    id: "registration-first",
+    registration_deadline_at: "2026-09-03",
+    start_at: "2026-09-20",
+  });
+  const earlierStart = mockHackathon({
+    id: "start-first",
+    registration_deadline_at: "2026-09-10",
+    start_at: "2026-09-05",
+  });
+
+  assert.equal(selectFeaturedHackathon([earlierStart, earlierRegistration])?.id, "registration-first");
+});
+
+test("selectFeaturedHackathon: returns null instead of fabricating a candidate when none remain (issue #95)", () => {
+  assert.equal(selectFeaturedHackathon([]), null);
+  const onlyReady = mockHackathon({ requiredCompetencies: [mockCompetency({ completed: true })] });
+  assert.equal(selectFeaturedHackathon([onlyReady]), null);
+});
+
+test("fpUserStatusToHackathonStatus maps explicit per-user completion, defers to catalogue status otherwise (issue #95)", () => {
+  assert.equal(fpUserStatusToHackathonStatus("completed"), "realizado");
+  assert.equal(fpUserStatusToHackathonStatus("dismissed"), "descartado");
+  assert.equal(fpUserStatusToHackathonStatus("started"), undefined);
+  assert.equal(fpUserStatusToHackathonStatus(null), undefined);
+  assert.equal(fpUserStatusToHackathonStatus(undefined), undefined);
+});
+
+test("completeHackathon persists Realizado per origin, with rollback, and never copies a catalogue row into hackathons (issue #95)", async () => {
+  const storeSource = await readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const start = storeSource.indexOf("completeHackathon: async");
+  const end = storeSource.indexOf("addLink: async", start);
+  assert.ok(start > -1 && end > start, "could not locate the completeHackathon action body");
+  const actionSource = storeSource.slice(start, end);
+
+  // fp_content_items: routed through the same per-user table as course/video
+  // completion, never inserted or copied into the hackathons table.
+  const fpBranchEnd = actionSource.indexOf("// Plain, already user-owned hackathon row");
+  const fpBranch = actionSource.slice(0, fpBranchEnd);
+  assert.match(fpBranch, /await markResourceStatusAction\(idSlug, "completed"\)/);
+  assert.doesNotMatch(fpBranch, /insertDb\("hackathons"/, "must not copy the catalogue row into the user's hackathons table");
+  assert.doesNotMatch(fpBranch, /addHackathon/, "must not go through the add-new-hackathon path either");
+  assert.match(fpBranch, /const previousStatus = previousContent\?\.user_status/);
+  assert.match(fpBranch, /const previousCompletedAt = previousContent\?\.user_completed_at/);
+  assert.match(fpBranch, /user_status: previousStatus/);
+  assert.match(fpBranch, /user_completed_at: previousCompletedAt/, "must roll back the optimistic completion to the exact prior state");
+  assert.match(fpBranch, /throw error;/);
+
+  // No tech_opportunities persistence branch exists - the UI does not offer
+  // Realizado for that source, and this action must not invent one. (A
+  // comment documenting why is fine; an actual sourceTable check is not.)
+  assert.doesNotMatch(
+    actionSource,
+    /if \(item\.sourceTable === "tech_opportunities"\)/,
+    "must not implement a tech_opportunities persistence branch",
+  );
+
+  // Plain, already user-owned hackathon row: awaited update scoped by id,
+  // rolled back to the exact previous row on failure.
+  const plainBranch = actionSource.slice(fpBranchEnd);
+  assert.match(plainBranch, /store\.hackathons\.find\(\(hackathon\) => hackathon\.id === item\.id\)/);
+  assert.match(plainBranch, /await updateDb\("hackathons", item\.id, \{ status: "realizado" \}/);
+  assert.match(plainBranch, /if \(!response\?\.result\) throw new Error/);
+  assert.match(plainBranch, /patchById\(current\.hackathons, item\.id, previousHackathon\)/, "must roll back to the exact previous row, not just clear it");
+  assert.match(plainBranch, /throw error;/);
+});
+
+test("completeHackathon preserves favourites and is scoped to the caller's own session/row, not a client-supplied user (issue #95)", async () => {
+  const storeSource = await readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const start = storeSource.indexOf("completeHackathon: async");
+  const end = storeSource.indexOf("addLink: async", start);
+  const actionSource = storeSource.slice(start, end);
+  const fpBranchEnd = actionSource.indexOf("// Plain, already user-owned hackathon row");
+  const fpBranch = actionSource.slice(0, fpBranchEnd);
+  const plainBranch = actionSource.slice(fpBranchEnd);
+
+  // fp_content_items: only status/completed_at are ever set - is_favorite,
+  // notes and reminder_at are untouched, so upsertFpUserContentState's
+  // partial-update semantics leave them exactly as they were.
+  assert.match(fpBranch, /user_status: "completed", user_completed_at: completedAt/);
+  assert.doesNotMatch(fpBranch, /is_favorite/, "must not touch is_favorite when marking an event realizado");
+  // markResourceStatusAction itself resolves the user from the server
+  // session (proven by the issue #94 test above) - completeHackathon never
+  // passes or receives a userId itself.
+  assert.doesNotMatch(fpBranch, /userId|user_id/i);
+
+  // Plain hackathon row: the update is scoped to this exact row's id, going
+  // through updateDb (which resolves the writer from the session and is
+  // allowlist-gated - see the issue #92 test above), not a raw/global write.
+  assert.match(plainBranch, /updateDb\("hackathons", item\.id, \{ status: "realizado" \}/);
+});
+
+test("Realizado is not offered for tech_opportunities and is guarded against double submission (issue #95)", async () => {
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.match(
+    guestAppSource,
+    /!isHackathonArchived\(item\) && item\.sourceTable !== "tech_opportunities" && \(/,
+    "Realizado must be hidden for tech_opportunities-sourced items, which have no safe per-user completion table",
+  );
+  assert.match(guestAppSource, /if \(pendingCompleteId\) return;/, "must ignore a second click while one completion is already in flight");
+  assert.match(guestAppSource, /disabled=\{pendingCompleteId === item\.id\}/);
+});
+
+test("The featured event hero and its empty state read the pure selection helper, not an inline sort (issue #95)", async () => {
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.match(guestAppSource, /return selectFeaturedHackathon\(activos\);/);
+  assert.match(guestAppSource, /Sin próximo evento o reto pendiente/, "must show a useful empty state instead of just rendering nothing");
 });
