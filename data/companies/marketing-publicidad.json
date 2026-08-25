@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "cycleGroup": "MP",
   "reviewedAt": "2026-08-25",
-  "reviewedBy": "Claude session (AL-LIO autonomous session) — pending Daniel's (the owner's) approval before import",
-  "status": "pending_owner_review",
+  "reviewedBy": "Daniel García Ortega (propietario)",
+  "status": "approved",
   "companies": [
     {
       "nombre": "Idento Marketing y Desarrollo Web",
