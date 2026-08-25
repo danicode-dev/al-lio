@@ -23,7 +23,6 @@ import {
   ListChecks,
   ListTodo,
   MapPin,
-  PlayCircle,
   Plus,
   RefreshCw,
   Search,
@@ -45,6 +44,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
 import { fpUserStatusToHackathonStatus, isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
+import { selectAptitudeVideo } from "@/lib/fp/event-cta";
 import { toast } from "sonner";
 import { BlocNotepad } from "@/components/bloc/bloc-notepad";
 import {
@@ -2413,7 +2413,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     return selectFeaturedHackathon(activos);
   }, [activos]);
   const featuredProgress = featuredHackathon ? hackathonAptitudeProgress(featuredHackathon) : null;
-  const featuredHasRuta = featuredHackathon ? !!(featuredHackathon.id_slug && hackathonHasRutaVideo(featuredHackathon)) : false;
 
   // Resolve against the current allHackathons collection instead of retaining
   // the object captured when the modal opened. Requirement updates then appear
@@ -2547,13 +2546,9 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   )}
                   {featuredHackathon.notes && <p className="al-hack-hero-desc">{featuredHackathon.notes}</p>}
                   <div className="al-hack-hero-actions">
-                    {featuredHasRuta ? (
-                      <Link href={`/ruta/${featuredHackathon.id_slug}`} className="al-hack-hero-btn-primary">
-                        <PlayCircle className="h-4 w-4" />Abrir preparación
-                      </Link>
-                    ) : featuredHackathon.url ? (
+                    {featuredHackathon.url ? (
                       <a href={featuredHackathon.url} target="_blank" rel="noreferrer" className="al-hack-hero-btn-primary">
-                        <ExternalLink className="h-4 w-4" />Abrir convocatoria
+                        <ExternalLink className="h-4 w-4" />Entrar al hackatón
                       </a>
                     ) : null}
                     {featuredHackathon.requiredCompetencies && featuredHackathon.requiredCompetencies.length > 0 && (
@@ -2601,7 +2596,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
                   const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
                   const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
-                  const hasRuta = item.id_slug && hackathonHasRutaVideo(item);
                   const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
                   return (
                     <div key={item.id} className="al-hack-card">
@@ -2642,16 +2636,10 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                       </div>
                       {item.notes && <p className="al-hack-card-desc line-clamp-2">{item.notes}</p>}
                       <div className="al-hack-card-actions">
-                        {hasRuta ? (
-                          <Link href={`/ruta/${item.id_slug}`} className="al-hack-btn al-hack-btn-primary">
-                            <PlayCircle className="h-3.5 w-3.5" />Abrir ruta
-                          </Link>
-                        ) : (
-                          item.url && (
-                            <a href={item.url} target="_blank" rel="noreferrer" className="al-hack-btn">
-                              <ExternalLink className="h-3.5 w-3.5" />Abrir web
-                            </a>
-                          )
+                        {item.url && (
+                          <a href={item.url} target="_blank" rel="noreferrer" className="al-hack-btn al-hack-btn-primary">
+                            <ExternalLink className="h-3.5 w-3.5" />Entrar al hackatón
+                          </a>
                         )}
                         {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
                           <button type="button" className="al-hack-btn" onClick={() => setRequirementsItemId(item.id)}>
@@ -2859,10 +2847,6 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
   const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
   const safeIndex = steps.length > 0 ? Math.min(stepIndex, steps.length - 1) : 0;
   const currentStep = steps[safeIndex] ?? null;
-  // Always an exact internal destination when we know one - the current step
-  // when there is one, otherwise the path's overview. Never a generic
-  // catalogue link, and never gated behind that step having a video.
-  const rutaHref = item.id_slug ? `/ruta/${item.id_slug}${currentStep ? `?paso=${currentStep.id}` : ""}` : null;
 
   return createPortal(
     <div
@@ -2942,7 +2926,6 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
               </div>
               <CompetencyRequirement
                 competency={currentStep}
-                hackathonSlug={item.id_slug}
                 actions={actions}
                 onMarkDone={() => setStepIndex((i) => Math.min(steps.length - 1, i + 1))}
               />
@@ -2968,12 +2951,6 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
         )}
         <div className="al-modal-footer">
           <div className="al-modal-footer-row">
-            {rutaHref && (
-              <Link href={rutaHref} className="al-modal-btn-primary">
-                <span>Ver en tu ruta</span>
-                <small>Contenido y contexto de este paso</small>
-              </Link>
-            )}
             {canFavorite && (
               <button type="button" className="al-modal-btn-secondary" onClick={() => actions.toggleFpFavorite(item.id_slug!, !item.is_favorite)}>
                 <Bookmark className="h-4 w-4" fill={item.is_favorite ? "currentColor" : "none"} />
@@ -2986,12 +2963,6 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
       </div>
     </div>,
     document.body
-  );
-}
-
-function hackathonHasRutaVideo(item: Hackathon): boolean {
-  return (item.requiredCompetencies ?? []).some((competency) =>
-    competency.learningItems.some((learningItem) => learningItem.video_url)
   );
 }
 
@@ -3013,17 +2984,15 @@ function hackPriorityClass(value?: string): string {
 
 function CompetencyRequirement({
   competency,
-  hackathonSlug,
   actions,
   onMarkDone,
 }: {
   competency: RequiredCompetency;
-  hackathonSlug?: string;
   actions: ReturnTypeActions;
   onMarkDone?: () => void;
 }) {
   const done = isCompetencyDone(competency);
-  const videoItem = competency.learningItems.find((li) => li.video_url);
+  const videoItem = selectAptitudeVideo(competency.learningItems);
   // At most two external references per competency - reliable and genuinely
   // complementary, not an exhaustive dump of every matched resource.
   const docItems = competency.learningItems.filter((li) => !li.video_url).slice(0, 2);
@@ -3042,22 +3011,21 @@ function CompetencyRequirement({
         <p className="al-modal-req-title">{competency.titulo}</p>
       </div>
       {competency.descripcion && <p className="al-modal-req-desc">{competency.descripcion}</p>}
-      {(videoItem || docItems.length > 0) && (
-        <div className="al-modal-req-actions">
-          {videoItem && hackathonSlug && (
-            <Link href={`/ruta/${hackathonSlug}?paso=${competency.id}`} className="al-modal-req-btn al-modal-req-btn-video">
-              <Youtube className="h-3 w-3" />
-              YouTube en la app
-            </Link>
-          )}
-          {docItems.map((learningItem) => (
-            <a key={learningItem.id} href={learningItem.source_url} target="_blank" rel="noreferrer" className="al-modal-req-btn">
-              <ExternalLink className="h-3 w-3" />
-              {learningItem.title}
-            </a>
-          ))}
-        </div>
-      )}
+      <div className="al-modal-req-actions">
+        {videoItem ? (
+          <a href={videoItem.video_url} target="_blank" rel="noreferrer" className="al-modal-req-btn al-modal-req-btn-video">
+            <Youtube className="h-3 w-3" />
+            Ver curso en YouTube
+          </a>
+        ) : null}
+        {docItems.map((learningItem) => (
+          <a key={learningItem.id} href={learningItem.source_url} target="_blank" rel="noreferrer" className="al-modal-req-btn">
+            <ExternalLink className="h-3 w-3" />
+            {learningItem.title}
+          </a>
+        ))}
+        {!videoItem && docItems.length === 0 && <EmptyText>Todavía no hay recurso curado para esta aptitud.</EmptyText>}
+      </div>
       {done ? (
         <span className="al-modal-mark-done al-modal-mark-done-active">
           <CheckCircle2 className="h-3.5 w-3.5" />Marcado como hecho

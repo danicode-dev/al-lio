@@ -16,6 +16,7 @@ import {
   isPreparationComplete,
   selectFeaturedHackathon,
 } from "../src/lib/fp/event-lifecycle.ts";
+import { resolveLegacyRutaTarget, selectAptitudeVideo } from "../src/lib/fp/event-cta.ts";
 import {
   buildFeaturedHackathonCards,
   buildUpcomingFeed,
@@ -632,32 +633,28 @@ test("markCompetencyCompleted optimistically completes and rolls back on failure
   assert.match(actionSource, /toast\.error\("No se pudo guardar"\);/);
 });
 
-test("/ruta never depends on fp_user_competency_state - Events aptitude checklist and resource-watching progress are separate systems by design (issue #96)", async () => {
-  const [rutaPathSource, viewSource] = await Promise.all([
-    readFile(new URL("../src/lib/fp/ruta-path.ts", import.meta.url), "utf8"),
-    readFile(new URL("../src/components/ruta/ruta-path-view.tsx", import.meta.url), "utf8"),
+test("the Eventos redirect resolver never depends on fp_user_competency_state - Events aptitude checklist and resource-watching progress are separate systems by design (issue #96, issue #112)", async () => {
+  // issue #112 removed the internal /ruta "path" screen for Eventos
+  // (ruta-path.ts / ruta-path-view.tsx, which this guard used to read) and
+  // replaced it with a redirect resolved by event-cta.ts + ruta/[slug]/page.tsx.
+  // The isolation invariant is the same as before: neither must ever read
+  // Events aptitude completion state.
+  const [eventCtaSource, rutaPageSource] = await Promise.all([
+    readFile(new URL("../src/lib/fp/event-cta.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/(dashboard)/ruta/[slug]/page.tsx", import.meta.url), "utf8"),
   ]);
 
-  for (const source of [rutaPathSource, viewSource]) {
+  for (const source of [eventCtaSource, rutaPageSource]) {
     assert.doesNotMatch(source, /competencyCompleted/, "must not read or expose Events aptitude completion");
     assert.doesNotMatch(source, /fp_user_competency_state/, "must not reference the Events aptitude table");
     assert.doesNotMatch(source, /getUserCompetencyStatesForSkills/, "must not call the Events aptitude repository function");
   }
-
-  // Unchanged from before issue #96: /ruta's own progress is derived only
-  // from the linked resource's watch/complete status. Marking an Events
-  // aptitude in the modal must not move this number in either direction.
-  assert.match(viewSource, /const trackableCount = steps\.filter\(\(s\) => s\.primary !== null\)\.length;/);
-  assert.match(
-    viewSource,
-    /const completedCount = stepState\.filter\(\(s, i\) => steps\[i\]\.primary !== null && s\.status === "completed"\)\.length;/,
-  );
 });
 
 test("The event aptitude modal renders through a body portal with full accessibility wiring (issue #96)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const modalStart = guestAppSource.indexOf("function HackathonRequirementsModal(");
-  const modalEnd = guestAppSource.indexOf("\nfunction hackathonHasRutaVideo", modalStart);
+  const modalEnd = guestAppSource.indexOf("\nfunction isCompetencyDone", modalStart);
   assert.ok(modalStart > -1 && modalEnd > modalStart, "could not locate the HackathonRequirementsModal component");
   const modalSource = guestAppSource.slice(modalStart, modalEnd);
 
@@ -693,21 +690,21 @@ test("The event aptitude modal renders through a body portal with full accessibi
   assert.match(modalSource, /id=\{descriptionId\}/);
 });
 
-test("The event aptitude modal footer always links to an exact internal step, never a dead end (issue #96)", async () => {
+test("The event aptitude modal footer never links to the retired internal ruta screen (issue #112)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const modalStart = guestAppSource.indexOf("function HackathonRequirementsModal(");
-  const modalEnd = guestAppSource.indexOf("\nfunction hackathonHasRutaVideo", modalStart);
+  const modalEnd = guestAppSource.indexOf("\nfunction isCompetencyDone", modalStart);
+  assert.ok(modalStart > -1 && modalEnd > modalStart, "could not locate the HackathonRequirementsModal component");
   const modalSource = guestAppSource.slice(modalStart, modalEnd);
 
-  assert.doesNotMatch(modalSource, /Ruta todavía sin vídeo/, "the dead-end disabled CTA must be gone");
-  assert.match(
-    modalSource,
-    /const rutaHref = item\.id_slug \? `\/ruta\/\$\{item\.id_slug\}\$\{currentStep \? `\?paso=\$\{currentStep\.id\}` : ""\}` : null;/,
-    "must link to the exact current step, falling back to the path overview - never a generic catalogue",
-  );
-  // The link is offered whenever an exact destination is known, not gated
-  // behind the old video-presence dichotomy.
-  assert.doesNotMatch(modalSource, /hasRuta/, "must not resurrect the old video-gated footer CTA");
+  // issue #112: the event-level "Ver en tu ruta"/rutaHref footer CTA is
+  // removed entirely - an event can require several aptitudes, so there is
+  // no single correct destination for it. Nothing in the modal should
+  // construct a /ruta/ URL any more.
+  assert.doesNotMatch(modalSource, /rutaHref/, "the event-level ruta footer CTA must be gone");
+  assert.doesNotMatch(modalSource, /Ver en tu ruta/, "the ambiguous event-level CTA label must be gone");
+  assert.doesNotMatch(modalSource, /\/ruta\//, "the modal must never construct a /ruta/ URL");
+  assert.doesNotMatch(modalSource, /Ruta todavía sin vídeo/, "the old dead-end disabled CTA must be gone");
 });
 
 test("A competency shows at most two external references (issue #96)", async () => {
@@ -1127,4 +1124,106 @@ test("desktop's xl three-column composition is untouched (issue #103)", async ()
     /grid grid-cols-1 items-start gap-4 xl:grid-cols-\[minmax\(300px,1\.08fr\)_minmax\(350px,1\.14fr\)_minmax\(260px,\.78fr\)\]/,
     "the xl: three-column track definition must be byte-for-byte unchanged, only the mobile base was added",
   );
+});
+
+// --- issue #112: retire the internal /ruta screen for Eventos, link exact YouTube videos ---
+
+function mockLearningItem(overrides = {}) {
+  return {
+    id: "li-1",
+    id_slug: "li-1-slug",
+    title: "Recurso",
+    type: "curso_basico",
+    source_url: "https://example.com/recurso",
+    video_url: null,
+    tipo_relacion: "ensena",
+    ...overrides,
+  };
+}
+
+test("selectAptitudeVideo returns null when no learning item has a video (issue #112)", () => {
+  assert.equal(selectAptitudeVideo([]), null);
+  assert.equal(selectAptitudeVideo([mockLearningItem({ id_slug: "a" }), mockLearningItem({ id_slug: "b" })]), null);
+});
+
+test("selectAptitudeVideo returns the only candidate when exactly one has a video (issue #112)", () => {
+  const withVideo = mockLearningItem({ id_slug: "b", video_url: "https://youtube.com/watch?v=b" });
+  const result = selectAptitudeVideo([mockLearningItem({ id_slug: "a" }), withVideo]);
+  assert.equal(result?.id_slug, "b");
+  assert.equal(result?.video_url, "https://youtube.com/watch?v=b");
+});
+
+test("selectAptitudeVideo is deterministic regardless of input order - no more arbitrary 'first' pick (issue #112)", () => {
+  const itemA = mockLearningItem({ id_slug: "zzz", video_url: "https://youtube.com/watch?v=z" });
+  const itemB = mockLearningItem({ id_slug: "aaa", video_url: "https://youtube.com/watch?v=a" });
+  const forward = selectAptitudeVideo([itemA, itemB]);
+  const reversed = selectAptitudeVideo([itemB, itemA]);
+  assert.equal(forward?.id_slug, reversed?.id_slug, "the same candidates must resolve to the same video regardless of array order");
+  assert.equal(forward?.id_slug, "aaa", "ties are broken by id_slug, never by array position");
+});
+
+test("resolveLegacyRutaTarget prefers the exact video, then the event's official page, then a safe fallback (issue #112)", () => {
+  assert.equal(
+    resolveLegacyRutaTarget({ itemSourceUrl: "https://evento.example/", exactVideoUrl: "https://youtube.com/watch?v=x" }),
+    "https://youtube.com/watch?v=x",
+  );
+  assert.equal(resolveLegacyRutaTarget({ itemSourceUrl: "https://evento.example/", exactVideoUrl: null }), "https://evento.example/");
+  assert.equal(resolveLegacyRutaTarget({ itemSourceUrl: null, exactVideoUrl: null }), "/hackathons");
+});
+
+test("ruta/[slug] redirects Eventos legacy links instead of rendering an internal path screen, and leaves the plain-resource branch untouched (issue #112)", async () => {
+  const source = await readFile(new URL("../src/app/(dashboard)/ruta/[slug]/page.tsx", import.meta.url), "utf8");
+
+  assert.doesNotMatch(source, /buildRutaPathSteps|LearningPathView/, "the retired Eventos path screen must be gone");
+  assert.match(source, /if \(FP_APTITUDE_GATED_TYPES\.has\(item\.type\)\) \{/);
+  assert.match(source, /selectAptitudeVideo\(/, "must use the shared, deterministic video selector");
+  assert.match(
+    source,
+    /redirect\(resolveLegacyRutaTarget\(\{ itemSourceUrl: item\.source_url, exactVideoUrl \}\)\);/,
+    "the Eventos branch must always redirect, never render",
+  );
+
+  // The plain fp_content_item branch (e.g. a course with its own video) is
+  // unrelated to Eventos and must be untouched - it still renders, never redirects.
+  assert.match(source, /if \(!item\.video_url\) notFound\(\);/);
+  assert.match(source, /<LearningResourceView/);
+});
+
+test("/roadmap/[modulo] never depended on, and still does not depend on, the retired ruta-path/ruta-path-view modules (issue #112)", async () => {
+  const [pageSource, viewSource] = await Promise.all([
+    readFile(new URL("../src/app/(dashboard)/roadmap/[modulo]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/learning/competency-courses-view.tsx", import.meta.url), "utf8"),
+  ]);
+  for (const source of [pageSource, viewSource]) {
+    assert.doesNotMatch(source, /ruta-path/, "must not depend on the removed Eventos ruta-path module");
+    assert.doesNotMatch(source, /buildRutaPathSteps/, "must not depend on the removed Eventos step builder");
+  }
+});
+
+test("the featured hackathon hero and hackathon list cards always open the official event page externally, never the retired /ruta screen (issue #112)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+
+  assert.doesNotMatch(source, /\/ruta\//, "no CTA anywhere in this file may construct a /ruta/ URL any more");
+  assert.match(source, /<a href=\{featuredHackathon\.url\} target="_blank" rel="noreferrer" className="al-hack-hero-btn-primary">/);
+  assert.match(source, /<a href=\{item\.url\} target="_blank" rel="noreferrer" className="al-hack-btn al-hack-btn-primary">/);
+  assert.match(source, /Entrar al hackat[oó]n/);
+  // The old video-gated internal/external dichotomy is gone.
+  assert.doesNotMatch(source, /featuredHasRuta/);
+  assert.doesNotMatch(source, /hackathonHasRutaVideo/);
+});
+
+test("each aptitude's YouTube CTA opens its exact video_url directly, with a non-interactive fallback when none is curated (issue #112)", async () => {
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const componentStart = guestAppSource.indexOf("function CompetencyRequirement(");
+  const componentEnd = guestAppSource.indexOf("\nfunction LinksView", componentStart);
+  assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the CompetencyRequirement component");
+  const componentSource = guestAppSource.slice(componentStart, componentEnd);
+
+  assert.match(componentSource, /const videoItem = selectAptitudeVideo\(competency\.learningItems\);/, "must use the shared, deterministic video selector");
+  assert.match(componentSource, /<a href=\{videoItem\.video_url\} target="_blank" rel="noreferrer" className="al-modal-req-btn al-modal-req-btn-video">/);
+  assert.match(componentSource, /Ver curso en YouTube/);
+  assert.doesNotMatch(componentSource, /\/ruta\//, "must never link back to the retired internal ruta screen");
+  // No video and no other resources: informative, non-interactive text -
+  // never a fake/misleading CTA and never an arbitrary generic resource.
+  assert.match(componentSource, /!videoItem && docItems\.length === 0 && <EmptyText>/);
 });
