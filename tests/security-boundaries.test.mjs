@@ -22,6 +22,14 @@ import {
   buildUpcomingFeed,
   selectDashboardTodoTasks,
 } from "../src/lib/dashboard/upcoming-feed.ts";
+import {
+  idSlugFor,
+  isBlockedWebHost,
+  isHttpUrl,
+  parseDatasetSource,
+  stableUuid,
+  validateDataset,
+} from "../scripts/lib/company-catalogue.mjs";
 
 const validSessionSecret = "session-test-secret-with-32-characters";
 
@@ -1143,6 +1151,21 @@ function mockLearningItem(overrides = {}) {
   };
 }
 
+// --- issue #97: AF/MP/TSAF company catalogues + parameterized importer ---
+
+function makeRow(overrides = {}) {
+  return {
+    nombre: "Ejemplo Consultoría SL",
+    web: "https://ejemplo-consultoria.es/",
+    empleo: null,
+    tipo_empleo: null,
+    categoria: "Asesoría fiscal y contable",
+    granada: "Sede en Granada",
+    fuente: "https://ejemplo-consultoria.es/contacto",
+    ...overrides,
+  };
+}
+
 test("isSafeHttpUrl accepts only absolute http(s) URLs, rejecting javascript:/data:/relative/malformed values (issue #112)", () => {
   assert.equal(isSafeHttpUrl("https://youtube.com/watch?v=x"), true);
   assert.equal(isSafeHttpUrl("http://example.com"), true);
@@ -1301,4 +1324,175 @@ test("the notes/status Server Actions no longer revalidate the retired ruta scre
   assert.match(source, /revalidatePath\("\/dashboard"\)/);
   assert.match(source, /revalidatePath\("\/courses"\)/);
   assert.match(source, /revalidatePath\("\/hackathons"\)/);
+});
+
+test("isHttpUrl accepts only http(s) and rejects malformed/other-protocol values (issue #97)", () => {
+  assert.equal(isHttpUrl("https://example.com"), true);
+  assert.equal(isHttpUrl("http://example.com"), true);
+  assert.equal(isHttpUrl("javascript:alert(1)"), false);
+  assert.equal(isHttpUrl("not a url"), false);
+  assert.equal(isHttpUrl(""), false);
+});
+
+test("isBlockedWebHost rejects job boards, social media, aggregators and link shorteners (issue #97)", () => {
+  for (const url of [
+    "https://www.linkedin.com/company/example",
+    "https://www.infojobs.net/empresa/example",
+    "https://es.indeed.com/cmp/Example",
+    "https://www.instagram.com/example/",
+    "https://www.facebook.com/example",
+    "https://bit.ly/3abcdef",
+    "https://www.google.com/search?q=example",
+  ]) {
+    assert.equal(isBlockedWebHost(url), true, `expected ${url} to be blocked`);
+  }
+  assert.equal(isBlockedWebHost("https://ejemplo-consultoria.es/"), false);
+});
+
+test("idSlugFor keeps DEV's original unprefixed scheme, exactly matching the pre-#97 identities (issue #97)", () => {
+  // DEV must never change: same slug function, same UUID namespace as the
+  // original hardcoded importer used for the existing 69 companies and their
+  // favourites - "Ansotec" is a real row from public/data/empresas_tech_granada.md.
+  assert.equal(idSlugFor("DEV", "Ansotec"), "ansotec");
+  assert.equal(stableUuid("companies-v1", "ansotec"), stableUuid("companies-v1", idSlugFor("DEV", "Ansotec")));
+});
+
+test("idSlugFor namespaces new groups so the same company name can never collide with DEV or another group (issue #97)", () => {
+  assert.equal(idSlugFor("AF", "Ejemplo"), "af-ejemplo");
+  assert.equal(idSlugFor("MP", "Ejemplo"), "mp-ejemplo");
+  assert.equal(idSlugFor("TSAF", "Ejemplo"), "tsaf-ejemplo");
+  assert.equal(idSlugFor("DEV", "Ejemplo"), "ejemplo");
+  const slugs = new Set(["DEV", "AF", "MP", "TSAF"].map((group) => idSlugFor(group, "Ejemplo")));
+  assert.equal(slugs.size, 4, "the same company name in four different groups must produce four distinct slugs/ids");
+});
+
+test("parseDatasetSource reads the legacy DEV markdown block and the new JSON envelope shape (issue #97)", () => {
+  const md = "# Title\n\n```json\n[{\"nombre\":\"A\"}]\n```\n";
+  assert.deepEqual(parseDatasetSource(md, "public/data/empresas_tech_granada.md"), { cycleGroupInFile: null, rows: [{ nombre: "A" }] });
+
+  const envelope = JSON.stringify({ cycleGroup: "AF", companies: [{ nombre: "A" }] });
+  assert.deepEqual(parseDatasetSource(envelope, "data/companies/administracion-finanzas.json"), { cycleGroupInFile: "AF", rows: [{ nombre: "A" }] });
+
+  const bareArray = JSON.stringify([{ nombre: "A" }]);
+  assert.deepEqual(parseDatasetSource(bareArray, "data/companies/x.json"), { cycleGroupInFile: null, rows: [{ nombre: "A" }] });
+
+  assert.throws(() => parseDatasetSource("not json", "data/companies/x.json"));
+  assert.throws(() => parseDatasetSource("# no code block here", "public/data/empresas_tech_granada.md"));
+});
+
+test("validateDataset accepts a well-formed AF/MP/TSAF dataset (issue #97)", () => {
+  for (const cycleGroup of ["AF", "MP", "TSAF"]) {
+    const secondRow = makeRow({ nombre: "Segunda Empresa", web: "https://segunda-empresa.es/", fuente: "https://segunda-empresa.es/contacto" });
+    const { errors, records } = validateDataset({ cycleGroupInFile: cycleGroup, rows: [makeRow(), secondRow], cycleGroup });
+    assert.deepEqual(errors, [], `unexpected errors for ${cycleGroup}: ${errors.join("; ")}`);
+    assert.equal(records.length, 2);
+    assert.equal(records[0].cycle_group, cycleGroup);
+    assert.equal(records[0].id_slug, idSlugFor(cycleGroup, "Ejemplo Consultoría SL"));
+  }
+});
+
+test("validateDataset rejects an unknown cycle group (issue #97)", () => {
+  const { errors, records } = validateDataset({ cycleGroupInFile: null, rows: [makeRow()], cycleGroup: "MARKETING" });
+  assert.match(errors.join("\n"), /Unknown cycle group/);
+  assert.deepEqual(records, []);
+});
+
+test("validateDataset rejects a mismatch between the dataset's declared cycleGroup and --cycle-group (issue #97)", () => {
+  const { errors } = validateDataset({ cycleGroupInFile: "MP", rows: [makeRow()], cycleGroup: "AF" });
+  assert.match(errors.join("\n"), /declares cycleGroup="MP".*--cycle-group="AF"/);
+});
+
+test("validateDataset requires nombre, web, categoria, granada and fuente (issue #97)", () => {
+  for (const field of ["nombre", "web", "categoria", "granada", "fuente"]) {
+    const { errors } = validateDataset({ cycleGroupInFile: null, rows: [makeRow({ [field]: null })], cycleGroup: "AF" });
+    assert.ok(errors.some((e) => e.includes(`${field} is required`)), `expected a "${field} is required" error, got: ${errors.join("; ")}`);
+  }
+});
+
+test("validateDataset rejects non-http(s) web and blocked hosts, including LinkedIn and InfoJobs (issue #97)", () => {
+  const badProtocol = validateDataset({ cycleGroupInFile: null, rows: [makeRow({ web: "ftp://example.com" })], cycleGroup: "AF" });
+  assert.match(badProtocol.errors.join("\n"), /web must be an http\(s\) URL/);
+
+  const linkedin = validateDataset({ cycleGroupInFile: null, rows: [makeRow({ web: "https://www.linkedin.com/company/example" })], cycleGroup: "AF" });
+  assert.match(linkedin.errors.join("\n"), /web points to a job board\/social\/aggregator\/shortener host/);
+
+  const infojobs = validateDataset({ cycleGroupInFile: null, rows: [makeRow({ web: "https://www.infojobs.net/empresa/example" })], cycleGroup: "AF" });
+  assert.match(infojobs.errors.join("\n"), /web points to a job board\/social\/aggregator\/shortener host/);
+});
+
+test("validateDataset allows empleo to be absent, and validates it the same way as web when present (issue #97)", () => {
+  const withoutEmpleo = validateDataset({ cycleGroupInFile: null, rows: [makeRow({ empleo: null, tipo_empleo: null })], cycleGroup: "AF" });
+  assert.deepEqual(withoutEmpleo.errors, []);
+  assert.equal(withoutEmpleo.records[0].empleo_url, null);
+
+  const officialEmpleo = validateDataset({
+    cycleGroupInFile: null,
+    rows: [makeRow({ empleo: "https://ejemplo-consultoria.es/empleo", tipo_empleo: "Portal oficial" })],
+    cycleGroup: "AF",
+  });
+  assert.deepEqual(officialEmpleo.errors, []);
+  assert.equal(officialEmpleo.records[0].empleo_url, "https://ejemplo-consultoria.es/empleo");
+
+  const linkedinEmpleo = validateDataset({
+    cycleGroupInFile: null,
+    rows: [makeRow({ empleo: "https://www.linkedin.com/jobs/search?keywords=example", tipo_empleo: "LinkedIn búsqueda" })],
+    cycleGroup: "AF",
+  });
+  assert.match(linkedinEmpleo.errors.join("\n"), /empleo points to a job board\/social\/aggregator\/shortener host/);
+
+  const orphanTipoEmpleo = validateDataset({ cycleGroupInFile: null, rows: [makeRow({ empleo: null, tipo_empleo: "Portal oficial" })], cycleGroup: "AF" });
+  assert.match(orphanTipoEmpleo.errors.join("\n"), /tipo_empleo is set but empleo is empty/);
+});
+
+test("validateDataset grandfathers DEV's historical LinkedIn/InfoJobs empleo links instead of rejecting the 69 existing rows (issue #97)", () => {
+  const row = makeRow({ empleo: "https://www.linkedin.com/jobs/search/?keywords=Example", tipo_empleo: "LinkedIn búsqueda" });
+  const dev = validateDataset({ cycleGroupInFile: null, rows: [row], cycleGroup: "DEV" });
+  assert.deepEqual(dev.errors, [], `DEV must not reject historical LinkedIn empleo links: ${dev.errors.join("; ")}`);
+  assert.equal(dev.records[0].empleo_url, "https://www.linkedin.com/jobs/search/?keywords=Example", "DEV's empleo_url must pass through unchanged");
+
+  // The same row would be rejected for any new group - the grandfather
+  // clause is DEV-only, not a general loosening of the policy.
+  const af = validateDataset({ cycleGroupInFile: null, rows: [row], cycleGroup: "AF" });
+  assert.match(af.errors.join("\n"), /empleo points to a job board\/social\/aggregator\/shortener host/);
+});
+
+test("validateDataset flags duplicate names/slugs as errors and duplicate domains as a warning (issue #97)", () => {
+  const dupName = validateDataset({
+    cycleGroupInFile: null,
+    rows: [makeRow(), makeRow({ web: "https://otra-web.es/" })],
+    cycleGroup: "AF",
+  });
+  assert.match(dupName.errors.join("\n"), /duplicate company name/);
+
+  const dupDomain = validateDataset({
+    cycleGroupInFile: null,
+    rows: [makeRow(), makeRow({ nombre: "Otra Empresa Real", web: "https://ejemplo-consultoria.es/otra-pagina" })],
+    cycleGroup: "AF",
+  });
+  assert.deepEqual(dupDomain.errors, [], "a shared domain alone must not block the import");
+  assert.match(dupDomain.warnings.join("\n"), /already uses domain/);
+});
+
+test("validateDataset refuses a slug that already exists in the database under a different cycle_group (issue #97)", () => {
+  const { errors } = validateDataset({
+    cycleGroupInFile: null,
+    rows: [makeRow({ nombre: "Ya Existe" })],
+    cycleGroup: "MP",
+    existingIdentities: new Map([[idSlugFor("MP", "Ya Existe"), "AF"]]),
+  });
+  assert.match(errors.join("\n"), /already exists in the database under cycle_group="AF".*refusing to move it to "MP"/);
+});
+
+test("validateDataset does not write any records when any row is invalid - one bad row invalidates the whole file for the caller (issue #97)", () => {
+  const { errors, records } = validateDataset({
+    cycleGroupInFile: null,
+    rows: [makeRow(), makeRow({ nombre: "Segunda", web: "https://www.linkedin.com/company/segunda" })],
+    cycleGroup: "AF",
+  });
+  assert.ok(errors.length > 0);
+  // records is still returned for diagnostics, but the importer (see
+  // scripts/import-companies.mjs) checks errors.length before ever opening a
+  // transaction, so a non-empty errors array must be treated as "write
+  // nothing" by every caller.
+  assert.ok(records.length < 2, "the invalid row must not produce a writable record");
 });
