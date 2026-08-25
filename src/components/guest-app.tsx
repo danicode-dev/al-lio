@@ -921,6 +921,9 @@ const workBrandCss = `
   .al-work-portal-link-icon { color: #9a958a; flex-shrink: 0; }
 
   .al-work-companies-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .al-work-company-views { display: inline-flex; align-items: center; gap: 2px; border: 1px solid #ece7dc; border-radius: 11px; background: white; padding: 3px; }
+  .al-work-company-view { display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 10px; border: none; border-radius: 8px; background: transparent; color: #6b6f72; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .al-work-company-view-active { background: #fbe7dd; color: #c94f21; }
   .al-work-company-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
   .al-work-company-card { position: relative; border: 1px solid #ece7dc; border-radius: 16px; background: white; padding: 16px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); display: flex; flex-direction: column; gap: 8px; }
   .al-work-company-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
@@ -1081,6 +1084,7 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
   const [tab, setTab] = useState<"portals" | "companies" | "candidaturas">("portals");
   const [expandedPortal, setExpandedPortal] = useState<JobPlatform | null>(null);
   const [companySearch, setCompanySearch] = useState("");
+  const [companyView, setCompanyView] = useState<"all" | "favorites">("all");
 
   // Candidaturas state
   const [applications, setApplications] = useState<JobApplication[]>([]);
@@ -1094,9 +1098,11 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
   const handleToggleWork = useCallback((p: JobPlatform) => setExpandedPortal((v) => v === p ? null : p), []);
 
   const filteredCompanies = useMemo(() => store.companies.filter((company) => {
+    if (companyView === "favorites" && !company.is_favorite) return false;
     const haystack = `${company.nombre} ${company.categoria ?? ""}`.toLowerCase();
     return !companySearch || haystack.includes(companySearch.toLowerCase());
-  }), [store.companies, companySearch]);
+  }), [store.companies, companySearch, companyView]);
+  const favoriteCompanyCount = store.companies.filter((company) => company.is_favorite).length;
 
   const fetchApplications = useCallback(async () => {
     const res = await fetch("/api/job-radar");
@@ -1243,6 +1249,15 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input className="pl-9" value={companySearch} onChange={(event) => setCompanySearch(event.target.value)} placeholder="Buscar empresa o categoria" />
             </div>
+            <div className="al-work-company-views" role="group" aria-label="Vista de empresas">
+              <button type="button" className={cn("al-work-company-view", companyView === "all" && "al-work-company-view-active")} onClick={() => setCompanyView("all")} aria-pressed={companyView === "all"}>
+                Todas
+              </button>
+              <button type="button" className={cn("al-work-company-view", companyView === "favorites" && "al-work-company-view-active")} onClick={() => setCompanyView("favorites")} aria-pressed={companyView === "favorites"}>
+                <Heart className="h-3.5 w-3.5" fill={companyView === "favorites" ? "currentColor" : "none"} />
+                Favoritas {favoriteCompanyCount}
+              </button>
+            </div>
             {store.companies.length > 0 && (
               <span className="text-xs text-muted-foreground">{filteredCompanies.length} empresas</span>
             )}
@@ -1254,8 +1269,14 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
               <p className="al-work-empty-title">Próximamente para tu ciclo</p>
               <p className="al-work-empty-desc">Todavía no tenemos empresas identificadas para tu familia profesional. Iremos añadiéndolas.</p>
             </div>
+          ) : !filteredCompanies.length && companyView === "favorites" && !companySearch ? (
+            <div className="al-work-empty">
+              <Heart className="h-8 w-8 text-[#E15D2D]/50" />
+              <p className="al-work-empty-title">Aún no tienes empresas favoritas</p>
+              <p className="al-work-empty-desc">Marca el corazón de una empresa y aparecerá aquí al instante.</p>
+            </div>
           ) : !filteredCompanies.length ? (
-            <EmptyText>No hay empresas con esa búsqueda.</EmptyText>
+            <EmptyText>{companyView === "favorites" ? "No hay empresas favoritas con esa búsqueda." : "No hay empresas con esa búsqueda."}</EmptyText>
           ) : (
             <div className="al-work-company-grid">
               {filteredCompanies.map((company) => (
@@ -2134,7 +2155,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
         .al-course-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
         .al-course-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
-        .al-course-empty { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .al-course-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
         .al-course-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
         .al-course-empty-illustration { width: 100%; max-width: 280px; height: auto; }
         .al-course-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
@@ -2154,9 +2175,10 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
               </button>
             ))}
           </div>
-          <button type="button" className={cn("al-course-filter-btn", showFilters && "al-course-filter-btn-active")} onClick={() => setShowFilters((v) => !v)}>
+          <button type="button" className={cn("al-course-filter-btn", showFilters && "al-course-filter-btn-active")} onClick={() => setShowFilters((v) => !v)} aria-label={activeFilterCount > 0 ? `Filtros, ${activeFilterCount} activos` : "Filtros"}>
             <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
+            Filtros
+            <span aria-hidden="true" className={cn("inline-block w-3 text-center tabular-nums", activeFilterCount === 0 && "invisible")}>{activeFilterCount || 0}</span>
           </button>
         </div>
 
@@ -2295,6 +2317,11 @@ function coursePriorityClass(value?: string): string {
   return "al-course-chip-amber";
 }
 
+function hackathonPublicDescription(item: Hackathon) {
+  if (item.description) return item.description;
+  return item.sourceTable === "fp_content_items" ? undefined : item.notes;
+}
+
 function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
   const allHackathons = useMemo(
     () => getDisplayHackathons(store.hackathons, store.techOpportunities, store.fpContent),
@@ -2413,6 +2440,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     return selectFeaturedHackathon(activos);
   }, [activos]);
   const featuredProgress = featuredHackathon ? hackathonAptitudeProgress(featuredHackathon) : null;
+  const featuredDescription = featuredHackathon ? hackathonPublicDescription(featuredHackathon) : undefined;
 
   // Resolve against the current allHackathons collection instead of retaining
   // the object captured when the modal opened. Requirement updates then appear
@@ -2483,7 +2511,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
         .al-hack-empty-wrap { display: grid; gap: 14px; grid-template-columns: 1fr; }
         @media (min-width: 640px) { .al-hack-empty-wrap.al-hack-empty-two { grid-template-columns: 1fr 1fr; } }
-        .al-hack-empty { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .al-hack-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
         .al-hack-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
         .al-hack-empty-illustration { width: 100%; max-width: 280px; height: auto; }
         .al-hack-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
@@ -2503,9 +2531,10 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
               </button>
             ))}
           </div>
-          <button type="button" className={cn("al-hack-filter-btn", showFilters && "al-hack-filter-btn-active")} onClick={() => setShowFilters((v) => !v)}>
+          <button type="button" className={cn("al-hack-filter-btn", showFilters && "al-hack-filter-btn-active")} onClick={() => setShowFilters((v) => !v)} aria-label={activeFilterCount > 0 ? `Filtros, ${activeFilterCount} activos` : "Filtros"}>
             <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
+            Filtros
+            <span aria-hidden="true" className={cn("inline-block w-3 text-center tabular-nums", activeFilterCount === 0 && "invisible")}>{activeFilterCount || 0}</span>
           </button>
         </div>
 
@@ -2544,7 +2573,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                       {featuredHackathon.end_at ? ` → ${formatDateLabel(featuredHackathon.end_at)}` : ""}
                     </p>
                   )}
-                  {featuredHackathon.notes && <p className="al-hack-hero-desc">{featuredHackathon.notes}</p>}
+                  {featuredDescription && <p className="al-hack-hero-desc">{featuredDescription}</p>}
                   <div className="al-hack-hero-actions">
                     {isSafeHttpUrl(featuredHackathon.url) ? (
                       <a href={featuredHackathon.url} target="_blank" rel="noopener noreferrer" className="al-hack-hero-btn-primary">
@@ -2597,6 +2626,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
                   const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
                   const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
+                  const description = hackathonPublicDescription(item);
                   return (
                     <div key={item.id} className="al-hack-card">
                       <div className="al-hack-card-top">
@@ -2634,7 +2664,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                         {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
                         {item.priority && <ChipTag className={hackPriorityClass(item.priority)}>{priorityText(item.priority)}</ChipTag>}
                       </div>
-                      {item.notes && <p className="al-hack-card-desc line-clamp-2">{item.notes}</p>}
+                      {description && <p className="al-hack-card-desc line-clamp-2">{description}</p>}
                       <div className="al-hack-card-actions">
                         {isSafeHttpUrl(item.url) && (
                           <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-hack-btn al-hack-btn-primary">
@@ -2847,16 +2877,24 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
   const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
   const safeIndex = steps.length > 0 ? Math.min(stepIndex, steps.length - 1) : 0;
   const currentStep = steps[safeIndex] ?? null;
+  const isLastStep = !currentStep || safeIndex === steps.length - 1;
+
+  function continueOrClose() {
+    if (currentStep && !isLastStep) {
+      setStepIndex((index) => Math.min(steps.length - 1, index + 1));
+      return;
+    }
+    onClose();
+  }
 
   return createPortal(
     <div
       ref={rootRef}
-      className="fixed inset-0 z-50 flex items-end bg-black/55 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6"
       onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
     >
       <style>{`
-        .al-modal-shell { background: white; border-radius: 22px 22px 0 0; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
-        @media (min-width: 640px) { .al-modal-shell { border-radius: 22px; } }
+        .al-modal-shell { background: white; border-radius: 22px; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
         .al-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #f0ece2; flex-shrink: 0; }
         .al-modal-head-icon { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; flex-shrink: 0; }
         .al-modal-title { font-size: 18px; font-weight: 700; color: #111111; line-height: 24px; letter-spacing: -0.02em; }
@@ -2896,7 +2934,7 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
       `}</style>
       <div
         ref={dialogRef}
-        className="al-modal-shell max-h-[92svh] w-full overflow-hidden sm:max-w-lg"
+        className="al-modal-shell max-h-[calc(100svh-1.5rem)] w-full max-w-lg overflow-hidden sm:max-h-[calc(100svh-3rem)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -2957,6 +2995,9 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
                 {item.is_favorite ? "Guardado" : "Guardar para después"}
               </button>
             )}
+            <button type="button" className="al-modal-btn-primary" onClick={continueOrClose}>
+              {!currentStep ? "Cerrar" : isLastStep ? "Terminar" : "Continuar"}
+            </button>
           </div>
           <p className="al-modal-footer-hint">Parte del aprendizaje se queda en AL-LÍO. Tú eliges dónde estudiar.</p>
         </div>
@@ -3371,7 +3412,9 @@ function isFpHackathonLike(item: FpCatalogItem) {
 }
 
 function fpItemNotes(item: FpCatalogItem) {
-  return [item.suggested_action, item.notes].filter(Boolean).join("\n\n") || undefined;
+  // `item.notes` contains import and moderation provenance. Keep it out of
+  // student-facing display models; only the suggested action is public copy.
+  return item.suggested_action || undefined;
 }
 
 function fpItemToCourse(item: FpCatalogItem): Course {
@@ -3428,6 +3471,7 @@ function fpItemToHackathon(item: FpCatalogItem): Hackathon {
     practicas_empresa: item.practices === "si",
     tags: item.tags ?? undefined,
     url: item.source_url ?? undefined,
+    description: item.description ?? undefined,
     notes: fpItemNotes(item),
     sourceTable: "fp_content_items",
     requiredCompetencies: item.requiredCompetencies,

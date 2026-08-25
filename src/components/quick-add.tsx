@@ -86,7 +86,7 @@ export function QuickAdd({ open, setOpen, actions }: QuickAddProps) {
   return (
     <>
       {open && (
-        <Card className="fixed bottom-20 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-[20px] border-[#e4dfd5] bg-white p-4 shadow-[0_22px_50px_rgba(37,30,20,0.18)] md:bottom-20 md:right-5">
+        <Card className="fixed left-1/2 top-[calc(env(safe-area-inset-top)+4.75rem)] z-[60] max-h-[calc(100svh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-10rem)] w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 overflow-y-auto rounded-[20px] border-[#e4dfd5] bg-white p-4 shadow-[0_22px_50px_rgba(37,30,20,0.18)] md:bottom-20 md:left-auto md:right-5 md:top-auto md:max-h-[calc(100vh-6rem)] md:translate-x-0">
           <div className="mb-3 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#e15d2d]">Alta rápida</p>
