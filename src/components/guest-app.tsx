@@ -2134,7 +2134,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
         .al-course-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
         .al-course-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
-        .al-course-empty { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .al-course-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
         .al-course-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
         .al-course-empty-illustration { width: 100%; max-width: 280px; height: auto; }
         .al-course-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
@@ -2154,9 +2154,10 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
               </button>
             ))}
           </div>
-          <button type="button" className={cn("al-course-filter-btn", showFilters && "al-course-filter-btn-active")} onClick={() => setShowFilters((v) => !v)}>
+          <button type="button" className={cn("al-course-filter-btn", showFilters && "al-course-filter-btn-active")} onClick={() => setShowFilters((v) => !v)} aria-label={activeFilterCount > 0 ? `Filtros, ${activeFilterCount} activos` : "Filtros"}>
             <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
+            Filtros
+            <span aria-hidden="true" className={cn("inline-block w-3 text-center tabular-nums", activeFilterCount === 0 && "invisible")}>{activeFilterCount || 0}</span>
           </button>
         </div>
 
@@ -2489,7 +2490,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
         .al-hack-empty-wrap { display: grid; gap: 14px; grid-template-columns: 1fr; }
         @media (min-width: 640px) { .al-hack-empty-wrap.al-hack-empty-two { grid-template-columns: 1fr 1fr; } }
-        .al-hack-empty { background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .al-hack-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
         .al-hack-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
         .al-hack-empty-illustration { width: 100%; max-width: 280px; height: auto; }
         .al-hack-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
@@ -2509,9 +2510,10 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
               </button>
             ))}
           </div>
-          <button type="button" className={cn("al-hack-filter-btn", showFilters && "al-hack-filter-btn-active")} onClick={() => setShowFilters((v) => !v)}>
+          <button type="button" className={cn("al-hack-filter-btn", showFilters && "al-hack-filter-btn-active")} onClick={() => setShowFilters((v) => !v)} aria-label={activeFilterCount > 0 ? `Filtros, ${activeFilterCount} activos` : "Filtros"}>
             <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filtros{activeFilterCount > 0 ? ` ${activeFilterCount}` : ""}
+            Filtros
+            <span aria-hidden="true" className={cn("inline-block w-3 text-center tabular-nums", activeFilterCount === 0 && "invisible")}>{activeFilterCount || 0}</span>
           </button>
         </div>
 
