@@ -1201,6 +1201,65 @@ test("resolveLegacyRutaTarget falls back to the event's official page for zero o
   );
 });
 
+test("resolveLegacyRutaTarget filters out unsafe candidates before deciding ambiguity - they must never count toward it (issue #112)", () => {
+  // One real video plus one javascript: candidate: exactly one *safe*
+  // candidate remains, so it must resolve to that video, not fall back for
+  // looking "ambiguous" by raw length.
+  assert.equal(
+    resolveLegacyRutaTarget({
+      itemSourceUrl: "https://evento.example/",
+      exactVideoCandidates: ["https://youtube.com/watch?v=x", "javascript:alert(1)"],
+    }),
+    "https://youtube.com/watch?v=x",
+  );
+
+  // Same, with several distinct kinds of unsafe values mixed in.
+  assert.equal(
+    resolveLegacyRutaTarget({
+      itemSourceUrl: "https://evento.example/",
+      exactVideoCandidates: ["https://youtube.com/watch?v=x", "data:text/html,<script>alert(1)</script>", "/relative/path"],
+    }),
+    "https://youtube.com/watch?v=x",
+  );
+
+  // Only unsafe candidates: zero safe ones remain, falls back to the
+  // official page - not treated as "one candidate" just because the array
+  // itself has length 1.
+  assert.equal(
+    resolveLegacyRutaTarget({ itemSourceUrl: "https://evento.example/", exactVideoCandidates: ["javascript:alert(1)"] }),
+    "https://evento.example/",
+  );
+
+  // Two real safe videos plus unsafe noise: still genuinely ambiguous once
+  // filtered (2 safe candidates, not 1), falls back to the official page -
+  // the unsafe entries must not accidentally resolve the ambiguity either way.
+  assert.equal(
+    resolveLegacyRutaTarget({
+      itemSourceUrl: "https://evento.example/",
+      exactVideoCandidates: ["https://youtube.com/watch?v=a", "https://youtube.com/watch?v=b", "javascript:alert(1)", "not a url"],
+    }),
+    "https://evento.example/",
+  );
+
+  // No safe candidates at all, and the official event URL is itself unsafe:
+  // the only thing left to fall back to is /hackathons.
+  assert.equal(
+    resolveLegacyRutaTarget({ itemSourceUrl: "javascript:alert(1)", exactVideoCandidates: ["data:text/html,x"] }),
+    "/hackathons",
+  );
+});
+
+test("resolveLegacyRutaTarget does not deduplicate two safe candidates that share the same URL - they still count as ambiguous (issue #112)", () => {
+  assert.equal(
+    resolveLegacyRutaTarget({
+      itemSourceUrl: "https://evento.example/",
+      exactVideoCandidates: ["https://youtube.com/watch?v=x", "https://youtube.com/watch?v=x"],
+    }),
+    "https://evento.example/",
+    "two resources pointing at the identical URL are still two candidates, not collapsed into one",
+  );
+});
+
 test("resolveLegacyRutaTarget never returns an unsafe URL, from either input (issue #112)", () => {
   assert.equal(resolveLegacyRutaTarget({ itemSourceUrl: "javascript:alert(1)", exactVideoCandidates: [] }), "/hackathons");
   assert.equal(resolveLegacyRutaTarget({ itemSourceUrl: null, exactVideoCandidates: [] }), "/hackathons");
