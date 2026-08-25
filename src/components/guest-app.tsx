@@ -2877,16 +2877,24 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
   const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
   const safeIndex = steps.length > 0 ? Math.min(stepIndex, steps.length - 1) : 0;
   const currentStep = steps[safeIndex] ?? null;
+  const isLastStep = !currentStep || safeIndex === steps.length - 1;
+
+  function continueOrClose() {
+    if (currentStep && !isLastStep) {
+      setStepIndex((index) => Math.min(steps.length - 1, index + 1));
+      return;
+    }
+    onClose();
+  }
 
   return createPortal(
     <div
       ref={rootRef}
-      className="fixed inset-0 z-50 flex items-end bg-black/55 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6"
       onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
     >
       <style>{`
-        .al-modal-shell { background: white; border-radius: 22px 22px 0 0; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
-        @media (min-width: 640px) { .al-modal-shell { border-radius: 22px; } }
+        .al-modal-shell { background: white; border-radius: 22px; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
         .al-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #f0ece2; flex-shrink: 0; }
         .al-modal-head-icon { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; flex-shrink: 0; }
         .al-modal-title { font-size: 18px; font-weight: 700; color: #111111; line-height: 24px; letter-spacing: -0.02em; }
@@ -2926,7 +2934,7 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
       `}</style>
       <div
         ref={dialogRef}
-        className="al-modal-shell max-h-[92svh] w-full overflow-hidden sm:max-w-lg"
+        className="al-modal-shell max-h-[calc(100svh-1.5rem)] w-full max-w-lg overflow-hidden sm:max-h-[calc(100svh-3rem)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -2987,6 +2995,9 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
                 {item.is_favorite ? "Guardado" : "Guardar para después"}
               </button>
             )}
+            <button type="button" className="al-modal-btn-primary" onClick={continueOrClose}>
+              {!currentStep ? "Cerrar" : isLastStep ? "Terminar" : "Continuar"}
+            </button>
           </div>
           <p className="al-modal-footer-hint">Parte del aprendizaje se queda en AL-LÍO. Tú eliges dónde estudiar.</p>
         </div>
