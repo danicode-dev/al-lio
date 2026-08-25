@@ -65,6 +65,15 @@ if (radarMultidestinationMigration) {
   check("existing Radar content is backfilled", radarMultidestinationMigration.sql.includes("insert into public.fp_content_items") && radarMultidestinationMigration.sql.includes("update public.radar_items"));
 }
 
+const competencyStateMigration = migrations.find((migration) => migration.version === "0006_fp_user_competency_state");
+check("competency completion migration exists", Boolean(competencyStateMigration));
+if (competencyStateMigration) {
+  check("the migration creates fp_user_competency_state", competencyStateMigration.sql.includes("fp_user_competency_state"));
+  check("completion is scoped to a user and a skill", competencyStateMigration.sql.includes("references public.users(id)") && competencyStateMigration.sql.includes("references public.fp_skills(id)"));
+  check("the migration uses a composite primary key", competencyStateMigration.sql.includes("primary key (user_id, skill_id)"));
+  check("the migration keeps updated_at current via a trigger", competencyStateMigration.sql.includes("set_fp_user_competency_state_updated_at"));
+}
+
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 check("postgres:migrate usa el runner versionado", packageJson.scripts?.["postgres:migrate"] === "node scripts/postgres/migrate.mjs");
 check("existe importador versionado de competencias", packageJson.scripts?.["import:learning-competencies"] === "node scripts/import-learning-competencies.mjs");

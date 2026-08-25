@@ -95,6 +95,9 @@ export type RequiredCompetency = {
   obligatoria_para_item: boolean;
   orden_preparacion?: number;
   learningItems: RequiredCompetencyLearningItem[];
+  // Explicit per-user completion (issue #96), independent of whether any
+  // learningItems exist or are individually completed.
+  completed?: boolean;
 };
 
 export type FpCatalogItem = {
@@ -204,5 +207,6 @@ export type ReturnTypeActions = {
   toggleFpFavorite: (idSlug: string, nextValue: boolean) => void;
   toggleCompanyFavorite: (companyId: string) => void;
   markLearningItemDone: (idSlug: string) => void;
+  markCompetencyCompleted: (skillId: string) => void;
   reset: () => void;
 };

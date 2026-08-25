@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   AlarmClock,
   Bookmark,
@@ -2762,35 +2763,103 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
   const recomendadas = competencies.filter((competency) => !competency.obligatoria_para_item);
   const steps = [...obligatorias, ...recomendadas];
   const [stepIndex, setStepIndex] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
+  const descriptionId = useId();
+
+  // Portals require a DOM to attach to, so the actual portal render is
+  // deferred one tick past the server-rendered pass.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setStepIndex(0);
   }, [item?.id]);
 
   useEffect(() => {
-    if (!item) return;
+    if (!item?.id) return;
+
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    const previousOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
     const previousPaddingRight = document.body.style.paddingRight;
+    document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
     if (scrollbarWidth > 0) {
       document.body.style.paddingRight = `${scrollbarWidth}px`;
     }
+
+    // Make everything behind the portal unreachable to assistive tech and
+    // keyboard/pointer input while the modal is open. rootRef is excluded
+    // since it IS the modal, appended as its own sibling under body. Each
+    // sibling's own prior inert value is captured and restored on cleanup
+    // instead of assuming it was false, in case something else already
+    // relied on it being inert for an unrelated reason.
+    const backgroundSiblings = Array.from(document.body.children).filter(
+      (el): el is HTMLElement => el instanceof HTMLElement && el !== rootRef.current,
+    );
+    const previousInertStates = backgroundSiblings.map((el) => el.inert);
+    backgroundSiblings.forEach((el) => { el.inert = true; });
+
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
       document.body.style.paddingRight = previousPaddingRight;
+      backgroundSiblings.forEach((el, index) => { el.inert = previousInertStates[index]; });
+      previouslyFocused?.focus();
     };
-  }, [item]);
+    // item?.id only - not the item object itself, which the store rebuilds
+    // (new reference, same event) whenever any of its fields change, e.g.
+    // marking an aptitude or navigating between steps. Keying on the full
+    // object would tear down and redo this whole lifecycle - scroll lock,
+    // inert, and focus jumping back to the close button - on every such
+    // update, even though the modal never actually closed and reopened.
+  }, [item?.id]);
 
-  if (!item) return null;
+  function handleDialogKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") {
+      onClose();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusableElements = dialogRef.current?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+    );
+    if (!focusableElements?.length) return;
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  }
 
-  const hasRuta = hackathonHasRutaVideo(item);
+  if (!mounted || !item) return null;
+
   const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
   const safeIndex = steps.length > 0 ? Math.min(stepIndex, steps.length - 1) : 0;
   const currentStep = steps[safeIndex] ?? null;
+  // Always an exact internal destination when we know one - the current step
+  // when there is one, otherwise the path's overview. Never a generic
+  // catalogue link, and never gated behind that step having a video.
+  const rutaHref = item.id_slug ? `/ruta/${item.id_slug}${currentStep ? `?paso=${currentStep.id}` : ""}` : null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/55 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6" role="dialog" aria-modal="true">
+  return createPortal(
+    <div
+      ref={rootRef}
+      className="fixed inset-0 z-50 flex items-end bg-black/55 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6"
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+    >
       <style>{`
         .al-modal-shell { background: white; border-radius: 22px 22px 0 0; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
         @media (min-width: 640px) { .al-modal-shell { border-radius: 22px; } }
@@ -2831,16 +2900,24 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
         .al-modal-btn-secondary { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 16px; border-radius: 13px; border: 1px solid #ece7dc; background: white; color: #333029; font-size: 12.5px; font-weight: 600; cursor: pointer; }
         .al-modal-footer-hint { text-align: center; font-size: 10.5px; color: #9a958a; }
       `}</style>
-      <div className="al-modal-shell max-h-[92svh] w-full overflow-hidden sm:max-w-lg">
+      <div
+        ref={dialogRef}
+        className="al-modal-shell max-h-[92svh] w-full overflow-hidden sm:max-w-lg"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+        onKeyDown={handleDialogKeyDown}
+      >
         <div className="al-modal-head">
           <span className="al-modal-head-icon">
             <Image src="/assets/hackathons/hackathons-modal-checklist-icon.png" alt="" width={160} height={160} className="h-full w-full object-contain" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="al-modal-title line-clamp-2">Requisitos para {item.name}</h2>
-            <p className="al-modal-subtitle">Todo lo que conviene dominar antes de presentarte.</p>
+            <h2 id={titleId} className="al-modal-title line-clamp-2">Requisitos para {item.name}</h2>
+            <p id={descriptionId} className="al-modal-subtitle">Todo lo que conviene dominar antes de presentarte.</p>
           </div>
-          <button type="button" className="al-modal-close" onClick={onClose} aria-label="Cerrar">
+          <button ref={closeButtonRef} type="button" className="al-modal-close" onClick={onClose} aria-label="Cerrar">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -2881,15 +2958,11 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
         )}
         <div className="al-modal-footer">
           <div className="al-modal-footer-row">
-            {hasRuta && item.id_slug ? (
-              <Link href={`/ruta/${item.id_slug}`} className="al-modal-btn-primary">
-                <span>Abrir ruta completa</span>
-                <small>Ver pasos, links y recursos</small>
+            {rutaHref && (
+              <Link href={rutaHref} className="al-modal-btn-primary">
+                <span>Ver en tu ruta</span>
+                <small>Contenido y contexto de este paso</small>
               </Link>
-            ) : (
-              <span className="al-modal-btn-primary" style={{ opacity: 0.5, cursor: "not-allowed" }}>
-                <span>Ruta todavía sin vídeo</span>
-              </span>
             )}
             {canFavorite && (
               <button type="button" className="al-modal-btn-secondary" onClick={() => actions.toggleFpFavorite(item.id_slug!, !item.is_favorite)}>
@@ -2901,7 +2974,8 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
           <p className="al-modal-footer-hint">Parte del aprendizaje se queda en AL-LÍO. Tú eliges dónde estudiar.</p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -2912,7 +2986,7 @@ function hackathonHasRutaVideo(item: Hackathon): boolean {
 }
 
 function isCompetencyDone(competency: RequiredCompetency): boolean {
-  return competency.learningItems.some((learningItem) => learningItem.user_status === "completed");
+  return !!competency.completed;
 }
 
 function hackathonAptitudeProgress(item: Hackathon): { done: number; total: number } {
@@ -2940,12 +3014,12 @@ function CompetencyRequirement({
 }) {
   const done = isCompetencyDone(competency);
   const videoItem = competency.learningItems.find((li) => li.video_url);
-  const docItems = competency.learningItems.filter((li) => !li.video_url);
+  // At most two external references per competency - reliable and genuinely
+  // complementary, not an exhaustive dump of every matched resource.
+  const docItems = competency.learningItems.filter((li) => !li.video_url).slice(0, 2);
 
   function markDone() {
-    for (const learningItem of competency.learningItems) {
-      actions.markLearningItemDone(learningItem.id_slug);
-    }
+    actions.markCompetencyCompleted(competency.id);
     onMarkDone?.();
   }
 
@@ -2974,16 +3048,14 @@ function CompetencyRequirement({
           ))}
         </div>
       )}
-      {competency.learningItems.length > 0 && (
-        done ? (
-          <span className="al-modal-mark-done al-modal-mark-done-active">
-            <CheckCircle2 className="h-3.5 w-3.5" />Marcado como hecho
-          </span>
-        ) : (
-          <button type="button" className="al-modal-mark-done" onClick={markDone}>
-            <Check className="h-3.5 w-3.5" />Marcar como hecho
-          </button>
-        )
+      {done ? (
+        <span className="al-modal-mark-done al-modal-mark-done-active">
+          <CheckCircle2 className="h-3.5 w-3.5" />Marcado como hecho
+        </span>
+      ) : (
+        <button type="button" className="al-modal-mark-done" onClick={markDone}>
+          <Check className="h-3.5 w-3.5" />Marcar como hecho
+        </button>
       )}
     </div>
   );

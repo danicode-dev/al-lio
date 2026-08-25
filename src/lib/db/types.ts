@@ -197,6 +197,18 @@ export interface DbFpUserContentState {
   updated_at: string;
 }
 
+// Explicit per-user competency completion (issue #96) - row existence means
+// completed. Separate from DbFpUserContentState because a skill_id (text,
+// references fp_skills) is not a content_item_id (uuid, references
+// fp_content_items): a different key against a different table.
+export interface DbFpUserCompetencyState {
+  user_id: string;
+  skill_id: string;
+  completed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export type FpCompetencyEtapa =
   | "0_antes_de_empezar"
   | "1_fundamentos"

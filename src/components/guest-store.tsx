@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { toggleCompanyFavoriteAction } from "@/lib/companies/actions";
 import { deleteDb, insertDb, updateDb } from "@/lib/db";
+import { markCompetencyCompletedAction } from "@/lib/fp/competency-actions";
 import { markResourceStatusAction, toggleFavoriteAction } from "@/lib/fp/resource-notes-actions";
 import type {
   Course,
@@ -382,6 +383,20 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
       void markResourceStatusAction(idSlug, "completed").then((result) => {
         if (!result.error) return;
         setStore((current) => ({ ...current, fpContent: patchLearningItems(current.fpContent, null) }));
+        toast.error("No se pudo guardar");
+      });
+    },
+    markCompetencyCompleted: (skillId: string) => {
+      const patchCompetencies = (fpContent: FpCatalogItem[], completed: boolean) => fpContent.map((item) => ({
+        ...item,
+        requiredCompetencies: item.requiredCompetencies?.map((competency) => (
+          competency.id === skillId ? { ...competency, completed } : competency
+        )),
+      }));
+      setStore((current) => ({ ...current, fpContent: patchCompetencies(current.fpContent, true) }));
+      void markCompetencyCompletedAction(skillId).then((result) => {
+        if (!result.error) return;
+        setStore((current) => ({ ...current, fpContent: patchCompetencies(current.fpContent, false) }));
         toast.error("No se pudo guardar");
       });
     },

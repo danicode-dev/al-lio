@@ -17,6 +17,7 @@ import {
   getRequiredCompetenciesForItems,
   getLearningItemsForCompetencies,
   getUserContentStatesForItems,
+  getUserCompetencyStatesForSkills,
   type CompetencyLearningItem,
 } from "@/lib/db/repositories/fp_catalog";
 
@@ -64,6 +65,7 @@ export const getGlobalStore = cache(async () => {
     : new Map();
   const learningItemIds = [...new Set([...learningItemsByCompetency.values()].flat().map((li) => li.id))];
   const learningItemStatusById = await getUserContentStatesForItems(userId, learningItemIds);
+  const userCompetencyStates = await getUserCompetencyStatesForSkills(userId, requiredCompetencyIds);
 
   const rawName =
     pgUser?.display_name ||
@@ -106,6 +108,7 @@ export const getGlobalStore = cache(async () => {
         ultima_revision: ymd(competency.ultima_revision),
         created_at: iso(competency.created_at),
         updated_at: iso(competency.updated_at),
+        completed: userCompetencyStates.has(competency.id),
         learningItems: (learningItemsByCompetency.get(competency.id) ?? []).map((learningItem: CompetencyLearningItem) => ({
           ...learningItem,
           user_status: learningItemStatusById.get(learningItem.id) ?? null,

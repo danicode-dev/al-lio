@@ -5,6 +5,7 @@ import type {
   DbFpCycle,
   DbFpCycleSkill,
   DbFpSkill,
+  DbFpUserCompetencyState,
   DbFpUserContentState,
   DbProfile,
   FpAcademicYear,
@@ -288,6 +289,41 @@ export async function upsertFpUserContentState(
       data.reminder_at ?? null,
       data.completed_at ?? null,
     ]
+  );
+  return res.rows[0];
+}
+
+// Single-row lookup for authorizing a skill against the caller's cycle,
+// mirroring getFpContentItemBySlugForCycle's shape rather than fetching the
+// full cycle skill list and filtering in JS.
+export async function getCycleSkillById(cycleCode: FpCycleCode, skillId: string): Promise<DbFpSkill | null> {
+  const res = await query<DbFpSkill>(
+    `SELECT skill.* FROM public.fp_cycle_skills cs
+     INNER JOIN public.fp_skills skill ON skill.id = cs.skill_id
+     WHERE cs.cycle_code = $1 AND cs.skill_id = $2
+     LIMIT 1`,
+    [cycleCode, skillId]
+  );
+  return res.rows[0] ?? null;
+}
+
+export async function getUserCompetencyStatesForSkills(userId: string, skillIds: string[]): Promise<Set<string>> {
+  if (skillIds.length === 0) return new Set();
+
+  const res = await query<{ skill_id: string }>(
+    `SELECT skill_id FROM public.fp_user_competency_state WHERE user_id = $1 AND skill_id = ANY($2)`,
+    [userId, skillIds]
+  );
+  return new Set(res.rows.map((row) => row.skill_id));
+}
+
+export async function markUserCompetencyCompleted(userId: string, skillId: string): Promise<DbFpUserCompetencyState> {
+  const res = await query<DbFpUserCompetencyState>(
+    `INSERT INTO public.fp_user_competency_state (user_id, skill_id)
+     VALUES ($1, $2)
+     ON CONFLICT (user_id, skill_id) DO UPDATE SET updated_at = now()
+     RETURNING *`,
+    [userId, skillId]
   );
   return res.rows[0];
 }
