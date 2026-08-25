@@ -429,6 +429,23 @@ export function BlocNotepad() {
     recordEditorContent();
   }
 
+  function handleEditorClick(event: React.MouseEvent<HTMLDivElement>) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const link = target.closest<HTMLAnchorElement>("a[href]");
+    const href = link?.getAttribute("href")?.trim();
+    if (!href) return;
+
+    try {
+      const destination = new URL(href, window.location.origin);
+      if (destination.origin !== window.location.origin || !destination.pathname.startsWith("/aprende/")) return;
+      event.preventDefault();
+      window.location.assign(`${destination.pathname}${destination.search}${destination.hash}`);
+    } catch {
+      // Leave malformed or non-navigation editor content untouched.
+    }
+  }
+
   function setParagraphBlock(value: string) {
     if (!value) return;
     focusEditor();
@@ -633,6 +650,7 @@ export function BlocNotepad() {
             onBlur={recordEditorContent}
             onPaste={handlePaste}
             onKeyDown={handleEditorKeyDown}
+            onClick={handleEditorClick}
             className={cn(
               "al-bloc-content empty:before:pointer-events-none empty:before:text-[#9a958a] empty:before:content-[attr(data-placeholder)]",
               "min-h-[45dvh] max-h-[58dvh] overflow-y-auto px-4 py-4 leading-7 outline-none",
@@ -865,6 +883,7 @@ export function BlocNotepad() {
               onBlur={recordEditorContent}
               onPaste={handlePaste}
               onKeyDown={handleEditorKeyDown}
+              onClick={handleEditorClick}
               className={cn(
                 "al-bloc-content empty:before:pointer-events-none empty:before:text-[#9a958a] empty:before:content-[attr(data-placeholder)]",
                 "min-h-[430px] flex-1 overflow-y-auto px-8 py-6 leading-7 outline-none",
@@ -1163,7 +1182,7 @@ function MobileSheet({ title, onClose, children }: { title: string; onClose: () 
   return (
     <>
       <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-      <div role="dialog" aria-modal="true" aria-label={title} className="al-bloc-sheet fixed inset-x-0 bottom-0 z-[71] max-h-[80dvh] overflow-y-auto rounded-t-2xl pb-safe">
+      <div role="dialog" aria-modal="true" aria-label={title} className="al-bloc-sheet fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-[71] max-h-[calc(100dvh-env(safe-area-inset-bottom)-1.5rem)] overflow-y-auto rounded-2xl pb-safe sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[calc(100vw-2rem)] sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-h-[calc(100dvh-2rem)]">
         <div className="al-bloc-sheet-handle mx-auto mt-3 h-1 w-10 rounded-full" />
         <div className="flex items-center justify-between px-5 py-3">
           <h3 className="truncate text-base font-semibold text-[#111111]">{title}</h3>
@@ -1622,6 +1641,7 @@ const blocBrandCss = `
   .al-bloc-note-card { min-width: 0; flex: 1; border-radius: 10px; padding: 8px 10px; text-align: left; background: transparent; border: none; cursor: pointer; color: #333029; }
   .al-bloc-note-card:hover { background: #faf8f4; }
   .al-bloc-note-card-active { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; }
+  .al-bloc-note-card-active:hover { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; }
   .al-bloc-note-card-meta { color: #9a958a; }
   .al-bloc-note-card-active .al-bloc-note-card-meta { color: rgba(255,255,255,0.75); }
   .al-bloc-note-card-star { color: #ffe3ba; }
