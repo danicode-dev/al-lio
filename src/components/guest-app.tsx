@@ -921,6 +921,9 @@ const workBrandCss = `
   .al-work-portal-link-icon { color: #9a958a; flex-shrink: 0; }
 
   .al-work-companies-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .al-work-company-views { display: inline-flex; align-items: center; gap: 2px; border: 1px solid #ece7dc; border-radius: 11px; background: white; padding: 3px; }
+  .al-work-company-view { display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 10px; border: none; border-radius: 8px; background: transparent; color: #6b6f72; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .al-work-company-view-active { background: #fbe7dd; color: #c94f21; }
   .al-work-company-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
   .al-work-company-card { position: relative; border: 1px solid #ece7dc; border-radius: 16px; background: white; padding: 16px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); display: flex; flex-direction: column; gap: 8px; }
   .al-work-company-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
@@ -1081,6 +1084,7 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
   const [tab, setTab] = useState<"portals" | "companies" | "candidaturas">("portals");
   const [expandedPortal, setExpandedPortal] = useState<JobPlatform | null>(null);
   const [companySearch, setCompanySearch] = useState("");
+  const [companyView, setCompanyView] = useState<"all" | "favorites">("all");
 
   // Candidaturas state
   const [applications, setApplications] = useState<JobApplication[]>([]);
@@ -1094,9 +1098,11 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
   const handleToggleWork = useCallback((p: JobPlatform) => setExpandedPortal((v) => v === p ? null : p), []);
 
   const filteredCompanies = useMemo(() => store.companies.filter((company) => {
+    if (companyView === "favorites" && !company.is_favorite) return false;
     const haystack = `${company.nombre} ${company.categoria ?? ""}`.toLowerCase();
     return !companySearch || haystack.includes(companySearch.toLowerCase());
-  }), [store.companies, companySearch]);
+  }), [store.companies, companySearch, companyView]);
+  const favoriteCompanyCount = store.companies.filter((company) => company.is_favorite).length;
 
   const fetchApplications = useCallback(async () => {
     const res = await fetch("/api/job-radar");
@@ -1243,6 +1249,15 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input className="pl-9" value={companySearch} onChange={(event) => setCompanySearch(event.target.value)} placeholder="Buscar empresa o categoria" />
             </div>
+            <div className="al-work-company-views" role="group" aria-label="Vista de empresas">
+              <button type="button" className={cn("al-work-company-view", companyView === "all" && "al-work-company-view-active")} onClick={() => setCompanyView("all")} aria-pressed={companyView === "all"}>
+                Todas
+              </button>
+              <button type="button" className={cn("al-work-company-view", companyView === "favorites" && "al-work-company-view-active")} onClick={() => setCompanyView("favorites")} aria-pressed={companyView === "favorites"}>
+                <Heart className="h-3.5 w-3.5" fill={companyView === "favorites" ? "currentColor" : "none"} />
+                Favoritas {favoriteCompanyCount}
+              </button>
+            </div>
             {store.companies.length > 0 && (
               <span className="text-xs text-muted-foreground">{filteredCompanies.length} empresas</span>
             )}
@@ -1254,8 +1269,14 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
               <p className="al-work-empty-title">Próximamente para tu ciclo</p>
               <p className="al-work-empty-desc">Todavía no tenemos empresas identificadas para tu familia profesional. Iremos añadiéndolas.</p>
             </div>
+          ) : !filteredCompanies.length && companyView === "favorites" && !companySearch ? (
+            <div className="al-work-empty">
+              <Heart className="h-8 w-8 text-[#E15D2D]/50" />
+              <p className="al-work-empty-title">Aún no tienes empresas favoritas</p>
+              <p className="al-work-empty-desc">Marca el corazón de una empresa y aparecerá aquí al instante.</p>
+            </div>
           ) : !filteredCompanies.length ? (
-            <EmptyText>No hay empresas con esa búsqueda.</EmptyText>
+            <EmptyText>{companyView === "favorites" ? "No hay empresas favoritas con esa búsqueda." : "No hay empresas con esa búsqueda."}</EmptyText>
           ) : (
             <div className="al-work-company-grid">
               {filteredCompanies.map((company) => (
