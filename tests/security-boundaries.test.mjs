@@ -792,6 +792,21 @@ test("selectFeaturedHackathon: orders by nearest future date, with a determinist
   assert.equal(selectFeaturedHackathon([tieA, tieB])?.id, "a-tie");
 });
 
+test("selectFeaturedHackathon orders by the nearest actionable registration/start/end date (issue #95)", () => {
+  const earlierRegistration = mockHackathon({
+    id: "registration-first",
+    registration_deadline_at: "2026-09-03",
+    start_at: "2026-09-20",
+  });
+  const earlierStart = mockHackathon({
+    id: "start-first",
+    registration_deadline_at: "2026-09-10",
+    start_at: "2026-09-05",
+  });
+
+  assert.equal(selectFeaturedHackathon([earlierStart, earlierRegistration])?.id, "registration-first");
+});
+
 test("selectFeaturedHackathon: returns null instead of fabricating a candidate when none remain (issue #95)", () => {
   assert.equal(selectFeaturedHackathon([]), null);
   const onlyReady = mockHackathon({ requiredCompetencies: [mockCompetency({ completed: true })] });
@@ -820,7 +835,10 @@ test("completeHackathon persists Realizado per origin, with rollback, and never 
   assert.match(fpBranch, /await markResourceStatusAction\(idSlug, "completed"\)/);
   assert.doesNotMatch(fpBranch, /insertDb\("hackathons"/, "must not copy the catalogue row into the user's hackathons table");
   assert.doesNotMatch(fpBranch, /addHackathon/, "must not go through the add-new-hackathon path either");
-  assert.match(fpBranch, /user_status: null, user_completed_at: null/, "must roll back the optimistic completion on failure");
+  assert.match(fpBranch, /const previousStatus = previousContent\?\.user_status/);
+  assert.match(fpBranch, /const previousCompletedAt = previousContent\?\.user_completed_at/);
+  assert.match(fpBranch, /user_status: previousStatus/);
+  assert.match(fpBranch, /user_completed_at: previousCompletedAt/, "must roll back the optimistic completion to the exact prior state");
   assert.match(fpBranch, /throw error;/);
 
   // No tech_opportunities persistence branch exists - the UI does not offer

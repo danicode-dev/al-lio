@@ -340,6 +340,9 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
           toast.error("No se pudo marcar el evento como realizado");
           throw new Error("Missing id_slug for fp hackathon completion");
         }
+        const previousContent = store.fpContent.find((content) => content.id_slug === idSlug);
+        const previousStatus = previousContent?.user_status;
+        const previousCompletedAt = previousContent?.user_completed_at;
         const completedAt = nowIso();
         setStore((current) => ({
           ...current,
@@ -352,7 +355,11 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
         } catch (error) {
           setStore((current) => ({
             ...current,
-            fpContent: current.fpContent.map((content) => content.id_slug === idSlug ? { ...content, user_status: null, user_completed_at: null } : content),
+            fpContent: current.fpContent.map((content) => content.id_slug === idSlug ? {
+              ...content,
+              user_status: previousStatus,
+              user_completed_at: previousCompletedAt,
+            } : content),
           }));
           toast.error("No se pudo marcar el evento como realizado");
           throw error;

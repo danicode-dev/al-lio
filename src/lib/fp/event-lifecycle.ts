@@ -13,14 +13,27 @@ export function isPreparationComplete(item: PreparationInput): boolean {
   return mandatory.length > 0 && mandatory.every((competency) => competency.completed === true);
 }
 
-type FeaturedCandidate = Pick<Hackathon, "id" | "status" | "start_at" | "requiredCompetencies">;
+type FeaturedCandidate = Pick<
+  Hackathon,
+  | "id"
+  | "status"
+  | "registration_deadline_at"
+  | "inscripcion_hasta"
+  | "start_at"
+  | "end_at"
+  | "requiredCompetencies"
+>;
+
+function featuredActionableDate(item: FeaturedCandidate): string {
+  return item.registration_deadline_at || item.inscripcion_hasta || item.start_at || item.end_at || "9999-99-99";
+}
 
 // Chooses the next event or challenge to feature. Callers must pass only
 // already-active candidates (not archived, not past its actionable date) -
 // this function's own job is solely the featured-specific exclusion
 // (preparation-complete) plus the selection order:
 //   1. prefer open registration, falling back to the full active pool;
-//   2. nearest future start date;
+//   2. nearest actionable date (registration deadline, start, then end);
 //   3. a stable identity tiebreak (id) so the result never depends on
 //      incidental array order when two candidates tie on date.
 // A preparation-complete event is excluded from the featured pool only -
@@ -33,7 +46,7 @@ export function selectFeaturedHackathon<T extends FeaturedCandidate>(activeCandi
   if (pool.length === 0) return null;
 
   return [...pool].sort((a, b) => {
-    const dateDiff = (a.start_at || "9999-99-99").localeCompare(b.start_at || "9999-99-99");
+    const dateDiff = featuredActionableDate(a).localeCompare(featuredActionableDate(b));
     if (dateDiff !== 0) return dateDiff;
     return a.id.localeCompare(b.id);
   })[0];
