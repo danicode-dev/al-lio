@@ -34,6 +34,11 @@ export type LearningResourceDetail = LearningResourceWithState & {
   cycle_code: FpCycleCode;
 };
 
+type InternalLearningTargetRow = {
+  youtube_url: string;
+  slug: string;
+};
+
 export async function getLearningCompetenciesForCycle(userId: string, cycleCode: FpCycleCode): Promise<LearningCompetencySummary[]> {
   const result = await query<LearningCompetencySummary>(
     `SELECT competency.*,
@@ -98,6 +103,32 @@ export async function getLearningResourceForCycle(userId: string, cycleCode: FpC
     [userId, slug, cycleCode],
   );
   return result.rows[0] ?? null;
+}
+
+export async function getInternalLearningTargetsForVideoUrls(
+  videoUrls: string[],
+  cycleCode: FpCycleCode,
+): Promise<Map<string, string>> {
+  const targets = new Map<string, string>();
+  const uniqueUrls = [...new Set(videoUrls.filter(Boolean))];
+  if (uniqueUrls.length === 0) return targets;
+
+  const result = await query<InternalLearningTargetRow>(
+    `SELECT DISTINCT ON (resource.youtube_url) resource.youtube_url, resource.slug
+     FROM public.fp_learning_resources resource
+     JOIN public.fp_learning_competency_resources link ON link.resource_id=resource.id
+     JOIN public.fp_learning_competencies competency ON competency.id=link.competency_id
+     WHERE competency.cycle_code=$1
+       AND competency.is_active=true
+       AND resource.is_active=true
+       AND resource.language='es'
+       AND resource.youtube_url=ANY($2)
+     ORDER BY resource.youtube_url, competency.sort_order, link.sort_order, resource.slug`,
+    [cycleCode, uniqueUrls],
+  );
+
+  for (const row of result.rows) targets.set(row.youtube_url, row.slug);
+  return targets;
 }
 
 export async function getLearningNotes(userId: string, resourceId: string): Promise<DbFpLearningNote[]> {

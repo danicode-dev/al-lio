@@ -2,15 +2,13 @@ import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import { getActiveVideoResourcesForCompetency, getFpContentItemBySlugForCycle, getRequiredCompetenciesForItems } from "@/lib/db/repositories/fp_catalog";
-import { isSafeHttpUrl, resolveLegacyRutaTarget } from "@/lib/fp/event-cta";
+import { getInternalLearningTargetsForVideoUrls } from "@/lib/db/repositories/learning";
 import { FP_APTITUDE_GATED_TYPES } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-// issue #112: /ruta/[slug] is a legacy deep link resolver only - it never
-// renders a page of its own any more, for any content type. It always
-// redirects, either to the exact destination a link promised or to a safe
-// fallback, and never to the old "Todavia no hay video curado" dead end.
+// /ruta/[slug] remains a legacy deep-link resolver, but it only resolves to
+// screens inside AL-LIO. YouTube and official event URLs are never returned.
 export default async function LegacyRutaRedirectPage({
   params,
   searchParams,
@@ -30,9 +28,8 @@ export default async function LegacyRutaRedirectPage({
   if (!item) notFound();
 
   if (FP_APTITUDE_GATED_TYPES.has(item.type)) {
-    // A single, unambiguous, active, safe video wins. Zero or more than one
-    // candidate (there is then no way to know which one an old link meant)
-    // falls back to the event's own official page, then to /hackathons.
+    // A single, unambiguous video that also exists in AL-LIO's learning
+    // catalogue wins. Missing or ambiguous internal matches return to Events.
     let exactVideoCandidates: string[] = [];
     if (paso) {
       // The competency must genuinely belong to this event - a paso value
@@ -44,13 +41,18 @@ export default async function LegacyRutaRedirectPage({
         exactVideoCandidates = candidates.map((c) => c.video_url);
       }
     }
-    redirect(resolveLegacyRutaTarget({ itemSourceUrl: item.source_url, exactVideoCandidates }));
+    const targets = await getInternalLearningTargetsForVideoUrls(exactVideoCandidates, profile.cycle_code);
+    const internalSlugs = [...new Set(targets.values())];
+    if (internalSlugs.length === 1) {
+      redirect(`/aprende/${encodeURIComponent(internalSlugs[0])}`);
+    }
+    redirect("/hackathons");
   }
 
-  // Non-Eventos content item (e.g. a course) with its own video: redirect
-  // straight to it. No safe video: nothing to send the user to any more.
-  if (isSafeHttpUrl(item.video_url)) {
-    redirect(item.video_url);
+  if (item.video_url) {
+    const targets = await getInternalLearningTargetsForVideoUrls([item.video_url], profile.cycle_code);
+    const internalSlug = targets.get(item.video_url);
+    if (internalSlug) redirect(`/aprende/${encodeURIComponent(internalSlug)}`);
   }
-  notFound();
+  redirect("/roadmap");
 }

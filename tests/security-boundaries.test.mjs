@@ -16,7 +16,7 @@ import {
   isPreparationComplete,
   selectFeaturedHackathon,
 } from "../src/lib/fp/event-lifecycle.ts";
-import { isSafeHttpUrl, resolveLegacyRutaTarget, selectAptitudeVideos } from "../src/lib/fp/event-cta.ts";
+import { isSafeHttpUrl, selectAptitudeVideos } from "../src/lib/fp/event-cta.ts";
 import {
   buildFeaturedHackathonCards,
   buildUpcomingFeed,
@@ -707,14 +707,15 @@ test("The event aptitude modal footer never links to the retired internal ruta s
   assert.doesNotMatch(modalSource, /Ruta todavía sin vídeo/, "the old dead-end disabled CTA must be gone");
 });
 
-test("A competency shows at most two external references (issue #96)", async () => {
+test("A competency shows at most two non-clickable legacy references (issue #96)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const componentStart = guestAppSource.indexOf("function CompetencyRequirement(");
   const componentEnd = guestAppSource.indexOf("\nfunction LinksView", componentStart);
   assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the CompetencyRequirement component");
   const componentSource = guestAppSource.slice(componentStart, componentEnd);
 
-  assert.match(componentSource, /\.filter\(\(li\) => !videoItemIds\.has\(li\.id\) && isSafeHttpUrl\(li\.source_url\)\)\s*\.slice\(0, 2\);/);
+  assert.match(componentSource, /const referenceTitles = \[\.\.\.new Set\([\s\S]*\)\]\.slice\(0, 2\);/);
+  assert.doesNotMatch(componentSource, /href=\{learningItem\.source_url\}|target="_blank"/);
 });
 
 // --- issue #95: event lifecycle (preparation, featured rotation, Realizado) ---
@@ -1126,12 +1127,7 @@ test("desktop's xl three-column composition is untouched (issue #103)", async ()
   );
 });
 
-// --- issue #112: retire the internal /ruta screen for Eventos, link exact YouTube videos ---
-// Second iteration: a blocking review found the first version still picked
-// one "exact" video arbitrarily, didn't validate URL schemes, and left the
-// non-Eventos branch rendering instead of redirecting. This section reflects
-// that corrected contract - it replaces (not extends) the first iteration's
-// tests, several of which asserted the exact behavior now considered wrong.
+// --- issue #112 follow-up: keep learning videos inside AL-LIO ---
 
 function mockLearningItem(overrides = {}) {
   return {
@@ -1141,6 +1137,7 @@ function mockLearningItem(overrides = {}) {
     type: "curso_basico",
     source_url: "https://example.com/recurso",
     video_url: null,
+    internal_learning_slug: null,
     tipo_relacion: "ensena",
     ...overrides,
   };
@@ -1182,94 +1179,6 @@ test("selectAptitudeVideos never treats an unsafe video_url as a real candidate 
   assert.deepEqual(selectAptitudeVideos([unsafe, mixed]).map((r) => r.id_slug), ["safe"]);
 });
 
-test("resolveLegacyRutaTarget redirects to the video only when there is exactly one safe candidate (issue #112)", () => {
-  assert.equal(
-    resolveLegacyRutaTarget({ itemSourceUrl: "https://evento.example/", exactVideoCandidates: ["https://youtube.com/watch?v=x"] }),
-    "https://youtube.com/watch?v=x",
-  );
-});
-
-test("resolveLegacyRutaTarget falls back to the event's official page for zero or several candidates - ambiguity is never guessed (issue #112)", () => {
-  assert.equal(resolveLegacyRutaTarget({ itemSourceUrl: "https://evento.example/", exactVideoCandidates: [] }), "https://evento.example/");
-  assert.equal(
-    resolveLegacyRutaTarget({
-      itemSourceUrl: "https://evento.example/",
-      exactVideoCandidates: ["https://youtube.com/watch?v=a", "https://youtube.com/watch?v=b"],
-    }),
-    "https://evento.example/",
-    "more than one candidate is exactly as unresolvable as zero - never pick one arbitrarily",
-  );
-});
-
-test("resolveLegacyRutaTarget filters out unsafe candidates before deciding ambiguity - they must never count toward it (issue #112)", () => {
-  // One real video plus one javascript: candidate: exactly one *safe*
-  // candidate remains, so it must resolve to that video, not fall back for
-  // looking "ambiguous" by raw length.
-  assert.equal(
-    resolveLegacyRutaTarget({
-      itemSourceUrl: "https://evento.example/",
-      exactVideoCandidates: ["https://youtube.com/watch?v=x", "javascript:alert(1)"],
-    }),
-    "https://youtube.com/watch?v=x",
-  );
-
-  // Same, with several distinct kinds of unsafe values mixed in.
-  assert.equal(
-    resolveLegacyRutaTarget({
-      itemSourceUrl: "https://evento.example/",
-      exactVideoCandidates: ["https://youtube.com/watch?v=x", "data:text/html,<script>alert(1)</script>", "/relative/path"],
-    }),
-    "https://youtube.com/watch?v=x",
-  );
-
-  // Only unsafe candidates: zero safe ones remain, falls back to the
-  // official page - not treated as "one candidate" just because the array
-  // itself has length 1.
-  assert.equal(
-    resolveLegacyRutaTarget({ itemSourceUrl: "https://evento.example/", exactVideoCandidates: ["javascript:alert(1)"] }),
-    "https://evento.example/",
-  );
-
-  // Two real safe videos plus unsafe noise: still genuinely ambiguous once
-  // filtered (2 safe candidates, not 1), falls back to the official page -
-  // the unsafe entries must not accidentally resolve the ambiguity either way.
-  assert.equal(
-    resolveLegacyRutaTarget({
-      itemSourceUrl: "https://evento.example/",
-      exactVideoCandidates: ["https://youtube.com/watch?v=a", "https://youtube.com/watch?v=b", "javascript:alert(1)", "not a url"],
-    }),
-    "https://evento.example/",
-  );
-
-  // No safe candidates at all, and the official event URL is itself unsafe:
-  // the only thing left to fall back to is /hackathons.
-  assert.equal(
-    resolveLegacyRutaTarget({ itemSourceUrl: "javascript:alert(1)", exactVideoCandidates: ["data:text/html,x"] }),
-    "/hackathons",
-  );
-});
-
-test("resolveLegacyRutaTarget does not deduplicate two safe candidates that share the same URL - they still count as ambiguous (issue #112)", () => {
-  assert.equal(
-    resolveLegacyRutaTarget({
-      itemSourceUrl: "https://evento.example/",
-      exactVideoCandidates: ["https://youtube.com/watch?v=x", "https://youtube.com/watch?v=x"],
-    }),
-    "https://evento.example/",
-    "two resources pointing at the identical URL are still two candidates, not collapsed into one",
-  );
-});
-
-test("resolveLegacyRutaTarget never returns an unsafe URL, from either input (issue #112)", () => {
-  assert.equal(resolveLegacyRutaTarget({ itemSourceUrl: "javascript:alert(1)", exactVideoCandidates: [] }), "/hackathons");
-  assert.equal(resolveLegacyRutaTarget({ itemSourceUrl: null, exactVideoCandidates: [] }), "/hackathons");
-  assert.equal(
-    resolveLegacyRutaTarget({ itemSourceUrl: "https://evento.example/", exactVideoCandidates: ["javascript:alert(1)"] }),
-    "https://evento.example/",
-    "a lone candidate that isn't actually safe must not be treated as the one exact video",
-  );
-});
-
 test("getActiveVideoResourcesForCompetency queries only active, cycle-matching, ensena resources with a video - and never touches the Roadmap-shared query (issue #112)", async () => {
   const source = await readFile(new URL("../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
   const fnStart = source.indexOf("export async function getActiveVideoResourcesForCompetency");
@@ -1296,8 +1205,7 @@ test("ruta/[slug] is a pure redirect endpoint for every content type - it never 
   assert.doesNotMatch(source, /return \(/, "must never return JSX");
 
   // Eventos branch: the requested competency must genuinely belong to the
-  // event, candidates come from the dedicated active-resource query, and
-  // the branch always ends in a redirect - never a render.
+  // event and an exact video may resolve only to AL-LIO's internal player.
   assert.match(source, /if \(FP_APTITUDE_GATED_TYPES\.has\(item\.type\)\) \{/);
   assert.match(
     source,
@@ -1305,12 +1213,28 @@ test("ruta/[slug] is a pure redirect endpoint for every content type - it never 
     "a paso for a competency outside this event must never resolve to a video",
   );
   assert.match(source, /getActiveVideoResourcesForCompetency\(/, "must use the dedicated active-resource query, not the Roadmap-shared one");
-  assert.match(source, /redirect\(resolveLegacyRutaTarget\(\{ itemSourceUrl: item\.source_url, exactVideoCandidates \}\)\);/);
+  assert.match(source, /getInternalLearningTargetsForVideoUrls\(exactVideoCandidates, profile\.cycle_code\)/);
+  assert.match(source, /redirect\(`\/aprende\/\$\{encodeURIComponent\(internalSlugs\[0\]\)\}`\)/);
+  assert.match(source, /redirect\("\/hackathons"\)/);
 
-  // Non-Eventos branch (e.g. a course with its own video): redirect straight
-  // to it when safe, otherwise notFound() - never render the old in-app viewer.
-  assert.match(source, /if \(isSafeHttpUrl\(item\.video_url\)\) \{\s*redirect\(item\.video_url\);\s*\}/);
-  assert.match(source, /notFound\(\);\s*\}\s*$/, "must fall through to notFound() when there is no safe video, closing the component");
+  // Non-Eventos content follows the same internal-only rule. A missing exact
+  // match returns to Competencias instead of opening YouTube.
+  assert.match(source, /getInternalLearningTargetsForVideoUrls\(\[item\.video_url\], profile\.cycle_code\)/);
+  assert.match(source, /redirect\("\/roadmap"\)/);
+  assert.doesNotMatch(source, /redirect\(item\.video_url\)|itemSourceUrl|resolveLegacyRutaTarget/);
+});
+
+test("legacy video URLs are matched only to active Spanish courses from the user's cycle", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/learning.ts", import.meta.url), "utf8");
+  const start = source.indexOf("export async function getInternalLearningTargetsForVideoUrls");
+  const end = source.indexOf("\nexport async function getLearningNotes", start);
+  assert.ok(start > -1 && end > start, "could not locate the internal learning target query");
+  const fnSource = source.slice(start, end);
+  assert.match(fnSource, /competency\.cycle_code=\$1/);
+  assert.match(fnSource, /competency\.is_active=true/);
+  assert.match(fnSource, /resource\.is_active=true/);
+  assert.match(fnSource, /resource\.language='es'/);
+  assert.match(fnSource, /resource\.youtube_url=ANY\(\$2\)/);
 });
 
 test("/roadmap/[modulo] never depended on, and still does not depend on, the retired ruta-path/ruta-path-view modules (issue #112)", async () => {
@@ -1345,25 +1269,29 @@ test("the featured hackathon hero and hackathon list cards always open a validat
   assert.doesNotMatch(source, /Entrar al hackat[oó]n/);
 });
 
-test("each aptitude shows every exact video resource with its own title and link, plus a non-interactive fallback when none is curated (issue #112)", async () => {
+test("each aptitude links only to exact internal courses and keeps legacy references as short text", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const componentStart = guestAppSource.indexOf("function CompetencyRequirement(");
   const componentEnd = guestAppSource.indexOf("\nfunction LinksView", componentStart);
   assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the CompetencyRequirement component");
   const componentSource = guestAppSource.slice(componentStart, componentEnd);
 
-  assert.match(componentSource, /const videoItems = selectAptitudeVideos\(competency\.learningItems\);/, "must show every exact candidate, not one picked via .find()");
+  assert.match(componentSource, /const internalCourses = selectAptitudeVideos\(competency\.learningItems\)/);
   assert.doesNotMatch(componentSource, /\.find\(\(li\) => li\.video_url\)/, "must never collapse several real videos into one arbitrary pick");
   assert.match(
     componentSource,
-    /\{videoItems\.map\(\(learningItem\) => \(\s*<a key=\{learningItem\.id\} href=\{learningItem\.video_url\} target="_blank" rel="noopener noreferrer" className="al-modal-req-btn al-modal-req-btn-video">\s*<Youtube[^/]*\/>\s*\{learningItem\.title\}/,
-    "each video CTA must show the resource's own identifiable title, not a generic indistinguishable button",
+    /\{internalCourses\.map\(\(learningItem\) => \(\s*<Link key=\{learningItem\.id\} href=\{`\/aprende\/\$\{encodeURIComponent\(learningItem\.internal_learning_slug\)\}`\}/,
+    "the aptitude CTA must stay inside AL-LIO's learning player",
   );
-  assert.match(componentSource, /isSafeHttpUrl\(li\.source_url\)/, "non-video references must also be validated before being rendered as a link");
-  assert.doesNotMatch(componentSource, /\/ruta\//, "must never link back to the retired internal ruta screen");
-  // No video and no other resources: informative, non-interactive text -
-  // never a fake/misleading CTA and never an arbitrary generic resource.
-  assert.match(componentSource, /videoItems\.length === 0 && docItems\.length === 0 && <EmptyText>/);
+  assert.doesNotMatch(componentSource, /href=\{learningItem\.video_url\}|target="_blank"/);
+  assert.match(componentSource, /Otros recursos: \{referenceTitles\.join\(" · "\)\}/);
+  assert.match(componentSource, /Sin curso interno disponible todavía\./);
+});
+
+test("the learning player embeds YouTube without offering an external YouTube exit", async () => {
+  const source = await readFile(new URL("../src/components/learning/learning-player.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /Abrir en YouTube|target="_blank"|href=\{resource\.youtube_url\}/);
+  assert.match(source, /ref=\{playerContainerRef\}/, "the internal embedded player must remain available");
 });
 
 test("the notes/status Server Actions no longer revalidate the retired ruta screen, but keep every revalidation that still renders content (issue #112)", async () => {

@@ -11,6 +11,7 @@ import { getAllTechOpportunities } from "@/lib/db/repositories/tech_opportunitie
 import { getCompaniesByCycleGroup, getFavoriteCompanyIds } from "@/lib/db/repositories/companies";
 import { getUserById } from "@/lib/db/repositories/users";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
+import { getInternalLearningTargetsForVideoUrls } from "@/lib/db/repositories/learning";
 import { getLearningOverview } from "@/lib/learning/overview";
 import {
   getFpContentForProfile,
@@ -63,6 +64,20 @@ export const getGlobalStore = cache(async () => {
   const learningItemsByCompetency = profile.cycle_code
     ? await getLearningItemsForCompetencies(requiredCompetencyIds, profile.cycle_code)
     : new Map();
+  const learningVideoUrls = [...new Set(
+    [...learningItemsByCompetency.values()]
+      .flat()
+      .map((item) => item.video_url)
+      .filter((url): url is string => Boolean(url)),
+  )];
+  const internalLearningTargets = profile.cycle_code
+    ? await loadStoreSection(
+        "roadmap",
+        getInternalLearningTargetsForVideoUrls(learningVideoUrls, profile.cycle_code),
+        new Map<string, string>(),
+        issues,
+      )
+    : new Map<string, string>();
   const learningItemIds = [...new Set([...learningItemsByCompetency.values()].flat().map((li) => li.id))];
   const learningItemStatusById = await getUserContentStatesForItems(userId, learningItemIds);
   const userCompetencyStates = await getUserCompetencyStatesForSkills(userId, requiredCompetencyIds);
@@ -111,6 +126,9 @@ export const getGlobalStore = cache(async () => {
         completed: userCompetencyStates.has(competency.id),
         learningItems: (learningItemsByCompetency.get(competency.id) ?? []).map((learningItem: CompetencyLearningItem) => ({
           ...learningItem,
+          internal_learning_slug: learningItem.video_url
+            ? internalLearningTargets.get(learningItem.video_url) ?? null
+            : null,
           user_status: learningItemStatusById.get(learningItem.id) ?? null,
         })),
       })),

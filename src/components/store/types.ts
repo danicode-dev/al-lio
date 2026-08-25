@@ -79,6 +79,7 @@ export type RequiredCompetencyLearningItem = {
   type: string;
   source_url: string;
   video_url: string | null;
+  internal_learning_slug?: string | null;
   tipo_relacion: string;
   user_status?: string | null;
 };
