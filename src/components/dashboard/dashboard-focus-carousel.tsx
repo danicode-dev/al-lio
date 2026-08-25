@@ -120,6 +120,7 @@ function buildCards(store: Store): Record<CarouselSection, FocusCard[]> {
   const hackathons = buildFeaturedHackathonCards({
     hackathons: store.hackathons,
     fpContent: store.fpContent,
+    today,
   }).map(toFocusCard);
 
   return { upcoming, opportunities, work, hackathons };

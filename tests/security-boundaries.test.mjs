@@ -962,6 +962,23 @@ test("buildUpcomingFeed only includes dated items within the next 14 days (issue
   assert.deepEqual(result.map((item) => item.id), ["task-in-range"]);
 });
 
+test("buildUpcomingFeed chooses the next valid date when an earlier deadline has already passed (issue #93)", () => {
+  const course = mockCourse({ deadline_at: "2026-08-20", start_at: "2026-09-06" });
+  const hackathon = mockHackathonItem({ registration_deadline_at: "2026-08-25", start_at: "2026-09-07" });
+  const fpEvent = mockFpItem({ start_date: "2026-08-20", end_date: "2026-09-08" });
+  const result = buildUpcomingFeed({ ...emptyFeedParams, courses: [course], hackathons: [hackathon], fpContent: [fpEvent] });
+
+  assert.deepEqual(result.map((item) => item.date), ["2026-09-06", "2026-09-07", "2026-09-08"]);
+});
+
+test("buildUpcomingFeed preserves distinct tasks that share title and date (issue #93)", () => {
+  const first = mockTask({ id: "first", title: "Llamar", due_at: "2026-09-05" });
+  const second = mockTask({ id: "second", title: "Llamar", due_at: "2026-09-05" });
+  const result = buildUpcomingFeed({ ...emptyFeedParams, tasks: [first, second] });
+
+  assert.deepEqual(result.map((item) => item.id), ["task-first", "task-second"]);
+});
+
 test("buildUpcomingFeed excludes completed/dismissed/archived items across every source (issue #93)", () => {
   const doneTask = mockTask({ id: "done", status: "completada" });
   const cancelledTask = mockTask({ id: "cancelled", status: "cancelada" });
@@ -1016,7 +1033,7 @@ test("buildUpcomingFeed orders chronologically and deduplicates by identity, wit
 
 test("buildFeaturedHackathonCards shows saved catalogue events first, and never claims there are none when is_favorite is true (issue #93)", () => {
   const saved = mockFpItem({ id_slug: "saved-1" });
-  const result = buildFeaturedHackathonCards({ hackathons: [], fpContent: [saved] });
+  const result = buildFeaturedHackathonCards({ hackathons: [], fpContent: [saved], today: REFERENCE_TODAY });
   assert.equal(result.length, 1, "a favourited FP event/challenge must always appear, even alone");
   assert.equal(result[0].id, "fp-saved-1");
 });
@@ -1024,11 +1041,11 @@ test("buildFeaturedHackathonCards shows saved catalogue events first, and never 
 test("buildFeaturedHackathonCards tops up with the user's own events only when fewer than three are saved (issue #93)", () => {
   const savedOne = mockFpItem({ id_slug: "saved-1" });
   const userHackathon = mockHackathonItem({ id: "own-1" });
-  const withOneSaved = buildFeaturedHackathonCards({ hackathons: [userHackathon], fpContent: [savedOne] });
+  const withOneSaved = buildFeaturedHackathonCards({ hackathons: [userHackathon], fpContent: [savedOne], today: REFERENCE_TODAY });
   assert.deepEqual(withOneSaved.map((item) => item.id).sort(), ["fp-saved-1", "hackathon-own-1"]);
 
   const savedThree = ["a", "b", "c"].map((slug) => mockFpItem({ id_slug: slug, title: `Evento ${slug}` }));
-  const withThreeSaved = buildFeaturedHackathonCards({ hackathons: [userHackathon], fpContent: savedThree });
+  const withThreeSaved = buildFeaturedHackathonCards({ hackathons: [userHackathon], fpContent: savedThree, today: REFERENCE_TODAY });
   assert.equal(withThreeSaved.length, 3);
   assert.ok(!withThreeSaved.some((item) => item.id === "hackathon-own-1"), "must not top up once three saved items already fill the section");
 });
@@ -1036,8 +1053,23 @@ test("buildFeaturedHackathonCards tops up with the user's own events only when f
 test("buildFeaturedHackathonCards deduplicates a saved catalogue event against the user's own matching row (issue #93)", () => {
   const saved = mockFpItem({ id_slug: "shared-slug" });
   const ownSameEvent = mockHackathonItem({ id: "own-dup", id_slug: "shared-slug" });
-  const result = buildFeaturedHackathonCards({ hackathons: [ownSameEvent], fpContent: [saved] });
+  const result = buildFeaturedHackathonCards({ hackathons: [ownSameEvent], fpContent: [saved], today: REFERENCE_TODAY });
   assert.equal(result.length, 1, "the same event must not appear twice just because it also has a user-owned row");
+});
+
+test("buildFeaturedHackathonCards excludes expired and catalogue-inactive events (issue #93)", () => {
+  const expiredSaved = mockFpItem({ id_slug: "expired-saved", start_date: "2026-08-01", end_date: "2026-08-02" });
+  const closedSaved = mockFpItem({ id_slug: "closed-saved", status: "Finalizado", start_date: "2026-09-05" });
+  const expiredOwned = mockHackathonItem({ id: "expired-owned", start_at: "2026-08-01", end_at: "2026-08-02" });
+  const activeSaved = mockFpItem({ id_slug: "active-saved", start_date: "2026-09-05" });
+
+  const result = buildFeaturedHackathonCards({
+    hackathons: [expiredOwned],
+    fpContent: [expiredSaved, closedSaved, activeSaved],
+    today: REFERENCE_TODAY,
+  });
+
+  assert.deepEqual(result.map((item) => item.id), ["fp-active-saved"]);
 });
 
 test("DashboardTodo and DashboardFocusCarousel read the shared pure feed helpers, not a reimplemented inline version (issue #93)", async () => {
