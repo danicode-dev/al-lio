@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "cycleGroup": "TSAF",
+  "reviewedAt": "2026-08-25",
+  "reviewedBy": "Daniel García Ortega (propietario)",
+  "status": "approved",
+  "companies": [
+    {
+      "nombre": "Sano Center",
+      "web": "https://sanocenter.es/granada/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Entrenamiento personal / Centros de entrenamiento en grupo reducido",
+      "granada": "Red de centros propios en Granada capital y área metropolitana: Carrera de la Virgen 23 (Centro), Avda. del Sur 17 (Villarejo), C/ Jorge de Torres 3 (Zaidín), C/ Santiago Rusiñol 51 (La Chana), Ctra. Bailén-Motril 62 (Alhendín), Avda. de Andalucía 156 (Huétor Vega) y Churriana de la Vega",
+      "fuente": "https://sanocenter.es/granada/"
+    },
+    {
+      "nombre": "Shape Up",
+      "web": "https://shapeupspain.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Entrenamiento personal / Centro de entrenamiento en grupo reducido",
+      "granada": "Sede en Granada capital: Avenida de la Ilustración 107, local 1",
+      "fuente": "https://shapeupspain.com/"
+    },
+    {
+      "nombre": "Ogisalud",
+      "web": "https://ogisalud.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Entrenamiento personal / Fisioterapia y readaptación deportiva",
+      "granada": "Sede en Granada capital (C/ Verdiales 17) y en Ogíjares (C/ Río Genil 4), área metropolitana de Granada",
+      "fuente": "https://ogisalud.com/servicios/entrenamiento-personal-y-en-grupos/"
+    },
+    {
+      "nombre": "JG Fitness",
+      "web": "https://jgfitness.es/centros/camino-de-ronda/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Entrenamiento personal / Gimnasio boutique",
+      "granada": "Sede en Granada capital: Calle Arabial 80, barrio de Ronda",
+      "fuente": "https://jgfitness.es/centros/camino-de-ronda/"
+    },
+    {
+      "nombre": "Basic-Fit Granada",
+      "web": "https://www.basic-fit.com/es-es/clubs/basic-fit-granada-c.-arabial-df184a94050e4fb1a63316d2095c5d2e.html",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Gimnasio / Cadena de fitness",
+      "granada": "Varios clubes en Granada capital: Arabial 45 y Camino de Ronda / Plaza del Guitarrista Manuel Cano",
+      "fuente": "https://www.basic-fit.com/es-es/clubs/basic-fit-granada-c.-arabial-df184a94050e4fb1a63316d2095c5d2e.html"
+    },
+    {
+      "nombre": "Fitness Park Granada",
+      "web": "https://www.fitnesspark.es/club/granada-granaita/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Gimnasio / Cadena de fitness",
+      "granada": "Clubes en Pulianas (Blvd. Billy Wilder, área metropolitana de Granada) y en el centro comercial Nevada Shopping (Armilla)",
+      "fuente": "https://www.fitnesspark.es/club/granada-granaita/"
+    },
+    {
+      "nombre": "O2 Centro Wellness Granada",
+      "web": "https://o2cw.es/gimnasios/granada/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Gimnasio / Centro de bienestar (wellness) premium",
+      "granada": "Sede en Granada capital: Calle Neptuno s/n, Ronda — centro de más de 8.000 m² con piscinas, spa y pádel",
+      "fuente": "https://o2cw.es/gimnasios/granada/"
+    },
+    {
+      "nombre": "Rockandbloc",
+      "web": "https://rockandbloc.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Rocódromo / Escalada y entrenamiento",
+      "granada": "Sede en Pulianas (área metropolitana de Granada): Polígono Olinda, nave 18 — más de 1.000 m² escalables",
+      "fuente": "https://rockandbloc.com/"
+    },
+    {
+      "nombre": "Tokyo Wall",
+      "web": "https://tokyowall.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Rocódromo / Entrenamiento funcional y yoga",
+      "granada": "Sede en Churriana de la Vega (área metropolitana de Granada): C/ La Pinta, nave 9",
+      "fuente": "https://tokyowall.es/"
+    },
+    {
+      "nombre": "Climb Warrior",
+      "web": "https://climbwarrior.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Entrenamiento funcional / Rocódromo y circuito OCR-Ninja",
+      "granada": "Sede en La Zubia (área metropolitana de Granada); primer espacio OCR/Ninja de la provincia según su propia web",
+      "fuente": "https://climbwarrior.com/"
+    },
+    {
+      "nombre": "C.D. Swim Granada",
+      "web": "https://cdswimgranada.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Club deportivo / Natación federada",
+      "granada": "Sede en la piscina municipal de La Zubia (área metropolitana de Granada); club federado activo desde 2010, registrado en 2012",
+      "fuente": "https://cdswimgranada.es/"
+    },
+    {
+      "nombre": "Covirán Granada (Fundación Club Baloncesto Granada)",
+      "web": "https://fundacioncbgranada.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Club deportivo profesional / Baloncesto y cantera",
+      "granada": "Club con sede en Granada capital; cantera de baloncesto base con cerca de 700 jugadores/as y equipos federados en categorías inferiores",
+      "fuente": "https://fundacioncbgranada.es/"
+    },
+    {
+      "nombre": "Federación Andaluza de Deportes de Montaña, Escalada y Senderismo (FADMES)",
+      "web": "https://fadmes.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Federación deportiva / Deportes de montaña y escalada",
+      "granada": "Delegación territorial en Granada capital: Calle Santa Paula 23, 2ª planta; ofrece formación de técnicos deportivos federativos",
+      "fuente": "https://fadmes.es/granada/"
+    },
+    {
+      "nombre": "Real Federación Andaluza de Fútbol (RFAF)",
+      "web": "https://www.rfaf.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Federación deportiva / Fútbol",
+      "granada": "Delegación provincial en Granada capital: C/ Dr. Azpitarte 8",
+      "fuente": "https://transparencia.rfaf.es/planificacion/datos-de-la-federacion-y-delegaciones-provinciales/"
+    },
+    {
+      "nombre": "Granaventour",
+      "web": "https://www.granaventour.com/en/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Turismo activo / Deportes de aventura",
+      "granada": "Empresa granadina que opera en Sierra Nevada y la provincia de Granada; monitores titulados",
+      "fuente": "https://www.granaventour.com/en/"
+    },
+    {
+      "nombre": "Ecoactiva Turismo",
+      "web": "https://www.ecoactivaturismo.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Turismo activo / Deportes de aventura",
+      "granada": "Sede en Castril (provincia de Granada): C/ Campo Cebas s/n; inscrita en el Registro de Turismo de Andalucía nº GR-00104",
+      "fuente": "https://www.ecoactivaturismo.es/multiaventura-en-granada/"
+    },
+    {
+      "nombre": "Cabra Loca Aventura",
+      "web": "https://clubcabraloca.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Turismo activo / Deportes de aventura y formación de monitores",
+      "granada": "Empresa granadina con más de 28 años de actividad en Sierra Nevada y la provincia de Granada; inscrita en el registro de turismo activo con nº AT/GR/00293",
+      "fuente": "https://clubcabraloca.es/"
+    },
+    {
+      "nombre": "Takamaka Aventura",
+      "web": "https://takamakaaventura.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Turismo activo / Deportes de aventura",
+      "granada": "Actividades en el Embalse de Cubillas, Sierra Nevada y La Herradura (Almuñécar), provincia de Granada",
+      "fuente": "https://takamakaaventura.com/"
+    },
+    {
+      "nombre": "Cetursa Sierra Nevada, S.A.",
+      "web": "https://www.cetursa.es/",
+      "empleo": "https://cetursa.es/es/trabaja-con-nosotros/",
+      "tipo_empleo": "Portal de empleo corporativo propio: ofertas de acceso libre y bolsas de temporada (incluye personal de pista y actividad física)",
+      "categoria": "Instalación deportiva / Estación de esquí y montaña",
+      "granada": "Gestiona la estación de esquí de Sierra Nevada en Monachil (Granada); empresa pública de la Junta de Andalucía con más de 700 empleados",
+      "fuente": "https://cetursa.es/es/trabaja-con-nosotros/"
+    },
+    {
+      "nombre": "Universidad de Granada — Centro de Actividades Deportivas",
+      "web": "https://deportes.ugr.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Gestión deportiva / Instalaciones universitarias",
+      "granada": "Instalaciones deportivas propias en el Campus de Fuentenueva y Campus de Cartuja, Granada capital",
+      "fuente": "https://deportes.ugr.es/"
+    },
+    {
+      "nombre": "Concejalía de Deportes del Ayuntamiento de Granada",
+      "web": "https://www.pmdgranada.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Gestión deportiva municipal / Instalaciones",
+      "granada": "Gestiona las instalaciones deportivas municipales de Granada capital (piscinas, pabellones, pistas de atletismo, centro de medicina deportiva)",
+      "fuente": "https://www.pmdgranada.es/"
+    },
+    {
+      "nombre": "Diputación de Granada — Área de Deportes",
+      "web": "https://www.dipgra.es/servicios/areas/deportes/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Gestión deportiva provincial / Instalaciones",
+      "granada": "Gestiona la Ciudad Deportiva de Armilla (Granada) y organiza los Juegos Deportivos Provinciales en toda la provincia de Granada",
+      "fuente": "https://deportes.dipgra.es/"
+    },
+    {
+      "nombre": "Granada Club de Fútbol (Granada CF)",
+      "web": "https://www.granadacf.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Club deportivo profesional / Fútbol y cantera",
+      "granada": "Ciudad Deportiva de 75.535 m² en Granada capital, con instalaciones para el primer equipo y la cantera",
+      "fuente": "https://www.granadacf.es/noticias/el-granada-cf-presenta-la-ampliacion-de-la-ciudad-deportiva-gcf"
+    }
+  ],
+  "discarded": [
+    { "nombre": "CrossFit Singular Box Granada", "reason": "Aparece en el registro oficial de afiliados de CrossFit.com y en resultados de búsqueda con contacto propio (granada@crossfitsingularbox.com, instalación de 3.000 m² junto a la estación de autobuses), pero durante la verificación su web oficial (crossfitsingularbox.com) devolvió errores 403/404 en todas las páginas probadas (raíz, about-us, precios, subpágina específica de Granada) y la ficha en crossfit.com devolvió error 500 — no se pudo confirmar de forma directa e independiente, así que se excluye pese a ser probablemente real." },
+    { "nombre": "Vital Centro de Entrenamiento", "reason": "vitalgranada.com solo devolvió el título de la página al verificarlo (posible sitio muy dependiente de JavaScript); no se pudo confirmar dirección, servicios ni actividad real más allá del nombre, así que se excluye por verificación insuficiente." },
+    { "nombre": "Sólo Aventura (Granada)", "reason": "Web oficial (soloaventura.com) verificada, real y activa, pero es principalmente una tienda de venta y alquiler de material de montaña (comercio electrónico), no una empresa que preste actividades/instrucción deportiva — encaje débil como salida profesional de acondicionamiento físico frente a las empresas de turismo activo ya incluidas." },
+    { "nombre": "VivaGym Granada", "reason": "Club real y verificado (Arabial 95, Granada capital), pero se excluye del listado final por redundancia: el catálogo ya incluye tres cadenas de gimnasios comerciales verificadas (Basic-Fit, Fitness Park, O2 Centro Wellness) que cubren el mismo subsector." },
+    { "nombre": "Concejalía de Deportes — Ayuntamiento de Armilla", "reason": "Organismo municipal real y verificado con instalaciones propias (piscina municipal, gimnasio municipal, pabellón Rafael Machado Villar), pero se excluye por redundancia frente a la cobertura municipal/provincial ya incluida (Ayuntamiento de Granada y Diputación de Granada, que gestiona precisamente la Ciudad Deportiva de Armilla)." },
+    { "nombre": "Concejalía de Deportes — Ayuntamiento de Maracena", "reason": "Organismo municipal real y verificado con instalaciones propias (piscina municipal, ciudad deportiva), pero se excluye por redundancia frente a la cobertura municipal/provincial ya incluida en el listado (Ayuntamiento de Granada y Diputación de Granada)." },
+    { "nombre": "Patronato Municipal de Deportes de Almuñécar", "reason": "Organismo real y verificado con instalaciones propias (estadio Francisco Bonet, piscina cubierta, pabellón Antonio Marina), pero se excluye por redundancia de cobertura municipal frente a las entidades de gestión deportiva ya incluidas; queda como alternativa fuerte si se desea ampliar la cobertura hacia la Costa Tropical." }
+  ],
+  "searchesPerformed": [
+    "gimnasios Granada capital lista",
+    "centros entrenamiento personal Granada",
+    "Ayuntamiento de Granada Instituto Municipal Deportes",
+    "Basic-Fit Granada gimnasio",
+    "CrossFit Granada box oficial",
+    "Federación Andaluza de deportes sede Granada",
+    "turismo activo deportes aventura Granada empresa multiaventura",
+    "GO fit Viva Gym O2 Centro Wellness Granada",
+    "Fitness Park Granada apertura club",
+    "Covirán Granada baloncesto club oficial cantera",
+    "Diputación de Granada deportes Patronato provincial",
+    "Sierra Nevada Cetursa deportes monitor esquí empleo",
+    "BeOne Duet gimnasio Granada",
+    "Granada CF ciudad deportiva cantera fútbol base",
+    "rocódromo boulder escalada gimnasio Granada",
+    "Federación Andaluza Fútbol delegación Granada",
+    "Patronato Municipal Deportes Armilla Maracena Motril",
+    "club natación Granada piscina federado",
+    "VivaGym Granada Arabial web oficial",
+    "\"Sóloaventura\" Granada web oficial outdoor",
+    "\"Climb Warrior\" Granada dirección calle",
+    "Cetursa Sierra Nevada \"trabaja con nosotros\" ofertas empleo web oficial",
+    "rfaf.es delegación Granada contacto",
+    "WebFetch de verificación individual sobre cada candidato: home y/o página de contacto/delegación, confirmando nombre/marca, dirección o vínculo real con Granada/provincia, y que el sitio está activo (no aparcado/caído/con errores)"
+  ]
+}

@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "cycleGroup": "AF",
+  "reviewedAt": "2026-08-25",
+  "reviewedBy": "Daniel García Ortega (propietario)",
+  "status": "approved",
+  "companies": [
+    {
+      "nombre": "ADADE Granada",
+      "web": "https://adadegranada.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Asesoría fiscal y contable / Consultoría empresarial",
+      "granada": "Sede en Granada capital (C/ Cerrajeros, 6), más de 25 años de actividad",
+      "fuente": "https://adadegranada.es/"
+    },
+    {
+      "nombre": "Gestoría Zurita",
+      "web": "https://gestoriazurita.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Gestoría administrativa / Asesoría fiscal y laboral",
+      "granada": "Sede en Granada capital (C/ Luis Braille, 3), operando desde 1956",
+      "fuente": "https://gestoriazurita.es/"
+    },
+    {
+      "nombre": "Nexo Asesores",
+      "web": "https://nexoasesores.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Asesoría fiscal y contable / Gestoría",
+      "granada": "Sede en Granada capital (Calle Roma, 2); Punto PAE (Punto de Atención al Emprendedor) oficial",
+      "fuente": "https://nexoasesores.es/"
+    },
+    {
+      "nombre": "Crivellari & Co.",
+      "web": "https://crivellari.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Asesoría fiscal y contable / Auditoría",
+      "granada": "Oficina en el centro de Granada capital (C. Cárcel Baja, 19)",
+      "fuente": "https://crivellari.es/"
+    },
+    {
+      "nombre": "Belalva Abogados Tributarios",
+      "web": "https://belalvaabogados.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Despacho profesional / Asesoría fiscal y tributaria",
+      "granada": "Sede en Granada capital (C/ Pedro Antonio de Alarcón, 19)",
+      "fuente": "https://belalvaabogados.com/"
+    },
+    {
+      "nombre": "Agaz Abogados y Consultores",
+      "web": "https://agaz.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Despacho profesional / Consultoría estratégica y financiera",
+      "granada": "Oficina en Granada capital (C/ Puente Verde, 4), además de sede en Madrid",
+      "fuente": "https://agaz.es/"
+    },
+    {
+      "nombre": "ADV Gestión",
+      "web": "https://www.advgestion.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Asesoría fiscal y contable / Gestoría",
+      "granada": "Sede en Motril, Granada (Río Duero, 4), operando desde 2004",
+      "fuente": "https://www.advgestion.com/"
+    },
+    {
+      "nombre": "OGADE",
+      "web": "https://ogade.net/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Gestoría / Asesoría fiscal y laboral",
+      "granada": "Sede en Granada capital (Marqués de la Ensenada, 2)",
+      "fuente": "https://ogade.net/"
+    },
+    {
+      "nombre": "Deloitte",
+      "web": "https://www.deloitte.com/es/es.html",
+      "empleo": "https://www.deloitte.com/es/es/careers.html",
+      "tipo_empleo": "Programa de prácticas para estudiantes y recién titulados (\"Glow Up\") y ofertas de empleo",
+      "categoria": "Auditoría / Consultoría",
+      "granada": "Oficina propia en Granada capital (Acera del Darro, 10), confirmada en el localizador oficial de oficinas de Deloitte España",
+      "fuente": "https://www.deloitte.com/es/es/offices/spain-offices/granada.html"
+    },
+    {
+      "nombre": "Kreston Iberaudit",
+      "web": "https://www.kreston.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Auditoría / Consultoría",
+      "granada": "Oficina propia en Granada con socios nombrados (Pedro Maza Vera, Sebastián Carbajo), dentro de la red internacional Kreston",
+      "fuente": "https://kreston.es/en/contact/offices/granada/"
+    },
+    {
+      "nombre": "Caja Rural de Granada, Sociedad Cooperativa de Crédito",
+      "web": "https://www.cajaruralgranada.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Banca / Cooperativa de crédito",
+      "granada": "Sede social en Granada capital (Avda. Don Bosco, 2); entidad cooperativa fundada en y originaria de Granada (1970)",
+      "fuente": "https://www.cajaruralgranada.es/es/particulares/sobre-entidad"
+    },
+    {
+      "nombre": "Cajamar Caja Rural",
+      "web": "https://www.cajamar.es/",
+      "empleo": "https://www.cajamar.es/es/comun/informacion-corporativa/empleo/",
+      "tipo_empleo": "Portal corporativo de empleo (vacantes y candidaturas)",
+      "categoria": "Banca / Cooperativa de crédito",
+      "granada": "Múltiples oficinas propias en Granada capital y provincia (p. ej. Gran Vía de Colón, Recogidas, Constitución, Maracena, Baza), confirmadas en el buscador de oficinas oficial",
+      "fuente": "https://www.grupocooperativocajamar.es/es/comun/busquedas/busqueda-oficinas/cajamar_andalucia_granada_granada_granada-gran-via/"
+    },
+    {
+      "nombre": "MAPFRE",
+      "web": "https://www.mapfre.es/",
+      "empleo": "https://jobs.mapfre.com/",
+      "tipo_empleo": "Portal de empleo oficial: prácticas (\"Tus Prácticas\"), Graduate Program y empleo profesional",
+      "categoria": "Seguros / Servicios financieros",
+      "granada": "Varias oficinas propias en Granada capital (p. ej. Arabial, 71), confirmadas en el localizador oficial de oficinas de mapfre.es",
+      "fuente": "https://www.mapfre.es/oficina/es_ES/granada/L5180/"
+    },
+    {
+      "nombre": "GSC Mediación",
+      "web": "https://www.gscmediacion.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Seguros / Correduría de seguros",
+      "granada": "Sede en Las Gabias, Granada (Real de Málaga, 46); colegiada en el Colegio de Mediadores de Seguros de Granada",
+      "fuente": "https://www.gscmediacion.com/"
+    },
+    {
+      "nombre": "COSEBA Macías Granada",
+      "web": "https://www.coseba.com/macias-granada/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Seguros / Correduría de seguros",
+      "granada": "Oficina en Granada capital (Camino de Ronda, 63-A), más de 30 años de actividad",
+      "fuente": "https://www.coseba.com/macias-granada/"
+    },
+    {
+      "nombre": "Grupo10 Seguros",
+      "web": "https://grupo10seguros.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Seguros / Correduría de seguros",
+      "granada": "Oficinas en Maracena y Huétor Tájar (provincia de Granada), desde 1995",
+      "fuente": "https://grupo10seguros.com/"
+    },
+    {
+      "nombre": "Randstad",
+      "web": "https://www.randstad.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Recursos humanos / Empresa de trabajo temporal",
+      "granada": "Oficina propia en Granada capital (Camino de Ronda, 149), confirmada en randstad.es",
+      "fuente": "https://www.randstad.es/candidatos/oficinas/oficina/-247/"
+    },
+    {
+      "nombre": "Avansel Selección",
+      "web": "https://www.avanselseleccion.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Recursos humanos / Consultoría de selección de personal",
+      "granada": "Consultora de RRHH centrada en Granada capital y área metropolitana (Armilla, Maracena, Albolote, Atarfe, La Zubia); modelo de atención 100% online, sin dirección física publicada en su propia web",
+      "fuente": "https://www.avanselseleccion.es/seleccion-de-personal-en-granada/"
+    },
+    {
+      "nombre": "Cámara Oficial de Comercio, Industria, Servicios y Navegación de Granada",
+      "web": "https://www.camaragranada.org/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Administración empresarial / Institución de apoyo a empresas",
+      "granada": "Sede central en Granada capital (Calle Luis Amador, 26); corporación de derecho público que representa a las empresas de la provincia",
+      "fuente": "https://www.camaragranada.org/"
+    },
+    {
+      "nombre": "FREMAP",
+      "web": "https://www.fremap.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Servicios financieros / Mutua colaboradora con la Seguridad Social",
+      "granada": "Centro asistencial en Granada capital (c/ Rey Abu Said, 17-19), dirección confirmada a través de la web oficial de la Universidad de Granada",
+      "fuente": "https://gerencia.ugr.es/habilitacion/pages/segsoc/accidente"
+    }
+  ],
+  "discarded": [
+    {
+      "nombre": "Gestoría Luvic",
+      "reason": "Empresa real y verificada (C/ Félix Rodríguez de la Fuente 25, Granada; web activa gestorialuvic.es), pero redundante con otras asesorías/gestorías generalistas ya incluidas (ADADE, Zurita, Nexo, OGADE); excluida por diversidad del catálogo, no por fallo de verificación."
+    },
+    {
+      "nombre": "Albarral Asesores",
+      "reason": "Empresa real y verificada (Armilla, Granada; web activa albarralasesores.com), perfil solapado con otras asesorías fiscales/laborales/contables ya incluidas; excluida por diversidad del catálogo."
+    },
+    {
+      "nombre": "Asesoría Merino",
+      "reason": "Empresa real y verificada (Avda. Mediterráneo, Granada; web activa asesoriamerino.net), perfil solapado con otras asesorías generalistas ya incluidas; excluida por diversidad del catálogo."
+    },
+    {
+      "nombre": "Asesoría Juan Bautista",
+      "reason": "Empresa real y verificada (C/ Águila 25, Granada, activa desde 1993, incluye auditoría de cuentas; web activa asesoriajuanbautista.es), pero redundante con Crivellari & Co. y ADADE, que ya cubren el combo asesoría+auditoría; excluida por diversidad del catálogo."
+    },
+    {
+      "nombre": "Asesoría en Granada",
+      "reason": "Empresa real y verificada (Alhamar 25, Granada; web activa asesoriaengranada.com), perfil solapado con otras asesorías generalistas ya incluidas; excluida por diversidad del catálogo."
+    },
+    {
+      "nombre": "Colegio Oficial de Gestores Administrativos de Granada, Jaén y Almería",
+      "reason": "Organismo colegial real y verificado (C/ Frailes 30, Granada; web activa gestoresgranada.es), pero es un colegio profesional regulador, no una empresa que habitualmente acoja FCT/prácticas de FP; se usó solo como fuente de contexto/verificación del sector, no como entrada de empresa."
+    },
+    {
+      "nombre": "Colegio Profesional de Economistas de Granada",
+      "reason": "Organismo colegial real y verificado (C. Maestro Montero 23, Granada; web activa colegioeconomistasgranada.com), mismo motivo que el Colegio de Gestores Administrativos: regulador profesional, no empleador típico; no incluido como entrada de empresa."
+    },
+    {
+      "nombre": "Unicaja Banco",
+      "reason": "Banco andaluz real (sede social en Málaga) con una amplia red de oficinas en la provincia de Granada citada de forma consistente por múltiples fuentes secundarias (30+ oficinas), pero sus dominios oficiales (unicajabanco.es y unicajabanco.com) devolvieron error HTTP 403 en todos los intentos de acceso automatizado; no incluido porque no se pudo verificar directamente la web oficial como exige el protocolo, pese a indicios sólidos de que es legítimo."
+    },
+    {
+      "nombre": "Ibercaja",
+      "reason": "Fuentes secundarias citan 3 oficinas en la provincia de Granada (p. ej. Gran Vía de Colón 17), pero no se logró cargar una página de ibercaja.es que lo confirmara directamente (error 404 en las rutas probadas) en el tiempo de investigación disponible; excluido por falta de confirmación en fuente oficial de primera mano."
+    }
+  ],
+  "searchesPerformed": [
+    "asesoría fiscal contable Granada empresa",
+    "gestoría administrativa Granada",
+    "Colegio de Gestores Administrativos de Granada (contexto/verificación, no incluido como empresa)",
+    "Colegio de Economistas de Granada (contexto/verificación, no incluido como empresa)",
+    "auditoría empresas Granada despacho",
+    "Cajamar oficina Granada empleo",
+    "Unicaja Banco Granada sede (descartado: 403 en dominio oficial)",
+    "correduría de seguros Granada empresa",
+    "consultora recursos humanos ETT Granada",
+    "cooperativa de crédito Granada Caja Rural",
+    "Deloitte PwC EY KPMG oficina Granada",
+    "Cámara de Comercio Granada",
+    "Mapfre Mutua Fremap delegación Granada",
+    "gestoría asesoría Motril Loja Baza Granada provincia",
+    "despacho de abogados Granada laboral fiscal tributario",
+    "BDO / Grant Thornton / RSM Granada auditoría (sin oficina confirmada en Granada, descartados)",
+    "Mapfre agencia Granada oficial",
+    "Randstad / Adecco / Crit oficina Granada",
+    "Cajasur oficina Granada / Santalucía / Allianz / Axa agencia Granada (cobertura de seguros ya suficiente, no profundizado)",
+    "gestoría asesoría Motril Granada oficial contacto",
+    "Global Exchange / cooperativas agroalimentarias Granada (fuera de alcance: agroalimentario, no administración/finanzas)",
+    "Verificación individual por WebFetch de cada web oficial candidata (identidad, actividad, dirección en Granada/provincia) antes de incluir cualquier entrada"
+  ]
+}

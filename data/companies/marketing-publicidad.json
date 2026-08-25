@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 1,
+  "cycleGroup": "MP",
+  "reviewedAt": "2026-08-25",
+  "reviewedBy": "Daniel García Ortega (propietario)",
+  "status": "approved",
+  "companies": [
+    {
+      "nombre": "Idento Marketing y Desarrollo Web",
+      "web": "https://www.idento.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Agencia de marketing digital / SEO-SEM",
+      "granada": "Sede en Armilla (Granada): Calle Graham Bell 3, Edificio San Isidro, Planta Baja Puerta 2",
+      "fuente": "https://www.idento.es/agencia-marketing-digital-granada/"
+    },
+    {
+      "nombre": "Incorpora Marketing",
+      "web": "https://incorporamarketing.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Agencia de publicidad / Marketing digital y branding",
+      "granada": "Sede en Granada capital: C/ José Luis Pérez Pujadas, 8, Edif. Fórum, oficina A5.10",
+      "fuente": "https://incorporamarketing.es/"
+    },
+    {
+      "nombre": "SH Management",
+      "web": "https://www.shmanagement.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Agencia de marketing digital / Diseño gráfico y redes sociales",
+      "granada": "Sede en Granada capital: C/ Párraga 8, centro",
+      "fuente": "https://www.shmanagement.es/"
+    },
+    {
+      "nombre": "Citysem",
+      "web": "https://citysem.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Agencia de marketing digital / SEO-SEM",
+      "granada": "Sede en Granada capital (con delegación en Málaga): C. Torre de los Abencerrajes, nº1, Local 3, Genil",
+      "fuente": "https://citysem.es/"
+    },
+    {
+      "nombre": "Mood 359",
+      "web": "https://mood359.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Agencia de marketing digital / Social media y contenidos",
+      "granada": "Agencia granadina con sede en Granada (además de oficina en Madrid); entre sus clientes figura IE Business School",
+      "fuente": "https://mood359.com/"
+    },
+    {
+      "nombre": "Wecomm",
+      "web": "https://wecomm.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Agencia de marketing digital / Ecommerce y desarrollo web",
+      "granada": "Sede en Albolote (Granada): C. Baza, parcela 3, Local 20B",
+      "fuente": "https://wecomm.es/"
+    },
+    {
+      "nombre": "Clearis (Clearis Ucontrol, SL)",
+      "web": "https://www.clearis.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Ecommerce / Desarrollo web (PrestaShop)",
+      "granada": "Sede en Baza (Granada): Carretera de Murcia 5, esq. Obispo Fernández del Rincón; colabora con programas de la Cámara de Comercio de Granada",
+      "fuente": "https://www.clearis.es/"
+    },
+    {
+      "nombre": "Kliché Marketing y Publicidad",
+      "web": "https://kliche.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Agencia de marketing digital / Branding y diseño web",
+      "granada": "Sede en Granada capital: C. Torre de los Abencerrajes, 1, Local 4, Genil",
+      "fuente": "https://kliche.es/"
+    },
+    {
+      "nombre": "Saint Jacques Publicidad",
+      "web": "https://saintjacquespublicidad.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Agencia de publicidad / Medios (prensa, radio, TV, exterior)",
+      "granada": "Sede en Granada capital desde 1965 — la agencia de publicidad más antigua de Granada: C/ Arabial s/n, esq. Dr. López Font",
+      "fuente": "https://saintjacquespublicidad.es/"
+    },
+    {
+      "nombre": "B2 Publicidad (B2 Consultores Marketing Estratégico, S.L.)",
+      "web": "https://b2publicidad.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Agencia de publicidad / Marketing estratégico y eventos corporativos",
+      "granada": "Sede en Granada capital: Plaza Isabel la Católica, nº1, 6ª planta, oficinas 1-2",
+      "fuente": "https://b2publicidad.com/la-agencia/"
+    },
+    {
+      "nombre": "Equilátera Publicidad",
+      "web": "https://www.equilatera.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Agencia de publicidad / Branding",
+      "granada": "Sede en Granada capital: Calle Príncipe, 6, 1ºA",
+      "fuente": "https://www.equilatera.es/contacto/"
+    },
+    {
+      "nombre": "Squembri",
+      "web": "https://www.squembri.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Estudio de diseño / Branding y UX-UI",
+      "granada": "Sede en Granada capital (y Málaga): Av. Fernando de los Ríos, 11, Portal 4, Ofic. 19",
+      "fuente": "https://www.squembri.com/"
+    },
+    {
+      "nombre": "Doblemalta Estudio Creativo",
+      "web": "https://doblemaltaestudio.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Estudio de diseño / Branding y publicidad",
+      "granada": "Sede en Granada capital: C/ San Antón, 72, 4ª planta, Oficina 18",
+      "fuente": "https://doblemaltaestudio.com/"
+    },
+    {
+      "nombre": "Mimográfico",
+      "web": "https://www.mimografico.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Estudio de diseño y comunicación / Branding y publicidad",
+      "granada": "Sede en Granada capital: Las Dehesas, 3, L9",
+      "fuente": "https://www.mimografico.com/"
+    },
+    {
+      "nombre": "Ortega Estudio",
+      "web": "https://ortegaestudio.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Branding / Diseño de packaging",
+      "granada": "Sede en Granada capital: C/ Cabañeros, 2",
+      "fuente": "https://ortegaestudio.com/"
+    },
+    {
+      "nombre": "Close.marketing",
+      "web": "https://close.marketing/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Agencia de marketing digital / Diseño web y desarrollo con IA",
+      "granada": "Sede en Armilla (Granada): Av. Fernando de los Ríos, 11, Portal 3, Oficina 15; Partner de la Cámara de Comercio de Granada",
+      "fuente": "https://close.marketing/somos-parte/partner-camara-comercio-granada/"
+    },
+    {
+      "nombre": "Target Creativo",
+      "web": "https://targetcreativo.net/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Estudio de diseño y comunicación / Branding",
+      "granada": "Sede en Albolote (Granada): Pol. Ind. Juncaril, C/ Baza, Edif. ICR, 3ºH",
+      "fuente": "https://targetcreativo.net/"
+    },
+    {
+      "nombre": "Voel",
+      "web": "https://voel.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Producción audiovisual / Video marketing y motion graphics",
+      "granada": "Sede en Granada capital (y también Málaga, Madrid): Calle Maestro Montero 23",
+      "fuente": "https://voel.es/productora-audiovisual-en-granada-voel"
+    },
+    {
+      "nombre": "ARP Producciones",
+      "web": "https://www.arpproducciones.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Producción audiovisual / Comunicación digital y eventos",
+      "granada": "Sede en Granada capital desde 1993: C/ Concepción Arenal, 3, Bajo",
+      "fuente": "https://www.arpproducciones.com/conocenos.html"
+    },
+    {
+      "nombre": "Videosur",
+      "web": "https://www.videosur.es/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Producción audiovisual / Video corporativo y streaming",
+      "granada": "Sede en Las Gabias (Granada): C/ Pablo Picasso 34",
+      "fuente": "https://www.videosur.es/contacto"
+    },
+    {
+      "nombre": "Tuset Eventos",
+      "web": "https://tuseteventos.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Agencia de eventos / Comunicación corporativa",
+      "granada": "Sede en Granada capital: C. Ciego de Arjona, 3",
+      "fuente": "https://tuseteventos.com/agencia-de-eventos-granada/"
+    },
+    {
+      "nombre": "La Grotta Events",
+      "web": "https://www.lagrottaevents.com/",
+      "empleo": null,
+      "tipo_empleo": null,
+      "categoria": "Agencia de eventos / Producción de experiencias",
+      "granada": "Sede en Las Gabias (Granada): La Malaha, Ctra., Km. 5,8",
+      "fuente": "https://www.lagrottaevents.com/contact"
+    }
+  ],
+  "discarded": [
+    { "nombre": "AJA Publicidad", "reason": "Sitio oficial (ajapublicidad.es) solo confirma sedes en Arganda del Rey y Madrid; sin oficina ni presencia verificable en Granada pese a aparecer en búsquedas de 'agencias de publicidad Granada'." },
+    { "nombre": "Crear Digital / Crear & CO", "reason": "Sitio oficial (crear-digital.com) solo confirma sedes en Jerez de la Frontera y Rivas-Vaciamadrid (Madrid); sin oficina real en Granada pese a tener páginas SEO dirigidas a 'agencia publicidad Granada'." },
+    { "nombre": "The Colours Box (COLOURS)", "reason": "Sitio oficial (thecoloursbox.com) solo confirma sede en Barcelona (Ramón Turró 203); sin presencia verificable en Granada pese a aparecer en resultados de búsqueda sobre comunicación/RRPP en Granada." },
+    { "nombre": "Kellenföl Advertising", "reason": "Sitio oficial (kellenfol.com) y registros de empresa confirman sede en Barcelona; aparece en directorios de 'mejores agencias de branding en Granada' sin oficina real en la ciudad — parece un listado genérico de directorio, no presencia local real." },
+    { "nombre": "Factory Events", "reason": "Sitio oficial (factoryevents.es) indica sedes principales en Valencia, Madrid y Barcelona; Granada no figura entre sus ciudades de servicio ni se encontró oficina en la provincia." },
+    { "nombre": "Recdron", "reason": "Productora audiovisual que se promociona para 'Granada' en URLs y textos, pero ni la home ni la página de contacto muestran una dirección física verificable; solo teléfono móvil y email genéricos." },
+    { "nombre": "EFECTO (Productora Audiovisual)", "reason": "Su propio sitio afirma 'sedes en Granada y Barcelona con más de 20 años', pero no se encontró ninguna dirección física publicada (la página de contacto probada devolvió error 404); verificación insuficiente frente a otras productoras del listado con dirección confirmada." },
+    { "nombre": "GRN Media", "reason": "Se autodefine como 'grupo de marketing y comunicación granadino' activo desde 2002 y centrado en Granada y su provincia, pero no publica ninguna dirección física en su web (home ni contacto); se excluye por falta de verificación a nivel de sede concreta." },
+    { "nombre": "Mixent Digital", "reason": "Oficina real verificada en Granada capital (C/ Jimena 27), agencia legítima — pero se excluye del listado final por redundancia, ya que el catálogo ya incluye seis agencias de marketing digital granadinas verificadas (Idento, Incorpora Marketing, SH Management, Citysem, Mood 359, Kliché) que cubren el mismo subsector." }
+  ],
+  "searchesPerformed": [
+    "agencias de marketing digital Granada empresas",
+    "agencias de publicidad Granada",
+    "estudios de diseño y branding Granada",
+    "productoras audiovisuales Granada empresas video corporativo",
+    "agencias de comunicación y relaciones públicas Granada",
+    "agencias de organización de eventos Granada empresa",
+    "agencia ecommerce Granada empresa tienda online",
+    "\"Cámara de Comercio de Granada\" empresas publicidad marketing asociación",
+    "medios de comunicación Granada radio televisión prensa empresa",
+    "Voel producción audiovisual Granada Málaga Madrid sitio web",
+    "\"ARP Producciones\" Granada audiovisual web",
+    "\"B2 consultores\" Granada publicidad comunicación marketing web",
+    "Kellenfol Granada branding agencia web oficial",
+    "investigación de mercados estudios de mercado empresa Granada",
+    "WebFetch de verificación individual sobre cada candidato: home y/o página de contacto, confirmando nombre/marca, dirección física en Granada/provincia y que el sitio está activo (no aparcado/caído)"
+  ]
+}

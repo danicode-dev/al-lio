@@ -17,6 +17,7 @@ private operational evidence do not belong here.
 - [`03_INTEGRATIONS_AND_DEEPLINKS.md`](03_INTEGRATIONS_AND_DEEPLINKS.md): Google, job-platform and deep-link policy.
 - [`AL_LIO_RADAR_INTEGRATION.md`](AL_LIO_RADAR_INTEGRATION.md): application-side Radar contract and ownership boundary.
 - [`LEARNING_SOURCE_GOVERNANCE.md`](LEARNING_SOURCE_GOVERNANCE.md): acceptance and withdrawal rules for learning resources.
+- [`COMPANY_CATALOGUE_GOVERNANCE.md`](COMPANY_CATALOGUE_GOVERNANCE.md): dataset format, source policy and import steps for the Work tab's company catalogue (DEV/AF/MP/TSAF).
 - [`04_SEED_HACKATHONS.md`](04_SEED_HACKATHONS.md): reference dataset for initial hackathon imports.
 - [`product/demo-and-screenshots.md`](product/demo-and-screenshots.md): safe public demo and visual-evidence protocol.
 
