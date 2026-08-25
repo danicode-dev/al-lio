@@ -1,20 +1,17 @@
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
-import {
-  getFpContentItemBySlugForCycle,
-  getRequiredCompetenciesForItems,
-  getUserContentState,
-} from "@/lib/db/repositories/fp_catalog";
-import { getResourceNotes } from "@/lib/db/repositories/fp_resource_notes";
-import { buildRutaPathSteps } from "@/lib/fp/ruta-path";
+import { getActiveVideoResourcesForCompetency, getFpContentItemBySlugForCycle, getRequiredCompetenciesForItems } from "@/lib/db/repositories/fp_catalog";
+import { isSafeHttpUrl, resolveLegacyRutaTarget } from "@/lib/fp/event-cta";
 import { FP_APTITUDE_GATED_TYPES } from "@/lib/data";
-import { LearningResourceView } from "@/components/ruta/ruta-view";
-import { LearningPathView } from "@/components/ruta/ruta-path-view";
 
 export const dynamic = "force-dynamic";
 
-export default async function LearningPathPage({
+// issue #112: /ruta/[slug] is a legacy deep link resolver only - it never
+// renders a page of its own any more, for any content type. It always
+// redirects, either to the exact destination a link promised or to a safe
+// fallback, and never to the old "Todavia no hay video curado" dead end.
+export default async function LegacyRutaRedirectPage({
   params,
   searchParams,
 }: {
@@ -33,58 +30,27 @@ export default async function LearningPathPage({
   if (!item) notFound();
 
   if (FP_APTITUDE_GATED_TYPES.has(item.type)) {
-    const requiredByItem = await getRequiredCompetenciesForItems([item.id]);
-    const competencies = requiredByItem.get(item.id) ?? [];
-    if (competencies.length === 0) notFound();
-
-    const orderedCompetencies = [...competencies].sort((a, b) => {
-      const aObl = a.obligatoria_para_item ? 0 : 1;
-      const bObl = b.obligatoria_para_item ? 0 : 1;
-      if (aObl !== bObl) return aObl - bObl;
-      return (a.orden_preparacion ?? 999) - (b.orden_preparacion ?? 999);
-    });
-
-    const steps = await buildRutaPathSteps(
-      session.uid,
-      orderedCompetencies.map((competency) => ({
-        id: competency.id,
-        titulo: competency.titulo,
-        descripcion: competency.descripcion,
-        obligatoria: competency.obligatoria_para_item,
-      })),
-      profile.cycle_code
-    );
-
-    const requestedIndex = paso ? steps.findIndex((step) => step.competencyId === paso) : 0;
-
-    return <LearningPathView pageTitle={item.title} steps={steps} initialStepIndex={requestedIndex >= 0 ? requestedIndex : 0} />;
+    // A single, unambiguous, active, safe video wins. Zero or more than one
+    // candidate (there is then no way to know which one an old link meant)
+    // falls back to the event's own official page, then to /hackathons.
+    let exactVideoCandidates: string[] = [];
+    if (paso) {
+      // The competency must genuinely belong to this event - a paso value
+      // for an unrelated event/skill must never resolve to a video.
+      const requiredByItem = await getRequiredCompetenciesForItems([item.id]);
+      const competency = (requiredByItem.get(item.id) ?? []).find((c) => c.id === paso);
+      if (competency) {
+        const candidates = await getActiveVideoResourcesForCompetency(competency.id, profile.cycle_code);
+        exactVideoCandidates = candidates.map((c) => c.video_url);
+      }
+    }
+    redirect(resolveLegacyRutaTarget({ itemSourceUrl: item.source_url, exactVideoCandidates }));
   }
 
-  if (!item.video_url) notFound();
-
-  const [notes, userState] = await Promise.all([
-    getResourceNotes(session.uid, item.id),
-    getUserContentState(session.uid, item.id),
-  ]);
-
-  return (
-    <LearningResourceView
-      item={{
-        idSlug: item.id_slug,
-        title: item.title,
-        type: item.type,
-        description: item.description,
-        entity: item.entity,
-        sourceUrl: item.source_url,
-        videoUrl: item.video_url,
-      }}
-      notes={notes.map((note) => ({
-        id: note.id,
-        timestampSeconds: note.timestamp_seconds,
-        body: note.body,
-        createdAt: note.created_at,
-      }))}
-      initialStatus={userState?.status ?? null}
-    />
-  );
+  // Non-Eventos content item (e.g. a course) with its own video: redirect
+  // straight to it. No safe video: nothing to send the user to any more.
+  if (isSafeHttpUrl(item.video_url)) {
+    redirect(item.video_url);
+  }
+  notFound();
 }

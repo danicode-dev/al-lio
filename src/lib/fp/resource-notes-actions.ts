@@ -36,7 +36,6 @@ export async function addResourceNoteAction(
 
   try {
     const note = await addResourceNote(session.uid, item.id, safeTimestamp, trimmedBody);
-    revalidatePath(`/ruta/${idSlug}`);
     return { error: null, note };
   } catch {
     return { error: "note_save_failed", note: null };
@@ -80,7 +79,6 @@ export async function markResourceStatusAction(
       status,
       completed_at: status === "completed" ? new Date().toISOString() : null,
     });
-    revalidatePath(`/ruta/${idSlug}`);
     revalidatePath("/roadmap");
     revalidatePath("/dashboard");
     revalidatePath("/courses");
