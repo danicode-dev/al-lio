@@ -50,13 +50,13 @@ export function DashboardView({ store, actions, calendar }: DashboardViewProps) 
         </div>
       )}
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(300px,1.08fr)_minmax(350px,1.14fr)_minmax(260px,.78fr)]">
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(300px,1.08fr)_minmax(350px,1.14fr)_minmax(260px,.78fr)]">
         <DashboardTodo store={store} actions={actions} />
         <DashboardNextStep roadmap={store.roadmap} loadFailed={loadIssues.includes("roadmap")} />
         <DashboardCalendar loadFailed={loadIssues.some((issue) => ["tasks", "courses", "hackathons", "opportunities"].includes(issue))}>{calendar}</DashboardCalendar>
       </div>
 
-      <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
+      <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
         <DashboardFocusCarousel store={store} />
         <DashboardProgress roadmap={store.roadmap} loadFailed={loadIssues.includes("roadmap")} />
       </div>
