@@ -44,7 +44,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
 import { fpUserStatusToHackathonStatus, isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
-import { selectAptitudeVideo } from "@/lib/fp/event-cta";
+import { isSafeHttpUrl, selectAptitudeVideos } from "@/lib/fp/event-cta";
 import { toast } from "sonner";
 import { BlocNotepad } from "@/components/bloc/bloc-notepad";
 import {
@@ -2546,9 +2546,9 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   )}
                   {featuredHackathon.notes && <p className="al-hack-hero-desc">{featuredHackathon.notes}</p>}
                   <div className="al-hack-hero-actions">
-                    {featuredHackathon.url ? (
-                      <a href={featuredHackathon.url} target="_blank" rel="noreferrer" className="al-hack-hero-btn-primary">
-                        <ExternalLink className="h-4 w-4" />Entrar al hackatón
+                    {isSafeHttpUrl(featuredHackathon.url) ? (
+                      <a href={featuredHackathon.url} target="_blank" rel="noopener noreferrer" className="al-hack-hero-btn-primary">
+                        <ExternalLink className="h-4 w-4" />Abrir convocatoria
                       </a>
                     ) : null}
                     {featuredHackathon.requiredCompetencies && featuredHackathon.requiredCompetencies.length > 0 && (
@@ -2636,9 +2636,9 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                       </div>
                       {item.notes && <p className="al-hack-card-desc line-clamp-2">{item.notes}</p>}
                       <div className="al-hack-card-actions">
-                        {item.url && (
-                          <a href={item.url} target="_blank" rel="noreferrer" className="al-hack-btn al-hack-btn-primary">
-                            <ExternalLink className="h-3.5 w-3.5" />Entrar al hackatón
+                        {isSafeHttpUrl(item.url) && (
+                          <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-hack-btn al-hack-btn-primary">
+                            <ExternalLink className="h-3.5 w-3.5" />Abrir web
                           </a>
                         )}
                         {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
@@ -2992,10 +2992,17 @@ function CompetencyRequirement({
   onMarkDone?: () => void;
 }) {
   const done = isCompetencyDone(competency);
-  const videoItem = selectAptitudeVideo(competency.learningItems);
-  // At most two external references per competency - reliable and genuinely
-  // complementary, not an exhaustive dump of every matched resource.
-  const docItems = competency.learningItems.filter((li) => !li.video_url).slice(0, 2);
+  // Every exactly-associated video, not one arbitrarily chosen "primary" -
+  // a competency can genuinely have more than one real course.
+  const videoItems = selectAptitudeVideos(competency.learningItems);
+  const videoItemIds = new Set(videoItems.map((li) => li.id));
+  // At most two non-video references per competency - reliable and
+  // genuinely complementary, not an exhaustive dump of every matched
+  // resource. A resource already shown as a video is never duplicated here,
+  // and an unsafe source_url is never rendered as a link.
+  const docItems = competency.learningItems
+    .filter((li) => !videoItemIds.has(li.id) && isSafeHttpUrl(li.source_url))
+    .slice(0, 2);
 
   function markDone() {
     actions.markCompetencyCompleted(competency.id);
@@ -3012,19 +3019,19 @@ function CompetencyRequirement({
       </div>
       {competency.descripcion && <p className="al-modal-req-desc">{competency.descripcion}</p>}
       <div className="al-modal-req-actions">
-        {videoItem ? (
-          <a href={videoItem.video_url} target="_blank" rel="noreferrer" className="al-modal-req-btn al-modal-req-btn-video">
+        {videoItems.map((learningItem) => (
+          <a key={learningItem.id} href={learningItem.video_url} target="_blank" rel="noopener noreferrer" className="al-modal-req-btn al-modal-req-btn-video">
             <Youtube className="h-3 w-3" />
-            Ver curso en YouTube
+            {learningItem.title}
           </a>
-        ) : null}
+        ))}
         {docItems.map((learningItem) => (
-          <a key={learningItem.id} href={learningItem.source_url} target="_blank" rel="noreferrer" className="al-modal-req-btn">
+          <a key={learningItem.id} href={learningItem.source_url} target="_blank" rel="noopener noreferrer" className="al-modal-req-btn">
             <ExternalLink className="h-3 w-3" />
             {learningItem.title}
           </a>
         ))}
-        {!videoItem && docItems.length === 0 && <EmptyText>Todavía no hay recurso curado para esta aptitud.</EmptyText>}
+        {videoItems.length === 0 && docItems.length === 0 && <EmptyText>Todavía no hay recurso curado para esta aptitud.</EmptyText>}
       </div>
       {done ? (
         <span className="al-modal-mark-done al-modal-mark-done-active">

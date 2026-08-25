@@ -217,6 +217,39 @@ export async function getLearningItemsForCompetencies(
   return map;
 }
 
+export type ActiveCompetencyVideoCandidate = {
+  id: string;
+  id_slug: string;
+  title: string;
+  video_url: string;
+};
+
+// Dedicated, stricter query for the legacy /ruta/[slug] redirect resolver
+// (issue #112). Deliberately separate from getLearningItemsForCompetencies
+// above (shared with the Roadmap/aptitude-modal data path) rather than
+// adding a status filter there - a redirect must never target an inactive
+// resource, but the modal's own display rules are out of scope for this
+// change and must not shift as a side effect.
+export async function getActiveVideoResourcesForCompetency(
+  competencyId: string,
+  cycleCode: FpCycleCode
+): Promise<ActiveCompetencyVideoCandidate[]> {
+  const res = await query<ActiveCompetencyVideoCandidate>(
+    `SELECT DISTINCT item.id, item.id_slug, item.title, item.video_url
+     FROM public.fp_item_competencies link
+     INNER JOIN public.fp_content_items item ON item.id = link.content_item_id
+     INNER JOIN public.fp_content_cycle_fit fit ON fit.content_item_id = item.id
+     WHERE link.skill_id = $1
+       AND link.tipo_relacion = 'ensena'
+       AND fit.cycle_code = $2
+       AND item.status = 'activo'
+       AND item.video_url IS NOT NULL
+     ORDER BY item.id_slug`,
+    [competencyId, cycleCode]
+  );
+  return res.rows;
+}
+
 export async function getUserContentState(
   userId: string,
   contentItemId: string
