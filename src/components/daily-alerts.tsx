@@ -270,7 +270,7 @@ export function DailyAlerts() {
         <div className="flex items-start justify-between px-5 pb-3 pt-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FBE7DD]">
-              <Bell className="h-4 w-4 text-[#E15D2D]" />
+              <Bell className="h-4 w-4 text-primary" />
             </div>
             <div>
               <h2 className="text-base font-semibold leading-tight">Tus alertas de hoy</h2>
@@ -297,7 +297,7 @@ export function DailyAlerts() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
               tab === "all"
-                ? "bg-[#E15D2D] text-white"
+                ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground hover:text-foreground",
             )}
           >
@@ -379,7 +379,7 @@ export function DailyAlerts() {
           <button
             type="button"
             onClick={goToAgenda}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#e15d2d] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#c94f21]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <CalendarDays className="h-4 w-4" />
             Ver agenda
@@ -397,7 +397,7 @@ export function DailyAlerts() {
                 type="checkbox"
                 checked={noShowChecked}
                 onChange={(e) => setNoShowChecked(e.target.checked)}
-                className="h-3.5 w-3.5 rounded accent-[#e15d2d]"
+                className="h-3.5 w-3.5 rounded accent-primary"
               />
               No mostrar hasta mañana
             </label>

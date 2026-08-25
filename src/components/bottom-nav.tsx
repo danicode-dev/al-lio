@@ -31,7 +31,7 @@ export function BottomNav() {
                 className={cn(
                   "flex flex-col items-center justify-center flex-1 h-full gap-1 select-none",
                   "transition-all duration-200 active:scale-90",
-                  isActive ? "text-[#E15D2D]" : "text-muted-foreground",
+                  isActive ? "text-primary" : "text-muted-foreground",
                 )}
               >
                 <div
