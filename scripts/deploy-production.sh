@@ -311,7 +311,10 @@ if [[ -e "$release_dir" ]]; then
   [[ -d "$release_dir" ]] || fail "Release path exists and is not a directory: $release_dir"
   [[ "$(git -C "$release_dir" rev-parse HEAD 2>/dev/null || true)" == "$release_sha" ]] || fail "Release directory already contains a different commit: $release_dir"
 else
+  private_umask="$(umask)"
+  umask 022
   git -C "$repository_dir" worktree add --detach "$release_dir" "$release_sha"
+  umask "$private_umask"
 fi
 
 [[ -z "$(git -C "$release_dir" status --porcelain --untracked-files=no)" ]] || fail "Release worktree is not clean: $release_dir"
