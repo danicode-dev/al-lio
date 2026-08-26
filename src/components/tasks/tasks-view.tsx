@@ -6,6 +6,8 @@ import { CalendarDays, Check, Circle, ListChecks, ListTodo, Pencil, Plus, Trash2
 import { useStore } from "@/components/guest-store";
 import type { Store } from "@/components/store/types";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/page-header";
+import { StudentHeaderActions } from "@/components/student-header-actions";
 
 type Task = Store["tasks"][number];
 type TaskFilter = "pending" | "completed" | "all";
@@ -59,17 +61,22 @@ export function TasksView() {
 
   return (
     <div className="space-y-5 pb-20 md:pb-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#e15d2d]">Tu organización</p>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-[#111111] sm:text-3xl">Tareas pendientes</h1>
-          <p className="mt-1 text-sm text-[#6b6f72]">La misma información del inicio, con todo el detalle para organizarte.</p>
-        </div>
-        <button type="button" onClick={() => setComposerOpen((open) => !open)} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#f06a37] px-4 text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(240,106,55,0.22)] transition hover:bg-[#df5725]">
-          {composerOpen ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {composerOpen ? "Cerrar" : "Nueva tarea"}
-        </button>
-      </header>
+      <PageHeader
+        eyebrow="Tu organización"
+        title="Tareas pendientes"
+        subtitle="La misma información del inicio, con todo el detalle para organizarte."
+        actions={
+          <>
+            <div className="hidden md:flex md:items-center md:gap-2">
+              <StudentHeaderActions />
+            </div>
+            <button type="button" onClick={() => setComposerOpen((open) => !open)} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#f06a37] px-4 text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(240,106,55,0.22)] transition hover:bg-[#df5725]">
+              {composerOpen ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+              {composerOpen ? "Cerrar" : "Nueva tarea"}
+            </button>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-3 gap-3">
         <SummaryCard icon={ListTodo} value={counts.pending} label="Pendientes" tone="orange" />

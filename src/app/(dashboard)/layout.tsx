@@ -36,9 +36,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </div>
             <StudentHeaderActions />
           </div>
-          <div className="hidden items-center justify-end gap-2 px-8 pt-6 md:flex">
-            <StudentHeaderActions />
-          </div>
           <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8">
             {children}
           </div>

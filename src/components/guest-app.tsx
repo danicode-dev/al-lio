@@ -56,6 +56,8 @@ import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
 import { APPLICATION_STATUSES, STATUS_LABELS, STATUS_COLORS } from "@/lib/job-radar/types";
 import { useStore } from "@/components/guest-store";
+import { StudentHeaderActions } from "@/components/student-header-actions";
+import { PageHeader } from "@/components/page-header";
 import type {
   Company,
   Course,
@@ -130,29 +132,34 @@ const taskBuckets: Array<{
 const taskBucketIds = taskBuckets.map((bucket) => bucket.id);
 const taskPriorities: TaskPriority[] = ["baja", "media", "alta", "critica"];
 
+const VIEW_HEADER_CONTENT: Record<string, { eyebrow: string; title: string; subtitle: string }> = {
+  work: { eyebrow: "Empleo y candidaturas", title: "Trabajo", subtitle: "Portales de búsqueda, tus empresas guardadas y el seguimiento de tus candidaturas." },
+  tasks: { eyebrow: "Tu organización", title: "Tareas", subtitle: "Todo lo que tienes pendiente, organizado por prioridad." },
+  courses: { eyebrow: "Formación", title: "Cursos", subtitle: "Formación complementaria y recursos para avanzar en tu ciclo." },
+  hackathons: { eyebrow: "Comunidad", title: "Eventos y retos", subtitle: "Hackathons, retos y convocatorias para poner a prueba lo que sabes." },
+  links: { eyebrow: "Recursos", title: "Enlaces", subtitle: "Accesos rápidos guardados." },
+  sources: { eyebrow: "Recursos", title: "Fuentes", subtitle: "Portales de referencia para tu búsqueda de empleo." },
+  settings: { eyebrow: "Administración", title: "Configuración", subtitle: "Ajustes del panel y datos de demostración." },
+  bloc: { eyebrow: "Bloc", title: "Bloc de notas", subtitle: "Escribe, organiza y exporta tus notas a PDF o Word." },
+};
+
 export function GuestApp({ view }: { view: View }) {
   const { store, actions } = useStore();
+  const headerContent = VIEW_HEADER_CONTENT[view];
 
   return (
     <div className="space-y-6 pb-20 md:pb-6">
-      {view !== "dashboard" && view !== "calendar" && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
-              {({
-                work: "Trabajo",
-                tasks: "Tareas",
-                courses: "Cursos",
-                hackathons: "Eventos y retos",
-                calendar: "Calendario",
-                links: "Links",
-                sources: "Fuentes",
-                settings: "Configuración",
-                bloc: "Bloc de notas",
-              } as Record<string, string>)[view] ?? view}
-            </h1>
-          </div>
-        </div>
+      {view !== "dashboard" && view !== "calendar" && headerContent && (
+        <PageHeader
+          eyebrow={headerContent.eyebrow}
+          title={headerContent.title}
+          subtitle={headerContent.subtitle}
+          actions={
+            <div className="hidden md:flex md:items-center md:gap-2">
+              <StudentHeaderActions />
+            </div>
+          }
+        />
       )}
       {view === "work" && <Work store={store} actions={actions} />}
       {view === "tasks" && <Tasks store={store} actions={actions} />}
@@ -162,7 +169,12 @@ export function GuestApp({ view }: { view: View }) {
         <CalendarView
           events={getCalendarEvents(store)}
           completedTasks={store.tasks}
-          headerActions={<GoogleCalendarStatusControl />}
+          headerActions={
+            <>
+              <StudentHeaderActions />
+              <GoogleCalendarStatusControl />
+            </>
+          }
         />
       )}
       {view === "links" && <LinksView store={store} actions={actions} />}

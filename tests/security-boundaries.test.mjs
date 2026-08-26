@@ -409,7 +409,7 @@ test("The merged store fetch loads every section with fail-soft handling (issue 
   }
 });
 
-test("Quick Add, Calendar and Notifications form one shared header action group mounted once per page (issue #91)", async () => {
+test("Quick Add, Calendar and Notifications form one shared header action group, mounted once for mobile and once per page's own header on desktop (issue #91, issue #129)", async () => {
   const [headerSource, layoutSource, guestAppSource, quickAddSource, dashboardClientSource, dashboardGreetingSource] = await Promise.all([
     readFile(new URL("../src/components/student-header-actions.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
@@ -432,9 +432,12 @@ test("Quick Add, Calendar and Notifications form one shared header action group 
   // Admin-only /settings is not part of the allowlist.
   assert.doesNotMatch(headerSource, /"\/settings"/);
 
-  // Mounted exactly twice in the layout (mobile slot + desktop slot) - the only mount point for the whole tree.
+  // issue #129: the layout's own standalone desktop actions row (the source of
+  // the excessive top gap) is gone - only the mobile sticky-header mount remains
+  // there. The desktop mount now lives inside each page's own PageHeader, next
+  // to its title, instead of floating in a disconnected row above the content.
   const layoutMounts = (layoutSource.match(/<StudentHeaderActions \/>/g) ?? []).length;
-  assert.equal(layoutMounts, 2, "expected exactly one mobile and one desktop mount in the layout");
+  assert.equal(layoutMounts, 1, "expected exactly the mobile sticky-header mount in the layout, no separate desktop row");
 
   // The old per-view/per-route duplicates are gone: no more BrandHeaderActions row,
   // no more floating QuickAdd mount, no more local NotificationBell in guest-app.tsx.
@@ -447,6 +450,27 @@ test("Quick Add, Calendar and Notifications form one shared header action group 
   // QuickAdd itself no longer renders its own always-on floating trigger.
   assert.doesNotMatch(quickAddSource, /aria-label="Añadir rápido"/);
   assert.match(quickAddSource, /export function QuickAdd\(\{ open, setOpen, actions \}: QuickAddProps\)/);
+});
+
+test("Each page's own header mounts StudentHeaderActions exactly once for its desktop actions slot - relocated, not lost or duplicated (issue #129)", async () => {
+  const files = [
+    "../src/components/dashboard/dashboard-greeting.tsx",
+    "../src/components/learning/competencies-view.tsx",
+    "../src/components/tasks/tasks-view.tsx",
+    "../src/components/noticias/noticias-view.tsx",
+    "../src/components/profile/profile-form.tsx",
+  ];
+  for (const file of files) {
+    const source = await readFile(new URL(file, import.meta.url), "utf8");
+    const mounts = (source.match(/<StudentHeaderActions \/>/g) ?? []).length;
+    assert.equal(mounts, 1, `${file} should mount StudentHeaderActions exactly once`);
+  }
+  // guest-app.tsx mounts it twice by design: once inside the shared
+  // work/courses/hackathons/bloc header, once for the separately-composed
+  // Calendario header - never inside the per-view render functions themselves.
+  const guestApp = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const guestAppMounts = (guestApp.match(/<StudentHeaderActions \/>/g) ?? []).length;
+  assert.equal(guestAppMounts, 2, "guest-app.tsx should mount StudentHeaderActions exactly twice: shared header + Calendario");
 });
 
 test("The notifications popover meets the accessibility requirements (issue #91)", async () => {
@@ -1884,4 +1908,72 @@ test("Ver papelera stays reachable from Todas, Recientes and Favoritas alike - i
   const renderSites = source.match(/className="al-bloc-trash-link/g) ?? [];
   assert.equal(renderSites.length, 1, "the trash link must render exactly once (not duplicated per tab, not gated behind a tab check)");
   assert.doesNotMatch(source, /listTab === "favoritas"[\s\S]{0,400}al-bloc-trash-link/, "the trash link must not be nested inside favorites-only conditional rendering");
+});
+
+test("PageHeader renders exactly one h1 with eyebrow/title/subtitle/actions slots, and never hardcodes the display font (issue #129)", async () => {
+  const source = await readFile(new URL("../src/components/page-header.tsx", import.meta.url), "utf8");
+  const h1Matches = source.match(/<h1[ >]/g) ?? [];
+  assert.equal(h1Matches.length, 1, "the shared header primitive must render exactly one h1");
+  assert.match(source, /al-page-header-eyebrow/);
+  assert.match(source, /al-page-header-subtitle/);
+  assert.doesNotMatch(source, /font-barlow/, "product headings use Inter (the default body font), not the display font");
+});
+
+test("The shared page-header tokens in globals.css style the eyebrow/title/subtitle with Inter (the default body font), not --font-barlow (issue #129)", async () => {
+  const source = await readFile(new URL("../src/app/globals.css", import.meta.url), "utf8");
+  assert.match(source, /\.al-page-header-title \{[^}]*color: #111111/, "the title must be black, matching the Tareas/Competencias reference");
+  assert.match(source, /\.al-page-header-eyebrow \{[^}]*color: #e15d2d/, "the eyebrow must be the brand terracotta orange");
+  assert.doesNotMatch(source, /\.al-page-header[^}]*font-barlow/);
+});
+
+test("The dashboard layout no longer renders a standalone desktop actions row above the content - actions live inside each page's own header - and the mobile sticky header is untouched (issue #129)", async () => {
+  const source = await readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /pt-6 md:flex/, "the old standalone desktop actions row (the source of the excessive top gap) must be removed");
+  assert.match(source, /StudentHeaderActions/, "StudentHeaderActions must still be imported for the mobile sticky bar");
+  assert.match(source, /md:hidden/, "the mobile-only sticky header row must remain");
+  assert.match(source, /pb-safe|pb-20|safe-area/, "mobile safe-area/bottom-nav spacing must remain intact");
+});
+
+test("Every first-level authenticated route renders the shared PageHeader instead of a bespoke ad-hoc heading (issue #129)", async () => {
+  const routes = [
+    { file: "../src/components/dashboard/dashboard-greeting.tsx", label: "Inicio" },
+    { file: "../src/components/learning/competencies-view.tsx", label: "Competencias" },
+    { file: "../src/components/tasks/tasks-view.tsx", label: "Tareas" },
+    { file: "../src/components/guest-app.tsx", label: "Bloc de notas / Trabajo / Cursos / Eventos y retos (shared GuestApp header)" },
+    { file: "../src/components/noticias/noticias-view.tsx", label: "Noticias" },
+    { file: "../src/components/calendar/app-calendar.tsx", label: "Calendario" },
+    { file: "../src/components/profile/profile-form.tsx", label: "Perfil" },
+  ];
+  for (const route of routes) {
+    const source = await readFile(new URL(route.file, import.meta.url), "utf8");
+    assert.match(source, /from "@\/components\/page-header"/, `${route.label} must import the shared PageHeader`);
+    assert.match(source, /<PageHeader/, `${route.label} must render PageHeader`);
+  }
+});
+
+test("GuestApp's shared header gives Trabajo, Cursos, Eventos y retos and Bloc de notas a real eyebrow and subtitle, not just a bare view-name h1 (issue #129)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.match(source, /VIEW_HEADER_CONTENT/);
+  for (const view of ["work", "courses", "hackathons", "bloc"]) {
+    const re = new RegExp(`${view}: \\{ eyebrow: "[^"]+", title: "[^"]+", subtitle: "[^"]+" \\}`);
+    assert.match(source, re, `VIEW_HEADER_CONTENT must define a non-empty eyebrow/title/subtitle for "${view}"`);
+  }
+  assert.match(source, /view !== "dashboard" && view !== "calendar" && headerContent/, "dashboard and calendar keep their own bespoke header, every other view gets the shared one");
+});
+
+test("Perfil's title switches from the Barlow display font to the shared Inter page header, and gains an eyebrow (issue #129)", async () => {
+  const source = await readFile(new URL("../src/components/profile/profile-form.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /al-profile-title|font-barlow/, "the old Barlow-styled title must be gone");
+  assert.match(source, /eyebrow="Tu cuenta"/);
+});
+
+test("Calendario, Noticias and Competencias each compose StudentHeaderActions into their own header instead of relying on a removed shared layout row (issue #129)", async () => {
+  const [calendar, noticias, competencies] = await Promise.all([
+    readFile(new URL("../src/components/calendar/app-calendar.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/noticias/noticias-view.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/learning/competencies-view.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(calendar, /headerActions/);
+  assert.match(noticias, /StudentHeaderActions/);
+  assert.match(competencies, /StudentHeaderActions/);
 });

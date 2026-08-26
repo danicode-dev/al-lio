@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/page-header";
 
 export type CalendarEvent = {
   id: string;
@@ -197,23 +198,24 @@ export function CalendarView({
 
   return (
     <div className="space-y-5 text-[#111111]">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">Calendario</h1>
-          <p className="mt-1 text-sm text-[#6b6f72]">Gestiona tus eventos, fechas y actividades.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="hidden items-center gap-2 md:flex">{headerActions}</div>
-          <button
-            type="button"
-            onClick={() => setNewEventOpen(true)}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#f06a37] to-[#e15d2d] px-4 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(225,93,45,0.22)] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e15d2d] focus-visible:ring-offset-2"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Nuevo evento
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Tu agenda"
+        title="Calendario"
+        subtitle="Gestiona tus eventos, fechas y actividades."
+        actions={
+          <>
+            <div className="hidden items-center gap-2 md:flex">{headerActions}</div>
+            <button
+              type="button"
+              onClick={() => setNewEventOpen(true)}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#f06a37] to-[#e15d2d] px-4 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(225,93,45,0.22)] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e15d2d] focus-visible:ring-offset-2"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Nuevo evento
+            </button>
+          </>
+        }
+      />
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(270px,320px)]">
         <section className="overflow-hidden rounded-[20px] border border-[#e8e2d8] bg-white text-[#111111] shadow-[0_12px_30px_rgba(17,17,17,0.045)]">

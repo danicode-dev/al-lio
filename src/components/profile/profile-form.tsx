@@ -19,6 +19,8 @@ import { ONBOARDING_INTEREST_OPTIONS } from "@/lib/profile/onboarding-options";
 import type { DbFpCycle, DbProfile } from "@/lib/db/types";
 import type { RoadmapOverview } from "@/lib/fp/roadmap";
 import { FieldListbox, type FieldListboxOption } from "@/components/ui/field-listbox";
+import { PageHeader } from "@/components/page-header";
+import { StudentHeaderActions } from "@/components/student-header-actions";
 
 const INTEREST_META: Record<
   (typeof ONBOARDING_INTEREST_OPTIONS)[number],
@@ -70,15 +72,6 @@ export function ProfileForm({
   return (
     <>
       <style>{`
-        .al-profile-header { margin-bottom: 20px; }
-        .al-profile-title {
-          font-size: clamp(1.5rem, 2.2vw, 1.9rem);
-          font-weight: 800;
-          color: #111111;
-          margin: 0 0 4px 0;
-          font-family: var(--font-barlow, sans-serif);
-        }
-        .al-profile-subtitle { color: #6b6f72; font-size: 14px; margin: 0; }
 
         .al-profile-grid {
           display: grid;
@@ -248,10 +241,16 @@ export function ProfileForm({
         }
       `}</style>
 
-      <div className="al-profile-header">
-        <h1 className="al-profile-title">Tu perfil</h1>
-        <p className="al-profile-subtitle">Cambia tu ciclo, curso o intereses cuando quieras. Se aplica en tus recomendaciones al instante.</p>
-      </div>
+      <PageHeader
+        eyebrow="Tu cuenta"
+        title="Tu perfil"
+        subtitle="Cambia tu ciclo, curso o intereses cuando quieras. Se aplica en tus recomendaciones al instante."
+        actions={
+          <div className="hidden md:flex md:items-center md:gap-2">
+            <StudentHeaderActions />
+          </div>
+        }
+      />
 
       <div className="al-profile-grid">
         <div className="al-profile-card">
