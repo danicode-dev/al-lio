@@ -2489,10 +2489,10 @@ export function CourseDetailView({ id }: { id: string }) {
             </div>
           </div>
 
-          <div className={cardClass}>
+          <section className={cardClass} aria-labelledby="course-aptitudes-title">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-sm font-bold text-[#111111]">Aptitudes del curso</p>
+                <h2 id="course-aptitudes-title" className="text-sm font-bold text-[#111111]">Aptitudes del curso</h2>
                 <p className="mt-1 text-xs leading-5 text-[#6b6f72]">Competencias que este contenido enseña o te ayuda a demostrar.</p>
               </div>
               {aptitudes.length > 0 && <span className="text-xs font-semibold text-[#9a958a]">{aptitudes.length}</span>}
@@ -2531,7 +2531,7 @@ export function CourseDetailView({ id }: { id: string }) {
                 ))}
               </div>
             )}
-          </div>
+          </section>
         </div>
 
         <div className="space-y-4">
