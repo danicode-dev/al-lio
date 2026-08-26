@@ -10,6 +10,19 @@ export type ProgressNote = {
   created_at: string;
 };
 
+// Aptitude taught or demonstrated by a course-like catalogue item. These
+// relationships already live in fp_item_competencies; this client shape only
+// exposes the student-facing skill fields needed by the course detail page.
+export type CourseAptitude = {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  horas_estimadas?: number;
+  evidencia_minima?: string;
+  relation: "ensena" | "demuestra";
+  completed?: boolean;
+};
+
 export type Task = {
   id: string;
   title: string;
@@ -69,6 +82,7 @@ export type Course = {
   notes?: string;
   sourceTable?: "courses" | "tech_opportunities" | "fp_content_items";
   is_favorite?: boolean;
+  aptitudes?: CourseAptitude[];
   created_at: string;
 };
 
@@ -124,6 +138,7 @@ export type FpCatalogItem = {
   notes?: string;
   priority: "Alta" | "Media" | "Baja";
   requiredCompetencies?: RequiredCompetency[];
+  courseAptitudes?: CourseAptitude[];
   is_favorite?: boolean;
   user_status?: string | null;
   user_completed_at?: string | null;

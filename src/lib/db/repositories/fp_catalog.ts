@@ -174,6 +174,38 @@ export async function getRequiredCompetenciesForItems(contentItemIds: string[]):
   return map;
 }
 
+export type CourseAptitude = DbFpSkill & {
+  content_item_id: string;
+  tipo_relacion: Extract<FpItemCompetencyRelation, "ensena" | "demuestra">;
+};
+
+// Course-like catalogue items already carry reviewed `ensena`/`demuestra`
+// relationships in fp_item_competencies. Keep this separate from event
+// requirements so a skill taught by a course is never presented as an entry
+// requirement for that same course.
+export async function getCourseAptitudesForItems(contentItemIds: string[]): Promise<Map<string, CourseAptitude[]>> {
+  const map = new Map<string, CourseAptitude[]>();
+  if (contentItemIds.length === 0) return map;
+
+  const res = await query<CourseAptitude>(
+    `SELECT link.content_item_id, skill.*, link.tipo_relacion
+     FROM public.fp_item_competencies link
+     INNER JOIN public.fp_skills skill ON skill.id = link.skill_id
+     WHERE link.content_item_id = ANY($1)
+       AND link.tipo_relacion IN ('ensena', 'demuestra')
+     ORDER BY link.orden_preparacion ASC NULLS LAST, skill.titulo ASC`,
+    [contentItemIds]
+  );
+
+  for (const row of res.rows) {
+    const list = map.get(row.content_item_id) ?? [];
+    list.push(row);
+    map.set(row.content_item_id, list);
+  }
+
+  return map;
+}
+
 export type CompetencyLearningItem = {
   skill_id: string;
   id: string;

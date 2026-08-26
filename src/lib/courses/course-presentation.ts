@@ -175,6 +175,7 @@ export function fpItemToCourse(item: FpCatalogItem): Course {
     notes: fpItemNotes(item),
     sourceTable: "fp_content_items",
     is_favorite: item.is_favorite ?? false,
+    aptitudes: item.courseAptitudes,
     created_at: item.created_at,
   };
 }

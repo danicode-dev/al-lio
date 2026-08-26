@@ -2422,6 +2422,51 @@ test("Archivado and Guardado stay fully independent for courses: is_favorite nev
   assert.doesNotMatch(completeFn, /is_favorite/, "marking a course Terminado (which archives it) must never read or write is_favorite");
 });
 
+test("FP course details expose only reviewed taught/demonstrated aptitudes, keeping them separate from event requirements", async () => {
+  const repository = await readFile(new URL("../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
+  const queryStart = repository.indexOf("export async function getCourseAptitudesForItems");
+  const queryEnd = repository.indexOf("export type CompetencyLearningItem", queryStart);
+  const querySource = repository.slice(queryStart, queryEnd);
+  assert.match(querySource, /link\.tipo_relacion IN \('ensena', 'demuestra'\)/);
+  assert.doesNotMatch(querySource, /tipo_relacion = 'requiere'/, "course outcomes must not be mislabeled as entry requirements");
+
+  const aptitude = {
+    id: "PRO-001",
+    titulo: "Programar con variables, decisiones y bucles",
+    descripcion: "Resuelve problemas básicos con código.",
+    horas_estimadas: 8,
+    evidencia_minima: "Ejercicio funcional",
+    relation: "ensena",
+    completed: true,
+  };
+  const mapped = fpItemToCourse({ ...fixtureFpCourseItem, courseAptitudes: [aptitude] });
+  assert.deepEqual(mapped.aptitudes, [aptitude], "the authoritative catalogue mapping must survive the FP-to-course presentation conversion");
+});
+
+test("the global store loads course aptitudes and shares live completion state with event requirements", async () => {
+  const dataSource = await readFile(new URL("../src/lib/data.ts", import.meta.url), "utf8");
+  assert.match(dataSource, /getCourseAptitudesForItems\(courseAptitudeItemIds\)/);
+  assert.match(dataSource, /const visibleCompetencyIds = \[\.\.\.new Set\(\[\.\.\.requiredCompetencyIds, \.\.\.courseAptitudeIds\]\)\]/);
+  assert.match(dataSource, /courseAptitudes: \(courseAptitudesByItem\.get\(item\.id\) \?\? \[\]\)\.map/);
+  assert.match(dataSource, /completed: userCompetencyStates\.has\(aptitude\.id\)/);
+
+  const storeSource = await readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8");
+  assert.match(storeSource, /courseAptitudes: item\.courseAptitudes\?\.map/);
+  assert.match(storeSource, /aptitude\.id === skillId \? \{ \.\.\.aptitude, completed \} : aptitude/);
+});
+
+test("CourseDetailView renders the mapped aptitudes and an honest fallback without fabricating relationships", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("export function CourseDetailView");
+  const fnEnd = source.indexOf("function Hackathons(");
+  const fnSource = source.slice(fnStart, fnEnd);
+  assert.match(fnSource, /const aptitudes = item\.aptitudes \?\? \[\];/);
+  assert.match(fnSource, /Aptitudes del curso/);
+  assert.match(fnSource, /aptitudes\.map\(\(aptitude\) =>/);
+  assert.match(fnSource, /Este curso todavía no tiene aptitudes verificadas vinculadas en el catálogo\./);
+  assert.doesNotMatch(fnSource, /requiredCompetencies/, "course outcomes must use their own relation-aware contract");
+});
+
 // ---------------------------------------------------------------------------
 // Issue #135 - Events & challenges: internal detail experience
 // ---------------------------------------------------------------------------

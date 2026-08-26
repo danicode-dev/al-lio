@@ -487,6 +487,9 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
         requiredCompetencies: item.requiredCompetencies?.map((competency) => (
           competency.id === skillId ? { ...competency, completed } : competency
         )),
+        courseAptitudes: item.courseAptitudes?.map((aptitude) => (
+          aptitude.id === skillId ? { ...aptitude, completed } : aptitude
+        )),
       }));
       setStore((current) => ({ ...current, fpContent: patchCompetencies(current.fpContent, true) }));
       void markCompetencyCompletedAction(skillId).then((result) => {

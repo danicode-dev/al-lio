@@ -2396,10 +2396,9 @@ export function toggleCourseFavoriteFor(item: Course, actions: ReturnTypeActions
 // link competing with a still-present popup. Resolves the item from the
 // live client store by id (same getDisplayCourses pipeline the list uses)
 // so favorite/status state always matches the card - it can never show a
-// stale or contradictory state. Courses have no requirements/aptitudes
-// concept (unlike Hackathon.requiredCompetencies), so there is no
-// step-by-step section to fold in here - this mirrors exactly what
-// CourseDetailModal already showed, just as a full page instead of a modal.
+// stale or contradictory state. FP catalogue courses also expose the
+// reviewed aptitudes they teach or demonstrate; user-created and legacy
+// tech courses degrade honestly when no mapping exists.
 export function CourseDetailView({ id }: { id: string }) {
   const { store, actions } = useStore();
   const allCourses = useMemo(
@@ -2432,6 +2431,7 @@ export function CourseDetailView({ id }: { id: string }) {
   const presentation = getCoursePresentation(item);
   const canFavorite = canToggleCourseFavorite(item);
   const archived = isCourseArchived(item);
+  const aptitudes = item.aptitudes ?? [];
   const cardClass = "space-y-3 rounded-[18px] border border-[#ece7dc] bg-white p-4 shadow-[0_10px_26px_rgba(17,17,17,0.045)] sm:p-5";
 
   return (
@@ -2487,6 +2487,50 @@ export function CourseDetailView({ id }: { id: string }) {
               <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Descripción</p>
               <p className="mt-1 whitespace-pre-wrap text-[13px] leading-6 text-[#4b4740]">{presentation.description || "Este curso todavía no tiene una descripción disponible."}</p>
             </div>
+          </div>
+
+          <div className={cardClass}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-bold text-[#111111]">Aptitudes del curso</p>
+                <p className="mt-1 text-xs leading-5 text-[#6b6f72]">Competencias que este contenido enseña o te ayuda a demostrar.</p>
+              </div>
+              {aptitudes.length > 0 && <span className="text-xs font-semibold text-[#9a958a]">{aptitudes.length}</span>}
+            </div>
+            {aptitudes.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-[#ded8cc] bg-[#faf8f3] p-4 text-xs leading-5 text-[#6b6f72]">
+                Este curso todavía no tiene aptitudes verificadas vinculadas en el catálogo.
+              </p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {aptitudes.map((aptitude) => (
+                  <div key={`${aptitude.id}-${aptitude.relation}`} className="rounded-2xl border border-[#ece7dc] p-3.5">
+                    <div className="flex items-start gap-2.5">
+                      <span className={cn("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl", aptitude.completed ? "bg-[#e7f5ee] text-[#1f7a4d]" : "bg-[#fbe7dd] text-[#c94f21]")}>
+                        {aptitude.completed ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Target className="h-3.5 w-3.5" />}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-[13px] font-bold leading-5 text-[#111111]">{aptitude.titulo}</p>
+                          <span className={cn("rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.03em]", aptitude.relation === "ensena" ? "bg-[#fbe7dd] text-[#c94f21]" : "bg-[#edf3fb] text-[#2f5fac]")}>
+                            {aptitude.relation === "ensena" ? "Aprenderás" : "Demostrarás"}
+                          </span>
+                          {aptitude.completed && <span className="rounded-full bg-[#e7f5ee] px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.03em] text-[#1f7a4d]">Completada</span>}
+                        </div>
+                        {aptitude.descripcion && <p className="mt-1.5 text-xs leading-5 text-[#4b4740]">{aptitude.descripcion}</p>}
+                        {(aptitude.horas_estimadas || aptitude.evidencia_minima) && (
+                          <p className="mt-2 text-[11px] leading-4 text-[#777269]">
+                            {aptitude.horas_estimadas ? `${aptitude.horas_estimadas} h estimadas` : ""}
+                            {aptitude.horas_estimadas && aptitude.evidencia_minima ? " · " : ""}
+                            {aptitude.evidencia_minima ? `Evidencia: ${aptitude.evidencia_minima}` : ""}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
