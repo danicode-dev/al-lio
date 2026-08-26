@@ -37,7 +37,6 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import jsPDF from "jspdf";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -69,6 +68,40 @@ const blocSettingsKey = "d1os:notepad:settings:v1";
 const legacyBlocSettingsKey = "techlife.bloc.settings.D1OS.v1";
 const defaultTitle = "Documento sin titulo";
 const maxImageBytes = 1_500_000;
+
+function findCanvasPageBreak(
+  canvas: HTMLCanvasElement,
+  pixels: Uint8ClampedArray | null,
+  startY: number,
+  maxSliceHeight: number,
+): number {
+  const remainingHeight = canvas.height - startY;
+  if (remainingHeight <= maxSliceHeight) return remainingHeight;
+  if (!pixels) return maxSliceHeight;
+
+  // Prefer a nearby blank row so ordinary text lines are not split between
+  // pages. If the note contains one uninterrupted image/block, fall back to
+  // the exact page boundary instead of dropping any content.
+  const searchDepth = Math.min(Math.round(64 * Math.max(window.devicePixelRatio, 1)), Math.round(maxSliceHeight * 0.1));
+  const lastCandidate = startY + maxSliceHeight;
+  const firstCandidate = lastCandidate - searchDepth;
+  const allowedInkPixels = Math.max(2, Math.floor(canvas.width * 0.002));
+
+  for (let candidate = lastCandidate; candidate >= firstCandidate; candidate -= 1) {
+    const rowStart = (candidate - 1) * canvas.width * 4;
+    const rowEnd = rowStart + canvas.width * 4;
+    let inkPixels = 0;
+    for (let pixel = rowStart; pixel < rowEnd; pixel += 4) {
+      if (pixels[pixel + 3] > 8 && (pixels[pixel] < 248 || pixels[pixel + 1] < 248 || pixels[pixel + 2] < 248)) {
+        inkPixels += 1;
+        if (inkPixels > allowedInkPixels) break;
+      }
+    }
+    if (inkPixels <= allowedInkPixels) return candidate - startY;
+  }
+
+  return maxSliceHeight;
+}
 
 type ListTab = "todas" | "recientes" | "favoritas";
 type MobileSheetId = "format" | "insert" | "export" | "more" | "settings" | null;
@@ -510,29 +543,66 @@ export function BlocNotepad() {
     setExportingPdf(true);
     const container = document.createElement("div");
     try {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([import("jspdf"), import("html2canvas")]);
       const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 40;
       const contentWidth = pageWidth - margin * 2;
 
       container.className = "al-bloc-export-doc-root";
-      // Off-screen, not display:none - html2canvas needs real layout/paint to rasterize.
-      container.style.cssText = "position: fixed; top: 0; left: -10000px; width: 800px; background: #ffffff;";
+      // Keep the export surface laid out at the canvas origin. Moving it far
+      // off-screen makes jsPDF/html2canvas preserve that negative offset and
+      // produces correctly-sized but blank pages. A negative stacking level
+      // keeps the temporary surface behind the application while it is
+      // rasterized without hiding it from layout/paint.
+      container.style.cssText = "position: fixed; top: 0; left: 0; z-index: -1; width: 800px; background: #ffffff; pointer-events: none;";
       container.innerHTML = buildNoteExportHtml(
         { title: activeNote.title || defaultTitle, contentHtml: activeNote.contentHtml },
         new Date(),
       );
       document.body.appendChild(container);
 
-      await doc.html(container, {
-        x: margin,
-        y: margin,
-        width: contentWidth,
-        windowWidth: 800,
-        autoPaging: "text",
-        margin: [margin, margin, margin, margin],
-        html2canvas: { scale: 2, backgroundColor: "#ffffff", useCORS: true },
+      await document.fonts.ready;
+      const renderScale = Math.min(Math.max(window.devicePixelRatio, 1), 2);
+      const canvas = await html2canvas(container, {
+        scale: renderScale,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        logging: false,
       });
+      const pixelsPerPoint = canvas.width / contentWidth;
+      const printableHeight = doc.internal.pageSize.getHeight() - margin * 2;
+      const maxSliceHeight = Math.max(1, Math.floor(printableHeight * pixelsPerPoint));
+      const sourceContext = canvas.getContext("2d");
+      const sourcePixels = sourceContext?.getImageData(0, 0, canvas.width, canvas.height).data ?? null;
+      let sourceY = 0;
+      let pageIndex = 0;
+
+      while (sourceY < canvas.height) {
+        const sliceHeight = findCanvasPageBreak(canvas, sourcePixels, sourceY, maxSliceHeight);
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sliceHeight;
+        const pageContext = pageCanvas.getContext("2d");
+        if (!pageContext) throw new Error("No se pudo preparar la página del PDF");
+        pageContext.fillStyle = "#ffffff";
+        pageContext.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        pageContext.drawImage(canvas, 0, sourceY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+
+        if (pageIndex > 0) doc.addPage();
+        doc.addImage(
+          pageCanvas.toDataURL("image/png"),
+          "PNG",
+          margin,
+          margin,
+          contentWidth,
+          sliceHeight / pixelsPerPoint,
+          undefined,
+          "FAST",
+        );
+        sourceY += sliceHeight;
+        pageIndex += 1;
+      }
 
       downloadBlob(`${sanitizeFilename(activeNote.title || "nota")}.pdf`, doc.output("blob"));
       showNotice("PDF exportado");

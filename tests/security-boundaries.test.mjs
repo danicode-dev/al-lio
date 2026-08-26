@@ -1916,12 +1916,36 @@ test("Bloc's server boundary normalizes PostgreSQL timestamps before they reach 
   assert.doesNotMatch(source, /created_at: row\.created_at,\s*\n\s*updated_at: row\.updated_at,/, "the DTO must not pass raw pg row timestamps through unnormalized");
 });
 
-test("Bloc's PDF export replaces the retired hand-rolled byte-level serializer with the Unicode-capable jsPDF/html2canvas path (issue #128)", async () => {
+test("Bloc's PDF export replaces the retired hand-rolled byte-level serializer with a raster-preserving jsPDF/html2canvas path (issue #128)", async () => {
   const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(source, /buildSimplePdf|toUtf16Hex|BaseFont \/Helvetica/, "the raw PDF byte serializer must be fully removed, not left dead in the file");
-  assert.match(source, /from "jspdf"/);
+  assert.match(source, /import\("jspdf"\)/);
+  assert.match(source, /import\("html2canvas"\)/);
   assert.match(source, /buildNoteExportHtml/);
-  assert.match(source, /autoPaging/, "pagination must be configured so long notes do not clip or overlap content across pages");
+  assert.match(source, /doc\.addImage/, "browser-rendered note pages must be embedded so Unicode glyphs are not lost to jsPDF's built-in fonts");
+  assert.doesNotMatch(source, /doc\.html\(/, "the jsPDF HTML text renderer falls back to built-in fonts and corrupts unsupported Unicode glyphs");
+});
+
+test("Bloc's PDF export keeps the html2canvas source at the canvas origin instead of rasterizing blank off-screen pages (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const start = source.indexOf("async function exportActivePdf");
+  const end = source.indexOf("function exportActiveWord");
+  assert.ok(start !== -1 && end !== -1 && end > start);
+  const fn = source.slice(start, end);
+  assert.match(fn, /left:\s*0/, "the export surface must start at the html2canvas origin");
+  assert.doesNotMatch(fn, /left:\s*-\d/, "a negative horizontal offset produces correctly-sized but blank PDF pages");
+});
+
+test("Bloc's PDF export scales and slices the browser canvas inside the printable A4 bounds (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const start = source.indexOf("async function exportActivePdf");
+  const end = source.indexOf("function exportActiveWord");
+  assert.ok(start !== -1 && end !== -1 && end > start);
+  const fn = source.slice(start, end);
+  assert.match(fn, /pixelsPerPoint\s*=\s*canvas\.width\s*\/\s*contentWidth/);
+  assert.match(fn, /printableHeight\s*=\s*doc\.internal\.pageSize\.getHeight\(\)\s*-\s*margin\s*\*\s*2/);
+  assert.match(fn, /findCanvasPageBreak/, "pagination should look for a nearby blank row instead of slicing ordinary text blindly");
+  assert.match(fn, /doc\.addImage\([\s\S]*?margin,\s*\n\s*margin,\s*\n\s*contentWidth/, "every page image must retain the configured top, left and right margins");
 });
 
 test("Bloc's PDF export only reports success after generation actually completes, and surfaces a distinct honest failure message otherwise (issue #128)", async () => {
@@ -1930,7 +1954,7 @@ test("Bloc's PDF export only reports success after generation actually completes
   const end = source.indexOf("function exportActiveWord");
   assert.ok(start !== -1 && end !== -1 && end > start, "exportActivePdf should be an async function defined before exportActiveWord");
   const fn = source.slice(start, end);
-  assert.match(fn, /await doc\.html\(/, "must await the render/pagination pipeline before declaring success");
+  assert.match(fn, /await html2canvas\(/, "must await the browser render before declaring success");
   assert.match(fn, /showNotice\("PDF exportado"\)/);
   assert.match(fn, /catch/);
   assert.match(fn, /showNotice\([^)]*"error"\)/, "a failed export must show a distinctly-toned error notice, not silently claim success");
