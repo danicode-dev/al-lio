@@ -37,11 +37,14 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
+import jsPDF from "jspdf";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { insertDb, updateDb, deleteDb } from "@/lib/db";
 import { fetchBlocNotes, migrateLocalBlocNotes } from "@/lib/bloc/notes-actions";
+import { sortByRecentFirst } from "@/lib/bloc/notes-sort";
+import { buildNoteExportHtml } from "@/lib/bloc/note-export";
 
 type BlocNote = {
   id: string;
@@ -82,12 +85,16 @@ export function BlocNotepad() {
   const [showMoreTools, setShowMoreTools] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [saveState, setSaveState] = useState<"saved" | "saving">("saved");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState<{ text: string; tone: "info" | "error" } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSheet, setMobileSheet] = useState<MobileSheetId>(null);
   const [menuNoteId, setMenuNoteId] = useState<string | null>(null);
   const [titleEditing, setTitleEditing] = useState(false);
   const [phantomId, setPhantomId] = useState<string | null>(null);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [noteMenuOpen, setNoteMenuOpen] = useState(false);
+  const exportingPdfRef = useRef(false);
   const notesRef = useRef<BlocNote[]>([]);
   const trashedRef = useRef<BlocTrashedNote[]>([]);
   const activeIdRef = useRef("");
@@ -223,7 +230,7 @@ export function BlocNotepad() {
 
   useEffect(() => {
     if (!notice) return;
-    const timeoutId = window.setTimeout(() => setNotice(""), 2200);
+    const timeoutId = window.setTimeout(() => setNotice(null), 2200);
     return () => window.clearTimeout(timeoutId);
   }, [notice]);
 
@@ -239,7 +246,7 @@ export function BlocNotepad() {
 
   const tabNotes = useMemo(() => {
     if (listTab === "favoritas") return visibleNotes.filter((note) => note.favorite);
-    if (listTab === "recientes") return [...visibleNotes].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    if (listTab === "recientes") return sortByRecentFirst(visibleNotes);
     return visibleNotes;
   }, [visibleNotes, listTab]);
 
@@ -258,6 +265,10 @@ export function BlocNotepad() {
   function persistSettings(next: BlocSettings) {
     setSettings(next);
     localStorage.setItem(blocSettingsKey, JSON.stringify(next));
+  }
+
+  function showNotice(text: string, tone: "info" | "error" = "info") {
+    setNotice({ text, tone });
   }
 
   // Promote the phantom note on the first meaningful edit. Insert the updated
@@ -336,7 +347,7 @@ export function BlocNotepad() {
     setActiveId(note.id);
     setSearchTerm("");
     setListTab("todas");
-    setNotice("Nota creada");
+    showNotice("Nota creada");
     if (dbSyncEnabledRef.current) {
       void insertDb("bloc_notes", { id: note.id, title: note.title, content_html: note.contentHtml, content_text: note.contentText, is_favorite: false, deleted_at: null }, []);
     }
@@ -352,7 +363,7 @@ export function BlocNotepad() {
     setNotes((current) => [copy, ...current]);
     setActiveId(copy.id);
     setSearchTerm("");
-    setNotice("Nota duplicada");
+    showNotice("Nota duplicada");
     if (dbSyncEnabledRef.current) {
       void insertDb("bloc_notes", { id: copy.id, title: copy.title, content_html: copy.contentHtml, content_text: copy.contentText, is_favorite: false, deleted_at: null }, []);
     }
@@ -383,7 +394,7 @@ export function BlocNotepad() {
       setNotes(next);
       if (activeId === id) setActiveId(next[0].id);
     }
-    setNotice("Nota movida a la papelera");
+    showNotice("Nota movida a la papelera");
     if (dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { deleted_at: nowIso() }, []);
   }
 
@@ -402,7 +413,7 @@ export function BlocNotepad() {
     setTrashedNotes((current) => current.filter((note) => note.id !== id));
     setNotes((current) => [restored, ...current]);
     setActiveId(restored.id);
-    setNotice("Nota restaurada");
+    showNotice("Nota restaurada");
     if (dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { deleted_at: null }, []);
   }
 
@@ -411,7 +422,7 @@ export function BlocNotepad() {
     if (!target) return;
     if (!window.confirm(`Eliminar definitivamente "${target.title || defaultTitle}"? No se puede deshacer.`)) return;
     setTrashedNotes((current) => current.filter((note) => note.id !== id));
-    setNotice("Nota eliminada definitivamente");
+    showNotice("Nota eliminada definitivamente");
     if (dbSyncEnabledRef.current) void deleteDb("bloc_notes", id, []);
   }
 
@@ -484,25 +495,60 @@ export function BlocNotepad() {
   async function copyActiveNote() {
     if (!activeNote) return;
     await writeClipboardText(activeNote.contentText);
-    setNotice("Texto copiado");
+    showNotice("Texto copiado");
   }
 
   function downloadActiveNote() {
     if (!activeNote) return;
     downloadTextFile(`${sanitizeFilename(activeNote.title || "nota")}.txt`, activeNote.contentText);
-    setNotice("Descarga preparada");
+    showNotice("Descarga preparada");
   }
 
-  function exportActivePdf() {
-    if (!activeNote) return;
-    downloadPdfFile(`${sanitizeFilename(activeNote.title || "nota")}.pdf`, activeNote.title || defaultTitle, activeNote.contentText);
-    setNotice("PDF exportado");
+  async function exportActivePdf() {
+    if (!activeNote || exportingPdfRef.current) return;
+    exportingPdfRef.current = true;
+    setExportingPdf(true);
+    const container = document.createElement("div");
+    try {
+      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 40;
+      const contentWidth = pageWidth - margin * 2;
+
+      container.className = "al-bloc-export-doc-root";
+      // Off-screen, not display:none - html2canvas needs real layout/paint to rasterize.
+      container.style.cssText = "position: fixed; top: 0; left: -10000px; width: 800px; background: #ffffff;";
+      container.innerHTML = buildNoteExportHtml(
+        { title: activeNote.title || defaultTitle, contentHtml: activeNote.contentHtml },
+        new Date(),
+      );
+      document.body.appendChild(container);
+
+      await doc.html(container, {
+        x: margin,
+        y: margin,
+        width: contentWidth,
+        windowWidth: 800,
+        autoPaging: "text",
+        margin: [margin, margin, margin, margin],
+        html2canvas: { scale: 2, backgroundColor: "#ffffff", useCORS: true },
+      });
+
+      downloadBlob(`${sanitizeFilename(activeNote.title || "nota")}.pdf`, doc.output("blob"));
+      showNotice("PDF exportado");
+    } catch {
+      showNotice("No se pudo exportar el PDF. Inténtalo de nuevo.", "error");
+    } finally {
+      container.remove();
+      exportingPdfRef.current = false;
+      setExportingPdf(false);
+    }
   }
 
   function exportActiveWord() {
     if (!activeNote) return;
     downloadWordFile(`${sanitizeFilename(activeNote.title || "nota")}.doc`, activeNote.title || defaultTitle, activeNote.contentHtml || textToHtml(activeNote.contentText));
-    setNotice("Word exportado");
+    showNotice("Word exportado");
   }
 
   function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -511,7 +557,7 @@ export function BlocNotepad() {
     if (!file) return;
 
     if (!/\.(txt|md)$/i.test(file.name)) {
-      setNotice("Solo TXT o MD");
+      showNotice("Solo TXT o MD");
       input.value = "";
       return;
     }
@@ -524,7 +570,7 @@ export function BlocNotepad() {
       setNotes((current) => [note, ...current]);
       setActiveId(note.id);
       setSearchTerm("");
-      setNotice("Documento subido");
+      showNotice("Documento subido");
       input.value = "";
       if (dbSyncEnabledRef.current) {
         void insertDb("bloc_notes", { id: note.id, title: note.title, content_html: note.contentHtml, content_text: note.contentText, is_favorite: false, deleted_at: null }, []);
@@ -539,12 +585,12 @@ export function BlocNotepad() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setNotice("Solo imágenes");
+      showNotice("Solo imágenes");
       input.value = "";
       return;
     }
     if (file.size > maxImageBytes) {
-      setNotice("Imagen demasiado grande (máx 1.5MB)");
+      showNotice("Imagen demasiado grande (máx 1.5MB)");
       input.value = "";
       return;
     }
@@ -679,7 +725,11 @@ export function BlocNotepad() {
           <span>{saveState === "saving" ? "Guardando..." : "Guardado automáticamente"}</span>
           <span>· Última edición: {activeNote ? formatBlocEditedTime(activeNote.updated_at) : "--:--"}</span>
           <span>· {wordCount} palabras</span>
-          {notice && <span className="font-semibold text-[#c94f21]">· {notice}</span>}
+          {notice && (
+            <span role="status" className={cn("font-semibold", notice.tone === "error" ? "text-[#c23a2e]" : "text-[#c94f21]")}>
+              · {notice.text}
+            </span>
+          )}
         </p>
 
         <input ref={uploadInputRef} type="file" accept=".txt,.md,text/plain,text/markdown" className="hidden" onChange={handleUpload} />
@@ -828,9 +878,9 @@ export function BlocNotepad() {
   return (
     <div className="relative">
       <style>{blocBrandCss}</style>
-      <div className="al-bloc-desktop-grid grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="al-bloc-desktop-grid grid gap-4 md:grid-cols-[minmax(0,1fr)_300px]">
         <div className="al-bloc-editor-shell min-w-0 overflow-hidden rounded-2xl">
-          <div className="al-bloc-title-row flex items-center gap-2 px-5 py-4">
+          <div className="al-bloc-title-row flex items-center gap-1.5 px-5 py-4">
             <Input
               value={activeNote?.title ?? ""}
               onChange={(event) => renameActiveNote(event.target.value)}
@@ -845,6 +895,24 @@ export function BlocNotepad() {
             >
               <Star className={cn("h-5 w-5", activeNote?.favorite && "al-bloc-star-active")} fill={activeNote?.favorite ? "currentColor" : "none"} />
             </button>
+            <ExportMenu
+              open={exportMenuOpen}
+              onOpenChange={setExportMenuOpen}
+              noteTitle={activeNote?.title || defaultTitle}
+              disabled={!activeNote}
+              exporting={exportingPdf}
+              onExportPdf={exportActivePdf}
+              onExportWord={exportActiveWord}
+              onExportTxt={downloadActiveNote}
+            />
+            <NoteOverflowMenu
+              open={noteMenuOpen}
+              onOpenChange={setNoteMenuOpen}
+              disabled={!activeNote}
+              onDuplicate={() => duplicateNote()}
+              onCopyText={copyActiveNote}
+              onDelete={() => activeNote && deleteNote(activeNote.id)}
+            />
           </div>
 
           <BlocEditorToolbar
@@ -897,38 +965,15 @@ export function BlocNotepad() {
               <span className="al-bloc-save-dot mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" />
               <span>{saveState === "saving" ? "Guardando..." : "Guardado automáticamente"}</span>
               <span> · Última edición: {activeNote ? formatBlocEditedTime(activeNote.updated_at) : "--:--"}</span>
-              {notice && <span className="ml-2 font-semibold text-[#c94f21]">{notice}</span>}
+              {notice && (
+                <span role="status" className={cn("ml-2 font-semibold", notice.tone === "error" ? "text-[#c23a2e]" : "text-[#c94f21]")}>
+                  {notice.text}
+                </span>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-3 sm:justify-end">
               <span>Palabras: {wordCount}</span>
               <span>Caracteres: {charCount}</span>
-              <div className="ml-0 flex items-center gap-1 sm:ml-2">
-                <Select
-                  defaultValue=""
-                  className="al-bloc-export-select h-8 w-[100px] text-xs"
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    if (value === "pdf") exportActivePdf();
-                    if (value === "word") exportActiveWord();
-                    if (value === "txt") downloadActiveNote();
-                    event.currentTarget.value = "";
-                  }}
-                >
-                  <option value="">Exportar</option>
-                  <option value="pdf">PDF</option>
-                  <option value="word">Word</option>
-                  <option value="txt">TXT</option>
-                </Select>
-                <button type="button" className="al-bloc-icon-btn-ghost flex h-8 w-8 items-center justify-center" onClick={() => duplicateNote()} aria-label="Duplicar nota" title="Duplicar nota">
-                  <Files className="h-4 w-4" />
-                </button>
-                <button type="button" className="al-bloc-icon-btn-ghost flex h-8 w-8 items-center justify-center" onClick={copyActiveNote} aria-label="Copiar texto" title="Copiar texto">
-                  <Copy className="h-4 w-4" />
-                </button>
-                <button type="button" className="al-bloc-icon-btn-ghost al-bloc-icon-btn-danger flex h-8 w-8 items-center justify-center" onClick={() => activeNote && deleteNote(activeNote.id)} aria-label="Eliminar nota" title="Eliminar nota">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -1023,6 +1068,144 @@ export function BlocNotepad() {
 
       {showTrash && (
         <TrashSheet trashedNotes={trashedNotes} onClose={() => setShowTrash(false)} onRestore={restoreNote} onPurge={purgeNote} />
+      )}
+    </div>
+  );
+}
+
+function useDismissableMenu(open: boolean, onClose: () => void) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(event: PointerEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) onClose();
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      onClose();
+      triggerRef.current?.focus();
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, onClose]);
+
+  return { containerRef, triggerRef };
+}
+
+function ExportMenu({
+  open,
+  onOpenChange,
+  noteTitle,
+  disabled,
+  exporting,
+  onExportPdf,
+  onExportWord,
+  onExportTxt,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  noteTitle: string;
+  disabled: boolean;
+  exporting: boolean;
+  onExportPdf: () => void;
+  onExportWord: () => void;
+  onExportTxt: () => void;
+}) {
+  const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+  const { containerRef, triggerRef } = useDismissableMenu(open, close);
+
+  function pick(action: () => void) {
+    action();
+    close();
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={disabled}
+        className="al-bloc-header-btn flex h-9 items-center gap-1.5 px-3"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => onOpenChange(!open)}
+      >
+        <Download className="h-4 w-4" />
+        <span className="hidden sm:inline">{exporting ? "Exportando…" : "Exportar"}</span>
+      </button>
+      {open && (
+        <div role="menu" aria-label={`Exportar "${noteTitle}"`} className="al-bloc-menu absolute right-0 top-full z-40 mt-2 w-48 rounded-xl p-1">
+          <button role="menuitem" type="button" className="al-bloc-menu-item" aria-label={`Exportar "${noteTitle}" a PDF`} title="PDF" onClick={() => pick(onExportPdf)}>
+            <FileText className="h-4 w-4" />PDF
+          </button>
+          <button role="menuitem" type="button" className="al-bloc-menu-item" aria-label={`Exportar "${noteTitle}" a Word`} title="Word" onClick={() => pick(onExportWord)}>
+            <FileText className="h-4 w-4" />Word
+          </button>
+          <button role="menuitem" type="button" className="al-bloc-menu-item" aria-label={`Exportar "${noteTitle}" a TXT`} title="TXT" onClick={() => pick(onExportTxt)}>
+            <FileText className="h-4 w-4" />TXT
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NoteOverflowMenu({
+  open,
+  onOpenChange,
+  disabled,
+  onDuplicate,
+  onCopyText,
+  onDelete,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  disabled: boolean;
+  onDuplicate: () => void;
+  onCopyText: () => void;
+  onDelete: () => void;
+}) {
+  const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+  const { containerRef, triggerRef } = useDismissableMenu(open, close);
+
+  function pick(action: () => void) {
+    action();
+    close();
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={disabled}
+        className="al-bloc-header-btn flex h-9 w-9 items-center justify-center"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Más opciones de la nota"
+        onClick={() => onOpenChange(!open)}
+      >
+        <MoreVertical className="h-4 w-4" />
+      </button>
+      {open && (
+        <div role="menu" aria-label="Más opciones de la nota" className="al-bloc-menu absolute right-0 top-full z-40 mt-2 w-52 rounded-xl p-1">
+          <button role="menuitem" type="button" className="al-bloc-menu-item" onClick={() => pick(onDuplicate)}>
+            <Files className="h-4 w-4" />Duplicar nota
+          </button>
+          <button role="menuitem" type="button" className="al-bloc-menu-item" onClick={() => pick(onCopyText)}>
+            <Copy className="h-4 w-4" />Copiar texto
+          </button>
+          <div className="al-bloc-menu-divider" />
+          <button role="menuitem" type="button" className="al-bloc-menu-item al-bloc-menu-item-danger" onClick={() => pick(onDelete)}>
+            <Trash2 className="h-4 w-4" />Eliminar nota
+          </button>
+        </div>
       )}
     </div>
   );
@@ -1456,11 +1639,6 @@ function downloadWordFile(filename: string, title: string, html: string) {
   downloadBlob(filename, blob);
 }
 
-function downloadPdfFile(filename: string, title: string, text: string) {
-  const pdf = buildSimplePdf(title, text);
-  downloadBlob(filename, new Blob([pdf], { type: "application/pdf" }));
-}
-
 function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -1470,102 +1648,6 @@ function downloadBlob(filename: string, blob: Blob) {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
-}
-
-function buildSimplePdf(title: string, text: string) {
-  const pageWidth = 612;
-  const pageHeight = 792;
-  const margin = 54;
-  const maxChars = 88;
-  const linesPerPage = 45;
-  const lines = wrapPdfLines([title, "", ...text.split(/\r?\n/)], maxChars);
-  const pages = chunkLines(lines.length ? lines : [title || defaultTitle], linesPerPage);
-  const objects: string[] = [];
-  const pageObjectIds: number[] = [];
-  const fontObjectId = 3 + pages.length * 2;
-
-  objects[0] = "<< /Type /Catalog /Pages 2 0 R >>";
-  objects[1] = "";
-
-  pages.forEach((pageLines, index) => {
-    const pageObjectId = 3 + index * 2;
-    const contentObjectId = pageObjectId + 1;
-    pageObjectIds.push(pageObjectId);
-    const content = buildPdfContent(pageLines, margin, pageHeight - margin);
-
-    objects[pageObjectId - 1] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontObjectId} 0 R >> >> /Contents ${contentObjectId} 0 R >>`;
-    objects[contentObjectId - 1] = `<< /Length ${content.length} >>\nstream\n${content}\nendstream`;
-  });
-
-  objects[1] = `<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pages.length} >>`;
-  objects[fontObjectId - 1] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
-
-  let body = "%PDF-1.4\n";
-  const offsets = [0];
-  objects.forEach((object, index) => {
-    offsets.push(body.length);
-    body += `${index + 1} 0 obj\n${object}\nendobj\n`;
-  });
-
-  const xrefOffset = body.length;
-  body += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  for (const offset of offsets.slice(1)) {
-    body += `${String(offset).padStart(10, "0")} 00000 n \n`;
-  }
-  body += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
-  return body;
-}
-
-function wrapPdfLines(values: string[], maxChars: number) {
-  return values.flatMap((value) => {
-    const source = value || "";
-    if (!source) return [""];
-    const words = source.split(/\s+/);
-    const lines: string[] = [];
-    let line = "";
-
-    for (const word of words) {
-      if (!line) {
-        line = word;
-      } else if (`${line} ${word}`.length <= maxChars) {
-        line = `${line} ${word}`;
-      } else {
-        lines.push(line);
-        line = word;
-      }
-    }
-
-    if (line) lines.push(line);
-    return lines.length ? lines : [""];
-  });
-}
-
-function chunkLines(lines: string[], size: number) {
-  const chunks: string[][] = [];
-  for (let index = 0; index < lines.length; index += size) {
-    chunks.push(lines.slice(index, index + size));
-  }
-  return chunks.length ? chunks : [[]];
-}
-
-function buildPdfContent(lines: string[], x: number, y: number) {
-  const escapedLines = lines.map((line) => `<${toUtf16Hex(line)}>`).join(" Tj T* ");
-  return `BT\n/F1 11 Tf\n14 TL\n1 0 0 1 ${x} ${y} Tm\n${escapedLines} Tj\nET`;
-}
-
-function toUtf16Hex(value: string) {
-  let hex = "FEFF";
-  for (const char of value) {
-    const code = char.codePointAt(0) ?? 32;
-    if (code > 0xffff) {
-      const high = Math.floor((code - 0x10000) / 0x400) + 0xd800;
-      const low = ((code - 0x10000) % 0x400) + 0xdc00;
-      hex += high.toString(16).padStart(4, "0") + low.toString(16).padStart(4, "0");
-    } else {
-      hex += code.toString(16).padStart(4, "0");
-    }
-  }
-  return hex.toUpperCase();
 }
 
 function sanitizeFilename(value: string) {
@@ -1616,7 +1698,29 @@ const blocBrandCss = `
   .al-bloc-content img { max-width: 100%; border-radius: 8px; margin: 6px 0; }
   .al-bloc-footer { border-top: 1px solid #f0ece2; background: #faf8f4; color: #6b6f72; }
   .al-bloc-save-dot { background: #4C9A6E; }
-  .al-bloc-export-select { border: 1px solid #ece7dc; border-radius: 8px; background: white; color: #333029; }
+  .al-bloc-header-btn { border-radius: 10px; border: 1px solid #ece7dc; background: white; color: #333029; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .al-bloc-header-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+  .al-bloc-header-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .al-bloc-menu { background: white; border: 1px solid #ece7dc; box-shadow: 0 16px 36px rgba(17,17,17,0.12); }
+  .al-bloc-menu-item { display: flex; width: 100%; align-items: center; gap: 8px; border-radius: 8px; border: none; background: none; padding: 8px 10px; font-size: 12.5px; font-weight: 600; color: #333029; cursor: pointer; text-align: left; }
+  .al-bloc-menu-item:hover { background: #faf8f4; }
+  .al-bloc-menu-item-danger { color: #c23a2e; }
+  .al-bloc-menu-item-danger:hover { background: #fbe2df; }
+  .al-bloc-menu-divider { height: 1px; margin: 4px 6px; background: #f0ece2; }
+  .al-bloc-export-doc { padding: 32px; color: #25221d; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+  .al-bloc-export-title { margin: 0 0 4px; font-size: 22px; font-weight: 700; color: #111111; }
+  .al-bloc-export-meta { margin: 0 0 18px; font-size: 11px; color: #9a958a; }
+  .al-bloc-export-body { font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; word-break: break-word; }
+  .al-bloc-export-body p { margin: 0 0 10px; }
+  .al-bloc-export-body h1 { font-size: 1.6em; font-weight: 700; margin: 0.6em 0 0.3em; }
+  .al-bloc-export-body h2 { font-size: 1.3em; font-weight: 700; margin: 0.6em 0 0.3em; }
+  .al-bloc-export-body h3 { font-size: 1.1em; font-weight: 700; margin: 0.6em 0 0.3em; }
+  .al-bloc-export-body ol { list-style: decimal; padding-left: 24px; margin: 0 0 10px; }
+  .al-bloc-export-body ul { list-style: disc; padding-left: 24px; margin: 0 0 10px; }
+  .al-bloc-export-body a { color: #c94f21; text-decoration: underline; }
+  .al-bloc-export-body img { max-width: 100%; }
+  .al-bloc-export-body blockquote { border-left: 3px solid #ece7dc; padding-left: 14px; color: #6b6f72; margin: 0 0 10px; }
+  .al-bloc-export-empty { color: #9a958a; font-style: italic; }
   .al-bloc-icon-btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; }
   .al-bloc-icon-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
   .al-bloc-icon-btn-active { background: #fbe7dd; border-color: rgba(225, 93, 45, 0.3); color: #c94f21; }
@@ -1649,7 +1753,7 @@ const blocBrandCss = `
   .al-bloc-note-row-delete { display: flex; align-items: center; justify-content: center; width: 30px; border-radius: 9px; border: none; background: transparent; color: #9a958a; cursor: pointer; opacity: 0; }
   .group:hover .al-bloc-note-row-delete { opacity: 1; }
   .al-bloc-note-row-delete:hover { background: #fbe2df; color: #c23a2e; }
-  .al-bloc-trash-link { border-top: 1px solid #f0ece2; color: #6b6f72; background: none; border-left: none; border-right: none; border-bottom: none; cursor: pointer; }
+  .al-bloc-trash-link { flex-shrink: 0; border-top: 1px solid #f0ece2; color: #6b6f72; background: none; border-left: none; border-right: none; border-bottom: none; cursor: pointer; }
   .al-bloc-trash-link:hover { color: #c94f21; }
   .al-bloc-trash-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #fbe7dd; color: #c94f21; font-size: 10.5px; font-weight: 700; }
   .al-bloc-trash-modal { background: rgba(17,17,17,0.35); }
@@ -1674,8 +1778,8 @@ const blocBrandCss = `
   .al-bloc-sheet-row-danger:hover { background: #fbe2df; }
   .al-bloc-sheet-tile { border: 1px solid #ece7dc; color: #6b6f72; background: white; }
   .al-bloc-sheet-tile:hover { background: #faf8f4; color: #111111; }
-  @media (min-width: 1280px) {
-    .al-bloc-desktop-grid { height: clamp(620px, calc(100dvh - 148px), 960px); }
+  @media (min-width: 768px) {
+    .al-bloc-desktop-grid { height: clamp(520px, calc(100dvh - 148px), 960px); }
     .al-bloc-editor-shell, .al-bloc-sidebar { height: 100%; }
   }
 `;

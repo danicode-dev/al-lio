@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getBlocNotesByUser, countBlocNotesByUser, insertBlocNotesBatch, type BlocNoteSeed } from "@/lib/db/repositories/bloc_notes";
 import type { DbBlocNote } from "@/lib/db/types";
+import { toIsoTimestamp } from "@/lib/bloc/timestamps";
 
 export type BlocNoteDTO = {
   id: string;
@@ -24,8 +25,8 @@ function toDto(row: DbBlocNote): BlocNoteDTO {
     contentHtml: row.content_html,
     contentText: row.content_text,
     favorite: row.is_favorite,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
+    created_at: toIsoTimestamp(row.created_at),
+    updated_at: toIsoTimestamp(row.updated_at),
   };
 }
 
@@ -34,7 +35,7 @@ function splitRows(rows: DbBlocNote[]): { notes: BlocNoteDTO[]; trashedNotes: Bl
   const trashedNotes: BlocTrashedNoteDTO[] = [];
   for (const row of rows) {
     if (row.deleted_at) {
-      trashedNotes.push({ ...toDto(row), deleted_at: row.deleted_at });
+      trashedNotes.push({ ...toDto(row), deleted_at: toIsoTimestamp(row.deleted_at) });
     } else {
       notes.push(toDto(row));
     }

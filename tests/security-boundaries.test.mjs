@@ -33,6 +33,9 @@ import {
   SUPPORTED_SCHEMA_VERSIONS,
   validateDataset,
 } from "../scripts/lib/company-catalogue.mjs";
+import { toIsoTimestamp } from "../src/lib/bloc/timestamps.ts";
+import { compareByRecentFirst, sortByRecentFirst } from "../src/lib/bloc/notes-sort.ts";
+import { buildNoteExportHtml, formatExportTimestamp } from "../src/lib/bloc/note-export.ts";
 
 const validSessionSecret = "session-test-secret-with-32-characters";
 
@@ -1759,4 +1762,126 @@ test("UI primitives (Button/Input/Select/Textarea) and GuestApp already referenc
   assert.match(textarea, /focus-visible:ring-ring/);
   assert.match(guestApp, /ring-primary\/40/);
   assert.match(guestApp, /bg-primary text-primary-foreground/);
+});
+
+test("toIsoTimestamp normalizes a PostgreSQL Date instance to a stable ISO string (issue #128)", () => {
+  const date = new Date("2026-08-20T10:15:00.000Z");
+  assert.equal(toIsoTimestamp(date), "2026-08-20T10:15:00.000Z");
+});
+
+test("toIsoTimestamp passes a valid ISO string through unchanged (issue #128)", () => {
+  assert.equal(toIsoTimestamp("2026-08-20T10:15:00.000Z"), "2026-08-20T10:15:00.000Z");
+});
+
+test("toIsoTimestamp falls back instead of throwing on invalid legacy values or a NaN Date (issue #128)", () => {
+  assert.equal(toIsoTimestamp("not-a-date", "fallback"), "fallback");
+  assert.equal(toIsoTimestamp(new Date("invalid"), "fallback"), "fallback");
+  assert.equal(toIsoTimestamp(undefined, "fallback"), "fallback");
+  assert.equal(toIsoTimestamp(null, "fallback"), "fallback");
+  assert.match(toIsoTimestamp("nonsense"), /^\d{4}-\d{2}-\d{2}T/, "default fallback is still a valid ISO string");
+});
+
+test("sortByRecentFirst orders PostgreSQL-normalized notes by most recently edited first (issue #128)", () => {
+  const notes = [
+    { id: "a", updated_at: "2026-08-01T00:00:00.000Z" },
+    { id: "b", updated_at: "2026-08-20T00:00:00.000Z" },
+    { id: "c", updated_at: "2026-08-10T00:00:00.000Z" },
+  ];
+  assert.deepEqual(sortByRecentFirst(notes).map((n) => n.id), ["b", "c", "a"]);
+});
+
+test("compareByRecentFirst never throws on an invalid/legacy timestamp and sorts it last instead (issue #128)", () => {
+  const notes = [
+    { id: "valid", updated_at: "2026-08-20T00:00:00.000Z" },
+    { id: "corrupt", updated_at: "not-a-timestamp" },
+  ];
+  assert.doesNotThrow(() => notes.sort(compareByRecentFirst));
+  assert.deepEqual(notes.map((n) => n.id), ["valid", "corrupt"]);
+});
+
+test("sortByRecentFirst returns an empty list untouched, and does not mutate its input (issue #128)", () => {
+  const empty = [];
+  assert.deepEqual(sortByRecentFirst(empty), []);
+  assert.notEqual(sortByRecentFirst(empty), empty);
+
+  const original = [{ id: "a", updated_at: "2026-08-01T00:00:00.000Z" }, { id: "b", updated_at: "2026-08-20T00:00:00.000Z" }];
+  const originalOrder = original.map((n) => n.id);
+  sortByRecentFirst(original);
+  assert.deepEqual(original.map((n) => n.id), originalOrder, "sorting Recientes must not reorder the source array used by other tabs");
+});
+
+test("Recientes ordering is chronological regardless of favorite state - favoriting a note never affects its recent position (issue #128)", () => {
+  const notes = [
+    { id: "old-fav", updated_at: "2026-08-01T00:00:00.000Z", favorite: true },
+    { id: "new-plain", updated_at: "2026-08-20T00:00:00.000Z", favorite: false },
+  ];
+  assert.deepEqual(sortByRecentFirst(notes).map((n) => n.id), ["new-plain", "old-fav"]);
+});
+
+test("buildNoteExportHtml escapes the title, embeds the already-sanitized content HTML verbatim, and stamps a generated-at line (issue #128)", () => {
+  const html = buildNoteExportHtml(
+    { title: '<b>Plan</b> & notas', contentHtml: "<h1>Objetivo</h1><p>Texto con &amp; y <strong>énfasis</strong>.</p>" },
+    new Date("2026-08-26T09:30:00.000Z"),
+  );
+  assert.match(html, /&lt;b&gt;Plan&lt;\/b&gt; &amp; notas/, "title must be escaped, not injected as raw HTML");
+  assert.match(html, /<h1>Objetivo<\/h1><p>Texto con &amp; y <strong>énfasis<\/strong>\.<\/p>/, "sanitized content HTML is embedded as-is, not double-escaped");
+  assert.match(html, /Exportado el/);
+});
+
+test("buildNoteExportHtml shows an honest empty-state message instead of an empty PDF page for a blank note (issue #128)", () => {
+  const html = buildNoteExportHtml({ title: "", contentHtml: "" }, new Date("2026-08-26T09:30:00.000Z"));
+  assert.match(html, /Documento sin titulo/);
+  assert.match(html, /todavia no tiene contenido/);
+});
+
+test("formatExportTimestamp returns an empty label instead of the string \"Invalid Date\" leaking into an exported document (issue #128)", () => {
+  assert.equal(formatExportTimestamp(new Date("not-a-date")), "");
+  assert.notEqual(formatExportTimestamp(new Date("2026-08-26T09:30:00.000Z")), "");
+});
+
+test("Bloc's server boundary normalizes PostgreSQL timestamps before they reach the client, instead of passing raw Date values through (issue #128)", async () => {
+  const source = await readFile(new URL("../src/lib/bloc/notes-actions.ts", import.meta.url), "utf8");
+  assert.match(source, /toIsoTimestamp/, "notes-actions.ts should normalize created_at/updated_at/deleted_at at the server-to-client boundary");
+  assert.doesNotMatch(source, /created_at: row\.created_at,\s*\n\s*updated_at: row\.updated_at,/, "the DTO must not pass raw pg row timestamps through unnormalized");
+});
+
+test("Bloc's PDF export replaces the retired hand-rolled byte-level serializer with the Unicode-capable jsPDF/html2canvas path (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /buildSimplePdf|toUtf16Hex|BaseFont \/Helvetica/, "the raw PDF byte serializer must be fully removed, not left dead in the file");
+  assert.match(source, /from "jspdf"/);
+  assert.match(source, /buildNoteExportHtml/);
+  assert.match(source, /autoPaging/, "pagination must be configured so long notes do not clip or overlap content across pages");
+});
+
+test("Bloc's PDF export only reports success after generation actually completes, and surfaces a distinct honest failure message otherwise (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const start = source.indexOf("async function exportActivePdf");
+  const end = source.indexOf("function exportActiveWord");
+  assert.ok(start !== -1 && end !== -1 && end > start, "exportActivePdf should be an async function defined before exportActiveWord");
+  const fn = source.slice(start, end);
+  assert.match(fn, /await doc\.html\(/, "must await the render/pagination pipeline before declaring success");
+  assert.match(fn, /showNotice\("PDF exportado"\)/);
+  assert.match(fn, /catch/);
+  assert.match(fn, /showNotice\([^)]*"error"\)/, "a failed export must show a distinctly-toned error notice, not silently claim success");
+});
+
+test("Exportar sits in the editor's top-right action group next to the overflow menu, and the old footer export selector is gone (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  assert.match(source, /al-bloc-title-row[\s\S]*?<ExportMenu[\s\S]*?<NoteOverflowMenu/, "Exportar and the overflow menu should be siblings in the title row, in that order");
+  assert.doesNotMatch(source, /al-bloc-export-select/, "the redundant desktop footer export <Select> must be removed");
+  assert.match(source, /Palabras: \{wordCount\}[\s\S]{0,80}Caracteres: \{charCount\}/, "the footer should stay focused on autosave/document metrics");
+});
+
+test("the Bloc sidebar's trash link stays height-bounded and pinned from the tablet breakpoint up, not only at the wide desktop breakpoint (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  assert.match(source, /md:grid-cols-\[minmax\(0,1fr\)_300px\]/, "the two-column split should start at the same breakpoint the component treats as desktop (md, not xl)");
+  assert.match(source, /@media \(min-width: 768px\) \{\s*\n\s*\.al-bloc-desktop-grid \{ height: clamp/, "the sidebar height clamp - which makes the notes list scroll internally and keeps Ver papelera pinned - must apply starting at the tablet breakpoint");
+  assert.match(source, /al-bloc-trash-link \{ flex-shrink: 0/);
+});
+
+test("Ver papelera stays reachable from Todas, Recientes and Favoritas alike - it is rendered once, outside the per-tab note list, not duplicated per tab (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const renderSites = source.match(/className="al-bloc-trash-link/g) ?? [];
+  assert.equal(renderSites.length, 1, "the trash link must render exactly once (not duplicated per tab, not gated behind a tab check)");
+  assert.doesNotMatch(source, /listTab === "favoritas"[\s\S]{0,400}al-bloc-trash-link/, "the trash link must not be nested inside favorites-only conditional rendering");
 });
