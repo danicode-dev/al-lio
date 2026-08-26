@@ -6,7 +6,6 @@ import React, { memo, useCallback, useEffect, useId, useMemo, useRef, useState }
 import { createPortal } from "react-dom";
 import {
   AlarmClock,
-  Bookmark,
   BookOpen,
   Building2,
   CalendarDays,
@@ -18,6 +17,7 @@ import {
   Clock,
   MoreVertical,
   ExternalLink,
+  Eye,
   Flame,
   Heart,
   ListChecks,
@@ -45,6 +45,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
 import { fpUserStatusToHackathonStatus, isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
 import { isSafeHttpUrl, selectAptitudeVideos } from "@/lib/fp/event-cta";
+import { getCoursePresentation } from "@/lib/courses/course-presentation";
 import { toast } from "sonner";
 import { BlocNotepad } from "@/components/bloc/bloc-notepad";
 import {
@@ -56,6 +57,8 @@ import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
 import { APPLICATION_STATUSES, STATUS_LABELS, STATUS_COLORS } from "@/lib/job-radar/types";
 import { useStore } from "@/components/guest-store";
+import { StudentHeaderActions } from "@/components/student-header-actions";
+import { PageHeader } from "@/components/page-header";
 import type {
   Company,
   Course,
@@ -130,29 +133,34 @@ const taskBuckets: Array<{
 const taskBucketIds = taskBuckets.map((bucket) => bucket.id);
 const taskPriorities: TaskPriority[] = ["baja", "media", "alta", "critica"];
 
+const VIEW_HEADER_CONTENT: Record<string, { eyebrow: string; title: string; subtitle: string }> = {
+  work: { eyebrow: "Empleo y candidaturas", title: "Trabajo", subtitle: "Portales de búsqueda, tus empresas guardadas y el seguimiento de tus candidaturas." },
+  tasks: { eyebrow: "Tu organización", title: "Tareas", subtitle: "Todo lo que tienes pendiente, organizado por prioridad." },
+  courses: { eyebrow: "Formación", title: "Cursos", subtitle: "Formación complementaria y recursos para avanzar en tu ciclo." },
+  hackathons: { eyebrow: "Comunidad", title: "Eventos y retos", subtitle: "Hackathons, retos y convocatorias para poner a prueba lo que sabes." },
+  links: { eyebrow: "Recursos", title: "Enlaces", subtitle: "Accesos rápidos guardados." },
+  sources: { eyebrow: "Recursos", title: "Fuentes", subtitle: "Portales de referencia para tu búsqueda de empleo." },
+  settings: { eyebrow: "Administración", title: "Configuración", subtitle: "Ajustes del panel y datos de demostración." },
+  bloc: { eyebrow: "Bloc", title: "Bloc de notas", subtitle: "Escribe, organiza y exporta tus notas a PDF o Word." },
+};
+
 export function GuestApp({ view }: { view: View }) {
   const { store, actions } = useStore();
+  const headerContent = VIEW_HEADER_CONTENT[view];
 
   return (
     <div className="space-y-6 pb-20 md:pb-6">
-      {view !== "dashboard" && view !== "calendar" && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
-              {({
-                work: "Trabajo",
-                tasks: "Tareas",
-                courses: "Cursos",
-                hackathons: "Eventos y retos",
-                calendar: "Calendario",
-                links: "Links",
-                sources: "Fuentes",
-                settings: "Configuración",
-                bloc: "Bloc de notas",
-              } as Record<string, string>)[view] ?? view}
-            </h1>
-          </div>
-        </div>
+      {view !== "dashboard" && view !== "calendar" && headerContent && (
+        <PageHeader
+          eyebrow={headerContent.eyebrow}
+          title={headerContent.title}
+          subtitle={headerContent.subtitle}
+          actions={
+            <div className="hidden md:flex md:items-center md:gap-2">
+              <StudentHeaderActions />
+            </div>
+          }
+        />
       )}
       {view === "work" && <Work store={store} actions={actions} />}
       {view === "tasks" && <Tasks store={store} actions={actions} />}
@@ -162,7 +170,8 @@ export function GuestApp({ view }: { view: View }) {
         <CalendarView
           events={getCalendarEvents(store)}
           completedTasks={store.tasks}
-          headerActions={<GoogleCalendarStatusControl />}
+          headerActions={<StudentHeaderActions />}
+          calendarStatus={<GoogleCalendarStatusControl />}
         />
       )}
       {view === "links" && <LinksView store={store} actions={actions} />}
@@ -210,31 +219,37 @@ function GoogleCalendarStatusControl() {
     }
   }
 
-  const statusTone = loading ? "bg-muted-foreground" : connected ? "bg-emerald-500" : "bg-amber-500";
-  const label = connected ? "Calendar" : "Conectar Calendar";
-  const content = (
-    <>
-      <span className="grid h-3.5 w-3.5 shrink-0 grid-cols-2 overflow-hidden rounded-[3px] border border-background/80 shadow-sm" aria-hidden="true">
-        <span className="bg-blue-500" />
-        <span className="bg-green-500" />
-        <span className="bg-yellow-400" />
-        <span className="bg-red-500" />
-      </span>
-      <span className={cn("h-1.5 w-1.5 rounded-full", statusTone)} />
-      <span className="hidden sm:inline truncate text-xs font-medium">{label}</span>
-    </>
+  const label = connected ? "Google Calendar conectado" : "Conectar Google Calendar";
+  const googleMark = (
+    <span className="grid h-3.5 w-3.5 shrink-0 grid-cols-2 overflow-hidden rounded-[3px] border border-white/80 shadow-sm" aria-hidden="true">
+      <span className="bg-blue-500" />
+      <span className="bg-green-500" />
+      <span className="bg-yellow-400" />
+      <span className="bg-red-500" />
+    </span>
   );
+
+  if (loading) {
+    return (
+      <span className="inline-flex h-9 w-fit items-center gap-2 rounded-xl border border-[#ece7dc] bg-white px-3 text-xs font-semibold text-[#9a958a]">
+        {googleMark}
+        Comprobando Google Calendar…
+      </span>
+    );
+  }
 
   if (connected) {
     return (
       <button
         type="button"
-        className="inline-flex h-8 w-fit items-center gap-2 rounded-md border bg-card/90 px-2.5 text-foreground shadow-sm transition-colors hover:bg-muted disabled:opacity-60"
+        className="inline-flex h-9 w-fit items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3 text-xs font-bold text-emerald-800 shadow-sm transition-colors hover:bg-emerald-100 disabled:opacity-60"
         onClick={disconnect}
         disabled={busy}
-        title="Google Calendar conectado. Click para desconectar."
+        title="Google Calendar conectado. Toca para desconectar."
       >
-        {content}
+        {googleMark}
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+        <span className="truncate">{busy ? "Desconectando…" : label}</span>
       </button>
     );
   }
@@ -242,11 +257,11 @@ function GoogleCalendarStatusControl() {
   return (
     <a
       href="/api/google/calendar/auth?next=/dashboard"
-      className={cn("inline-flex h-8 w-fit items-center gap-2 rounded-md border bg-card/90 px-2.5 text-foreground shadow-sm transition-colors hover:bg-muted", loading && "pointer-events-none opacity-60")}
+      className="inline-flex h-9 w-fit items-center gap-2 rounded-xl border border-[#f4b398] bg-[#fff7f3] px-3 text-xs font-bold text-[#c94f21] shadow-sm transition-colors hover:bg-[#ffe9df]"
       title="Conectar Google Calendar"
-      aria-disabled={loading}
     >
-      {content}
+      {googleMark}
+      <span className="truncate">{label}</span>
     </a>
   );
 }
@@ -2041,6 +2056,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
+  const [detailItemId, setDetailItemId] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
@@ -2117,6 +2133,14 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
 
   const activeFilterCount = [monthFilter, dayFilter, estadoFilter, modalidadFilter, prioridadFilter, soloGratuitos].filter(Boolean).length;
 
+  // Resolved against the live allCourses collection, not the object captured
+  // when the modal opened, so a status change (e.g. Terminado) is reflected
+  // immediately without closing and reopening the modal.
+  const detailItem = useMemo(
+    () => (detailItemId ? allCourses.find((c) => c.id === detailItemId) ?? null : null),
+    [detailItemId, allCourses],
+  );
+
   function clearAll() {
     setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setModalidadFilter(""); setPrioridadFilter(""); setSoloGratuitos(false); setSearchInput(""); setSearch("");
   }
@@ -2145,16 +2169,19 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .al-course-count-text { font-size: 12px; color: #6b6f72; }
         .al-course-grid { display: grid; gap: 12px; }
-        .al-course-grid-2 { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+        .al-course-grid-2 { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
         .al-course-card { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 13px; }
-        .al-course-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-        .al-course-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; }
-        .al-course-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; }
+        .al-course-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+        .al-course-card-title-wrap { min-width: 0; flex: 1 1 auto; }
+        .al-course-card-badges { display: flex; flex-shrink: 0; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+        .al-course-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; overflow-wrap: anywhere; word-break: break-word; }
+        .al-course-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; overflow-wrap: anywhere; word-break: break-word; }
         .al-course-card-meta { font-size: 11px; color: #6b6f72; }
-        .al-course-card-desc { font-size: 11.5px; color: #4b4740; line-height: 1.4; }
+        .al-course-card-desc { font-size: 11.5px; color: #4b4740; line-height: 1.4; overflow-wrap: anywhere; word-break: break-word; }
         .al-course-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
         .al-course-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
         .al-course-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+        .al-course-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
         .al-course-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
         .al-course-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
         .al-course-empty-illustration { width: 100%; max-width: 280px; height: auto; }
@@ -2215,32 +2242,34 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
             {filtered.length ? (
               <div className={cn("al-course-grid", viewMode === "grid" ? "al-course-grid-2" : "")}>
                 {filtered.map((item) => {
-                  const startDate = item.fecha_inicio || item.start_at;
-                  const endDate = item.fecha_fin || item.deadline_at;
-                  const place = [item.localidad, item.provincia].filter(Boolean).join(" / ");
-                  const url = item.fuente_url || item.url;
+                  const presentation = getCoursePresentation(item);
                   return (
                     <div key={item.id} className="al-course-card">
                       <div className="al-course-card-top">
-                        <div className="min-w-0">
-                          <p className="al-course-card-title line-clamp-2" title={item.title}>{item.title}</p>
-                          {(item.entidad || item.platform) && <p className="al-course-card-org line-clamp-1" title={item.entidad || item.platform}>{item.entidad || item.platform}</p>}
+                        <div className="al-course-card-title-wrap">
+                          <p className="al-course-card-title line-clamp-2" title={presentation.title}>{presentation.title}</p>
+                          {presentation.provider && <p className="al-course-card-org line-clamp-1" title={presentation.provider}>{presentation.provider}</p>}
                         </div>
-                        <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
+                        <div className="al-course-card-badges">
+                          <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
+                        </div>
                       </div>
-                      {(startDate || endDate) && (
+                      {(presentation.startDate || presentation.endDate) && (
                         <p className="al-course-card-meta">
-                          {startDate ? formatDateLabel(startDate) : "—"}{endDate ? ` → ${formatDateLabel(endDate)}` : ""}
+                          {presentation.startDate ? formatDateLabel(presentation.startDate) : "—"}{presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}
                         </p>
                       )}
                       <div className="flex flex-wrap gap-1.5">
-                        {place && <ChipTag icon="pin" className="max-w-full break-words">{place}</ChipTag>}
-                        {item.modalidad && <ChipTag className="max-w-full break-words">{item.modalidad}</ChipTag>}
-                        {item.prioridad && <ChipTag className={cn("max-w-full break-words", coursePriorityClass(item.prioridad))}>{priorityText(item.prioridad)}</ChipTag>}
+                        {presentation.location && <ChipTag icon="pin" className="max-w-full break-words">{presentation.location}</ChipTag>}
+                        {presentation.modality && <ChipTag className="max-w-full break-words">{presentation.modality}</ChipTag>}
+                        {presentation.priority && <ChipTag className={cn("max-w-full break-words", coursePriorityClass(presentation.priority))}>{priorityText(presentation.priority)}</ChipTag>}
                       </div>
-                      {item.requisitos_resumen && <p className="al-course-card-desc line-clamp-2" title={item.requisitos_resumen}>{item.requisitos_resumen}</p>}
+                      {presentation.description && <p className="al-course-card-desc line-clamp-2" title={presentation.description}>{presentation.description}</p>}
                       <div className="al-course-card-actions">
-                        {url && <a href={url} target="_blank" rel="noreferrer" className="al-course-btn"><ExternalLink className="h-3.5 w-3.5" />Abrir</a>}
+                        <button type="button" className="al-course-btn al-course-btn-primary" onClick={() => setDetailItemId(item.id)}>
+                          <Eye className="h-3.5 w-3.5" />Ver detalles
+                        </button>
+                        {isSafeHttpUrl(presentation.sourceUrl) && <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-course-btn"><ExternalLink className="h-3.5 w-3.5" />Abrir</a>}
                         {!isCourseArchived(item) && (
                           <button type="button" className="al-course-btn" onClick={() => actions.completeCourse(item).catch(() => {})}>
                             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -2305,6 +2334,8 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
             </FilterPanel>
           )}
         </div>
+
+        <CourseDetailModal item={detailItem} actions={actions} onClose={() => setDetailItemId(null)} />
       </div>
     </>
   );
@@ -2315,6 +2346,180 @@ function coursePriorityClass(value?: string): string {
   if (priority.includes("alta")) return "al-course-chip-terracotta";
   if (priority.includes("baja")) return "al-course-chip-green";
   return "al-course-chip-amber";
+}
+
+function CourseDetailModal({
+  item,
+  actions,
+  onClose,
+}: {
+  item: Course | null;
+  actions: ReturnTypeActions;
+  onClose: () => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
+
+  // Portals require a DOM to attach to, so the actual portal render is
+  // deferred one tick past the server-rendered pass.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!item?.id) return;
+
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    const backgroundSiblings = Array.from(document.body.children).filter(
+      (el): el is HTMLElement => el instanceof HTMLElement && el !== rootRef.current,
+    );
+    const previousInertStates = backgroundSiblings.map((el) => el.inert);
+    backgroundSiblings.forEach((el) => { el.inert = true; });
+
+    closeButtonRef.current?.focus();
+
+    return () => {
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
+      backgroundSiblings.forEach((el, index) => { el.inert = previousInertStates[index]; });
+    };
+  }, [item?.id]);
+
+  function handleDialogKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") {
+      onClose();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusableElements = dialogRef.current?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+    );
+    if (!focusableElements?.length) return;
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  }
+
+  if (!mounted || !item) return null;
+
+  const presentation = getCoursePresentation(item);
+
+  return createPortal(
+    <div
+      ref={rootRef}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6"
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+    >
+      <style>{`
+        .al-course-modal-shell { background: white; border-radius: 22px; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
+        .al-course-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px; border-bottom: 1px solid #f0ece2; flex-shrink: 0; }
+        .al-course-modal-title { font-size: 18px; font-weight: 700; color: #111111; line-height: 24px; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+        .al-course-modal-org { font-size: 12px; color: #6b6f72; margin-top: 3px; }
+        .al-course-modal-close { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; flex-shrink: 0; }
+        .al-course-modal-body { flex: 1; min-height: 0; overflow-y: auto; padding: 18px; }
+        .al-course-modal-meta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .al-course-modal-meta-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #9a958a; margin: 0 0 3px; }
+        .al-course-modal-meta-value { font-size: 13px; font-weight: 600; color: #333029; overflow-wrap: anywhere; }
+        .al-course-modal-desc { font-size: 13px; line-height: 1.6; color: #4b4740; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .al-course-modal-footer { border-top: 1px solid #f0ece2; padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 8px; flex-shrink: 0; }
+      `}</style>
+      <div
+        ref={dialogRef}
+        className="al-course-modal-shell max-h-[calc(100svh-1.5rem)] w-full max-w-lg overflow-hidden sm:max-h-[calc(100svh-3rem)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onKeyDown={handleDialogKeyDown}
+      >
+        <div className="al-course-modal-head">
+          <div className="min-w-0 flex-1">
+            <h2 id={titleId} className="al-course-modal-title">{presentation.title}</h2>
+            {presentation.provider && <p className="al-course-modal-org">{presentation.provider}</p>}
+          </div>
+          <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
+          <button ref={closeButtonRef} type="button" className="al-course-modal-close" onClick={onClose} aria-label="Cerrar">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="al-course-modal-body">
+          <div className="al-course-modal-meta-grid">
+            <div>
+              <p className="al-course-modal-meta-label">Fechas</p>
+              <p className="al-course-modal-meta-value">
+                {presentation.startDate ? formatDateLabel(presentation.startDate) : "Sin fecha indicada"}
+                {presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}
+              </p>
+            </div>
+            <div>
+              <p className="al-course-modal-meta-label">Ubicación</p>
+              <p className="al-course-modal-meta-value">{presentation.location || "No especificada"}</p>
+            </div>
+            <div>
+              <p className="al-course-modal-meta-label">Modalidad</p>
+              <p className="al-course-modal-meta-value">{presentation.modality || "No especificada"}</p>
+            </div>
+            <div>
+              <p className="al-course-modal-meta-label">Prioridad</p>
+              <p className="al-course-modal-meta-value">{presentation.priority ? priorityText(presentation.priority) : "No especificada"}</p>
+            </div>
+          </div>
+          <p className="al-course-modal-meta-label">Descripción</p>
+          <p className="al-course-modal-desc">{presentation.description || "Este curso todavía no tiene una descripción disponible."}</p>
+        </div>
+        <div className="al-course-modal-footer">
+          {isSafeHttpUrl(presentation.sourceUrl) && (
+            <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-course-btn al-course-btn-primary">
+              <ExternalLink className="h-3.5 w-3.5" />Abrir
+            </a>
+          )}
+          {!isCourseArchived(item) && (
+            <button type="button" className="al-course-btn" onClick={() => actions.completeCourse(item).catch(() => {})}>
+              <CheckCircle2 className="h-3.5 w-3.5" />Terminado
+            </button>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+// tech_opportunities-sourced events are deliberately excluded (issue #131) -
+// that shared catalogue has no per-user favorites table (see the migration
+// notes in 0007_hackathon_favorites.sql); everything else - fp_content_items
+// and the student's own hackathons rows (sourceTable is undefined for those,
+// since addHackathon never sets it) - can be saved.
+function canToggleHackathonFavorite(item: Hackathon): boolean {
+  if (item.sourceTable === "tech_opportunities") return false;
+  if (item.sourceTable === "fp_content_items") return !!item.id_slug;
+  return true;
+}
+
+function toggleHackathonFavoriteFor(item: Hackathon, actions: ReturnTypeActions) {
+  if (item.sourceTable === "fp_content_items") {
+    actions.toggleFpFavorite(item.id_slug!, !item.is_favorite);
+  } else {
+    actions.toggleHackathonFavorite(item.id);
+  }
 }
 
 function hackathonPublicDescription(item: Hackathon) {
@@ -2328,7 +2533,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     [store.hackathons, store.techOpportunities, store.fpContent]
   );
 
-  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "todos">("activos");
+  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "guardados" | "todos">("activos");
   const [showFilters, setShowFilters] = useState(false);
   const [monthFilter, setMonthFilter] = useState("");
   const [dayFilter, setDayFilter] = useState("");
@@ -2371,9 +2576,14 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
 
   const archivados = useMemo(() => sorted.filter(isHackathonArchived), [sorted]);
   const activos = useMemo(() => sorted.filter((h) => !isHackathonArchived(h) && !isHackathonPast(h)), [sorted]);
+  // Guardados (issue #131): a heart-driven filter, independent of the
+  // Activos/Archivados lifecycle split above - saving an event never moves
+  // it between those tabs, so the same event can appear in both Guardados
+  // and whichever lifecycle tab it already belongs to.
+  const guardados = useMemo(() => sorted.filter((h) => h.is_favorite), [sorted]);
   const tabBase = useMemo(
-    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : sorted,
-    [viewTab, activos, archivados, sorted]
+    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : viewTab === "guardados" ? guardados : sorted,
+    [viewTab, activos, archivados, guardados, sorted]
   );
 
   const monthGroups = useMemo(() => {
@@ -2501,8 +2711,10 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
         .al-hack-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; }
         .al-hack-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; }
-        .al-hack-bookmark { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
-        .al-hack-bookmark.al-hack-bookmark-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
+        .al-hack-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .al-hack-heart.al-hack-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
+        .al-hack-hero-heart { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .al-hack-hero-heart.al-hack-hero-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
         .al-hack-card-meta { font-size: 11px; color: #6b6f72; }
         .al-hack-card-desc { font-size: 11.5px; color: #4b4740; line-height: 1.4; }
         .al-hack-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
@@ -2525,8 +2737,9 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             <Input placeholder="Buscar nombre, organizador, tema, aptitud..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           </div>
           <div className="al-hack-tabs">
-            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
+            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
               <button key={id} type="button" className={cn("al-hack-tab", viewTab === id && "al-hack-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
+                {id === "guardados" && <Heart className="mr-1 inline h-3 w-3 align-[-1px]" fill={viewTab === "guardados" ? "currentColor" : "none"} />}
                 {label}
               </button>
             ))}
@@ -2564,7 +2777,20 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             {featuredHackathon ? (
               <div className="al-hack-hero">
                 <div className="al-hack-hero-main">
-                  <span className="al-hack-hero-kicker">Próximo evento o reto</span>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="al-hack-hero-kicker">Próximo evento o reto</span>
+                    {canToggleHackathonFavorite(featuredHackathon) && (
+                      <button
+                        type="button"
+                        className={cn("al-hack-hero-heart", featuredHackathon.is_favorite && "al-hack-hero-heart-active")}
+                        aria-label={featuredHackathon.is_favorite ? "Quitar de guardados" : "Guardar"}
+                        aria-pressed={!!featuredHackathon.is_favorite}
+                        onClick={() => toggleHackathonFavoriteFor(featuredHackathon, actions)}
+                      >
+                        <Heart className="h-4 w-4" fill={featuredHackathon.is_favorite ? "currentColor" : "none"} />
+                      </button>
+                    )}
+                  </div>
                   <p className="al-hack-hero-title">{featuredHackathon.name}</p>
                   {featuredHackathon.organizer && <p className="al-hack-hero-org">{featuredHackathon.organizer}</p>}
                   {(featuredHackathon.start_at || featuredHackathon.end_at) && (
@@ -2625,7 +2851,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
                   const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
                   const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
-                  const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
+                  const canFavorite = canToggleHackathonFavorite(item);
                   const description = hackathonPublicDescription(item);
                   return (
                     <div key={item.id} className="al-hack-card">
@@ -2644,11 +2870,12 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                           {canFavorite && (
                             <button
                               type="button"
-                              className={cn("al-hack-bookmark", item.is_favorite && "al-hack-bookmark-active")}
+                              className={cn("al-hack-heart", item.is_favorite && "al-hack-heart-active")}
                               aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
-                              onClick={() => actions.toggleFpFavorite(item.id_slug!, !item.is_favorite)}
+                              aria-pressed={!!item.is_favorite}
+                              onClick={() => toggleHackathonFavoriteFor(item, actions)}
                             >
-                              <Bookmark className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+                              <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
                             </button>
                           )}
                         </div>
@@ -2874,7 +3101,7 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
 
   if (!mounted || !item) return null;
 
-  const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
+  const canFavorite = canToggleHackathonFavorite(item);
   const safeIndex = steps.length > 0 ? Math.min(stepIndex, steps.length - 1) : 0;
   const currentStep = steps[safeIndex] ?? null;
   const isLastStep = !currentStep || safeIndex === steps.length - 1;
@@ -2990,9 +3217,14 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
         <div className="al-modal-footer">
           <div className="al-modal-footer-row">
             {canFavorite && (
-              <button type="button" className="al-modal-btn-secondary" onClick={() => actions.toggleFpFavorite(item.id_slug!, !item.is_favorite)}>
-                <Bookmark className="h-4 w-4" fill={item.is_favorite ? "currentColor" : "none"} />
-                {item.is_favorite ? "Guardado" : "Guardar para después"}
+              <button
+                type="button"
+                className="al-modal-btn-secondary"
+                aria-pressed={!!item.is_favorite}
+                onClick={() => toggleHackathonFavoriteFor(item, actions)}
+              >
+                <Heart className="h-4 w-4" fill={item.is_favorite ? "currentColor" : "none"} />
+                {item.is_favorite ? "Guardado" : "Guardar"}
               </button>
             )}
             <button type="button" className="al-modal-btn-primary" onClick={continueOrClose}>

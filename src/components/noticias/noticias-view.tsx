@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { NewsItem, NewsStatus, NewsSyncStatus, NewsTrustTier } from "@/lib/news/types";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
+import { StudentHeaderActions } from "@/components/student-header-actions";
 
 type ApiResponse = { items: NewsItem[]; status: NewsSyncStatus };
 type SortMode = "date" | "trust";
@@ -178,28 +180,31 @@ export function NewsView() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-normal text-[#111111] sm:text-3xl">Noticias</h1>
+      <PageHeader
+        eyebrow="Radar de noticias"
+        title={
+          <span className="inline-flex items-center gap-2">
+            Noticias
             {status?.cycleCode && (
               <span className="rounded-full bg-[#e7f5ee] px-2.5 py-1 text-xs font-bold text-[#1f7a4d]">
                 {status.cycleCode}
               </span>
             )}
-          </div>
-          <p className="mt-1 text-sm text-[#6b6f72]">
-            Actualidad reciente, fiable y relacionada con lo que estudias.
-          </p>
-          <p className="mt-1 text-xs text-[#9a958a]">
-            Radar revisa las fuentes cada 12 horas; recargar solo consulta la última entrega disponible.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-[#6b6f72]">
-          <ShieldCheck className="h-4 w-4 text-[#1f7a4d]" />
-          Fuentes verificadas y reglas de publicación auditadas
-        </div>
-      </header>
+          </span>
+        }
+        subtitle="Actualidad reciente, fiable y relacionada con lo que estudias. Radar revisa las fuentes cada 12 horas; recargar solo consulta la última entrega disponible."
+        actions={
+          <>
+            <div className="flex items-center gap-2 text-xs text-[#6b6f72]">
+              <ShieldCheck className="h-4 w-4 shrink-0 text-[#1f7a4d]" />
+              Fuentes verificadas y reglas de publicación auditadas
+            </div>
+            <div className="hidden md:flex md:items-center md:gap-2">
+              <StudentHeaderActions />
+            </div>
+          </>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[230px] flex-1">

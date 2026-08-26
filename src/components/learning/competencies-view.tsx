@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, CheckCircle2, Clock3, PlayCircle, Sparkles } from "lucide-react";
 import type { LearningCompetencySummary } from "@/lib/db/repositories/learning";
+import { PageHeader } from "@/components/page-header";
+import { StudentHeaderActions } from "@/components/student-header-actions";
 
 export function CompetenciesView({
   cycleName,
@@ -17,20 +19,26 @@ export function CompetenciesView({
 
   return (
     <div className="space-y-7">
-      <header className="flex flex-col gap-5 border-b border-[#e8e2d7] pb-7 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-3xl">
-          <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#e15d2d]">Competencias · {cycleName}</p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-[-0.04em] text-[#111111] sm:text-4xl">Elige qué quieres aprender</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#656159]">Cada competencia agrupa cursos en español revisados por AL-LIO. Puedes elegir uno, tomar notas y continuar otro día desde el mismo punto.</p>
-        </div>
-        <div className="flex min-w-[220px] items-center gap-4 rounded-2xl bg-[#114b3b] px-5 py-4 text-white">
-          <span className="grid h-12 w-12 place-items-center rounded-full bg-white/10 text-sm font-extrabold">{progress}%</span>
-          <div>
-            <p className="text-sm font-bold">Progreso guardado</p>
-            <p className="mt-0.5 text-xs text-white/70">{completedResources} de {totalResources} cursos</p>
-          </div>
-        </div>
-      </header>
+      <PageHeader
+        className="mb-0 border-b border-[#e8e2d7] pb-7"
+        eyebrow={`Competencias · ${cycleName}`}
+        title="Elige qué quieres aprender"
+        subtitle="Cada competencia agrupa cursos en español revisados por AL-LIO. Puedes elegir uno, tomar notas y continuar otro día desde el mismo punto."
+        actions={
+          <>
+            <div className="flex shrink-0 items-center gap-3 rounded-2xl bg-[#114b3b] px-4 py-2.5 text-white">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/10 text-xs font-extrabold">{progress}%</span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold leading-tight">Progreso guardado</p>
+                <p className="text-[11px] leading-tight text-white/70">{completedResources} de {totalResources} cursos</p>
+              </div>
+            </div>
+            <div className="hidden md:flex md:items-center md:gap-2">
+              <StudentHeaderActions />
+            </div>
+          </>
+        }
+      />
 
       {competencies.length === 0 ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-6 text-sm text-amber-950">

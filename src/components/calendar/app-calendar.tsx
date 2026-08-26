@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/page-header";
 
 export type CalendarEvent = {
   id: string;
@@ -162,10 +163,12 @@ export function CalendarView({
   events: localEvents,
   completedTasks,
   headerActions,
+  calendarStatus,
 }: {
   events: CalendarEvent[];
   completedTasks: CompletedTask[];
   headerActions?: React.ReactNode;
+  calendarStatus?: React.ReactNode;
 }) {
   const [month, setMonth] = useState(startOfMonth(new Date()));
   const [selectedDay, setSelectedDay] = useState(todayKey());
@@ -197,23 +200,14 @@ export function CalendarView({
 
   return (
     <div className="space-y-5 text-[#111111]">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">Calendario</h1>
-          <p className="mt-1 text-sm text-[#6b6f72]">Gestiona tus eventos, fechas y actividades.</p>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        eyebrow="Tu agenda"
+        title="Calendario"
+        subtitle="Gestiona tus eventos, fechas y actividades."
+        actions={
           <div className="hidden items-center gap-2 md:flex">{headerActions}</div>
-          <button
-            type="button"
-            onClick={() => setNewEventOpen(true)}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#f06a37] to-[#e15d2d] px-4 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(225,93,45,0.22)] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e15d2d] focus-visible:ring-offset-2"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Nuevo evento
-          </button>
-        </div>
-      </header>
+        }
+      />
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(270px,320px)]">
         <section className="overflow-hidden rounded-[20px] border border-[#e8e2d8] bg-white text-[#111111] shadow-[0_12px_30px_rgba(17,17,17,0.045)]">
@@ -223,6 +217,8 @@ export function CalendarView({
               onPrevious={() => moveMonth(-1)}
               onToday={goToday}
               onNext={() => moveMonth(1)}
+              onCreate={() => setNewEventOpen(true)}
+              statusSlot={calendarStatus}
             />
           </div>
           <div className="hidden overflow-x-auto border-t border-[#eee8de] md:block">
@@ -297,10 +293,14 @@ type CalendarHeaderProps = {
   onToday: () => void;
   onNext: () => void;
   onCreate?: () => void;
+  // The Google Calendar connection indicator - rendered inline with
+  // Hoy/Nuevo evento (full variant only) so a student sees whether the
+  // event they're about to create will sync, right where they create it.
+  statusSlot?: React.ReactNode;
   children?: React.ReactNode;
 };
 
-function CalendarHeader({ month, compact = false, controlsRef, onPrevious, onToday, onNext, onCreate, children }: CalendarHeaderProps) {
+function CalendarHeader({ month, compact = false, controlsRef, onPrevious, onToday, onNext, onCreate, statusSlot, children }: CalendarHeaderProps) {
   if (compact) {
     return (
       <div className="mb-3 flex items-center justify-between gap-2">
@@ -326,8 +326,9 @@ function CalendarHeader({ month, compact = false, controlsRef, onPrevious, onTod
         <Button type="button" size="icon" variant="outline" className="h-9 w-9 rounded-xl border-[#e6dfd4] !bg-white !text-[#4e4941] hover:border-[#e5bba8] hover:!bg-[#fff4ee] hover:!text-[#e15d2d]" aria-label="Mes siguiente" onClick={onNext}><ChevronRight className="h-4 w-4" /></Button>
         <h2 className="ml-1 text-base font-semibold sm:text-lg">{monthTitle(month)}</h2>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button type="button" size="sm" variant="outline" className="h-9 rounded-xl border-[#e6dfd4] !bg-white px-3 !text-[#4e4941] hover:border-[#e5bba8] hover:!bg-[#fff4ee] hover:!text-[#e15d2d]" onClick={onToday}>Hoy</Button>
+        {statusSlot}
         {onCreate && (
           <Button type="button" size="sm" className="h-9 rounded-xl bg-[#e15d2d] px-3 text-white hover:bg-[#c94f21]" onClick={onCreate}>
             <Plus className="h-4 w-4" /> Nuevo evento

@@ -33,6 +33,9 @@ import {
   SUPPORTED_SCHEMA_VERSIONS,
   validateDataset,
 } from "../scripts/lib/company-catalogue.mjs";
+import { toIsoTimestamp } from "../src/lib/bloc/timestamps.ts";
+import { compareByRecentFirst, sortByRecentFirst } from "../src/lib/bloc/notes-sort.ts";
+import { buildNoteExportHtml, formatExportTimestamp } from "../src/lib/bloc/note-export.ts";
 
 const validSessionSecret = "session-test-secret-with-32-characters";
 
@@ -406,7 +409,7 @@ test("The merged store fetch loads every section with fail-soft handling (issue 
   }
 });
 
-test("Quick Add, Calendar and Notifications form one shared header action group mounted once per page (issue #91)", async () => {
+test("Quick Add, Calendar and Notifications form one shared header action group, mounted once for mobile and once per page's own header on desktop (issue #91, issue #129)", async () => {
   const [headerSource, layoutSource, guestAppSource, quickAddSource, dashboardClientSource, dashboardGreetingSource] = await Promise.all([
     readFile(new URL("../src/components/student-header-actions.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
@@ -429,9 +432,12 @@ test("Quick Add, Calendar and Notifications form one shared header action group 
   // Admin-only /settings is not part of the allowlist.
   assert.doesNotMatch(headerSource, /"\/settings"/);
 
-  // Mounted exactly twice in the layout (mobile slot + desktop slot) - the only mount point for the whole tree.
+  // issue #129: the layout's own standalone desktop actions row (the source of
+  // the excessive top gap) is gone - only the mobile sticky-header mount remains
+  // there. The desktop mount now lives inside each page's own PageHeader, next
+  // to its title, instead of floating in a disconnected row above the content.
   const layoutMounts = (layoutSource.match(/<StudentHeaderActions \/>/g) ?? []).length;
-  assert.equal(layoutMounts, 2, "expected exactly one mobile and one desktop mount in the layout");
+  assert.equal(layoutMounts, 1, "expected exactly the mobile sticky-header mount in the layout, no separate desktop row");
 
   // The old per-view/per-route duplicates are gone: no more BrandHeaderActions row,
   // no more floating QuickAdd mount, no more local NotificationBell in guest-app.tsx.
@@ -444,6 +450,27 @@ test("Quick Add, Calendar and Notifications form one shared header action group 
   // QuickAdd itself no longer renders its own always-on floating trigger.
   assert.doesNotMatch(quickAddSource, /aria-label="Añadir rápido"/);
   assert.match(quickAddSource, /export function QuickAdd\(\{ open, setOpen, actions \}: QuickAddProps\)/);
+});
+
+test("Each page's own header mounts StudentHeaderActions exactly once for its desktop actions slot - relocated, not lost or duplicated (issue #129)", async () => {
+  const files = [
+    "../src/components/dashboard/dashboard-greeting.tsx",
+    "../src/components/learning/competencies-view.tsx",
+    "../src/components/tasks/tasks-view.tsx",
+    "../src/components/noticias/noticias-view.tsx",
+    "../src/components/profile/profile-form.tsx",
+  ];
+  for (const file of files) {
+    const source = await readFile(new URL(file, import.meta.url), "utf8");
+    const mounts = (source.match(/<StudentHeaderActions \/>/g) ?? []).length;
+    assert.equal(mounts, 1, `${file} should mount StudentHeaderActions exactly once`);
+  }
+  // guest-app.tsx mounts it twice by design: once inside the shared
+  // work/courses/hackathons/bloc header, once for the separately-composed
+  // Calendario header - never inside the per-view render functions themselves.
+  const guestApp = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const guestAppMounts = (guestApp.match(/<StudentHeaderActions \/>/g) ?? []).length;
+  assert.equal(guestAppMounts, 2, "guest-app.tsx should mount StudentHeaderActions exactly twice: shared header + Calendario");
 });
 
 test("The notifications popover meets the accessibility requirements (issue #91)", async () => {
@@ -583,7 +610,7 @@ test("fp course completion is per-user isolated and never mutates the shared cou
   assert.match(guestAppSource, /fpUserStatusToCourseStatus\(item\.user_status\)/, "the Courses view must read the per-user completion state, not just the catalogue's own display status");
 });
 
-test("Course cards clamp title, provider and description consistently and stay inside the grid (issue #94)", async () => {
+test("Course cards clamp title, provider and description consistently and stay inside the grid (issue #94, issue #130)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const cardStart = guestAppSource.indexOf('key={item.id} className="al-course-card"');
   const cardEnd = guestAppSource.indexOf("al-course-card-actions", cardStart);
@@ -594,15 +621,62 @@ test("Course cards clamp title, provider and description consistently and stay i
   assert.match(cardSource, /al-course-card-org line-clamp-1/);
   assert.match(cardSource, /al-course-card-desc line-clamp-2/);
   // Clamping must not hide content with no fallback - each clamped element
-  // keeps the full text reachable via a native accessible title attribute.
-  assert.match(cardSource, /title=\{item\.title\}/);
-  assert.match(cardSource, /title=\{item\.entidad \|\| item\.platform\}/);
-  assert.match(cardSource, /title=\{item\.requisitos_resumen\}/);
+  // keeps the full text reachable via a native accessible title attribute,
+  // sourced from the one shared presentation model (issue #130).
+  assert.match(cardSource, /title=\{presentation\.title\}/);
+  assert.match(cardSource, /title=\{presentation\.provider\}/);
+  assert.match(cardSource, /title=\{presentation\.description\}/);
   // Long, unbroken tag/location text wraps instead of overflowing the card.
   assert.match(cardSource, /className="max-w-full break-words"/);
+  // issue #130: the header row wraps a min-w-0 title block and a shrink-0
+  // badge cluster - the same shape Trabajo/Eventos y retos use, ready for
+  // the #120 heart to slot in without another layout rework.
+  assert.match(cardSource, /al-course-card-title-wrap/);
+  assert.match(cardSource, /al-course-card-badges/);
 
-  const styleSource = guestAppSource.slice(guestAppSource.indexOf(".al-course-card {"), guestAppSource.indexOf(".al-course-card-top"));
+  const styleSource = guestAppSource.slice(guestAppSource.indexOf(".al-course-card {"), guestAppSource.indexOf(".al-course-card-actions {"));
   assert.match(styleSource, /min-width:\s*0/, "the grid cell itself must be allowed to shrink below its content's intrinsic width");
+  assert.match(styleSource, /overflow-wrap:\s*anywhere/, "title/org/description must break long unbroken strings instead of overflowing the card");
+});
+
+test("Course cards validate the source URL before linking out, matching the isSafeHttpUrl hardening Hackathons already has (issue #130)", async () => {
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const cardStart = guestAppSource.indexOf('key={item.id} className="al-course-card"');
+  assert.ok(cardStart > -1, "could not locate the course card JSX");
+  const cardSource = guestAppSource.slice(cardStart, cardStart + 2500);
+  assert.match(cardSource, /isSafeHttpUrl\(presentation\.sourceUrl\)/, "Abrir must not link to an unvalidated URL (javascript:/data: guard)");
+  assert.match(cardSource, /rel="noopener noreferrer"/);
+});
+
+test("Every course card offers Ver detalles, opening an accessible modal built from the same shared presentation model used by the card (issue #130)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.match(source, /setDetailItemId\(item\.id\)/, "the card's Ver detalles action must open the detail modal for that exact item");
+  assert.match(source, /function CourseDetailModal/);
+  assert.match(source, /<CourseDetailModal item=\{detailItem\}/);
+
+  const modalStart = source.indexOf("function CourseDetailModal");
+  const modalEnd = source.indexOf("function hackathonPublicDescription");
+  const modalSource = source.slice(modalStart, modalEnd);
+  assert.match(modalSource, /getCoursePresentation\(item\)/, "the modal must reuse the shared presentation model, not re-derive its own field mapping");
+  assert.match(modalSource, /createPortal\(/);
+  assert.match(modalSource, /role="dialog"/);
+  assert.match(modalSource, /aria-modal="true"/);
+  assert.match(modalSource, /aria-labelledby=\{titleId\}/);
+  assert.match(modalSource, /event\.key === "Escape"/);
+  assert.match(modalSource, /el\.inert = true/, "background content must be made inert while the modal is open");
+  assert.match(modalSource, /closeButtonRef\.current\?\.focus\(\)/);
+});
+
+test("Course descriptions never fall back to raw import/moderation notes for any origin - the same regression class fixed for Hackathons in issue #118 (issue #130)", async () => {
+  const source = await readFile(new URL("../src/lib/courses/course-presentation.ts", import.meta.url), "utf8");
+  assert.match(source, /description: nonEmpty\(course\.requisitos_resumen\)/);
+  assert.doesNotMatch(source, /\.notes|suggested_action/, "the public presentation model must never read Course.notes as a description source");
+
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const courseFnStart = guestAppSource.indexOf("function Courses(");
+  const courseFnEnd = guestAppSource.indexOf("function coursePriorityClass");
+  const courseFnSource = guestAppSource.slice(courseFnStart, courseFnEnd);
+  assert.doesNotMatch(courseFnSource, /item\.notes|\.notes\b/, "the Courses view must never render Course.notes as student-facing copy");
 });
 
 test("Competency completion is authorized against the caller's session and cycle, never a client-supplied user (issue #96)", async () => {
@@ -1759,4 +1833,410 @@ test("UI primitives (Button/Input/Select/Textarea) and GuestApp already referenc
   assert.match(textarea, /focus-visible:ring-ring/);
   assert.match(guestApp, /ring-primary\/40/);
   assert.match(guestApp, /bg-primary text-primary-foreground/);
+});
+
+test("toIsoTimestamp normalizes a PostgreSQL Date instance to a stable ISO string (issue #128)", () => {
+  const date = new Date("2026-08-20T10:15:00.000Z");
+  assert.equal(toIsoTimestamp(date), "2026-08-20T10:15:00.000Z");
+});
+
+test("toIsoTimestamp passes a valid ISO string through unchanged (issue #128)", () => {
+  assert.equal(toIsoTimestamp("2026-08-20T10:15:00.000Z"), "2026-08-20T10:15:00.000Z");
+});
+
+test("toIsoTimestamp falls back instead of throwing on invalid legacy values or a NaN Date (issue #128)", () => {
+  assert.equal(toIsoTimestamp("not-a-date", "fallback"), "fallback");
+  assert.equal(toIsoTimestamp(new Date("invalid"), "fallback"), "fallback");
+  assert.equal(toIsoTimestamp(undefined, "fallback"), "fallback");
+  assert.equal(toIsoTimestamp(null, "fallback"), "fallback");
+  assert.match(toIsoTimestamp("nonsense"), /^\d{4}-\d{2}-\d{2}T/, "default fallback is still a valid ISO string");
+});
+
+test("sortByRecentFirst orders PostgreSQL-normalized notes by most recently edited first (issue #128)", () => {
+  const notes = [
+    { id: "a", updated_at: "2026-08-01T00:00:00.000Z" },
+    { id: "b", updated_at: "2026-08-20T00:00:00.000Z" },
+    { id: "c", updated_at: "2026-08-10T00:00:00.000Z" },
+  ];
+  assert.deepEqual(sortByRecentFirst(notes).map((n) => n.id), ["b", "c", "a"]);
+});
+
+test("compareByRecentFirst never throws on an invalid/legacy timestamp and sorts it last instead (issue #128)", () => {
+  const notes = [
+    { id: "valid", updated_at: "2026-08-20T00:00:00.000Z" },
+    { id: "corrupt", updated_at: "not-a-timestamp" },
+  ];
+  assert.doesNotThrow(() => notes.sort(compareByRecentFirst));
+  assert.deepEqual(notes.map((n) => n.id), ["valid", "corrupt"]);
+});
+
+test("sortByRecentFirst returns an empty list untouched, and does not mutate its input (issue #128)", () => {
+  const empty = [];
+  assert.deepEqual(sortByRecentFirst(empty), []);
+  assert.notEqual(sortByRecentFirst(empty), empty);
+
+  const original = [{ id: "a", updated_at: "2026-08-01T00:00:00.000Z" }, { id: "b", updated_at: "2026-08-20T00:00:00.000Z" }];
+  const originalOrder = original.map((n) => n.id);
+  sortByRecentFirst(original);
+  assert.deepEqual(original.map((n) => n.id), originalOrder, "sorting Recientes must not reorder the source array used by other tabs");
+});
+
+test("Recientes ordering is chronological regardless of favorite state - favoriting a note never affects its recent position (issue #128)", () => {
+  const notes = [
+    { id: "old-fav", updated_at: "2026-08-01T00:00:00.000Z", favorite: true },
+    { id: "new-plain", updated_at: "2026-08-20T00:00:00.000Z", favorite: false },
+  ];
+  assert.deepEqual(sortByRecentFirst(notes).map((n) => n.id), ["new-plain", "old-fav"]);
+});
+
+test("buildNoteExportHtml escapes the title, embeds the already-sanitized content HTML verbatim, and stamps a generated-at line (issue #128)", () => {
+  const html = buildNoteExportHtml(
+    { title: '<b>Plan</b> & notas', contentHtml: "<h1>Objetivo</h1><p>Texto con &amp; y <strong>énfasis</strong>.</p>" },
+    new Date("2026-08-26T09:30:00.000Z"),
+  );
+  assert.match(html, /&lt;b&gt;Plan&lt;\/b&gt; &amp; notas/, "title must be escaped, not injected as raw HTML");
+  assert.match(html, /<h1>Objetivo<\/h1><p>Texto con &amp; y <strong>énfasis<\/strong>\.<\/p>/, "sanitized content HTML is embedded as-is, not double-escaped");
+  assert.match(html, /Exportado el/);
+});
+
+test("buildNoteExportHtml shows an honest empty-state message instead of an empty PDF page for a blank note (issue #128)", () => {
+  const html = buildNoteExportHtml({ title: "", contentHtml: "" }, new Date("2026-08-26T09:30:00.000Z"));
+  assert.match(html, /Documento sin titulo/);
+  assert.match(html, /todavia no tiene contenido/);
+});
+
+test("formatExportTimestamp returns an empty label instead of the string \"Invalid Date\" leaking into an exported document (issue #128)", () => {
+  assert.equal(formatExportTimestamp(new Date("not-a-date")), "");
+  assert.notEqual(formatExportTimestamp(new Date("2026-08-26T09:30:00.000Z")), "");
+});
+
+test("Bloc's server boundary normalizes PostgreSQL timestamps before they reach the client, instead of passing raw Date values through (issue #128)", async () => {
+  const source = await readFile(new URL("../src/lib/bloc/notes-actions.ts", import.meta.url), "utf8");
+  assert.match(source, /toIsoTimestamp/, "notes-actions.ts should normalize created_at/updated_at/deleted_at at the server-to-client boundary");
+  assert.doesNotMatch(source, /created_at: row\.created_at,\s*\n\s*updated_at: row\.updated_at,/, "the DTO must not pass raw pg row timestamps through unnormalized");
+});
+
+test("Bloc's PDF export replaces the retired hand-rolled byte-level serializer with a raster-preserving jsPDF/html2canvas path (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /buildSimplePdf|toUtf16Hex|BaseFont \/Helvetica/, "the raw PDF byte serializer must be fully removed, not left dead in the file");
+  assert.match(source, /import\("jspdf"\)/);
+  assert.match(source, /import\("html2canvas"\)/);
+  assert.match(source, /buildNoteExportHtml/);
+  assert.match(source, /doc\.addImage/, "browser-rendered note pages must be embedded so Unicode glyphs are not lost to jsPDF's built-in fonts");
+  assert.doesNotMatch(source, /doc\.html\(/, "the jsPDF HTML text renderer falls back to built-in fonts and corrupts unsupported Unicode glyphs");
+});
+
+test("Bloc's PDF export keeps the html2canvas source at the canvas origin instead of rasterizing blank off-screen pages (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const start = source.indexOf("async function exportActivePdf");
+  const end = source.indexOf("function exportActiveWord");
+  assert.ok(start !== -1 && end !== -1 && end > start);
+  const fn = source.slice(start, end);
+  assert.match(fn, /left:\s*0/, "the export surface must start at the html2canvas origin");
+  assert.doesNotMatch(fn, /left:\s*-\d/, "a negative horizontal offset produces correctly-sized but blank PDF pages");
+});
+
+test("Bloc's PDF export scales and slices the browser canvas inside the printable A4 bounds (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const start = source.indexOf("async function exportActivePdf");
+  const end = source.indexOf("function exportActiveWord");
+  assert.ok(start !== -1 && end !== -1 && end > start);
+  const fn = source.slice(start, end);
+  assert.match(fn, /pixelsPerPoint\s*=\s*canvas\.width\s*\/\s*contentWidth/);
+  assert.match(fn, /printableHeight\s*=\s*doc\.internal\.pageSize\.getHeight\(\)\s*-\s*margin\s*\*\s*2/);
+  assert.match(fn, /findCanvasPageBreak/, "pagination should look for a nearby blank row instead of slicing ordinary text blindly");
+  assert.match(fn, /doc\.addImage\([\s\S]*?margin,\s*\n\s*margin,\s*\n\s*contentWidth/, "every page image must retain the configured top, left and right margins");
+});
+
+test("Bloc's PDF export only reports success after generation actually completes, and surfaces a distinct honest failure message otherwise (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const start = source.indexOf("async function exportActivePdf");
+  const end = source.indexOf("function exportActiveWord");
+  assert.ok(start !== -1 && end !== -1 && end > start, "exportActivePdf should be an async function defined before exportActiveWord");
+  const fn = source.slice(start, end);
+  assert.match(fn, /await html2canvas\(/, "must await the browser render before declaring success");
+  assert.match(fn, /showNotice\("PDF exportado"\)/);
+  assert.match(fn, /catch/);
+  assert.match(fn, /showNotice\([^)]*"error"\)/, "a failed export must show a distinctly-toned error notice, not silently claim success");
+});
+
+test("Exportar sits in the editor's top-right action group next to the overflow menu, and the old footer export selector is gone (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  assert.match(source, /al-bloc-title-row[\s\S]*?<ExportMenu[\s\S]*?<NoteOverflowMenu/, "Exportar and the overflow menu should be siblings in the title row, in that order");
+  assert.doesNotMatch(source, /al-bloc-export-select/, "the redundant desktop footer export <Select> must be removed");
+  assert.match(source, /Palabras: \{wordCount\}[\s\S]{0,80}Caracteres: \{charCount\}/, "the footer should stay focused on autosave/document metrics");
+});
+
+test("the Bloc sidebar's trash link stays height-bounded and pinned from the tablet breakpoint up, not only at the wide desktop breakpoint (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  assert.match(source, /md:grid-cols-\[minmax\(0,1fr\)_300px\]/, "the two-column split should start at the same breakpoint the component treats as desktop (md, not xl)");
+  assert.match(source, /@media \(min-width: 768px\) \{\s*\n\s*\.al-bloc-desktop-grid \{ height: clamp/, "the sidebar height clamp - which makes the notes list scroll internally and keeps Ver papelera pinned - must apply starting at the tablet breakpoint");
+  assert.match(source, /al-bloc-trash-link \{ flex-shrink: 0/);
+});
+
+test("Ver papelera stays reachable from Todas, Recientes and Favoritas alike - it is rendered once, outside the per-tab note list, not duplicated per tab (issue #128)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const renderSites = source.match(/className="al-bloc-trash-link/g) ?? [];
+  assert.equal(renderSites.length, 1, "the trash link must render exactly once (not duplicated per tab, not gated behind a tab check)");
+  assert.doesNotMatch(source, /listTab === "favoritas"[\s\S]{0,400}al-bloc-trash-link/, "the trash link must not be nested inside favorites-only conditional rendering");
+});
+
+test("PageHeader renders exactly one h1 with eyebrow/title/subtitle/actions slots, and never hardcodes the display font (issue #129)", async () => {
+  const source = await readFile(new URL("../src/components/page-header.tsx", import.meta.url), "utf8");
+  const h1Matches = source.match(/<h1[ >]/g) ?? [];
+  assert.equal(h1Matches.length, 1, "the shared header primitive must render exactly one h1");
+  assert.match(source, /al-page-header-eyebrow/);
+  assert.match(source, /al-page-header-subtitle/);
+  assert.doesNotMatch(source, /font-barlow/, "product headings use Inter (the default body font), not the display font");
+});
+
+test("PageHeader anchors its actions slot to the top of the text block (items-start), not its bottom - items-end tied the actions' position to subtitle length/wrapping, which differs per page and made the same icon cluster land at a different height on every route (issue #129 follow-up)", async () => {
+  const source = await readFile(new URL("../src/components/page-header.tsx", import.meta.url), "utf8");
+  assert.match(source, /md:items-start/);
+  assert.doesNotMatch(source, /md:items-end|md:items-center/, "the actions slot must anchor to the eyebrow line - the one element whose size never varies by page - not to a page-dependent midpoint or bottom");
+  assert.match(source, /flex shrink-0 flex-wrap items-center gap-2/, "the actions cluster must never be compressed by a long title/subtitle next to it");
+});
+
+test("The shared page-header tokens in globals.css style the eyebrow/title/subtitle with Inter (the default body font), not --font-barlow (issue #129)", async () => {
+  const source = await readFile(new URL("../src/app/globals.css", import.meta.url), "utf8");
+  assert.match(source, /\.al-page-header-title \{[^}]*color: #111111/, "the title must be black, matching the Tareas/Competencias reference");
+  assert.match(source, /\.al-page-header-eyebrow \{[^}]*color: #e15d2d/, "the eyebrow must be the brand terracotta orange");
+  assert.doesNotMatch(source, /\.al-page-header[^}]*font-barlow/);
+});
+
+test("The dashboard layout no longer renders a standalone desktop actions row above the content - actions live inside each page's own header - and the mobile sticky header is untouched (issue #129)", async () => {
+  const source = await readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /pt-6 md:flex/, "the old standalone desktop actions row (the source of the excessive top gap) must be removed");
+  assert.match(source, /StudentHeaderActions/, "StudentHeaderActions must still be imported for the mobile sticky bar");
+  assert.match(source, /md:hidden/, "the mobile-only sticky header row must remain");
+  assert.match(source, /pb-safe|pb-20|safe-area/, "mobile safe-area/bottom-nav spacing must remain intact");
+});
+
+test("Every first-level authenticated route renders the shared PageHeader instead of a bespoke ad-hoc heading (issue #129)", async () => {
+  const routes = [
+    { file: "../src/components/dashboard/dashboard-greeting.tsx", label: "Inicio" },
+    { file: "../src/components/learning/competencies-view.tsx", label: "Competencias" },
+    { file: "../src/components/tasks/tasks-view.tsx", label: "Tareas" },
+    { file: "../src/components/guest-app.tsx", label: "Bloc de notas / Trabajo / Cursos / Eventos y retos (shared GuestApp header)" },
+    { file: "../src/components/noticias/noticias-view.tsx", label: "Noticias" },
+    { file: "../src/components/calendar/app-calendar.tsx", label: "Calendario" },
+    { file: "../src/components/profile/profile-form.tsx", label: "Perfil" },
+  ];
+  for (const route of routes) {
+    const source = await readFile(new URL(route.file, import.meta.url), "utf8");
+    assert.match(source, /from "@\/components\/page-header"/, `${route.label} must import the shared PageHeader`);
+    assert.match(source, /<PageHeader/, `${route.label} must render PageHeader`);
+  }
+});
+
+test("GuestApp's shared header gives Trabajo, Cursos, Eventos y retos and Bloc de notas a real eyebrow and subtitle, not just a bare view-name h1 (issue #129)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.match(source, /VIEW_HEADER_CONTENT/);
+  for (const view of ["work", "courses", "hackathons", "bloc"]) {
+    const re = new RegExp(`${view}: \\{ eyebrow: "[^"]+", title: "[^"]+", subtitle: "[^"]+" \\}`);
+    assert.match(source, re, `VIEW_HEADER_CONTENT must define a non-empty eyebrow/title/subtitle for "${view}"`);
+  }
+  assert.match(source, /view !== "dashboard" && view !== "calendar" && headerContent/, "dashboard and calendar keep their own bespoke header, every other view gets the shared one");
+});
+
+test("Perfil's title switches from the Barlow display font to the shared Inter page header, and gains an eyebrow (issue #129)", async () => {
+  const source = await readFile(new URL("../src/components/profile/profile-form.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /al-profile-title|font-barlow/, "the old Barlow-styled title must be gone");
+  assert.match(source, /eyebrow="Tu cuenta"/);
+});
+
+test("Calendario, Noticias and Competencias each compose StudentHeaderActions into their own header instead of relying on a removed shared layout row (issue #129)", async () => {
+  const [calendar, noticias, competencies] = await Promise.all([
+    readFile(new URL("../src/components/calendar/app-calendar.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/noticias/noticias-view.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/learning/competencies-view.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(calendar, /headerActions/);
+  assert.match(noticias, /StudentHeaderActions/);
+  assert.match(competencies, /StudentHeaderActions/);
+});
+
+test("The hackathon_favorites migration is additive only - a new column and index, no destructive DDL, and only ever mentions fp_user_content_state in an explanatory comment, never in DDL (issue #131)", async () => {
+  const source = await readFile(new URL("../infra/postgres/migrations/0007_hackathon_favorites.sql", import.meta.url), "utf8");
+  assert.match(source, /alter table public\.hackathons\s*\n\s*add column if not exists is_favorite boolean not null default false/);
+  assert.match(source, /create index if not exists hackathons_user_favorite_idx/);
+  assert.doesNotMatch(source, /\bdrop\s+(table|schema)|truncate\s+table/i);
+  const ddlLines = source.split(/\r?\n/).filter((line) => !line.trim().startsWith("--") && line.trim());
+  assert.ok(!ddlLines.some((line) => line.includes("fp_user_content_state")), "fp_user_content_state must only appear in comments explaining it's untouched, never in an actual DDL statement");
+});
+
+test("toggleHackathonFavorite is an atomic, user-scoped UPDATE - never touches status/lifecycle columns, and returns null (not a thrown error) for a row the caller doesn't own (issue #131)", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/hackathons.ts", import.meta.url), "utf8");
+  const fnSource = source.slice(source.indexOf("export async function toggleHackathonFavorite"));
+  assert.match(fnSource, /UPDATE public\.hackathons SET is_favorite = NOT is_favorite WHERE id = \$1 AND user_id = \$2/, "must be a single atomic flip, not a read-then-write, and must filter by user_id");
+  assert.doesNotMatch(fnSource, /\bstatus\b/, "toggling the heart must never touch the status/lifecycle column");
+  assert.match(fnSource, /rows\[0\]\?\.is_favorite \?\? null/);
+});
+
+test("toggleHackathonFavoriteAction is session-gated and redirects unauthenticated callers, matching the toggleCompanyFavoriteAction pattern it mirrors (issue #131)", async () => {
+  const source = await readFile(new URL("../src/lib/hackathons/actions.ts", import.meta.url), "utf8");
+  assert.match(source, /"use server"/);
+  assert.match(source, /const session = await getSession\(\);/);
+  assert.match(source, /if \(!session\) redirect\("\/login"\);/);
+  assert.match(source, /toggleHackathonFavorite\(session\.uid, hackathonId\)/, "must scope to session.uid, never a client-supplied user id");
+});
+
+test("The toggleHackathonFavorite store action applies an optimistic flip with rollback and an honest error toast on failure, mirroring toggleCompanyFavorite/toggleFpFavorite - not the unguarded fire-and-forget updateHackathon (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const start = source.indexOf("toggleHackathonFavorite: (id: string)");
+  const end = source.indexOf("updateHackathon: async (id: string, data: Partial<Hackathon>)");
+  assert.ok(start !== -1 && end !== -1 && end > start, "toggleHackathonFavorite must be defined as its own dedicated action, before updateHackathon");
+  const fn = source.slice(start, end);
+  assert.match(fn, /setStore\(/, "must apply an optimistic update");
+  assert.match(fn, /toggleHackathonFavoriteAction\(id\)\.then\(\(result\) => \{/);
+  assert.match(fn, /if \(!result\.error\) return;/);
+  assert.match(fn, /toast\.error\(/, "a failed save must surface an honest error toast");
+  const rollbackAssignments = fn.match(/is_favorite: !nextValue/g) ?? [];
+  assert.ok(rollbackAssignments.length >= 1, "the failure branch must flip is_favorite back, not leave the optimistic value stuck");
+});
+
+test("ReturnTypeActions declares toggleHackathonFavorite, so the store's action object type-checks against the shared interface (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/store/types.ts", import.meta.url), "utf8");
+  assert.match(source, /toggleHackathonFavorite: \(id: string\) => void;/);
+});
+
+test("The heart control appears in the card, the featured hero and the requirements modal, all driven by the same canToggleHackathonFavorite/toggleHackathonFavoriteFor helpers - so the three surfaces can never drift out of sync (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function canToggleHackathonFavorite\(item: Hackathon\): boolean/);
+  assert.match(source, /function toggleHackathonFavoriteFor\(item: Hackathon, actions: ReturnTypeActions\)/);
+
+  const heartSites = source.match(/onClick=\{\(\) => toggleHackathonFavoriteFor\(/g) ?? [];
+  assert.equal(heartSites.length, 3, "the card, the hero and the requirements modal must all call the same dispatcher - expected exactly 3 call sites");
+
+  assert.doesNotMatch(source, /import \{[^}]*\bBookmark\b/, "the retired Bookmark icon import must be gone, not left unused");
+  const heartIconUses = source.match(/<Heart className=/g) ?? [];
+  assert.ok(heartIconUses.length >= 4, "Heart is used by Trabajo's CompanyCard plus the 3 new hackathon surfaces");
+});
+
+test("Saving copy is consistent everywhere - Guardar / Guardado / Quitar de guardados - and the old ambiguous \"Guardar para despues\" wording from the requirements modal is gone (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /Guardar para despu[eé]s/, "the requirements modal's old inconsistent copy must not survive anywhere in the file");
+  assert.match(source, /"Quitar de guardados" : "Guardar"/, "the card's aria-label pattern (unsaved -> Guardar, saved -> Quitar de guardados)");
+  assert.match(source, /item\.is_favorite \? "Guardado" : "Guardar"/, "the modal's visible label pattern (unsaved -> Guardar, saved -> Guardado)");
+});
+
+test("tech_opportunities-sourced events are excluded from saving with a documented reason, not silently broken or given a non-functional heart (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("function canToggleHackathonFavorite");
+  const fnSource = source.slice(fnStart, source.indexOf("function toggleHackathonFavoriteFor"));
+  assert.match(fnSource, /sourceTable === "tech_opportunities"\) return false/);
+  const precedingComment = source.slice(Math.max(0, fnStart - 700), fnStart);
+  assert.match(precedingComment, /deliberately excluded/i, "the exclusion must be explained, not just present with no rationale");
+});
+
+test("Nueva tarea moved out of the crowded top header into the Tu lista row, next to Pendientes/Hechas/Todas - not competing with the global +/calendar/bell icons anymore (owner-reported follow-up)", async () => {
+  const source = await readFile(new URL("../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8");
+
+  const headerStart = source.indexOf("<PageHeader");
+  const headerEnd = source.indexOf("/>", source.indexOf('actions={', headerStart)) + 2;
+  const headerJsx = source.slice(headerStart, headerEnd);
+  assert.doesNotMatch(headerJsx, /Nueva tarea/, "the top PageHeader must no longer carry the page-specific composer button");
+  assert.match(headerJsx, /<StudentHeaderActions \/>/, "the global icon cluster must remain there, same as every other page");
+
+  const listRowStart = source.indexOf("Tu lista");
+  const listRowEnd = source.indexOf("</div>\r\n\r\n        {store.loadIssues");
+  const listRow = source.slice(listRowStart, listRowEnd === -1 ? listRowStart + 1200 : listRowEnd);
+  assert.match(listRow, /FilterButton active=\{filter === "pending"\}/);
+  assert.match(listRow, /setComposerOpen\(\(open\) => !open\)/, "the exact same composer toggle handler must be reused, not reimplemented");
+  const filterIdx = listRow.indexOf("Pendientes");
+  const buttonIdx = listRow.indexOf("Nueva tarea");
+  assert.ok(filterIdx > -1 && buttonIdx > filterIdx, "Pendientes/Hechas/Todas must come before Nueva tarea in reading order (filters left, action right)");
+});
+
+test("Nuevo evento and the Google Calendar status move into the calendar's own month-navigation toolbar, next to Hoy - the top header keeps only the global icon cluster (owner-reported follow-up)", async () => {
+  const source = await readFile(new URL("../src/components/calendar/app-calendar.tsx", import.meta.url), "utf8");
+
+  const headerStart = source.indexOf("<PageHeader");
+  const headerEnd = source.indexOf("/>", headerStart) + 2;
+  const pageHeaderJsx = source.slice(headerStart, headerEnd);
+  assert.doesNotMatch(pageHeaderJsx, /Nuevo evento/, "the top PageHeader must no longer carry the event-creation button");
+  assert.doesNotMatch(pageHeaderJsx, /calendarStatus/, "the Google Calendar status must not render in the top header anymore");
+  assert.match(pageHeaderJsx, /\{headerActions\}/, "the global icon cluster must remain there, same as every other page");
+
+  assert.match(source, /statusSlot\?: React\.ReactNode;/, "CalendarHeader needs a dedicated slot for the connection status, distinct from the anchored-popover children prop used by the compact variant");
+  const nonCompactButtonRow = source.slice(source.indexOf('<Button type="button" size="sm" variant="outline"'), source.indexOf("</div>\r\n    </div>\r\n  );\r\n}"));
+  assert.match(nonCompactButtonRow, />Hoy<\/Button>/);
+  assert.match(nonCompactButtonRow, /\{statusSlot\}/);
+  assert.match(nonCompactButtonRow, /Nuevo evento/);
+
+  const calendarViewCall = source.slice(source.indexOf("<CalendarHeader", source.indexOf("export function CalendarView")), source.indexOf("<CalendarHeader", source.indexOf("export function CalendarView")) + 300);
+  assert.match(calendarViewCall, /onCreate=\{\(\) => setNewEventOpen\(true\)\}/, "must reuse the exact same handler the old header button called, not a new one");
+  assert.match(calendarViewCall, /statusSlot=\{calendarStatus\}/);
+
+  const guestApp = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.match(guestApp, /headerActions=\{<StudentHeaderActions \/>\}/);
+  assert.match(guestApp, /calendarStatus=\{<GoogleCalendarStatusControl \/>\}/);
+});
+
+test("GoogleCalendarStatusControl's connected/disconnected/loading states are visually distinct (green when connected, inviting when not) with unchanged underlying logic - same state variables, same effect, same disconnect handler (owner-reported follow-up)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("function GoogleCalendarStatusControl");
+  const fnEnd = source.indexOf("function TaskBoard");
+  const fn = source.slice(fnStart, fnEnd);
+
+  // Logic untouched: same state, same effect endpoint, same disconnect call.
+  assert.match(fn, /const \[connected, setConnected\] = useState\(false\);/);
+  assert.match(fn, /const \[loading, setLoading\] = useState\(true\);/);
+  assert.match(fn, /const \[busy, setBusy\] = useState\(false\);/);
+  assert.match(fn, /fetch\("\/api\/google\/calendar\/status", \{ cache: "no-store" \}\)/);
+  assert.match(fn, /method: "DELETE"/);
+
+  // Presentation: clearly distinct per state, not just a small dot.
+  assert.match(fn, /bg-emerald-50 px-3 text-xs font-bold text-emerald-800/, "connected state must read as green/positive, not generic");
+  assert.match(fn, /border-\[#f4b398\] bg-\[#fff7f3\] px-3 text-xs font-bold text-\[#c94f21\]/, "disconnected state must read as an inviting call-to-connect, not generic");
+  assert.match(fn, /"Google Calendar conectado"/);
+  assert.match(fn, /"Conectar Google Calendar"/);
+  assert.doesNotMatch(fn, /hidden sm:inline/, "the status label must always be visible now that it lives in the calendar's own toolbar, not squeezed into a narrow global header");
+});
+
+test("Competencias' progress card sits inside PageHeader's own actions, glued to the +/calendar/bell icon cluster in the same top row - not stacked below it in its own row leaving an empty gap (owner-reported follow-up)", async () => {
+  const source = await readFile(new URL("../src/components/learning/competencies-view.tsx", import.meta.url), "utf8");
+
+  // The old two-row stack (a dedicated space-y wrapper around PageHeader
+  // plus a sibling card row below it) is exactly what left the large,
+  // "unprofessional" empty gap under the subtitle. That wrapper must be
+  // gone - PageHeader now renders directly, and the card lives inside it.
+  assert.doesNotMatch(source, /<div className="space-y-4 border-b/, "the old wrapper that stacked PageHeader and the progress card into two separate rows must be removed");
+
+  const headerStart = source.indexOf("<PageHeader");
+  const actionsIdx = source.indexOf("actions={", headerStart);
+  const headerEnd = source.indexOf("\n      />", actionsIdx);
+  assert.ok(headerStart > -1 && actionsIdx > headerStart && headerEnd > actionsIdx, "PageHeader must declare an actions prop");
+  const actionsBlock = source.slice(actionsIdx, headerEnd);
+
+  const cardIdx = actionsBlock.indexOf("bg-[#114b3b]");
+  const iconsIdx = actionsBlock.indexOf("<StudentHeaderActions />");
+  assert.ok(cardIdx > -1, "the progress card must render inside PageHeader's actions, next to the icon cluster");
+  assert.ok(iconsIdx > -1 && iconsIdx > cardIdx, "the progress card must come before StudentHeaderActions in reading order - glued to its left, same top row");
+
+  assert.match(actionsBlock, /Progreso guardado/);
+  assert.match(actionsBlock, /\{progress\}%/);
+  assert.match(actionsBlock, /shrink-0/, "the card must not be allowed to stretch/shrink oddly when squeezed next to the icon cluster");
+});
+
+test("Guardados is a real heart-driven filter tab, independent of and additional to Activos/Archivados/Todos - not just the heart control on its own (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const hackathonsFnStart = source.indexOf("function Hackathons(");
+  const hackathonsFnEnd = source.indexOf("function HackathonsEmptyState");
+  const fnSource = source.slice(hackathonsFnStart, hackathonsFnEnd);
+
+  assert.match(fnSource, /useState<"activos" \| "archivados" \| "guardados" \| "todos">/);
+  assert.match(fnSource, /const guardados = useMemo\(\(\) => sorted\.filter\(\(h\) => h\.is_favorite\), \[sorted\]\);/);
+  assert.match(fnSource, /viewTab === "guardados" \? guardados/);
+  assert.match(fnSource, /"guardados", `Guardados \$\{guardados\.length\}`/, "the tab must show a live heart count, matching the issue's explicit ask");
+});
+
+test("Toggling the heart is wired through a distinct action from completion/status changes - completeHackathon and the Realizado button never touch is_favorite (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const completeFnStart = source.indexOf("completeHackathon: async (item: Hackathon)");
+  const completeFnEnd = source.indexOf("addLink:", completeFnStart);
+  assert.ok(completeFnStart !== -1 && completeFnEnd > completeFnStart);
+  const completeFn = source.slice(completeFnStart, completeFnEnd);
+  assert.doesNotMatch(completeFn, /is_favorite/, "completing/archiving an event must never read or write is_favorite - the two concepts stay independent");
 });

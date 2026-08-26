@@ -176,3 +176,37 @@
   height: 15px;
   flex-shrink: 0;
 }
+
+/* Shared page header (src/components/page-header.tsx) — the eyebrow / h1 /
+   subtitle hierarchy every authenticated first-level route uses, so the
+   first text baseline lines up across routes. Always Inter (the body font);
+   reserve --font-barlow for intentional marketing/logo treatments only. */
+.al-page-header {
+  margin-bottom: 24px;
+}
+
+.al-page-header-eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #e15d2d;
+}
+
+.al-page-header-title {
+  margin: 4px 0 0;
+  font-size: clamp(1.5rem, 2.4vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: #111111;
+}
+
+.al-page-header-subtitle {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6b6f72;
+  max-width: 64ch;
+}
