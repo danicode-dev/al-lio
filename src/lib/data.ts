@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
-import { clearSession, getSession } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/session";
 import { getTasksByUser } from "@/lib/db/repositories/tasks";
 import { getCoursesByUser } from "@/lib/db/repositories/courses";
 import { getHackathonsByUser } from "@/lib/db/repositories/hackathons";
@@ -45,9 +45,15 @@ export const getGlobalStore = cache(async () => {
   // issued with against the user's current one, here, where a database
   // round trip for this exact row is already in flight. A mismatch (or a
   // deleted user) means the session was revoked - treat it as logged out.
+  // Routed through /api/auth/logout-stale rather than clearing the cookie
+  // here directly: this runs inside a Server Component's render, and
+  // Next.js only allows cookie mutation from a Server Action or Route
+  // Handler (caught live - see the commit message). redirect() alone here
+  // would leave the stale-but-signature-valid cookie in place, which
+  // middleware (no database access, so it can't see the mismatch) would
+  // bounce straight back to /dashboard - an infinite loop.
   if (!pgUser || pgUser.security_stamp !== session.sv) {
-    await clearSession();
-    redirect("/login");
+    redirect("/api/auth/logout-stale");
   }
 
   if (!profile || !profile.onboarding_completed_at) redirect("/onboarding");

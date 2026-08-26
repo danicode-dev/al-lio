@@ -3018,16 +3018,23 @@ test("confirmEmailToken confirms and immediately establishes a session (email co
   assert.match(source, /return "confirmed";/);
 });
 
-test("Real session revocation: getGlobalStore compares the session's embedded stamp against the freshly-fetched user row (no extra database round trip) and clears the cookie before redirecting on a mismatch (issue #132)", async () => {
+test("Real session revocation: getGlobalStore compares the session's embedded stamp against the freshly-fetched user row (no extra database round trip) and redirects to the dedicated clearing route on a mismatch (issue #132)", async () => {
   const source = await readFile(new URL("../src/lib/data.ts", import.meta.url), "utf8");
 
-  assert.match(source, /import \{ clearSession, getSession \} from "@\/lib\/auth\/session";/);
+  assert.doesNotMatch(source, /clearSession/, "clearSession must not be called from this Server Component - Next.js only allows cookie mutation from a Server Action or Route Handler (caught live)");
   const fnStart = source.indexOf("export const getGlobalStore");
-  const fnSource = source.slice(fnStart, fnStart + 1200);
+  const fnSource = source.slice(fnStart, fnStart + 1900);
 
   assert.match(fnSource, /const \[profile, pgUser\] = await Promise\.all\(\[/, "pgUser must be fetched from the SAME Promise.all already in flight, not a second query");
   assert.match(fnSource, /if \(!pgUser \|\| pgUser\.security_stamp !== session\.sv\) \{/);
-  assert.match(fnSource, /await clearSession\(\);\s*\n\s*redirect\("\/login"\);/, "the stale cookie must be cleared, not just redirected past");
+  assert.match(fnSource, /redirect\("\/api\/auth\/logout-stale"\);/, "must route through the dedicated Route Handler that can actually clear the cookie - redirect() alone here would leave a stale-but-signature-valid cookie that middleware (no database access) would bounce right back to /dashboard");
+});
+
+test("Owner-reported follow-up (caught live in production): /api/auth/logout-stale actually clears the session cookie - the exact capability a Server Component's render is forbidden from doing itself, which is why getGlobalStore redirects here instead of clearing inline (issue #132)", async () => {
+  const source = await readFile(new URL("../src/app/api/auth/logout-stale/route.ts", import.meta.url), "utf8");
+  assert.match(source, /export async function GET\(req: Request\)/);
+  assert.match(source, /await clearSession\(\);/);
+  assert.match(source, /return NextResponse\.redirect\(new URL\("\/login", req\.url\)\);/);
 });
 
 test("SessionPayload requires a security stamp (sv) and verifySessionToken rejects a token missing one, and createSession requires callers to supply it explicitly (issue #132)", async () => {
@@ -3089,6 +3096,22 @@ test("Owner-reported follow-up (caught live): resolveOrProvisionGoogleUser confi
   const source = await readFile(new URL("../src/lib/auth/google-signin.ts", import.meta.url), "utf8");
   const confirmCalls = source.match(/await confirmUserEmail\(user\.id\);/g) ?? [];
   assert.equal(confirmCalls.length, 2, "both the already-linked fast path and the resolve-or-create path must confirm - a password account that registered but never confirmed, then signed in with Google, was left permanently unable to log in with its own password otherwise");
+});
+
+test("Owner-reported follow-up (caught live in production): /confirmar is a Route Handler, not a page - Next.js only allows setting cookies (session creation) from a Server Action or Route Handler, never a Server Component's render, and the old page-based /confirmar crashed with exactly that error on a real click (issue #132)", async () => {
+  const routeSource = await readFile(new URL("../src/app/(auth)/confirmar/route.ts", import.meta.url), "utf8");
+  assert.match(routeSource, /export async function GET\(req: Request\)/);
+  assert.match(routeSource, /const result = await confirmEmailToken\(token\);/);
+  assert.match(routeSource, /return NextResponse\.redirect\(new URL\("\/dashboard", baseUrl\)\);/, "success lands the visitor straight in the app - no intermediate page, matching how every other confirmation flow like this works");
+  assert.match(routeSource, /return NextResponse\.redirect\(new URL\(`\/login\?error=confirm_\$\{result\}`, baseUrl\)\);/, "failure reuses the login page's existing error banner instead of a bespoke error page");
+
+  const oldPageExists = await readFile(new URL("../src/app/(auth)/confirmar/page.tsx", import.meta.url), "utf8").then(() => true).catch(() => false);
+  assert.equal(oldPageExists, false, "the broken Server Component page must be fully removed, not left alongside the route handler");
+
+  const loginSource = await readFile(new URL("../src/components/auth/login-form.tsx", import.meta.url), "utf8");
+  for (const code of ["confirm_invalid", "confirm_expired", "confirm_already_used"]) {
+    assert.match(loginSource, new RegExp(`${code}: "`), `${code} must have Spanish copy in the login page's error dictionary`);
+  }
 });
 
 test("GoogleLoginButton on the login page points at the new minimal-scope identity route, not the Calendar OAuth route (issue #132)", async () => {
