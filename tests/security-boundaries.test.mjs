@@ -706,9 +706,9 @@ test("Competency completion is authorized against the caller's session and cycle
 
 test("A competency with no linked learning item can still be marked complete (issue #96)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  const componentStart = guestAppSource.indexOf("function CompetencyRequirement(");
-  const componentEnd = guestAppSource.indexOf("\nfunction relatedLearningLinks", componentStart);
-  assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the CompetencyRequirement component");
+  const componentStart = guestAppSource.indexOf("function RequirementRow(");
+  const componentEnd = guestAppSource.indexOf("export function HackathonDetailView", componentStart);
+  assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the RequirementRow component");
   const componentSource = guestAppSource.slice(componentStart, componentEnd);
 
   assert.match(componentSource, /actions\.markCompetencyCompleted\(competency\.id\)/, "marking done must write an explicit competency record, not loop over learningItems");
@@ -748,67 +748,20 @@ test("the Eventos redirect resolver never depends on fp_user_competency_state - 
   }
 });
 
-test("The event aptitude modal renders through a body portal with full accessibility wiring (issue #96)", async () => {
-  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  const modalStart = guestAppSource.indexOf("function HackathonRequirementsModal(");
-  const modalEnd = guestAppSource.indexOf("\nfunction isCompetencyDone", modalStart);
-  assert.ok(modalStart > -1 && modalEnd > modalStart, "could not locate the HackathonRequirementsModal component");
-  const modalSource = guestAppSource.slice(modalStart, modalEnd);
-
-  // Portal: renders outside the normal tree, directly under document.body.
-  assert.match(modalSource, /return createPortal\(/);
-  assert.match(modalSource, /,\s*document\.body\s*\);/, "createPortal must target document.body");
-
-  // Full-viewport lock on both html and body, without layout shift.
-  assert.match(modalSource, /document\.documentElement\.style\.overflow = "hidden"/);
-  assert.match(modalSource, /document\.body\.style\.overflow = "hidden"/);
-  assert.match(modalSource, /document\.body\.style\.paddingRight = `\$\{scrollbarWidth\}px`/);
-
-  // Focus trap: cycles Tab/Shift+Tab inside the dialog, never escapes it.
-  assert.match(modalSource, /function handleDialogKeyDown/);
-  assert.match(modalSource, /event\.shiftKey && document\.activeElement === firstElement/);
-  assert.match(modalSource, /!event\.shiftKey && document\.activeElement === lastElement/);
-
-  // Escape closes, and focus returns to whatever triggered the modal.
-  assert.match(modalSource, /if \(event\.key === "Escape"\) \{\s*onClose\(\);/);
-  assert.match(modalSource, /previouslyFocused\?\.focus\(\)/);
-
-  // Background is inert while the modal is open. Cleanup restores each
-  // sibling's own prior value (not a hardcoded false), in case something
-  // else already relied on it being inert for an unrelated reason.
-  assert.match(modalSource, /el\.inert = true/);
-  assert.match(modalSource, /previousInertStates = backgroundSiblings\.map\(\(el\) => el\.inert\)/);
-  assert.match(modalSource, /el\.inert = previousInertStates\[index\]/);
-
-  // aria-labelledby/aria-describedby point at real ids on the title/description.
-  assert.match(modalSource, /aria-labelledby=\{titleId\}/);
-  assert.match(modalSource, /aria-describedby=\{descriptionId\}/);
-  assert.match(modalSource, /id=\{titleId\}/);
-  assert.match(modalSource, /id=\{descriptionId\}/);
-});
-
-test("The event aptitude modal footer never links to the retired internal ruta screen (issue #112)", async () => {
-  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  const modalStart = guestAppSource.indexOf("function HackathonRequirementsModal(");
-  const modalEnd = guestAppSource.indexOf("\nfunction isCompetencyDone", modalStart);
-  assert.ok(modalStart > -1 && modalEnd > modalStart, "could not locate the HackathonRequirementsModal component");
-  const modalSource = guestAppSource.slice(modalStart, modalEnd);
-
-  // issue #112: the event-level "Ver en tu ruta"/rutaHref footer CTA is
-  // removed entirely - an event can require several aptitudes, so there is
-  // no single correct destination for it. Nothing in the modal should
-  // construct a /ruta/ URL any more.
-  assert.doesNotMatch(modalSource, /rutaHref/, "the event-level ruta footer CTA must be gone");
-  assert.doesNotMatch(modalSource, /Ver en tu ruta/, "the ambiguous event-level CTA label must be gone");
-  assert.doesNotMatch(modalSource, /\/ruta\//, "the modal must never construct a /ruta/ URL");
-  assert.doesNotMatch(modalSource, /Ruta todavía sin vídeo/, "the old dead-end disabled CTA must be gone");
-});
+// The requirements step-by-step modal (HackathonRequirementsModal) was
+// retired by issue #135's owner-reported follow-up: requirements now render
+// inline on the /hackathons/[id] detail page (RequirementRow) instead of
+// behind a second modal-opening button, so there is exactly one entry point
+// ("Ver detalles") instead of two competing ones. The modal's own
+// portal/focus-trap/inert accessibility tests and its /ruta-link guard are
+// removed along with it - see "the requirements section never constructs a
+// /ruta/ URL" below for the equivalent guard against the inline replacement.
 
 test("A competency shows at most two non-clickable legacy references (issue #96)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  const componentStart = guestAppSource.indexOf("function CompetencyRequirement(");
-  const componentEnd = guestAppSource.indexOf("\nfunction relatedLearningLinks", componentStart);
-  assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the CompetencyRequirement component");
+  const componentStart = guestAppSource.indexOf("function RequirementRow(");
+  const componentEnd = guestAppSource.indexOf("export function HackathonDetailView", componentStart);
+  assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the RequirementRow component");
   const componentSource = guestAppSource.slice(componentStart, componentEnd);
 
   assert.match(componentSource, /const referenceTitles = \[\.\.\.new Set\([\s\S]*\)\]\.slice\(0, 2\);/);
@@ -1385,9 +1338,9 @@ test("the featured hackathon hero and hackathon list cards always open a validat
 
 test("each aptitude links only to exact internal courses and keeps legacy references as short text", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  const componentStart = guestAppSource.indexOf("function CompetencyRequirement(");
-  const componentEnd = guestAppSource.indexOf("\nfunction relatedLearningLinks", componentStart);
-  assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the CompetencyRequirement component");
+  const componentStart = guestAppSource.indexOf("function RequirementRow(");
+  const componentEnd = guestAppSource.indexOf("export function HackathonDetailView", componentStart);
+  assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the RequirementRow component");
   const componentSource = guestAppSource.slice(componentStart, componentEnd);
 
   assert.match(componentSource, /const internalCourses = selectAptitudeVideos\(competency\.learningItems\)/);
@@ -2114,25 +2067,24 @@ test("ReturnTypeActions declares toggleHackathonFavorite, so the store's action 
   assert.match(source, /toggleHackathonFavorite: \(id: string\) => void;/);
 });
 
-test("The heart control appears in the card, the featured hero, the requirements modal and the detail view, all driven by the same shared canToggleHackathonFavorite/toggleHackathonFavoriteFor helpers - so no surface can drift out of sync (issue #131, extended by #135)", async () => {
+test("The heart control appears in the card, the featured hero and the detail view, all driven by the same shared canToggleHackathonFavorite/toggleHackathonFavoriteFor helpers - so no surface can drift out of sync (issue #131, extended by #135)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
 
   assert.match(source, /canToggleHackathonFavorite,[\s\S]*\} from "@\/lib\/hackathons\/hackathon-presentation";/, "guest-app.tsx must import the shared helper (issue #135), not keep a local copy");
   assert.match(source, /toggleHackathonFavoriteFor,[\s\S]*\} from "@\/lib\/hackathons\/hackathon-presentation";/);
 
   const heartSites = source.match(/onClick=\{\(\) => toggleHackathonFavoriteFor\(/g) ?? [];
-  assert.equal(heartSites.length, 4, "the card, the hero, the requirements modal and the detail view must all call the same dispatcher - expected exactly 4 call sites");
+  assert.equal(heartSites.length, 3, "the card, the hero and the detail view must all call the same dispatcher - expected exactly 3 call sites (the requirements modal was retired, folded into the detail view)");
 
   assert.doesNotMatch(source, /import \{[^}]*\bBookmark\b/, "the retired Bookmark icon import must be gone, not left unused");
   const heartIconUses = source.match(/<Heart className=/g) ?? [];
-  assert.ok(heartIconUses.length >= 5, "Heart is used by Trabajo's CompanyCard plus the 4 hackathon surfaces");
+  assert.ok(heartIconUses.length >= 4, "Heart is used by Trabajo's CompanyCard plus the 3 hackathon surfaces");
 });
 
-test("Saving copy is consistent everywhere - Guardar / Guardado / Quitar de guardados - and the old ambiguous \"Guardar para despues\" wording from the requirements modal is gone (issue #131)", async () => {
+test("Saving copy is consistent everywhere - Guardar / Quitar de guardados - and the old ambiguous \"Guardar para despues\" wording from the retired requirements modal is gone (issue #131)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /Guardar para despu[eé]s/, "the requirements modal's old inconsistent copy must not survive anywhere in the file");
-  assert.match(source, /"Quitar de guardados" : "Guardar"/, "the card's aria-label pattern (unsaved -> Guardar, saved -> Quitar de guardados)");
-  assert.match(source, /item\.is_favorite \? "Guardado" : "Guardar"/, "the modal's visible label pattern (unsaved -> Guardar, saved -> Guardado)");
+  assert.doesNotMatch(source, /Guardar para despu[eé]s/, "the retired requirements modal's old inconsistent copy must not survive anywhere in the file");
+  assert.match(source, /"Quitar de guardados" : "Guardar"/, "the aria-label pattern shared by card/hero/detail view (unsaved -> Guardar, saved -> Quitar de guardados)");
 });
 
 test("tech_opportunities-sourced events are excluded from saving with a documented reason, not silently broken or given a non-functional heart (issue #131, relocated to hackathon-presentation.ts by issue #135)", async () => {
@@ -2441,14 +2393,18 @@ test("Every hackathon card and the featured hero link unconditionally to the int
   assert.doesNotMatch(cardConditionalWrap, /requiredCompetencies/, "the detail Link must render unconditionally, unlike the old gated button");
 });
 
-test("The requirements modal's opening button is relabeled 'Ver requisitos' (distinct from the new 'Ver detalles' page link) but keeps its exact original gating and handler (issue #135)", async () => {
+test("The card and hero have exactly one expansion affordance each - Ver detalles - not a second competing button for requirements/aptitudes (owner-reported follow-up to #135)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const hackathonsFnStart = source.indexOf("function Hackathons(");
   const hackathonsFnEnd = source.indexOf("function HackathonsEmptyState");
   const fnSource = source.slice(hackathonsFnStart, hackathonsFnEnd);
 
-  assert.match(fnSource, /item\.requiredCompetencies && item\.requiredCompetencies\.length > 0 && \(\s*<button type="button" className="al-hack-btn" onClick=\{\(\) => setRequirementsItemId\(item\.id\)\}>\s*<ListChecks className="h-3\.5 w-3\.5" \/>Ver requisitos/, "the card's requirements-modal button must keep its exact original gate and handler, only the label changed");
-  assert.doesNotMatch(fnSource, />Ver detalles<\/button>/, "no button may still claim to be 'Ver detalles' while actually opening the modal - that label now belongs exclusively to the page Link");
+  assert.doesNotMatch(fnSource, /Ver requisitos/, "the card's old separate requirements-modal button must be gone - requirements now live inline on the Ver detalles page");
+  assert.doesNotMatch(fnSource, /Aptitudes mínimas/, "the hero's old separate requirements-modal button must be gone for the same reason");
+  assert.doesNotMatch(fnSource, /setRequirementsItemId/, "no state should exist to open a requirements modal that no longer exists");
+
+  const verDetallesSites = fnSource.match(/>Ver detalles/g) ?? [];
+  assert.equal(verDetallesSites.length, 2, "exactly one Ver detalles per surface: the card and the hero");
 });
 
 test("HackathonDetailPage resolves the item via the already user/cycle-scoped global store and calls notFound() instead of querying by a client-supplied id (issue #135)", async () => {
@@ -2458,7 +2414,7 @@ test("HackathonDetailPage resolves the item via the already user/cycle-scoped gl
   assert.match(source, /if \(!item\) notFound\(\);/, "an id outside this user's authorized catalogue must 404, not render an empty/broken page");
 });
 
-test("HackathonDetailView shows an honest not-found state with a way back when the id doesn't resolve, and reuses the untouched HackathonRequirementsModal for the step-by-step flow (issue #135)", async () => {
+test("HackathonDetailView shows an honest not-found state with a way back when the id doesn't resolve (issue #135)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const fnStart = source.indexOf("export function HackathonDetailView");
   const fnEnd = source.indexOf("function LinksView");
@@ -2467,8 +2423,28 @@ test("HackathonDetailView shows an honest not-found state with a way back when t
   assert.match(fnSource, /if \(!item\) \{/);
   assert.match(fnSource, /Ya no podemos mostrar este evento/);
   assert.match(fnSource, /<Link href="\/hackathons" className="al-hack-empty-btn">Volver a Eventos y retos<\/Link>/);
-  assert.match(fnSource, /<HackathonRequirementsModal item=\{item\} actions=\{actions\} onClose=\{\(\) => setRequirementsOpen\(false\)\} \/>/, "must reuse the existing modal component, not a second reimplementation");
-  assert.doesNotMatch(fnSource, /function HackathonRequirementsModal/, "must not redefine the modal locally - only call the existing one");
+});
+
+test("The requirements step-by-step modal was retired (owner-reported follow-up to #135) - HackathonRequirementsModal no longer exists, and requirements render inline via RequirementRow instead", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /function HackathonRequirementsModal/, "the modal must be removed entirely, not just left unreachable");
+  assert.doesNotMatch(source, /requirementsItemId|requirementsOpen/, "no state should remain for opening a modal that no longer exists");
+  assert.match(source, /function RequirementRow\(\{ competency, actions \}: \{ competency: RequiredCompetency; actions: ReturnTypeActions \}\)/);
+
+  const viewFnStart = source.indexOf("export function HackathonDetailView");
+  const viewFnEnd = source.indexOf("function LinksView");
+  const viewFnSource = source.slice(viewFnStart, viewFnEnd);
+  assert.match(viewFnSource, /\{requirements\.map\(\(competency\) => \(\s*<RequirementRow key=\{competency\.id\} competency=\{competency\} actions=\{actions\} \/>/, "every requirement must render inline on the page");
+  assert.match(viewFnSource, /const cardClass = "space-y-3 rounded-\[18px\]/, "the detail page's own cards must still exist to hold the inline requirements");
+});
+
+test("The inline requirements section never constructs a /ruta/ URL - replaces the equivalent guard that used to cover the retired modal (issue #112, owner-reported follow-up to #135)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("function RequirementRow(");
+  const fnEnd = source.indexOf("export function HackathonDetailView");
+  const fnSource = source.slice(fnStart, fnEnd);
+  assert.doesNotMatch(fnSource, /\/ruta\//, "RequirementRow must never construct a /ruta/ URL");
+  assert.doesNotMatch(fnSource, /rutaHref|Ver en tu ruta/, "the old event-level ruta CTA concept must not resurface here");
 });
 
 test("HackathonDetailView never renders item.notes directly - the description always goes through hackathonPublicDescription, same as the card and hero (issue #135)", async () => {
@@ -2480,18 +2456,16 @@ test("HackathonDetailView never renders item.notes directly - the description al
   assert.doesNotMatch(fnSource, /\{item\.notes\}/, "notes must never be interpolated directly into the page");
 });
 
-test("Related learning links on the detail view are deduped by internal_learning_slug and only render when grounded - no fabricated recommendations to fill space (issue #135)", async () => {
+test("Each inline requirement's learning links are deduped by internal_learning_slug, and an honest fallback replaces fabricated recommendations when nothing is grounded (owner-reported follow-up to #135)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  const fnStart = source.indexOf("function relatedLearningLinks");
+  const fnStart = source.indexOf("function RequirementRow(");
   const fnEnd = source.indexOf("export function HackathonDetailView");
   const fnSource = source.slice(fnStart, fnEnd);
-  assert.match(fnSource, /selectAptitudeVideos\(competency\.learningItems\)/, "must reuse the same safe-video selector CompetencyRequirement uses, not a new unfiltered pass over every learning item");
-  assert.match(fnSource, /if \(!learningItem\.internal_learning_slug \|\| seen\.has\(learningItem\.internal_learning_slug\)\) continue;/);
 
-  const viewFnStart = source.indexOf("export function HackathonDetailView");
-  const viewFnEnd = source.indexOf("function LinksView");
-  const viewFnSource = source.slice(viewFnStart, viewFnEnd);
-  assert.match(viewFnSource, /\{related\.length > 0 && \(/, "the related-learning section must not render at all when nothing is grounded");
+  assert.match(fnSource, /selectAptitudeVideos\(competency\.learningItems\)/, "must reuse the same safe-video selector the old CompetencyRequirement used, not a new unfiltered pass over every learning item");
+  assert.match(fnSource, /items\.findIndex\(\(candidate\) => candidate\.internal_learning_slug === learningItem\.internal_learning_slug\) === index\)/, "must dedupe by internal_learning_slug");
+  assert.match(fnSource, /internalCourses\.length === 0 && referenceTitles\.length === 0 && <EmptyText>Sin curso interno disponible todavía\.<\/EmptyText>/, "an honest empty state, not a fabricated recommendation, when this specific requirement has nothing grounded");
+  assert.match(fnSource, /const referenceTitles = \[\.\.\.new Set\([\s\S]*?\)\]\.slice\(0, 2\);/, "legacy references without an internal course stay capped, same as before");
 });
 
 test("The detail view's official source link is gated by isSafeHttpUrl, same as the card and hero (issue #135)", async () => {
@@ -2503,10 +2477,10 @@ test("The detail view's official source link is gated by isSafeHttpUrl, same as 
   assert.match(fnSource, /rel="noopener noreferrer"/);
 });
 
-test("The detail view heart control reuses the exact shared canToggleHackathonFavorite/toggleHackathonFavoriteFor helpers - card, hero, modal and detail can never drift out of sync on saved state (issue #135)", async () => {
+test("The detail view heart control reuses the exact shared canToggleHackathonFavorite/toggleHackathonFavoriteFor helpers - card, hero and detail can never drift out of sync on saved state (issue #135)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const heartSites = source.match(/onClick=\{\(\) => toggleHackathonFavoriteFor\(/g) ?? [];
-  assert.equal(heartSites.length, 4, "card, hero, requirements modal and the new detail view must all call the same dispatcher - expected exactly 4 call sites now");
+  assert.equal(heartSites.length, 3, "card, hero and the detail view must all call the same dispatcher - expected exactly 3 call sites");
   assert.match(source, /from "@\/lib\/hackathons\/hackathon-presentation"/, "guest-app.tsx must import the shared helpers rather than keep a second local copy that could drift");
 });
 

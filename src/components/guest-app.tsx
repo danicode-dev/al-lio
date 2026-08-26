@@ -2583,7 +2583,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
-  const [requirementsItemId, setRequirementsItemId] = useState<string | null>(null);
   const [pendingCompleteId, setPendingCompleteId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -2689,14 +2688,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   }, [activos]);
   const featuredProgress = featuredHackathon ? hackathonAptitudeProgress(featuredHackathon) : null;
   const featuredDescription = featuredHackathon ? hackathonPublicDescription(featuredHackathon) : undefined;
-
-  // Resolve against the current allHackathons collection instead of retaining
-  // the object captured when the modal opened. Requirement updates then appear
-  // immediately without closing and reopening the modal.
-  const requirementsItem = useMemo(
-    () => (requirementsItemId ? allHackathons.find((h) => h.id === requirementsItemId) ?? null : null),
-    [requirementsItemId, allHackathons]
-  );
 
   return (
     <>
@@ -2847,11 +2838,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                         <ExternalLink className="h-4 w-4" />Abrir convocatoria
                       </a>
                     ) : null}
-                    {featuredHackathon.requiredCompetencies && featuredHackathon.requiredCompetencies.length > 0 && (
-                      <button type="button" className="al-hack-hero-btn-ghost" onClick={() => setRequirementsItemId(featuredHackathon.id)}>
-                        <ListChecks className="h-4 w-4" />Aptitudes mínimas
-                      </button>
-                    )}
                   </div>
                 </div>
                 {featuredProgress && featuredProgress.total > 0 && (
@@ -2942,11 +2928,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                             <ExternalLink className="h-3.5 w-3.5" />Abrir web
                           </a>
                         )}
-                        {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
-                          <button type="button" className="al-hack-btn" onClick={() => setRequirementsItemId(item.id)}>
-                            <ListChecks className="h-3.5 w-3.5" />Ver requisitos
-                          </button>
-                        )}
                         <button type="button" className="al-hack-btn" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" }).catch(() => {})}>
                           <Plus className="h-3.5 w-3.5" />Crear tarea
                         </button>
@@ -3020,8 +3001,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             </FilterPanel>
           )}
         </div>
-
-        <HackathonRequirementsModal item={requirementsItem} actions={actions} onClose={() => setRequirementsItemId(null)} />
       </div>
     </>
   );
@@ -3056,233 +3035,6 @@ function HackathonsEmptyState({ variant, onClearFilters }: { variant: "sin_resul
   );
 }
 
-function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackathon | null; actions: ReturnTypeActions; onClose: () => void }) {
-  const competencies = item?.requiredCompetencies ?? [];
-  const obligatorias = competencies.filter((competency) => competency.obligatoria_para_item);
-  const recomendadas = competencies.filter((competency) => !competency.obligatoria_para_item);
-  const steps = [...obligatorias, ...recomendadas];
-  const [stepIndex, setStepIndex] = useState(0);
-  const [mounted, setMounted] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const titleId = useId();
-  const descriptionId = useId();
-
-  // Portals require a DOM to attach to, so the actual portal render is
-  // deferred one tick past the server-rendered pass.
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    setStepIndex(0);
-  }, [item?.id]);
-
-  useEffect(() => {
-    if (!item?.id) return;
-
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousPaddingRight = document.body.style.paddingRight;
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-    if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
-    }
-
-    // Make everything behind the portal unreachable to assistive tech and
-    // keyboard/pointer input while the modal is open. rootRef is excluded
-    // since it IS the modal, appended as its own sibling under body. Each
-    // sibling's own prior inert value is captured and restored on cleanup
-    // instead of assuming it was false, in case something else already
-    // relied on it being inert for an unrelated reason.
-    const backgroundSiblings = Array.from(document.body.children).filter(
-      (el): el is HTMLElement => el instanceof HTMLElement && el !== rootRef.current,
-    );
-    const previousInertStates = backgroundSiblings.map((el) => el.inert);
-    backgroundSiblings.forEach((el) => { el.inert = true; });
-
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    closeButtonRef.current?.focus();
-
-    return () => {
-      document.documentElement.style.overflow = previousHtmlOverflow;
-      document.body.style.overflow = previousBodyOverflow;
-      document.body.style.paddingRight = previousPaddingRight;
-      backgroundSiblings.forEach((el, index) => { el.inert = previousInertStates[index]; });
-      previouslyFocused?.focus();
-    };
-    // item?.id only - not the item object itself, which the store rebuilds
-    // (new reference, same event) whenever any of its fields change, e.g.
-    // marking an aptitude or navigating between steps. Keying on the full
-    // object would tear down and redo this whole lifecycle - scroll lock,
-    // inert, and focus jumping back to the close button - on every such
-    // update, even though the modal never actually closed and reopened.
-  }, [item?.id]);
-
-  function handleDialogKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "Escape") {
-      onClose();
-      return;
-    }
-    if (event.key !== "Tab") return;
-    const focusableElements = dialogRef.current?.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
-    );
-    if (!focusableElements?.length) return;
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-    if (event.shiftKey && document.activeElement === firstElement) {
-      event.preventDefault();
-      lastElement.focus();
-    } else if (!event.shiftKey && document.activeElement === lastElement) {
-      event.preventDefault();
-      firstElement.focus();
-    }
-  }
-
-  if (!mounted || !item) return null;
-
-  const canFavorite = canToggleHackathonFavorite(item);
-  const safeIndex = steps.length > 0 ? Math.min(stepIndex, steps.length - 1) : 0;
-  const currentStep = steps[safeIndex] ?? null;
-  const isLastStep = !currentStep || safeIndex === steps.length - 1;
-
-  function continueOrClose() {
-    if (currentStep && !isLastStep) {
-      setStepIndex((index) => Math.min(steps.length - 1, index + 1));
-      return;
-    }
-    onClose();
-  }
-
-  return createPortal(
-    <div
-      ref={rootRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6"
-      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
-    >
-      <style>{`
-        .al-modal-shell { background: white; border-radius: 22px; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
-        .al-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #f0ece2; flex-shrink: 0; }
-        .al-modal-head-icon { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; flex-shrink: 0; }
-        .al-modal-title { font-size: 18px; font-weight: 700; color: #111111; line-height: 24px; letter-spacing: -0.02em; }
-        .al-modal-subtitle { font-size: 11.5px; color: #6b6f72; margin-top: 2px; }
-        .al-modal-close { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; flex-shrink: 0; }
-        .al-modal-step-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px; }
-        .al-modal-step-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
-        .al-modal-step-badge { display: inline-flex; align-items: center; height: 22px; padding: 0 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
-        .al-modal-step-badge-oblig { background: #e7f5ee; color: #1f7a4d; }
-        .al-modal-step-badge-reco { background: #fdf1dd; color: #b4791f; }
-        .al-modal-step-count { font-size: 11px; font-weight: 600; color: #9a958a; }
-        .al-modal-step-card { border: 1px solid #ece7dc; border-radius: 16px; padding: 16px; }
-        .al-modal-step-card-head { display: flex; align-items: flex-start; gap: 10px; }
-        .al-modal-req-check { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; flex-shrink: 0; margin-top: 1px; }
-        .al-modal-req-check-done { background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
-        .al-modal-req-check-pending { border: 2px solid #e4dfd5; color: transparent; }
-        .al-modal-req-title { font-size: 14.5px; font-weight: 700; color: #111111; line-height: 1.35; }
-        .al-modal-req-desc { font-size: 12.5px; color: #4b4740; margin-top: 8px; line-height: 1.55; }
-        .al-modal-req-actions { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
-        .al-modal-req-btn { display: inline-flex; align-items: center; gap: 5px; height: 29px; padding: 0 10px; border-radius: 8px; border: 1px solid #ece7dc; background: white; font-size: 11px; font-weight: 600; color: #333029; text-decoration: none; cursor: pointer; }
-        .al-modal-req-btn-video { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
-        .al-modal-mark-done { margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 9px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 700; background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
-        .al-modal-mark-done-active { background: #e7f5ee; color: #1f7a4d; cursor: default; }
-        .al-modal-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 18px; border-top: 1px solid #f0ece2; flex-shrink: 0; }
-        .al-modal-nav-btn { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 11px; border-radius: 9px; border: 1px solid #ece7dc; background: white; font-size: 11.5px; font-weight: 600; color: #333029; cursor: pointer; }
-        .al-modal-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-        .al-modal-dots { display: flex; align-items: center; gap: 5px; }
-        .al-modal-dot { width: 6px; height: 6px; border-radius: 999px; background: #e4dfd5; }
-        .al-modal-dot-done { background: #a9d6bc; }
-        .al-modal-dot-active { width: 16px; background: linear-gradient(90deg, #F06A37, #E15D2D); }
-        .al-modal-footer { border-top: 1px solid #f0ece2; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
-        .al-modal-footer-row { display: flex; gap: 8px; }
-        .al-modal-btn-primary { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 42px; border-radius: 13px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 13px; font-weight: 700; box-shadow: 0 10px 24px rgba(225,93,45,0.25); border: none; cursor: pointer; text-decoration: none; flex-direction: column; line-height: 1.25; }
-        .al-modal-btn-primary small { font-weight: 500; font-size: 10.5px; opacity: 0.85; }
-        .al-modal-btn-secondary { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 16px; border-radius: 13px; border: 1px solid #ece7dc; background: white; color: #333029; font-size: 12.5px; font-weight: 600; cursor: pointer; }
-        .al-modal-footer-hint { text-align: center; font-size: 10.5px; color: #9a958a; }
-      `}</style>
-      <div
-        ref={dialogRef}
-        className="al-modal-shell max-h-[calc(100svh-1.5rem)] w-full max-w-lg overflow-hidden sm:max-h-[calc(100svh-3rem)]"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
-        onKeyDown={handleDialogKeyDown}
-      >
-        <div className="al-modal-head">
-          <span className="al-modal-head-icon">
-            <Image src="/assets/hackathons/hackathons-modal-checklist-icon.png" alt="" width={160} height={160} className="h-full w-full object-contain" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 id={titleId} className="al-modal-title line-clamp-2">Requisitos para {item.name}</h2>
-            <p id={descriptionId} className="al-modal-subtitle">Todo lo que conviene dominar antes de presentarte.</p>
-          </div>
-          <button ref={closeButtonRef} type="button" className="al-modal-close" onClick={onClose} aria-label="Cerrar">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        {currentStep ? (
-          <>
-            <div className="al-modal-step-scroll">
-              <div className="al-modal-step-top">
-                <span className={cn("al-modal-step-badge", currentStep.obligatoria_para_item ? "al-modal-step-badge-oblig" : "al-modal-step-badge-reco")}>
-                  {currentStep.obligatoria_para_item ? "Imprescindible" : "Recomendada"}
-                </span>
-                <span className="al-modal-step-count">Paso {safeIndex + 1} de {steps.length}</span>
-              </div>
-              <CompetencyRequirement
-                competency={currentStep}
-                actions={actions}
-                onMarkDone={() => setStepIndex((i) => Math.min(steps.length - 1, i + 1))}
-              />
-            </div>
-            <div className="al-modal-nav">
-              <button type="button" className="al-modal-nav-btn" onClick={() => setStepIndex((i) => Math.max(0, i - 1))} disabled={safeIndex === 0}>
-                <ChevronLeft className="h-3.5 w-3.5" />Anterior
-              </button>
-              <div className="al-modal-dots">
-                {steps.map((step, i) => (
-                  <span key={step.id} className={cn("al-modal-dot", i === safeIndex && "al-modal-dot-active", i !== safeIndex && isCompetencyDone(step) && "al-modal-dot-done")} />
-                ))}
-              </div>
-              <button type="button" className="al-modal-nav-btn" onClick={() => setStepIndex((i) => Math.min(steps.length - 1, i + 1))} disabled={safeIndex === steps.length - 1}>
-                Siguiente<ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="al-modal-step-scroll">
-            <EmptyText>No hay aptitudes registradas todavía para este evento o reto.</EmptyText>
-          </div>
-        )}
-        <div className="al-modal-footer">
-          <div className="al-modal-footer-row">
-            {canFavorite && (
-              <button
-                type="button"
-                className="al-modal-btn-secondary"
-                aria-pressed={!!item.is_favorite}
-                onClick={() => toggleHackathonFavoriteFor(item, actions)}
-              >
-                <Heart className="h-4 w-4" fill={item.is_favorite ? "currentColor" : "none"} />
-                {item.is_favorite ? "Guardado" : "Guardar"}
-              </button>
-            )}
-            <button type="button" className="al-modal-btn-primary" onClick={continueOrClose}>
-              {!currentStep ? "Cerrar" : isLastStep ? "Terminar" : "Continuar"}
-            </button>
-          </div>
-          <p className="al-modal-footer-hint">Parte del aprendizaje se queda en AL-LÍO. Tú eliges dónde estudiar.</p>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
 function isCompetencyDone(competency: RequiredCompetency): boolean {
   return !!competency.completed;
 }
@@ -3299,94 +3051,65 @@ function hackPriorityClass(value?: string): string {
   return "al-hack-chip-amber";
 }
 
-function CompetencyRequirement({
-  competency,
-  actions,
-  onMarkDone,
-}: {
-  competency: RequiredCompetency;
-  actions: ReturnTypeActions;
-  onMarkDone?: () => void;
-}) {
+// A single requirement, fully expanded (title, description, its own
+// grounded internal-course links, mark-done action) - not a compact
+// checklist row behind a second "see more" button. Folding the old
+// step-by-step modal's content directly into the page is issue #135's
+// explicit follow-up ask: one entry point (Ver detalles), not two
+// competing ones for the same information.
+function RequirementRow({ competency, actions }: { competency: RequiredCompetency; actions: ReturnTypeActions }) {
   const done = isCompetencyDone(competency);
-  // Only videos already present in AL-LIO's learning catalogue are clickable.
-  // Legacy references without an internal course stay as short, read-only text.
   const internalCourses = selectAptitudeVideos(competency.learningItems)
-    .flatMap((item) => item.internal_learning_slug
-      ? [{ ...item, internal_learning_slug: item.internal_learning_slug }]
+    .flatMap((learningItem) => learningItem.internal_learning_slug
+      ? [{ ...learningItem, internal_learning_slug: learningItem.internal_learning_slug }]
       : [])
-    .filter((item, index, items) => items.findIndex((candidate) => candidate.internal_learning_slug === item.internal_learning_slug) === index);
-  const internalCourseIds = new Set(internalCourses.map((item) => item.id));
+    .filter((learningItem, index, items) => items.findIndex((candidate) => candidate.internal_learning_slug === learningItem.internal_learning_slug) === index);
+  const internalCourseIds = new Set(internalCourses.map((learningItem) => learningItem.id));
   const referenceTitles = [...new Set(
     competency.learningItems
-      .filter((item) => !internalCourseIds.has(item.id))
-      .map((item) => item.title.trim())
+      .filter((learningItem) => !internalCourseIds.has(learningItem.id))
+      .map((learningItem) => learningItem.title.trim())
       .filter(Boolean),
   )].slice(0, 2);
 
-  function markDone() {
-    actions.markCompetencyCompleted(competency.id);
-    onMarkDone?.();
-  }
-
   return (
-    <div className="al-modal-step-card">
-      <div className="al-modal-step-card-head">
-        <span className={cn("al-modal-req-check", done ? "al-modal-req-check-done" : "al-modal-req-check-pending")}>
-          <Check className="h-3.5 w-3.5" />
+    <div className="rounded-2xl border border-[#ece7dc] p-3.5">
+      <div className="flex items-start gap-2.5">
+        <span className={cn("al-modal-req-check mt-0.5", done ? "al-modal-req-check-done" : "al-modal-req-check-pending")}>
+          <Check className="h-3 w-3" />
         </span>
-        <p className="al-modal-req-title">{competency.titulo}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[13.5px] font-bold text-[#111111]">{competency.titulo}</p>
+            <span className={cn("al-modal-step-badge", competency.obligatoria_para_item ? "al-modal-step-badge-oblig" : "al-modal-step-badge-reco")}>
+              {competency.obligatoria_para_item ? "Imprescindible" : "Recomendada"}
+            </span>
+          </div>
+          {competency.descripcion && <p className="mt-1.5 text-xs leading-5 text-[#4b4740]">{competency.descripcion}</p>}
+          <div className="al-modal-req-actions mt-2">
+            {internalCourses.map((learningItem) => (
+              <Link key={learningItem.id} href={`/aprende/${encodeURIComponent(learningItem.internal_learning_slug)}`} className="al-modal-req-btn al-modal-req-btn-video">
+                <Youtube className="h-3 w-3" />{learningItem.title}
+              </Link>
+            ))}
+            {referenceTitles.length > 0 && <EmptyText>Otros recursos: {referenceTitles.join(" · ")}</EmptyText>}
+            {internalCourses.length === 0 && referenceTitles.length === 0 && <EmptyText>Sin curso interno disponible todavía.</EmptyText>}
+          </div>
+          {done ? (
+            <span className="al-modal-mark-done al-modal-mark-done-active mt-3">
+              <CheckCircle2 className="h-3.5 w-3.5" />Marcado como hecho
+            </span>
+          ) : (
+            <button type="button" className="al-modal-mark-done mt-3" onClick={() => actions.markCompetencyCompleted(competency.id)}>
+              <Check className="h-3.5 w-3.5" />Marcar como hecho
+            </button>
+          )}
+        </div>
       </div>
-      {competency.descripcion && <p className="al-modal-req-desc">{competency.descripcion}</p>}
-      <div className="al-modal-req-actions">
-        {internalCourses.map((learningItem) => (
-          <Link key={learningItem.id} href={`/aprende/${encodeURIComponent(learningItem.internal_learning_slug)}`} className="al-modal-req-btn al-modal-req-btn-video">
-            <Youtube className="h-3 w-3" />
-            {learningItem.title}
-          </Link>
-        ))}
-        {referenceTitles.length > 0 && <EmptyText>Otros recursos: {referenceTitles.join(" · ")}</EmptyText>}
-        {internalCourses.length === 0 && referenceTitles.length === 0 && <EmptyText>Sin curso interno disponible todavía.</EmptyText>}
-      </div>
-      {done ? (
-        <span className="al-modal-mark-done al-modal-mark-done-active">
-          <CheckCircle2 className="h-3.5 w-3.5" />Marcado como hecho
-        </span>
-      ) : (
-        <button type="button" className="al-modal-mark-done" onClick={markDone}>
-          <Check className="h-3.5 w-3.5" />Marcar como hecho
-        </button>
-      )}
     </div>
   );
 }
 
-// Aggregates every internal course/video linked from any of this event's
-// required competencies into one deduped list (issue #135's "related
-// AL-LIO competencies/courses when grounded" requirement) - reuses the
-// exact same selectAptitudeVideos + internal_learning_slug filtering
-// CompetencyRequirement already does per-step, just across every step.
-function relatedLearningLinks(item: Hackathon) {
-  const seen = new Set<string>();
-  const links: { id: string; title: string; slug: string }[] = [];
-  for (const competency of item.requiredCompetencies ?? []) {
-    for (const learningItem of selectAptitudeVideos(competency.learningItems)) {
-      if (!learningItem.internal_learning_slug || seen.has(learningItem.internal_learning_slug)) continue;
-      seen.add(learningItem.internal_learning_slug);
-      links.push({ id: learningItem.id, title: learningItem.title, slug: learningItem.internal_learning_slug });
-    }
-  }
-  return links;
-}
-
-// The internal detail surface for issue #135: a real route (/hackathons/[id])
-// rather than only the requirements modal, so every visible event/challenge
-// has somewhere to link to. Resolves the item from the live client store by
-// id (same getDisplayHackathons pipeline the list uses) rather than trusting
-// a prop snapshot, so favorite/completion/preparation state always matches
-// the card and hero - they can never show a stale or contradictory state.
-// The requirements modal itself is untouched and reused as-is for the
-// step-by-step flow; this view only adds a read-only summary of it.
 export function HackathonDetailView({ id }: { id: string }) {
   const { store, actions } = useStore();
   const allHackathons = useMemo(
@@ -3394,7 +3117,6 @@ export function HackathonDetailView({ id }: { id: string }) {
     [store.hackathons, store.techOpportunities, store.fpContent]
   );
   const item = useMemo(() => allHackathons.find((h) => h.id === id) ?? null, [allHackathons, id]);
-  const [requirementsOpen, setRequirementsOpen] = useState(false);
   const [pendingComplete, setPendingComplete] = useState(false);
 
   if (!item) {
@@ -3424,7 +3146,6 @@ export function HackathonDetailView({ id }: { id: string }) {
   const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
   const requirements = item.requiredCompetencies ?? [];
   const progress = hackathonAptitudeProgress(item);
-  const related = relatedLearningLinks(item);
   const past = isHackathonPast(item);
   const archived = isHackathonArchived(item);
   const cardClass = "space-y-3 rounded-[18px] border border-[#ece7dc] bg-white p-4 shadow-[0_10px_26px_rgba(17,17,17,0.045)] sm:p-5";
@@ -3442,7 +3163,7 @@ export function HackathonDetailView({ id }: { id: string }) {
   }
 
   return (
-    <div className="max-w-3xl space-y-5">
+    <div className="space-y-5">
       <style>{`
         .al-hack-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
         .al-hack-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
@@ -3461,110 +3182,95 @@ export function HackathonDetailView({ id }: { id: string }) {
         .al-modal-req-actions { display: flex; flex-wrap: wrap; gap: 6px; }
         .al-modal-req-btn { display: inline-flex; align-items: center; gap: 5px; height: 29px; padding: 0 10px; border-radius: 8px; border: 1px solid #ece7dc; background: white; font-size: 11px; font-weight: 600; color: #333029; text-decoration: none; cursor: pointer; }
         .al-modal-req-btn-video { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
+        .al-modal-mark-done { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 9px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 700; background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
+        .al-modal-mark-done-active { background: #e7f5ee; color: #1f7a4d; cursor: default; }
       `}</style>
       <Link href="/hackathons" className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b6f72] transition hover:text-[#c94f21]">
         <ChevronLeft className="h-3.5 w-3.5" />Eventos y retos
       </Link>
       <PageHeader eyebrow={item.type || "Evento o reto"} title={item.name} subtitle={item.organizer} actions={<StudentHeaderActions />} />
 
-      <div className={cardClass}>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge className={cn(hackathonStatusClass(item.status))}>{hackathonStatusLabel(item.status)}</Badge>
-          {!archived && isPreparationComplete(item) && (
-            <Badge className="al-hack-prep-ready al-hack-chip-green"><CheckCircle2 className="h-3 w-3" />Preparación lista</Badge>
-          )}
-          {canFavorite && (
-            <button
-              type="button"
-              className={cn("al-hack-heart", item.is_favorite && "al-hack-heart-active")}
-              aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
-              aria-pressed={!!item.is_favorite}
-              onClick={() => toggleHackathonFavoriteFor(item, actions)}
-            >
-              <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
-            </button>
+      <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+        <div className="min-w-0 space-y-4">
+          <div className={cardClass}>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className={cn(hackathonStatusClass(item.status))}>{hackathonStatusLabel(item.status)}</Badge>
+              {!archived && isPreparationComplete(item) && (
+                <Badge className="al-hack-prep-ready al-hack-chip-green"><CheckCircle2 className="h-3 w-3" />Preparación lista</Badge>
+              )}
+              {canFavorite && (
+                <button
+                  type="button"
+                  className={cn("al-hack-heart", item.is_favorite && "al-hack-heart-active")}
+                  aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
+                  aria-pressed={!!item.is_favorite}
+                  onClick={() => toggleHackathonFavoriteFor(item, actions)}
+                >
+                  <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+                </button>
+              )}
+            </div>
+            {past && <p className="rounded-lg bg-[#f3ece1] px-3 py-2 text-xs font-semibold text-[#6b6f72]">Este evento ya ha finalizado.</p>}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Fechas</p>
+                <p className="text-[13px] font-semibold text-[#333029]">{item.start_at ? formatDateLabel(item.start_at) : "Sin fecha indicada"}{item.end_at ? ` → ${formatDateLabel(item.end_at)}` : ""}</p>
+              </div>
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Inscripción hasta</p>
+                <p className="text-[13px] font-semibold text-[#333029]">{inscripcionFin ? formatDateLabel(inscripcionFin) : "No especificada"}</p>
+              </div>
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Ubicación</p>
+                <p className="text-[13px] font-semibold text-[#333029]">{place || "No especificada"}</p>
+              </div>
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Modalidad</p>
+                <p className="text-[13px] font-semibold text-[#333029]">{item.modalidad || "No especificada"}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Descripción</p>
+              <p className="mt-1 whitespace-pre-wrap text-[13px] leading-6 text-[#4b4740]">{description || "Este evento todavía no tiene una descripción disponible."}</p>
+            </div>
+          </div>
+
+          {requirements.length > 0 && (
+            <div className={cardClass}>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-bold text-[#111111]">Requisitos y preparación</p>
+                {progress.total > 0 && <span className="text-xs font-semibold text-[#9a958a]">{progress.done}/{progress.total} completadas</span>}
+              </div>
+              <div className="space-y-3">
+                {requirements.map((competency) => (
+                  <RequirementRow key={competency.id} competency={competency} actions={actions} />
+                ))}
+              </div>
+            </div>
           )}
         </div>
-        {past && <p className="rounded-lg bg-[#f3ece1] px-3 py-2 text-xs font-semibold text-[#6b6f72]">Este evento ya ha finalizado.</p>}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Fechas</p>
-            <p className="text-[13px] font-semibold text-[#333029]">{item.start_at ? formatDateLabel(item.start_at) : "Sin fecha indicada"}{item.end_at ? ` → ${formatDateLabel(item.end_at)}` : ""}</p>
+
+        <div className="space-y-4">
+          <div className={cardClass}>
+            <p className="text-sm font-bold text-[#111111]">Acciones</p>
+            <div className="flex flex-col gap-2">
+              {isSafeHttpUrl(item.url) && (
+                <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-hack-btn al-hack-btn-primary justify-center">
+                  <ExternalLink className="h-3.5 w-3.5" />Abrir convocatoria oficial
+                </a>
+              )}
+              <button type="button" className="al-hack-btn justify-center" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" }).catch(() => {})}>
+                <Plus className="h-3.5 w-3.5" />Crear tarea
+              </button>
+              {!archived && item.sourceTable !== "tech_opportunities" && (
+                <button type="button" className="al-hack-btn justify-center" disabled={pendingComplete} onClick={() => handleComplete(item)}>
+                  <CheckCircle2 className="h-3.5 w-3.5" />{pendingComplete ? "Guardando…" : "Realizado"}
+                </button>
+              )}
+            </div>
           </div>
-          <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Inscripción hasta</p>
-            <p className="text-[13px] font-semibold text-[#333029]">{inscripcionFin ? formatDateLabel(inscripcionFin) : "No especificada"}</p>
-          </div>
-          <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Ubicación</p>
-            <p className="text-[13px] font-semibold text-[#333029]">{place || "No especificada"}</p>
-          </div>
-          <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Modalidad</p>
-            <p className="text-[13px] font-semibold text-[#333029]">{item.modalidad || "No especificada"}</p>
-          </div>
-        </div>
-        <div>
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Descripción</p>
-          <p className="mt-1 whitespace-pre-wrap text-[13px] leading-6 text-[#4b4740]">{description || "Este evento todavía no tiene una descripción disponible."}</p>
         </div>
       </div>
-
-      {requirements.length > 0 && (
-        <div className={cardClass}>
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-bold text-[#111111]">Requisitos y preparación</p>
-            {progress.total > 0 && <span className="text-xs font-semibold text-[#9a958a]">{progress.done}/{progress.total} completadas</span>}
-          </div>
-          <ul className="space-y-2">
-            {requirements.map((competency) => (
-              <li key={competency.id} className="flex items-center gap-2.5">
-                <span className={cn("al-modal-req-check", isCompetencyDone(competency) ? "al-modal-req-check-done" : "al-modal-req-check-pending")}>
-                  <Check className="h-3 w-3" />
-                </span>
-                <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#333029]">{competency.titulo}</span>
-                <span className={cn("al-modal-step-badge", competency.obligatoria_para_item ? "al-modal-step-badge-oblig" : "al-modal-step-badge-reco")}>
-                  {competency.obligatoria_para_item ? "Imprescindible" : "Recomendada"}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <button type="button" className="al-hack-btn al-hack-btn-primary" onClick={() => setRequirementsOpen(true)}>
-            <ListChecks className="h-3.5 w-3.5" />Ver requisitos paso a paso
-          </button>
-        </div>
-      )}
-
-      {related.length > 0 && (
-        <div className={cardClass}>
-          <p className="text-sm font-bold text-[#111111]">Aprendizaje relacionado en AL-LÍO</p>
-          <div className="al-modal-req-actions">
-            {related.map((link) => (
-              <Link key={link.id} href={`/aprende/${encodeURIComponent(link.slug)}`} className="al-modal-req-btn al-modal-req-btn-video">
-                <Youtube className="h-3 w-3" />{link.title}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        {isSafeHttpUrl(item.url) && (
-          <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-hack-btn al-hack-btn-primary">
-            <ExternalLink className="h-3.5 w-3.5" />Abrir convocatoria oficial
-          </a>
-        )}
-        <button type="button" className="al-hack-btn" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" }).catch(() => {})}>
-          <Plus className="h-3.5 w-3.5" />Crear tarea
-        </button>
-        {!archived && item.sourceTable !== "tech_opportunities" && (
-          <button type="button" className="al-hack-btn" disabled={pendingComplete} onClick={() => handleComplete(item)}>
-            <CheckCircle2 className="h-3.5 w-3.5" />{pendingComplete ? "Guardando…" : "Realizado"}
-          </button>
-        )}
-      </div>
-
-      {requirementsOpen && <HackathonRequirementsModal item={item} actions={actions} onClose={() => setRequirementsOpen(false)} />}
     </div>
   );
 }
