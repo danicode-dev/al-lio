@@ -4,12 +4,13 @@ import { SESSION_COOKIE, signSessionToken, verifySessionToken, type SessionPaylo
 
 const SESSION_DAYS = 30;
 
-export async function createSession(user: { id: string; email: string; name?: string | null }): Promise<void> {
+export async function createSession(user: { id: string; email: string; name?: string | null; securityStamp: string }): Promise<void> {
   const exp = Math.floor(Date.now() / 1000) + SESSION_DAYS * 24 * 60 * 60;
   const token = await signSessionToken({
     uid: user.id,
     email: user.email,
     name: user.name ?? undefined,
+    sv: user.securityStamp,
     exp,
   });
 

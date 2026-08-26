@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
-import { getSession } from "@/lib/auth/session";
+import { clearSession, getSession } from "@/lib/auth/session";
 import { getTasksByUser } from "@/lib/db/repositories/tasks";
 import { getCoursesByUser } from "@/lib/db/repositories/courses";
 import { getHackathonsByUser } from "@/lib/db/repositories/hackathons";
@@ -38,6 +38,18 @@ export const getGlobalStore = cache(async () => {
     getProfileByUser(userId),
     getUserById(userId),
   ]);
+
+  // Real session revocation (issue #132): the signed cookie is otherwise
+  // stateless and stays cryptographically valid until it expires, so a
+  // password reset can only take effect by comparing the stamp it was
+  // issued with against the user's current one, here, where a database
+  // round trip for this exact row is already in flight. A mismatch (or a
+  // deleted user) means the session was revoked - treat it as logged out.
+  if (!pgUser || pgUser.security_stamp !== session.sv) {
+    await clearSession();
+    redirect("/login");
+  }
+
   if (!profile || !profile.onboarding_completed_at) redirect("/onboarding");
 
   const issues: StoreLoadSection[] = [];

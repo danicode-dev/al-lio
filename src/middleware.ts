@@ -20,7 +20,7 @@ const privatePathPrefixes = [
   "/roadmap",
 ];
 
-const authPaths = ["/login", "/register"];
+const authPaths = ["/login", "/register", "/recuperar"];
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -68,5 +68,6 @@ export const config = {
     "/roadmap/:path*",
     "/login",
     "/register",
+    "/recuperar",
   ],
 };

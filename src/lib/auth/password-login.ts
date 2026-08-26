@@ -56,11 +56,16 @@ export async function loginWithPasswordAction(
     return { error: "credentials_invalid" };
   }
 
+  if (!authenticatedUser.email_confirmed_at) {
+    return { error: "email_not_confirmed" };
+  }
+
   await clearAuthRateLimit("password", email);
   await createSession({
     id: authenticatedUser.id,
     email: authenticatedUser.email,
     name: authenticatedUser.display_name,
+    securityStamp: authenticatedUser.security_stamp,
   });
   redirect("/dashboard");
 }

@@ -1,5 +1,5 @@
 const baseUrl = process.env.SMOKE_BASE_URL ?? "http://localhost:3000";
-const routes = ["/", "/dashboard", "/calendar", "/work", "/courses", "/hackathons", "/noticias"];
+const routes = ["/", "/dashboard", "/calendar", "/work", "/courses", "/hackathons", "/noticias", "/register", "/recuperar"];
 const appMarkers = ["AL-L", "AL L", "__next", "/_next/static"];
 
 async function fetchText(path) {

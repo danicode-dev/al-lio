@@ -2,6 +2,7 @@
 
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { GoogleLoginButton } from "@/components/auth/google-login-button";
 import { LoginBrandPanel } from "@/components/auth/login-brand-panel";
@@ -19,6 +20,7 @@ const errorCopy: Record<string, string> = {
   google_session_error: "Google conectó correctamente, pero no se pudo crear la sesión.",
   credentials_invalid: "Correo o clave incorrectos.",
   credentials_unavailable: "No se pudo validar el acceso. Vuelve a intentarlo.",
+  email_not_confirmed: "Confirma tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.",
   demo_disabled: "El acceso a los perfiles demo está desactivado temporalmente.",
   demo_unavailable: "Este perfil demo no está disponible ahora mismo.",
   rate_limited: "Demasiados intentos seguidos. Espera unos minutos antes de volver a probar.",
@@ -416,6 +418,11 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
                     {showPassword ? <EyeOff style={{ width: 16, height: 16 }} /> : <Eye style={{ width: 16, height: 16 }} />}
                   </button>
                 </div>
+                <div style={{ marginTop: 8, textAlign: "right" }}>
+                  <Link href="/recuperar" style={{ fontSize: 13, color: "#9a9589", textDecoration: "underline", textUnderlineOffset: 3 }}>
+                    ¿Has olvidado tu contraseña?
+                  </Link>
+                </div>
               </div>
 
               {/* CTA */}
@@ -442,6 +449,13 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
 
               {/* Google — ancho completo */}
               <GoogleLoginButton className="al-google-btn" />
+
+              <p style={{ textAlign: "center", fontSize: 14, color: "#525252", margin: 0 }}>
+                ¿No tienes cuenta?{" "}
+                <Link href="/register" style={{ fontWeight: 600, color: "#E15D2D", textDecoration: "underline", textUnderlineOffset: 3 }}>
+                  Crear cuenta
+                </Link>
+              </p>
             </form>
 
             {demoAccessEnabled && <DemoProfilePicker />}

@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import { google } from "googleapis";
-import { createSession } from "@/lib/auth/session";
-import { ensureUserByEmail } from "@/lib/db/repositories/users";
-import { upsertProfile } from "@/lib/db/repositories/profiles";
+import { getSession } from "@/lib/auth/session";
 import {
   assertGoogleOAuthState,
   createGoogleOAuthClient,
@@ -13,10 +10,20 @@ import {
 
 export const dynamic = "force-dynamic";
 
+// Calendar consent only - identity/session creation is handled entirely by
+// the separate /api/auth/google/* flow before a user ever reaches here
+// (issue #132). This callback no longer creates or links a user account;
+// it just stores Calendar tokens for the browser that already has a valid
+// AL-LÍO session.
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  // Use BASE_URL from env to avoid inheriting the internal Docker bind address (0.0.0.0:3000).
   const baseUrl = process.env.BASE_URL ?? url.origin;
+
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.redirect(new URL("/login", baseUrl));
+  }
+
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
 
@@ -32,24 +39,6 @@ export async function GET(req: Request) {
 
   try {
     const { tokens } = await oauth.getToken(code);
-    oauth.setCredentials(tokens);
-
-    const userInfo = await google.oauth2({ version: "v2", auth: oauth }).userinfo.get();
-    const email = userInfo.data.email;
-    if (!email || userInfo.data.verified_email === false) {
-      return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("connect_error"), baseUrl));
-    }
-
-    const displayName = userInfo.data.name?.trim() || email.split("@")[0];
-    const user = await ensureUserByEmail(email, displayName);
-    await upsertProfile(user.id, {
-      display_name: displayName,
-      full_name: userInfo.data.name ?? displayName,
-      target_role: "Usuario AL-LIO",
-      main_location: "Granada",
-    });
-    await createSession({ id: user.id, email: user.email, name: user.display_name ?? displayName });
-
     await saveGoogleTokens(tokens);
     return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("connected"), baseUrl));
   } catch {

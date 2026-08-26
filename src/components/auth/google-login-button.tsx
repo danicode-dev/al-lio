@@ -12,7 +12,7 @@ function GoogleIcon() {
 export function GoogleLoginButton({ className }: { className?: string }) {
   return (
     <a
-      href="/api/google/calendar/auth?next=/dashboard"
+      href="/api/auth/google/start?next=/dashboard"
       className={[
         "flex w-full items-center justify-center gap-2 rounded-lg border text-sm font-medium transition-colors",
         "h-11 border-[#232323] bg-[#141414] text-white hover:bg-[#1a1a1a]",

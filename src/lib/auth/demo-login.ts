@@ -51,6 +51,7 @@ export async function loginAsDemoAction(formData: FormData): Promise<void> {
     id: user.id,
     email: user.email,
     name: user.display_name,
+    securityStamp: user.security_stamp,
   });
   redirect("/dashboard");
 }
