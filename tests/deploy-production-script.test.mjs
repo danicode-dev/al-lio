@@ -4,6 +4,7 @@ import test from "node:test";
 
 const deployScriptUrl = new URL("../scripts/deploy-production.sh", import.meta.url);
 const guideUrl = new URL("../docs/AUTONOMOUS_PRODUCTION_DEPLOY.md", import.meta.url);
+const dockerfileUrl = new URL("../infra/Dockerfile", import.meta.url);
 
 test("the production deploy command pins a reviewed forward-only main commit", async () => {
   const source = await readFile(deployScriptUrl, "utf8");
@@ -41,6 +42,14 @@ test("the command replaces only web and preserves automatic recovery", async () 
   assert.doesNotMatch(source, /docker compose[^\n]*down/);
   assert.doesNotMatch(source, /docker volume rm/);
   assert.doesNotMatch(source, /git reset --hard/);
+});
+
+test("release worktrees and public assets remain readable by the runtime user", async () => {
+  const source = await readFile(deployScriptUrl, "utf8");
+  const dockerfile = await readFile(dockerfileUrl, "utf8");
+
+  assert.match(source, /umask 022\s+git -C "\$repository_dir" worktree add/);
+  assert.match(dockerfile, /COPY --from=builder --chown=nextjs:nodejs \/app\/public \.\/public/);
 });
 
 test("the owner guide documents the complete low-touch workflow", async () => {
