@@ -626,7 +626,7 @@ test("fp course completion is per-user isolated and never mutates the shared cou
   const actionsSource = await readFile(new URL("../src/lib/fp/resource-notes-actions.ts", import.meta.url), "utf8");
   const fnSource = actionsSource.slice(actionsSource.indexOf("export async function markResourceStatusAction"));
 
-  assert.match(fnSource, /const session = await getSession\(\);/);
+  assert.match(fnSource, /const session = await getValidatedSession\(\);/);
   assert.match(fnSource, /if \(!session\) redirect\("\/login"\);/);
   assert.match(fnSource, /getAuthorizedResource\(session\.uid, idSlug\)/, "must resolve the item scoped to the current session's user/cycle");
   assert.match(fnSource, /upsertFpUserContentState\(session\.uid, item\.id/, "must write scoped to session.uid, not a caller-supplied id");
@@ -706,7 +706,7 @@ test("Competency completion is authorized against the caller's session and cycle
   const actionsSource = await readFile(new URL("../src/lib/fp/competency-actions.ts", import.meta.url), "utf8");
   const fnSource = actionsSource.slice(actionsSource.indexOf("export async function markCompetencyCompletedAction"));
 
-  assert.match(fnSource, /const session = await getSession\(\);/);
+  assert.match(fnSource, /const session = await getValidatedSession\(\);/);
   assert.match(fnSource, /if \(!session\) redirect\("\/login"\);/);
   assert.match(fnSource, /getAuthorizedSkill\(session\.uid, skillId\)/, "must resolve the skill scoped to the current session's user/cycle");
   assert.match(fnSource, /markUserCompetencyCompleted\(session\.uid, skillId\)/, "must write scoped to session.uid, not a caller-supplied id");
@@ -2054,7 +2054,7 @@ test("toggleHackathonFavorite is an atomic, user-scoped UPDATE - never touches s
 test("toggleHackathonFavoriteAction is session-gated and redirects unauthenticated callers, matching the toggleCompanyFavoriteAction pattern it mirrors (issue #131)", async () => {
   const source = await readFile(new URL("../src/lib/hackathons/actions.ts", import.meta.url), "utf8");
   assert.match(source, /"use server"/);
-  assert.match(source, /const session = await getSession\(\);/);
+  assert.match(source, /const session = await getValidatedSession\(\);/);
   assert.match(source, /if \(!session\) redirect\("\/login"\);/);
   assert.match(source, /toggleHackathonFavorite\(session\.uid, hackathonId\)/, "must scope to session.uid, never a client-supplied user id");
 });
@@ -2244,7 +2244,7 @@ test("toggleCourseFavorite is an atomic, user-scoped UPDATE - never touches stat
 test("toggleCourseFavoriteAction is session-gated and redirects unauthenticated callers, matching toggleCompanyFavoriteAction/toggleHackathonFavoriteAction (issue #120)", async () => {
   const source = await readFile(new URL("../src/lib/courses/actions.ts", import.meta.url), "utf8");
   assert.match(source, /"use server"/);
-  assert.match(source, /const session = await getSession\(\);/);
+  assert.match(source, /const session = await getValidatedSession\(\);/);
   assert.match(source, /if \(!session\) redirect\("\/login"\);/);
   assert.match(source, /toggleCourseFavorite\(session\.uid, courseId\)/, "must scope to session.uid, never a client-supplied user id");
 });
@@ -2873,7 +2873,7 @@ test("src/lib/work/actions.ts is session-scoped, never redirects (it runs from b
   const source = await readFile(new URL("../src/lib/work/actions.ts", import.meta.url), "utf8");
 
   assert.match(source, /"use server";/);
-  assert.match(source, /const session = await getSession\(\);/g);
+  assert.match(source, /const session = await getValidatedSession\(\);/g);
   assert.doesNotMatch(source, /redirect\(/, "a background save/read must degrade to an error result, not throw a Next.js redirect");
   assert.match(source, /category: "work"/, "createQuickSearch's `data.category ?? null` falls through to null unless this is passed explicitly, silently overriding the column's SQL default");
   assert.match(source, /\.filter\(\(row\) => row\.category === "work"\)/, "reads must not leak rows from an unrelated future category sharing this table");
