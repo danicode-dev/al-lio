@@ -2171,13 +2171,24 @@ test("GoogleCalendarStatusControl's connected/disconnected/loading states are vi
   assert.doesNotMatch(fn, /hidden sm:inline/, "the status label must always be visible now that it lives in the calendar's own toolbar, not squeezed into a narrow global header");
 });
 
-test("Competencias' outer header wrapper (the only page that nests PageHeader inside an extra flex row, for the progress card) uses the same items-start anchor and the same md: breakpoint as PageHeader itself - a mismatched items-end/lg: on the outer wrapper is exactly the bug class already fixed once, just one nesting level up (owner-reported follow-up)", async () => {
+test("Competencias' progress card sits below the header, not beside it - so PageHeader's actions land flush at the page's true right edge, same as every other page, instead of being squeezed left of a sibling card (owner-reported follow-up)", async () => {
   const source = await readFile(new URL("../src/components/learning/competencies-view.tsx", import.meta.url), "utf8");
-  const wrapperStart = source.indexOf('<div className="flex flex-col gap-5 border-b');
-  const wrapperTag = source.slice(wrapperStart, source.indexOf(">", wrapperStart) + 1);
-  assert.match(wrapperTag, /md:flex-row/, "the outer wrapper must switch to a row at the same breakpoint PageHeader itself uses (md), not a wider one (lg), or the two disagree about layout mode between 768-1023px");
-  assert.match(wrapperTag, /md:items-start/, "the outer wrapper must anchor to the top, matching PageHeader's own items-start - an items-end here re-introduces the exact bug already fixed inside PageHeader, just one level up");
-  assert.doesNotMatch(wrapperTag, /items-end|lg:flex-row|lg:items/);
+
+  // PageHeader must no longer share a flex row with the progress card -
+  // a row-level sibling is exactly what pushed the actions cluster in from
+  // the true right edge in the previous attempt at this fix.
+  const wrapperStart = source.indexOf('<div className="space-y-4 border-b');
+  assert.ok(wrapperStart > -1, "the header/progress-card container must stack vertically (space-y), not sit in a shared flex row");
+  const pageHeaderIdx = source.indexOf("<PageHeader", wrapperStart);
+  const progressCardIdx = source.indexOf("Progreso guardado", wrapperStart);
+  assert.ok(pageHeaderIdx > -1 && progressCardIdx > pageHeaderIdx, "PageHeader must render before, and outside of, the progress card's own row");
+
+  const betweenHeaderAndCard = source.slice(pageHeaderIdx, progressCardIdx);
+  assert.doesNotMatch(betweenHeaderAndCard, /md:flex-row|lg:flex-row|justify-between/, "no flex row may span PageHeader and the progress card together");
+
+  const cardDivStart = source.lastIndexOf('<div className="flex', progressCardIdx);
+  const cardTag = source.slice(cardDivStart, source.indexOf(">", cardDivStart) + 1);
+  assert.match(cardTag, /w-fit/, "the progress card must size to its own content on its own row, not stretch to fill/compete for the header's row width");
 });
 
 test("Guardados is a real heart-driven filter tab, independent of and additional to Activos/Archivados/Todos - not just the heart control on its own (issue #131)", async () => {
