@@ -43,9 +43,21 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
-import { fpUserStatusToHackathonStatus, isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
+import { isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
 import { isSafeHttpUrl, selectAptitudeVideos } from "@/lib/fp/event-cta";
 import { getCoursePresentation } from "@/lib/courses/course-presentation";
+import {
+  canToggleHackathonFavorite,
+  fpItemNotes,
+  fpItemToHackathon,
+  hackathonPublicDescription,
+  isFpHackathonLike,
+  isTechHackathonOrEvent,
+  techCategory,
+  techOpportunityToHackathon,
+  textLooksPositive,
+  toggleHackathonFavoriteFor,
+} from "@/lib/hackathons/hackathon-presentation";
 import { toast } from "sonner";
 import { BlocNotepad } from "@/components/bloc/bloc-notepad";
 import {
@@ -2045,7 +2057,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
     [store.courses, store.techOpportunities, store.fpContent]
   );
 
-  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "todos">("activos");
+  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "guardados" | "todos">("activos");
   const [showFilters, setShowFilters] = useState(false);
   const [monthFilter, setMonthFilter] = useState("");
   const [dayFilter, setDayFilter] = useState("");
@@ -2074,9 +2086,10 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
 
   const archivados = useMemo(() => sorted.filter(isCourseArchived), [sorted]);
   const activos = useMemo(() => sorted.filter((c) => !isCourseArchived(c) && !isCoursePast(c)), [sorted]);
+  const guardados = useMemo(() => sorted.filter((c) => c.is_favorite), [sorted]);
   const tabBase = useMemo(
-    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : sorted,
-    [viewTab, activos, archivados, sorted]
+    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : viewTab === "guardados" ? guardados : sorted,
+    [viewTab, activos, archivados, guardados, sorted]
   );
 
   const monthGroups = useMemo(() => {
@@ -2174,6 +2187,8 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
         .al-course-card-title-wrap { min-width: 0; flex: 1 1 auto; }
         .al-course-card-badges { display: flex; flex-shrink: 0; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+        .al-course-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .al-course-heart.al-course-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
         .al-course-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; overflow-wrap: anywhere; word-break: break-word; }
         .al-course-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; overflow-wrap: anywhere; word-break: break-word; }
         .al-course-card-meta { font-size: 11px; color: #6b6f72; }
@@ -2196,8 +2211,9 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
             <Input placeholder="Buscar título, entidad, tag..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           </div>
           <div className="al-course-tabs">
-            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
+            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
               <button key={id} type="button" className={cn("al-course-tab", viewTab === id && "al-course-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
+                {id === "guardados" && <Heart className="mr-1 inline h-3 w-3 align-[-1px]" fill={viewTab === "guardados" ? "currentColor" : "none"} />}
                 {label}
               </button>
             ))}
@@ -2252,6 +2268,17 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                         </div>
                         <div className="al-course-card-badges">
                           <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
+                          {canToggleCourseFavorite(item) && (
+                            <button
+                              type="button"
+                              className={cn("al-course-heart", item.is_favorite && "al-course-heart-active")}
+                              aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
+                              aria-pressed={!!item.is_favorite}
+                              onClick={() => toggleCourseFavoriteFor(item, actions)}
+                            >
+                              <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+                            </button>
+                          )}
                         </div>
                       </div>
                       {(presentation.startDate || presentation.endDate) && (
@@ -2286,6 +2313,12 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                 <Image src="/assets/cursos/cursos-empty-archivados.png" alt="" width={480} height={294} className="al-course-empty-illustration" />
                 <p className="al-course-empty-title">No tienes cursos archivados</p>
                 <p className="al-course-empty-desc">Cuando archives un curso aparecerá aquí.</p>
+              </div>
+            ) : viewTab === "guardados" && !search && activeFilterCount === 0 ? (
+              <div className="al-course-empty">
+                <span className="al-course-empty-icon"><Heart className="h-6 w-6" /></span>
+                <p className="al-course-empty-title">No tienes cursos guardados</p>
+                <p className="al-course-empty-desc">Toca el corazón de un curso para guardarlo aquí, sin importar su estado o progreso.</p>
               </div>
             ) : (
               <div className="al-course-empty">
@@ -2456,6 +2489,17 @@ function CourseDetailModal({
             {presentation.provider && <p className="al-course-modal-org">{presentation.provider}</p>}
           </div>
           <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
+          {canToggleCourseFavorite(item) && (
+            <button
+              type="button"
+              className={cn("al-course-heart", item.is_favorite && "al-course-heart-active")}
+              aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
+              aria-pressed={!!item.is_favorite}
+              onClick={() => toggleCourseFavoriteFor(item, actions)}
+            >
+              <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+            </button>
+          )}
           <button ref={closeButtonRef} type="button" className="al-course-modal-close" onClick={onClose} aria-label="Cerrar">
             <X className="h-4 w-4" />
           </button>
@@ -2503,28 +2547,22 @@ function CourseDetailModal({
   );
 }
 
-// tech_opportunities-sourced events are deliberately excluded (issue #131) -
-// that shared catalogue has no per-user favorites table (see the migration
-// notes in 0007_hackathon_favorites.sql); everything else - fp_content_items
-// and the student's own hackathons rows (sourceTable is undefined for those,
-// since addHackathon never sets it) - can be saved.
-function canToggleHackathonFavorite(item: Hackathon): boolean {
+// Mirrors canToggleHackathonFavorite/toggleHackathonFavoriteFor exactly -
+// tech_opportunities-sourced courses are deliberately excluded for the same
+// documented reason (issue #120, see 0008_course_favorites.sql); everything
+// else - fp_content_items and the student's own courses rows - can be saved.
+export function canToggleCourseFavorite(item: Course): boolean {
   if (item.sourceTable === "tech_opportunities") return false;
   if (item.sourceTable === "fp_content_items") return !!item.id_slug;
   return true;
 }
 
-function toggleHackathonFavoriteFor(item: Hackathon, actions: ReturnTypeActions) {
+export function toggleCourseFavoriteFor(item: Course, actions: ReturnTypeActions) {
   if (item.sourceTable === "fp_content_items") {
     actions.toggleFpFavorite(item.id_slug!, !item.is_favorite);
   } else {
-    actions.toggleHackathonFavorite(item.id);
+    actions.toggleCourseFavorite(item.id);
   }
-}
-
-function hackathonPublicDescription(item: Hackathon) {
-  if (item.description) return item.description;
-  return item.sourceTable === "fp_content_items" ? undefined : item.notes;
 }
 
 function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
@@ -2801,8 +2839,11 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   )}
                   {featuredDescription && <p className="al-hack-hero-desc">{featuredDescription}</p>}
                   <div className="al-hack-hero-actions">
+                    <Link href={`/hackathons/${encodeURIComponent(featuredHackathon.id)}`} className="al-hack-hero-btn-primary">
+                      <Eye className="h-4 w-4" />Ver detalles
+                    </Link>
                     {isSafeHttpUrl(featuredHackathon.url) ? (
-                      <a href={featuredHackathon.url} target="_blank" rel="noopener noreferrer" className="al-hack-hero-btn-primary">
+                      <a href={featuredHackathon.url} target="_blank" rel="noopener noreferrer" className="al-hack-hero-btn-ghost">
                         <ExternalLink className="h-4 w-4" />Abrir convocatoria
                       </a>
                     ) : null}
@@ -2893,14 +2934,17 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                       </div>
                       {description && <p className="al-hack-card-desc line-clamp-2">{description}</p>}
                       <div className="al-hack-card-actions">
+                        <Link href={`/hackathons/${encodeURIComponent(item.id)}`} className="al-hack-btn al-hack-btn-primary">
+                          <Eye className="h-3.5 w-3.5" />Ver detalles
+                        </Link>
                         {isSafeHttpUrl(item.url) && (
-                          <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-hack-btn al-hack-btn-primary">
+                          <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-hack-btn">
                             <ExternalLink className="h-3.5 w-3.5" />Abrir web
                           </a>
                         )}
                         {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
                           <button type="button" className="al-hack-btn" onClick={() => setRequirementsItemId(item.id)}>
-                            <ListChecks className="h-3.5 w-3.5" />Ver detalles
+                            <ListChecks className="h-3.5 w-3.5" />Ver requisitos
                           </button>
                         )}
                         <button type="button" className="al-hack-btn" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" }).catch(() => {})}>
@@ -3317,6 +3361,214 @@ function CompetencyRequirement({
   );
 }
 
+// Aggregates every internal course/video linked from any of this event's
+// required competencies into one deduped list (issue #135's "related
+// AL-LIO competencies/courses when grounded" requirement) - reuses the
+// exact same selectAptitudeVideos + internal_learning_slug filtering
+// CompetencyRequirement already does per-step, just across every step.
+function relatedLearningLinks(item: Hackathon) {
+  const seen = new Set<string>();
+  const links: { id: string; title: string; slug: string }[] = [];
+  for (const competency of item.requiredCompetencies ?? []) {
+    for (const learningItem of selectAptitudeVideos(competency.learningItems)) {
+      if (!learningItem.internal_learning_slug || seen.has(learningItem.internal_learning_slug)) continue;
+      seen.add(learningItem.internal_learning_slug);
+      links.push({ id: learningItem.id, title: learningItem.title, slug: learningItem.internal_learning_slug });
+    }
+  }
+  return links;
+}
+
+// The internal detail surface for issue #135: a real route (/hackathons/[id])
+// rather than only the requirements modal, so every visible event/challenge
+// has somewhere to link to. Resolves the item from the live client store by
+// id (same getDisplayHackathons pipeline the list uses) rather than trusting
+// a prop snapshot, so favorite/completion/preparation state always matches
+// the card and hero - they can never show a stale or contradictory state.
+// The requirements modal itself is untouched and reused as-is for the
+// step-by-step flow; this view only adds a read-only summary of it.
+export function HackathonDetailView({ id }: { id: string }) {
+  const { store, actions } = useStore();
+  const allHackathons = useMemo(
+    () => getDisplayHackathons(store.hackathons, store.techOpportunities, store.fpContent),
+    [store.hackathons, store.techOpportunities, store.fpContent]
+  );
+  const item = useMemo(() => allHackathons.find((h) => h.id === id) ?? null, [allHackathons, id]);
+  const [requirementsOpen, setRequirementsOpen] = useState(false);
+  const [pendingComplete, setPendingComplete] = useState(false);
+
+  if (!item) {
+    return (
+      <div className="space-y-4">
+        <style>{`
+          .al-hack-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+          .al-hack-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
+          .al-hack-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
+          .al-hack-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
+          .al-hack-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; text-decoration: none; }
+        `}</style>
+        <PageHeader eyebrow="Eventos y retos" title="Evento no disponible" actions={<StudentHeaderActions />} />
+        <div className="al-hack-empty">
+          <span className="al-hack-empty-icon"><Trophy className="h-6 w-6" /></span>
+          <p className="al-hack-empty-title">Ya no podemos mostrar este evento</p>
+          <p className="al-hack-empty-desc">Puede haberse retirado del catálogo o no estar disponible para tu ciclo. Vuelve al listado para ver los eventos activos.</p>
+          <Link href="/hackathons" className="al-hack-empty-btn">Volver a Eventos y retos</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const description = hackathonPublicDescription(item);
+  const canFavorite = canToggleHackathonFavorite(item);
+  const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
+  const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
+  const requirements = item.requiredCompetencies ?? [];
+  const progress = hackathonAptitudeProgress(item);
+  const related = relatedLearningLinks(item);
+  const past = isHackathonPast(item);
+  const archived = isHackathonArchived(item);
+  const cardClass = "space-y-3 rounded-[18px] border border-[#ece7dc] bg-white p-4 shadow-[0_10px_26px_rgba(17,17,17,0.045)] sm:p-5";
+
+  async function handleComplete(target: Hackathon) {
+    if (pendingComplete) return;
+    setPendingComplete(true);
+    try {
+      await actions.completeHackathon(target);
+    } catch {
+      // Store action already surfaced a toast and rolled back optimistic state.
+    } finally {
+      setPendingComplete(false);
+    }
+  }
+
+  return (
+    <div className="max-w-3xl space-y-5">
+      <style>{`
+        .al-hack-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
+        .al-hack-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+        .al-hack-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
+        .al-hack-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .al-hack-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .al-hack-heart.al-hack-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
+        .al-hack-chip-green { border-color: rgba(31, 122, 77, 0.3) !important; background: #e7f5ee !important; color: #1f7a4d !important; }
+        .al-hack-prep-ready { display: inline-flex; align-items: center; gap: 4px; }
+        .al-modal-req-check { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; flex-shrink: 0; }
+        .al-modal-req-check-done { background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
+        .al-modal-req-check-pending { border: 2px solid #e4dfd5; color: transparent; }
+        .al-modal-step-badge { display: inline-flex; align-items: center; height: 20px; padding: 0 9px; border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; flex-shrink: 0; }
+        .al-modal-step-badge-oblig { background: #e7f5ee; color: #1f7a4d; }
+        .al-modal-step-badge-reco { background: #fdf1dd; color: #b4791f; }
+        .al-modal-req-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+        .al-modal-req-btn { display: inline-flex; align-items: center; gap: 5px; height: 29px; padding: 0 10px; border-radius: 8px; border: 1px solid #ece7dc; background: white; font-size: 11px; font-weight: 600; color: #333029; text-decoration: none; cursor: pointer; }
+        .al-modal-req-btn-video { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
+      `}</style>
+      <Link href="/hackathons" className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b6f72] transition hover:text-[#c94f21]">
+        <ChevronLeft className="h-3.5 w-3.5" />Eventos y retos
+      </Link>
+      <PageHeader eyebrow={item.type || "Evento o reto"} title={item.name} subtitle={item.organizer} actions={<StudentHeaderActions />} />
+
+      <div className={cardClass}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge className={cn(hackathonStatusClass(item.status))}>{hackathonStatusLabel(item.status)}</Badge>
+          {!archived && isPreparationComplete(item) && (
+            <Badge className="al-hack-prep-ready al-hack-chip-green"><CheckCircle2 className="h-3 w-3" />Preparación lista</Badge>
+          )}
+          {canFavorite && (
+            <button
+              type="button"
+              className={cn("al-hack-heart", item.is_favorite && "al-hack-heart-active")}
+              aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
+              aria-pressed={!!item.is_favorite}
+              onClick={() => toggleHackathonFavoriteFor(item, actions)}
+            >
+              <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+            </button>
+          )}
+        </div>
+        {past && <p className="rounded-lg bg-[#f3ece1] px-3 py-2 text-xs font-semibold text-[#6b6f72]">Este evento ya ha finalizado.</p>}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div>
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Fechas</p>
+            <p className="text-[13px] font-semibold text-[#333029]">{item.start_at ? formatDateLabel(item.start_at) : "Sin fecha indicada"}{item.end_at ? ` → ${formatDateLabel(item.end_at)}` : ""}</p>
+          </div>
+          <div>
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Inscripción hasta</p>
+            <p className="text-[13px] font-semibold text-[#333029]">{inscripcionFin ? formatDateLabel(inscripcionFin) : "No especificada"}</p>
+          </div>
+          <div>
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Ubicación</p>
+            <p className="text-[13px] font-semibold text-[#333029]">{place || "No especificada"}</p>
+          </div>
+          <div>
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Modalidad</p>
+            <p className="text-[13px] font-semibold text-[#333029]">{item.modalidad || "No especificada"}</p>
+          </div>
+        </div>
+        <div>
+          <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Descripción</p>
+          <p className="mt-1 whitespace-pre-wrap text-[13px] leading-6 text-[#4b4740]">{description || "Este evento todavía no tiene una descripción disponible."}</p>
+        </div>
+      </div>
+
+      {requirements.length > 0 && (
+        <div className={cardClass}>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-bold text-[#111111]">Requisitos y preparación</p>
+            {progress.total > 0 && <span className="text-xs font-semibold text-[#9a958a]">{progress.done}/{progress.total} completadas</span>}
+          </div>
+          <ul className="space-y-2">
+            {requirements.map((competency) => (
+              <li key={competency.id} className="flex items-center gap-2.5">
+                <span className={cn("al-modal-req-check", isCompetencyDone(competency) ? "al-modal-req-check-done" : "al-modal-req-check-pending")}>
+                  <Check className="h-3 w-3" />
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#333029]">{competency.titulo}</span>
+                <span className={cn("al-modal-step-badge", competency.obligatoria_para_item ? "al-modal-step-badge-oblig" : "al-modal-step-badge-reco")}>
+                  {competency.obligatoria_para_item ? "Imprescindible" : "Recomendada"}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <button type="button" className="al-hack-btn al-hack-btn-primary" onClick={() => setRequirementsOpen(true)}>
+            <ListChecks className="h-3.5 w-3.5" />Ver requisitos paso a paso
+          </button>
+        </div>
+      )}
+
+      {related.length > 0 && (
+        <div className={cardClass}>
+          <p className="text-sm font-bold text-[#111111]">Aprendizaje relacionado en AL-LÍO</p>
+          <div className="al-modal-req-actions">
+            {related.map((link) => (
+              <Link key={link.id} href={`/aprende/${encodeURIComponent(link.slug)}`} className="al-modal-req-btn al-modal-req-btn-video">
+                <Youtube className="h-3 w-3" />{link.title}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {isSafeHttpUrl(item.url) && (
+          <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-hack-btn al-hack-btn-primary">
+            <ExternalLink className="h-3.5 w-3.5" />Abrir convocatoria oficial
+          </a>
+        )}
+        <button type="button" className="al-hack-btn" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" }).catch(() => {})}>
+          <Plus className="h-3.5 w-3.5" />Crear tarea
+        </button>
+        {!archived && item.sourceTable !== "tech_opportunities" && (
+          <button type="button" className="al-hack-btn" disabled={pendingComplete} onClick={() => handleComplete(item)}>
+            <CheckCircle2 className="h-3.5 w-3.5" />{pendingComplete ? "Guardando…" : "Realizado"}
+          </button>
+        )}
+      </div>
+
+      {requirementsOpen && <HackathonRequirementsModal item={item} actions={actions} onClose={() => setRequirementsOpen(false)} />}
+    </div>
+  );
+}
+
 function LinksView({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
   return (
     <CrudGrid
@@ -3533,10 +3785,7 @@ function CompanyCard({ company, onToggleFavorite }: { company: Company; onToggle
 
 
 const techCourseCategories = new Set(["curso"]);
-const techHackathonCategories = new Set(["hackathon_reto"]);
-const techEventCategories = new Set(["evento_tech", "reto_programacion", "concurso_programacion"]);
-
-function getDisplayCourses(courses: Course[], items: TechOpportunity[], fpItems: FpCatalogItem[] = []) {
+export function getDisplayCourses(courses: Course[], items: TechOpportunity[], fpItems: FpCatalogItem[] = []) {
   const seen = new Set(courses.map(courseIdentityKey));
   const fromTech = items
     .filter(isTechCourse)
@@ -3551,7 +3800,7 @@ function getDisplayCourses(courses: Course[], items: TechOpportunity[], fpItems:
   return [...fromTech, ...fromFp, ...courses].sort(sortCoursesForDisplay);
 }
 
-function getDisplayHackathons(hackathons: Hackathon[], items: TechOpportunity[], fpItems: FpCatalogItem[] = []) {
+export function getDisplayHackathons(hackathons: Hackathon[], items: TechOpportunity[], fpItems: FpCatalogItem[] = []) {
   const seen = new Set(hackathons.map(hackathonIdentityKey));
   const fromTech = items
     .filter(isTechHackathonOrEvent)
@@ -3603,50 +3852,10 @@ function techOpportunityToCourse(item: TechOpportunity): Course {
   };
 }
 
-function techOpportunityToHackathon(item: TechOpportunity): Hackathon {
-  return {
-    id: `tech-${item.id_slug}`,
-    id_slug: item.id_slug,
-    categoria: item.categoria ?? undefined,
-    name: item.nombre,
-    organizer: item.entidad ?? undefined,
-    province: item.provincia ?? undefined,
-    city: item.localidad ?? undefined,
-    type: item.area_o_tipo ?? item.categoria ?? undefined,
-    modalidad: item.modalidad ?? undefined,
-    localidad: item.localidad ?? undefined,
-    status: normalizeHackathonStatus(item.estado),
-    priority: normalizeTechPriority(item.prioridad),
-    start_at: item.fecha_inicio ?? "",
-    end_at: item.fecha_fin ?? "",
-    registration_deadline_at: "",
-    certificacion_o_premio: item.certificacion_o_premio ?? undefined,
-    practicas_empresa: textLooksPositive(item.practicas_empresa),
-    encaje_daw_1_5: item.encaje_daw_1_5 ?? undefined,
-    tags: item.tags ?? undefined,
-    ultima_revision: item.ultima_revision ?? undefined,
-    url: item.fuente_url ?? undefined,
-    notes: [item.requisitos_resumen, item.notas].filter(Boolean).join("\n\n") || undefined,
-    sourceTable: "tech_opportunities",
-    created_at: item.created_at,
-  };
-}
-
 const fpCourseTypes = new Set(["curso_basico", "curso_complementario", "herramienta", "recurso", "evidencia_recomendada"]);
-const fpHackathonTypes = new Set(["hackathon", "evento", "reto", "convocatoria_practicas"]);
 
 function isFpCourseLike(item: FpCatalogItem) {
   return fpCourseTypes.has(item.type);
-}
-
-function isFpHackathonLike(item: FpCatalogItem) {
-  return fpHackathonTypes.has(item.type);
-}
-
-function fpItemNotes(item: FpCatalogItem) {
-  // `item.notes` contains import and moderation provenance. Keep it out of
-  // student-facing display models; only the suggested action is public copy.
-  return item.suggested_action || undefined;
 }
 
 function fpItemToCourse(item: FpCatalogItem): Course {
@@ -3678,35 +3887,6 @@ function fpItemToCourse(item: FpCatalogItem): Course {
     fuente_url: item.source_url ?? undefined,
     notes: fpItemNotes(item),
     sourceTable: "fp_content_items",
-    created_at: item.created_at,
-  };
-}
-
-function fpItemToHackathon(item: FpCatalogItem): Hackathon {
-  return {
-    id: `fp-${item.id_slug}`,
-    id_slug: item.id_slug,
-    categoria: item.type,
-    name: item.title,
-    organizer: item.entity ?? undefined,
-    province: item.province ?? undefined,
-    city: item.location ?? undefined,
-    type: item.type,
-    modalidad: item.delivery_mode ?? undefined,
-    localidad: item.location ?? undefined,
-    status: fpUserStatusToHackathonStatus(item.user_status) ?? normalizeHackathonStatus(item.status),
-    priority: (item.priority.toLowerCase() as Hackathon["priority"]),
-    start_at: item.start_date ?? "",
-    end_at: item.end_date ?? "",
-    registration_deadline_at: "",
-    certificacion_o_premio: item.certification ?? undefined,
-    practicas_empresa: item.practices === "si",
-    tags: item.tags ?? undefined,
-    url: item.source_url ?? undefined,
-    description: item.description ?? undefined,
-    notes: fpItemNotes(item),
-    sourceTable: "fp_content_items",
-    requiredCompetencies: item.requiredCompetencies,
     is_favorite: item.is_favorite ?? false,
     created_at: item.created_at,
   };
@@ -3774,25 +3954,6 @@ function isTechCourse(item: TechOpportunity) {
   return techCourseCategories.has(category);
 }
 
-function isTechHackathon(item: TechOpportunity) {
-  const category = techCategory(item);
-  return techHackathonCategories.has(category) || category.includes("hackathon");
-}
-
-function isTechHackathonOrEvent(item: TechOpportunity) {
-  const category = techCategory(item);
-  return isTechHackathon(item) || techEventCategories.has(category) || category.includes("evento") || category.includes("reto") || category.includes("concurso");
-}
-
-function techCategory(item: TechOpportunity) {
-  return String(item.categoria || "").trim().toLowerCase();
-}
-
-function textLooksPositive(value?: string | null) {
-  const normalized = String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  return normalized.startsWith("si") || normalized.includes("beca formativa");
-}
-
 function normalizeCourseStatus(value?: string | null): Course["status"] {
   const normalized = String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   if (normalized.includes("final") || normalized.includes("termin")) return "terminado";
@@ -3811,22 +3972,6 @@ function fpUserStatusToCourseStatus(userStatus?: string | null): Course["status"
   if (userStatus === "dismissed") return "descartado";
   if (userStatus === "started") return "empezado";
   return undefined;
-}
-
-function normalizeHackathonStatus(value?: string | null): Hackathon["status"] {
-  const normalized = String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (normalized.includes("final") || normalized.includes("realiz")) return "realizado";
-  if (normalized.includes("descart")) return "descartado";
-  if (normalized.includes("abiert") || normalized.includes("inscrip")) return "inscripcion_abierta";
-  if (normalized.includes("futura")) return "revisar_futura_edicion";
-  return "pendiente";
-}
-
-function normalizeTechPriority(value?: string | null): Hackathon["priority"] {
-  const normalized = String(value || "").toLowerCase();
-  if (normalized.includes("alta")) return "alta";
-  if (normalized.includes("baja")) return "baja";
-  return "media";
 }
 
 function courseIdentityKey(course: Course) {
