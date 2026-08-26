@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlarmClock,
   BookOpen,
@@ -43,9 +42,24 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
-import { fpUserStatusToHackathonStatus, isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
+import { isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
 import { isSafeHttpUrl, selectAptitudeVideos } from "@/lib/fp/event-cta";
-import { getCoursePresentation } from "@/lib/courses/course-presentation";
+import {
+  getCoursePresentation,
+  isFpCourseLike,
+  isTechCourse,
+  fpItemToCourse,
+  techOpportunityToCourse,
+} from "@/lib/courses/course-presentation";
+import {
+  canToggleHackathonFavorite,
+  fpItemToHackathon,
+  hackathonPublicDescription,
+  isFpHackathonLike,
+  isTechHackathonOrEvent,
+  techOpportunityToHackathon,
+  toggleHackathonFavoriteFor,
+} from "@/lib/hackathons/hackathon-presentation";
 import { toast } from "sonner";
 import { BlocNotepad } from "@/components/bloc/bloc-notepad";
 import {
@@ -2045,7 +2059,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
     [store.courses, store.techOpportunities, store.fpContent]
   );
 
-  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "todos">("activos");
+  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "guardados" | "todos">("activos");
   const [showFilters, setShowFilters] = useState(false);
   const [monthFilter, setMonthFilter] = useState("");
   const [dayFilter, setDayFilter] = useState("");
@@ -2056,7 +2070,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
-  const [detailItemId, setDetailItemId] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
@@ -2074,9 +2087,10 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
 
   const archivados = useMemo(() => sorted.filter(isCourseArchived), [sorted]);
   const activos = useMemo(() => sorted.filter((c) => !isCourseArchived(c) && !isCoursePast(c)), [sorted]);
+  const guardados = useMemo(() => sorted.filter((c) => c.is_favorite), [sorted]);
   const tabBase = useMemo(
-    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : sorted,
-    [viewTab, activos, archivados, sorted]
+    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : viewTab === "guardados" ? guardados : sorted,
+    [viewTab, activos, archivados, guardados, sorted]
   );
 
   const monthGroups = useMemo(() => {
@@ -2133,14 +2147,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
 
   const activeFilterCount = [monthFilter, dayFilter, estadoFilter, modalidadFilter, prioridadFilter, soloGratuitos].filter(Boolean).length;
 
-  // Resolved against the live allCourses collection, not the object captured
-  // when the modal opened, so a status change (e.g. Terminado) is reflected
-  // immediately without closing and reopening the modal.
-  const detailItem = useMemo(
-    () => (detailItemId ? allCourses.find((c) => c.id === detailItemId) ?? null : null),
-    [detailItemId, allCourses],
-  );
-
   function clearAll() {
     setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setModalidadFilter(""); setPrioridadFilter(""); setSoloGratuitos(false); setSearchInput(""); setSearch("");
   }
@@ -2174,6 +2180,8 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
         .al-course-card-title-wrap { min-width: 0; flex: 1 1 auto; }
         .al-course-card-badges { display: flex; flex-shrink: 0; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+        .al-course-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .al-course-heart.al-course-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
         .al-course-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; overflow-wrap: anywhere; word-break: break-word; }
         .al-course-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; overflow-wrap: anywhere; word-break: break-word; }
         .al-course-card-meta { font-size: 11px; color: #6b6f72; }
@@ -2196,8 +2204,9 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
             <Input placeholder="Buscar título, entidad, tag..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           </div>
           <div className="al-course-tabs">
-            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
+            {([["activos", `Activos ${activos.length}`], ["archivados", `Terminado ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
               <button key={id} type="button" className={cn("al-course-tab", viewTab === id && "al-course-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
+                {id === "guardados" && <Heart className="mr-1 inline h-3 w-3 align-[-1px]" fill={viewTab === "guardados" ? "currentColor" : "none"} />}
                 {label}
               </button>
             ))}
@@ -2252,6 +2261,17 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                         </div>
                         <div className="al-course-card-badges">
                           <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
+                          {canToggleCourseFavorite(item) && (
+                            <button
+                              type="button"
+                              className={cn("al-course-heart", item.is_favorite && "al-course-heart-active")}
+                              aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
+                              aria-pressed={!!item.is_favorite}
+                              onClick={() => toggleCourseFavoriteFor(item, actions)}
+                            >
+                              <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+                            </button>
+                          )}
                         </div>
                       </div>
                       {(presentation.startDate || presentation.endDate) && (
@@ -2266,9 +2286,9 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                       </div>
                       {presentation.description && <p className="al-course-card-desc line-clamp-2" title={presentation.description}>{presentation.description}</p>}
                       <div className="al-course-card-actions">
-                        <button type="button" className="al-course-btn al-course-btn-primary" onClick={() => setDetailItemId(item.id)}>
+                        <Link href={`/courses/${encodeURIComponent(item.id)}`} className="al-course-btn al-course-btn-primary">
                           <Eye className="h-3.5 w-3.5" />Ver detalles
-                        </button>
+                        </Link>
                         {isSafeHttpUrl(presentation.sourceUrl) && <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-course-btn"><ExternalLink className="h-3.5 w-3.5" />Abrir</a>}
                         {!isCourseArchived(item) && (
                           <button type="button" className="al-course-btn" onClick={() => actions.completeCourse(item).catch(() => {})}>
@@ -2284,8 +2304,14 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
             ) : viewTab === "archivados" && !search && activeFilterCount === 0 ? (
               <div className="al-course-empty">
                 <Image src="/assets/cursos/cursos-empty-archivados.png" alt="" width={480} height={294} className="al-course-empty-illustration" />
-                <p className="al-course-empty-title">No tienes cursos archivados</p>
-                <p className="al-course-empty-desc">Cuando archives un curso aparecerá aquí.</p>
+                <p className="al-course-empty-title">No tienes cursos terminados</p>
+                <p className="al-course-empty-desc">Cuando marques un curso como Terminado, aparecerá aquí.</p>
+              </div>
+            ) : viewTab === "guardados" && !search && activeFilterCount === 0 ? (
+              <div className="al-course-empty">
+                <span className="al-course-empty-icon"><Heart className="h-6 w-6" /></span>
+                <p className="al-course-empty-title">No tienes cursos guardados</p>
+                <p className="al-course-empty-desc">Toca el corazón de un curso para guardarlo aquí, sin importar su estado o progreso.</p>
               </div>
             ) : (
               <div className="al-course-empty">
@@ -2334,8 +2360,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
             </FilterPanel>
           )}
         </div>
-
-        <CourseDetailModal item={detailItem} actions={actions} onClose={() => setDetailItemId(null)} />
       </div>
     </>
   );
@@ -2348,183 +2372,188 @@ function coursePriorityClass(value?: string): string {
   return "al-course-chip-amber";
 }
 
-function CourseDetailModal({
-  item,
-  actions,
-  onClose,
-}: {
-  item: Course | null;
-  actions: ReturnTypeActions;
-  onClose: () => void;
-}) {
-  const [mounted, setMounted] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const titleId = useId();
-
-  // Portals require a DOM to attach to, so the actual portal render is
-  // deferred one tick past the server-rendered pass.
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!item?.id) return;
-
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousPaddingRight = document.body.style.paddingRight;
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-    if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
-    }
-
-    const backgroundSiblings = Array.from(document.body.children).filter(
-      (el): el is HTMLElement => el instanceof HTMLElement && el !== rootRef.current,
-    );
-    const previousInertStates = backgroundSiblings.map((el) => el.inert);
-    backgroundSiblings.forEach((el) => { el.inert = true; });
-
-    closeButtonRef.current?.focus();
-
-    return () => {
-      document.documentElement.style.overflow = previousHtmlOverflow;
-      document.body.style.overflow = previousBodyOverflow;
-      document.body.style.paddingRight = previousPaddingRight;
-      backgroundSiblings.forEach((el, index) => { el.inert = previousInertStates[index]; });
-    };
-  }, [item?.id]);
-
-  function handleDialogKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "Escape") {
-      onClose();
-      return;
-    }
-    if (event.key !== "Tab") return;
-    const focusableElements = dialogRef.current?.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
-    );
-    if (!focusableElements?.length) return;
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-    if (event.shiftKey && document.activeElement === firstElement) {
-      event.preventDefault();
-      lastElement.focus();
-    } else if (!event.shiftKey && document.activeElement === lastElement) {
-      event.preventDefault();
-      firstElement.focus();
-    }
-  }
-
-  if (!mounted || !item) return null;
-
-  const presentation = getCoursePresentation(item);
-
-  return createPortal(
-    <div
-      ref={rootRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6"
-      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
-    >
-      <style>{`
-        .al-course-modal-shell { background: white; border-radius: 22px; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
-        .al-course-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px; border-bottom: 1px solid #f0ece2; flex-shrink: 0; }
-        .al-course-modal-title { font-size: 18px; font-weight: 700; color: #111111; line-height: 24px; letter-spacing: -0.02em; overflow-wrap: anywhere; }
-        .al-course-modal-org { font-size: 12px; color: #6b6f72; margin-top: 3px; }
-        .al-course-modal-close { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; flex-shrink: 0; }
-        .al-course-modal-body { flex: 1; min-height: 0; overflow-y: auto; padding: 18px; }
-        .al-course-modal-meta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
-        .al-course-modal-meta-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #9a958a; margin: 0 0 3px; }
-        .al-course-modal-meta-value { font-size: 13px; font-weight: 600; color: #333029; overflow-wrap: anywhere; }
-        .al-course-modal-desc { font-size: 13px; line-height: 1.6; color: #4b4740; white-space: pre-wrap; overflow-wrap: anywhere; }
-        .al-course-modal-footer { border-top: 1px solid #f0ece2; padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 8px; flex-shrink: 0; }
-      `}</style>
-      <div
-        ref={dialogRef}
-        className="al-course-modal-shell max-h-[calc(100svh-1.5rem)] w-full max-w-lg overflow-hidden sm:max-h-[calc(100svh-3rem)]"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        onKeyDown={handleDialogKeyDown}
-      >
-        <div className="al-course-modal-head">
-          <div className="min-w-0 flex-1">
-            <h2 id={titleId} className="al-course-modal-title">{presentation.title}</h2>
-            {presentation.provider && <p className="al-course-modal-org">{presentation.provider}</p>}
-          </div>
-          <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
-          <button ref={closeButtonRef} type="button" className="al-course-modal-close" onClick={onClose} aria-label="Cerrar">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="al-course-modal-body">
-          <div className="al-course-modal-meta-grid">
-            <div>
-              <p className="al-course-modal-meta-label">Fechas</p>
-              <p className="al-course-modal-meta-value">
-                {presentation.startDate ? formatDateLabel(presentation.startDate) : "Sin fecha indicada"}
-                {presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}
-              </p>
-            </div>
-            <div>
-              <p className="al-course-modal-meta-label">Ubicación</p>
-              <p className="al-course-modal-meta-value">{presentation.location || "No especificada"}</p>
-            </div>
-            <div>
-              <p className="al-course-modal-meta-label">Modalidad</p>
-              <p className="al-course-modal-meta-value">{presentation.modality || "No especificada"}</p>
-            </div>
-            <div>
-              <p className="al-course-modal-meta-label">Prioridad</p>
-              <p className="al-course-modal-meta-value">{presentation.priority ? priorityText(presentation.priority) : "No especificada"}</p>
-            </div>
-          </div>
-          <p className="al-course-modal-meta-label">Descripción</p>
-          <p className="al-course-modal-desc">{presentation.description || "Este curso todavía no tiene una descripción disponible."}</p>
-        </div>
-        <div className="al-course-modal-footer">
-          {isSafeHttpUrl(presentation.sourceUrl) && (
-            <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-course-btn al-course-btn-primary">
-              <ExternalLink className="h-3.5 w-3.5" />Abrir
-            </a>
-          )}
-          {!isCourseArchived(item) && (
-            <button type="button" className="al-course-btn" onClick={() => actions.completeCourse(item).catch(() => {})}>
-              <CheckCircle2 className="h-3.5 w-3.5" />Terminado
-            </button>
-          )}
-        </div>
-      </div>
-    </div>,
-    document.body,
-  );
-}
-
-// tech_opportunities-sourced events are deliberately excluded (issue #131) -
-// that shared catalogue has no per-user favorites table (see the migration
-// notes in 0007_hackathon_favorites.sql); everything else - fp_content_items
-// and the student's own hackathons rows (sourceTable is undefined for those,
-// since addHackathon never sets it) - can be saved.
-function canToggleHackathonFavorite(item: Hackathon): boolean {
+// Mirrors canToggleHackathonFavorite/toggleHackathonFavoriteFor exactly -
+// tech_opportunities-sourced courses are deliberately excluded for the same
+// documented reason (issue #120, see 0008_course_favorites.sql); everything
+// else - fp_content_items and the student's own courses rows - can be saved.
+export function canToggleCourseFavorite(item: Course): boolean {
   if (item.sourceTable === "tech_opportunities") return false;
   if (item.sourceTable === "fp_content_items") return !!item.id_slug;
   return true;
 }
 
-function toggleHackathonFavoriteFor(item: Hackathon, actions: ReturnTypeActions) {
+export function toggleCourseFavoriteFor(item: Course, actions: ReturnTypeActions) {
   if (item.sourceTable === "fp_content_items") {
     actions.toggleFpFavorite(item.id_slug!, !item.is_favorite);
   } else {
-    actions.toggleHackathonFavorite(item.id);
+    actions.toggleCourseFavorite(item.id);
   }
 }
 
-function hackathonPublicDescription(item: Hackathon) {
-  if (item.description) return item.description;
-  return item.sourceTable === "fp_content_items" ? undefined : item.notes;
+// The internal detail surface for Courses, mirroring HackathonDetailView
+// (issue #135) exactly: a real route (/courses/[id]) replacing the old
+// CourseDetailModal outright - one entry point (Ver detalles), not a page
+// link competing with a still-present popup. Resolves the item from the
+// live client store by id (same getDisplayCourses pipeline the list uses)
+// so favorite/status state always matches the card - it can never show a
+// stale or contradictory state. FP catalogue courses also expose the
+// reviewed aptitudes they teach or demonstrate; user-created and legacy
+// tech courses degrade honestly when no mapping exists.
+export function CourseDetailView({ id }: { id: string }) {
+  const { store, actions } = useStore();
+  const allCourses = useMemo(
+    () => getDisplayCourses(store.courses, store.techOpportunities, store.fpContent),
+    [store.courses, store.techOpportunities, store.fpContent]
+  );
+  const item = useMemo(() => allCourses.find((c) => c.id === id) ?? null, [allCourses, id]);
+
+  if (!item) {
+    return (
+      <div className="space-y-4">
+        <style>{`
+          .al-course-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+          .al-course-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
+          .al-course-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
+          .al-course-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
+          .al-course-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; text-decoration: none; }
+        `}</style>
+        <PageHeader eyebrow="Cursos" title="Curso no disponible" actions={<StudentHeaderActions />} />
+        <div className="al-course-empty">
+          <span className="al-course-empty-icon"><BookOpen className="h-6 w-6" /></span>
+          <p className="al-course-empty-title">Ya no podemos mostrar este curso</p>
+          <p className="al-course-empty-desc">Puede haberse retirado del catálogo o no estar disponible para tu ciclo. Vuelve al listado para ver los cursos activos.</p>
+          <Link href="/courses" className="al-course-empty-btn">Volver a Cursos</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const presentation = getCoursePresentation(item);
+  const canFavorite = canToggleCourseFavorite(item);
+  const archived = isCourseArchived(item);
+  const aptitudes = item.aptitudes ?? [];
+  const cardClass = "space-y-3 rounded-[18px] border border-[#ece7dc] bg-white p-4 shadow-[0_10px_26px_rgba(17,17,17,0.045)] sm:p-5";
+
+  return (
+    <div className="space-y-5">
+      <style>{`
+        .al-course-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
+        .al-course-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+        .al-course-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
+        .al-course-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .al-course-heart.al-course-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
+      `}</style>
+      <Link href="/courses" className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b6f72] transition hover:text-[#c94f21]">
+        <ChevronLeft className="h-3.5 w-3.5" />Cursos
+      </Link>
+      <PageHeader eyebrow="Curso" title={presentation.title} subtitle={presentation.provider} actions={<StudentHeaderActions />} />
+
+      <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+        <div className="min-w-0 space-y-4">
+          <div className={cardClass}>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className={cn(courseStatusClass(item.status))}>{item.status}</Badge>
+              {presentation.priority && <ChipTag className={coursePriorityClass(presentation.priority)}>{priorityText(presentation.priority)}</ChipTag>}
+              {canFavorite && (
+                <button
+                  type="button"
+                  className={cn("al-course-heart", item.is_favorite && "al-course-heart-active")}
+                  aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
+                  aria-pressed={!!item.is_favorite}
+                  onClick={() => toggleCourseFavoriteFor(item, actions)}
+                >
+                  <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Fechas</p>
+                <p className="text-[13px] font-semibold text-[#333029]">
+                  {presentation.startDate ? formatDateLabel(presentation.startDate) : "Sin fecha indicada"}
+                  {presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Ubicación</p>
+                <p className="text-[13px] font-semibold text-[#333029]">{presentation.location || "No especificada"}</p>
+              </div>
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Modalidad</p>
+                <p className="text-[13px] font-semibold text-[#333029]">{presentation.modality || "No especificada"}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Descripción</p>
+              <p className="mt-1 whitespace-pre-wrap text-[13px] leading-6 text-[#4b4740]">{presentation.description || "Este curso todavía no tiene una descripción disponible."}</p>
+            </div>
+          </div>
+
+          <section className={cardClass} aria-labelledby="course-aptitudes-title">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 id="course-aptitudes-title" className="text-sm font-bold text-[#111111]">Aptitudes del curso</h2>
+                <p className="mt-1 text-xs leading-5 text-[#6b6f72]">Competencias que este contenido enseña o te ayuda a demostrar.</p>
+              </div>
+              {aptitudes.length > 0 && <span className="text-xs font-semibold text-[#9a958a]">{aptitudes.length}</span>}
+            </div>
+            {aptitudes.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-[#ded8cc] bg-[#faf8f3] p-4 text-xs leading-5 text-[#6b6f72]">
+                Este curso todavía no tiene aptitudes verificadas vinculadas en el catálogo.
+              </p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {aptitudes.map((aptitude) => (
+                  <div key={`${aptitude.id}-${aptitude.relation}`} className="rounded-2xl border border-[#ece7dc] p-3.5">
+                    <div className="flex items-start gap-2.5">
+                      <span className={cn("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl", aptitude.completed ? "bg-[#e7f5ee] text-[#1f7a4d]" : "bg-[#fbe7dd] text-[#c94f21]")}>
+                        {aptitude.completed ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Target className="h-3.5 w-3.5" />}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-[13px] font-bold leading-5 text-[#111111]">{aptitude.titulo}</p>
+                          <span className={cn("rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.03em]", aptitude.relation === "ensena" ? "bg-[#fbe7dd] text-[#c94f21]" : "bg-[#edf3fb] text-[#2f5fac]")}>
+                            {aptitude.relation === "ensena" ? "Aprenderás" : "Demostrarás"}
+                          </span>
+                          {aptitude.completed && <span className="rounded-full bg-[#e7f5ee] px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.03em] text-[#1f7a4d]">Completada</span>}
+                        </div>
+                        {aptitude.descripcion && <p className="mt-1.5 text-xs leading-5 text-[#4b4740]">{aptitude.descripcion}</p>}
+                        {(aptitude.horas_estimadas || aptitude.evidencia_minima) && (
+                          <p className="mt-2 text-[11px] leading-4 text-[#777269]">
+                            {aptitude.horas_estimadas ? `${aptitude.horas_estimadas} h estimadas` : ""}
+                            {aptitude.horas_estimadas && aptitude.evidencia_minima ? " · " : ""}
+                            {aptitude.evidencia_minima ? `Evidencia: ${aptitude.evidencia_minima}` : ""}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div className="space-y-4">
+          <div className={cardClass}>
+            <p className="text-sm font-bold text-[#111111]">Acciones</p>
+            <div className="flex flex-col gap-2">
+              {isSafeHttpUrl(presentation.sourceUrl) && (
+                <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-course-btn al-course-btn-primary justify-center">
+                  <ExternalLink className="h-3.5 w-3.5" />Abrir
+                </a>
+              )}
+              {!archived && (
+                <button type="button" className="al-course-btn justify-center" onClick={() => actions.completeCourse(item).catch(() => {})}>
+                  <CheckCircle2 className="h-3.5 w-3.5" />Terminado
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
@@ -2545,7 +2574,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
-  const [requirementsItemId, setRequirementsItemId] = useState<string | null>(null);
   const [pendingCompleteId, setPendingCompleteId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -2577,7 +2605,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   const archivados = useMemo(() => sorted.filter(isHackathonArchived), [sorted]);
   const activos = useMemo(() => sorted.filter((h) => !isHackathonArchived(h) && !isHackathonPast(h)), [sorted]);
   // Guardados (issue #131): a heart-driven filter, independent of the
-  // Activos/Archivados lifecycle split above - saving an event never moves
+  // Activos/Realizado lifecycle split above - saving an event never moves
   // it between those tabs, so the same event can appear in both Guardados
   // and whichever lifecycle tab it already belongs to.
   const guardados = useMemo(() => sorted.filter((h) => h.is_favorite), [sorted]);
@@ -2651,14 +2679,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   }, [activos]);
   const featuredProgress = featuredHackathon ? hackathonAptitudeProgress(featuredHackathon) : null;
   const featuredDescription = featuredHackathon ? hackathonPublicDescription(featuredHackathon) : undefined;
-
-  // Resolve against the current allHackathons collection instead of retaining
-  // the object captured when the modal opened. Requirement updates then appear
-  // immediately without closing and reopening the modal.
-  const requirementsItem = useMemo(
-    () => (requirementsItemId ? allHackathons.find((h) => h.id === requirementsItemId) ?? null : null),
-    [requirementsItemId, allHackathons]
-  );
 
   return (
     <>
@@ -2737,7 +2757,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             <Input placeholder="Buscar nombre, organizador, tema, aptitud..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           </div>
           <div className="al-hack-tabs">
-            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
+            {([["activos", `Activos ${activos.length}`], ["archivados", `Realizado ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
               <button key={id} type="button" className={cn("al-hack-tab", viewTab === id && "al-hack-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
                 {id === "guardados" && <Heart className="mr-1 inline h-3 w-3 align-[-1px]" fill={viewTab === "guardados" ? "currentColor" : "none"} />}
                 {label}
@@ -2801,16 +2821,14 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   )}
                   {featuredDescription && <p className="al-hack-hero-desc">{featuredDescription}</p>}
                   <div className="al-hack-hero-actions">
+                    <Link href={`/hackathons/${encodeURIComponent(featuredHackathon.id)}`} className="al-hack-hero-btn-primary">
+                      <Eye className="h-4 w-4" />Ver detalles
+                    </Link>
                     {isSafeHttpUrl(featuredHackathon.url) ? (
-                      <a href={featuredHackathon.url} target="_blank" rel="noopener noreferrer" className="al-hack-hero-btn-primary">
+                      <a href={featuredHackathon.url} target="_blank" rel="noopener noreferrer" className="al-hack-hero-btn-ghost">
                         <ExternalLink className="h-4 w-4" />Abrir convocatoria
                       </a>
                     ) : null}
-                    {featuredHackathon.requiredCompetencies && featuredHackathon.requiredCompetencies.length > 0 && (
-                      <button type="button" className="al-hack-hero-btn-ghost" onClick={() => setRequirementsItemId(featuredHackathon.id)}>
-                        <ListChecks className="h-4 w-4" />Aptitudes mínimas
-                      </button>
-                    )}
                   </div>
                 </div>
                 {featuredProgress && featuredProgress.total > 0 && (
@@ -2893,15 +2911,13 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                       </div>
                       {description && <p className="al-hack-card-desc line-clamp-2">{description}</p>}
                       <div className="al-hack-card-actions">
+                        <Link href={`/hackathons/${encodeURIComponent(item.id)}`} className="al-hack-btn al-hack-btn-primary">
+                          <Eye className="h-3.5 w-3.5" />Ver detalles
+                        </Link>
                         {isSafeHttpUrl(item.url) && (
-                          <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-hack-btn al-hack-btn-primary">
+                          <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-hack-btn">
                             <ExternalLink className="h-3.5 w-3.5" />Abrir web
                           </a>
-                        )}
-                        {item.requiredCompetencies && item.requiredCompetencies.length > 0 && (
-                          <button type="button" className="al-hack-btn" onClick={() => setRequirementsItemId(item.id)}>
-                            <ListChecks className="h-3.5 w-3.5" />Ver detalles
-                          </button>
                         )}
                         <button type="button" className="al-hack-btn" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" }).catch(() => {})}>
                           <Plus className="h-3.5 w-3.5" />Crear tarea
@@ -2976,8 +2992,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             </FilterPanel>
           )}
         </div>
-
-        <HackathonRequirementsModal item={requirementsItem} actions={actions} onClose={() => setRequirementsItemId(null)} />
       </div>
     </>
   );
@@ -3012,233 +3026,6 @@ function HackathonsEmptyState({ variant, onClearFilters }: { variant: "sin_resul
   );
 }
 
-function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackathon | null; actions: ReturnTypeActions; onClose: () => void }) {
-  const competencies = item?.requiredCompetencies ?? [];
-  const obligatorias = competencies.filter((competency) => competency.obligatoria_para_item);
-  const recomendadas = competencies.filter((competency) => !competency.obligatoria_para_item);
-  const steps = [...obligatorias, ...recomendadas];
-  const [stepIndex, setStepIndex] = useState(0);
-  const [mounted, setMounted] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const titleId = useId();
-  const descriptionId = useId();
-
-  // Portals require a DOM to attach to, so the actual portal render is
-  // deferred one tick past the server-rendered pass.
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    setStepIndex(0);
-  }, [item?.id]);
-
-  useEffect(() => {
-    if (!item?.id) return;
-
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousPaddingRight = document.body.style.paddingRight;
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-    if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
-    }
-
-    // Make everything behind the portal unreachable to assistive tech and
-    // keyboard/pointer input while the modal is open. rootRef is excluded
-    // since it IS the modal, appended as its own sibling under body. Each
-    // sibling's own prior inert value is captured and restored on cleanup
-    // instead of assuming it was false, in case something else already
-    // relied on it being inert for an unrelated reason.
-    const backgroundSiblings = Array.from(document.body.children).filter(
-      (el): el is HTMLElement => el instanceof HTMLElement && el !== rootRef.current,
-    );
-    const previousInertStates = backgroundSiblings.map((el) => el.inert);
-    backgroundSiblings.forEach((el) => { el.inert = true; });
-
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    closeButtonRef.current?.focus();
-
-    return () => {
-      document.documentElement.style.overflow = previousHtmlOverflow;
-      document.body.style.overflow = previousBodyOverflow;
-      document.body.style.paddingRight = previousPaddingRight;
-      backgroundSiblings.forEach((el, index) => { el.inert = previousInertStates[index]; });
-      previouslyFocused?.focus();
-    };
-    // item?.id only - not the item object itself, which the store rebuilds
-    // (new reference, same event) whenever any of its fields change, e.g.
-    // marking an aptitude or navigating between steps. Keying on the full
-    // object would tear down and redo this whole lifecycle - scroll lock,
-    // inert, and focus jumping back to the close button - on every such
-    // update, even though the modal never actually closed and reopened.
-  }, [item?.id]);
-
-  function handleDialogKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "Escape") {
-      onClose();
-      return;
-    }
-    if (event.key !== "Tab") return;
-    const focusableElements = dialogRef.current?.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
-    );
-    if (!focusableElements?.length) return;
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-    if (event.shiftKey && document.activeElement === firstElement) {
-      event.preventDefault();
-      lastElement.focus();
-    } else if (!event.shiftKey && document.activeElement === lastElement) {
-      event.preventDefault();
-      firstElement.focus();
-    }
-  }
-
-  if (!mounted || !item) return null;
-
-  const canFavorite = canToggleHackathonFavorite(item);
-  const safeIndex = steps.length > 0 ? Math.min(stepIndex, steps.length - 1) : 0;
-  const currentStep = steps[safeIndex] ?? null;
-  const isLastStep = !currentStep || safeIndex === steps.length - 1;
-
-  function continueOrClose() {
-    if (currentStep && !isLastStep) {
-      setStepIndex((index) => Math.min(steps.length - 1, index + 1));
-      return;
-    }
-    onClose();
-  }
-
-  return createPortal(
-    <div
-      ref={rootRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6"
-      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
-    >
-      <style>{`
-        .al-modal-shell { background: white; border-radius: 22px; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
-        .al-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #f0ece2; flex-shrink: 0; }
-        .al-modal-head-icon { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; flex-shrink: 0; }
-        .al-modal-title { font-size: 18px; font-weight: 700; color: #111111; line-height: 24px; letter-spacing: -0.02em; }
-        .al-modal-subtitle { font-size: 11.5px; color: #6b6f72; margin-top: 2px; }
-        .al-modal-close { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; flex-shrink: 0; }
-        .al-modal-step-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px; }
-        .al-modal-step-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
-        .al-modal-step-badge { display: inline-flex; align-items: center; height: 22px; padding: 0 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
-        .al-modal-step-badge-oblig { background: #e7f5ee; color: #1f7a4d; }
-        .al-modal-step-badge-reco { background: #fdf1dd; color: #b4791f; }
-        .al-modal-step-count { font-size: 11px; font-weight: 600; color: #9a958a; }
-        .al-modal-step-card { border: 1px solid #ece7dc; border-radius: 16px; padding: 16px; }
-        .al-modal-step-card-head { display: flex; align-items: flex-start; gap: 10px; }
-        .al-modal-req-check { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; flex-shrink: 0; margin-top: 1px; }
-        .al-modal-req-check-done { background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
-        .al-modal-req-check-pending { border: 2px solid #e4dfd5; color: transparent; }
-        .al-modal-req-title { font-size: 14.5px; font-weight: 700; color: #111111; line-height: 1.35; }
-        .al-modal-req-desc { font-size: 12.5px; color: #4b4740; margin-top: 8px; line-height: 1.55; }
-        .al-modal-req-actions { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
-        .al-modal-req-btn { display: inline-flex; align-items: center; gap: 5px; height: 29px; padding: 0 10px; border-radius: 8px; border: 1px solid #ece7dc; background: white; font-size: 11px; font-weight: 600; color: #333029; text-decoration: none; cursor: pointer; }
-        .al-modal-req-btn-video { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
-        .al-modal-mark-done { margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 9px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 700; background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
-        .al-modal-mark-done-active { background: #e7f5ee; color: #1f7a4d; cursor: default; }
-        .al-modal-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 18px; border-top: 1px solid #f0ece2; flex-shrink: 0; }
-        .al-modal-nav-btn { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 11px; border-radius: 9px; border: 1px solid #ece7dc; background: white; font-size: 11.5px; font-weight: 600; color: #333029; cursor: pointer; }
-        .al-modal-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-        .al-modal-dots { display: flex; align-items: center; gap: 5px; }
-        .al-modal-dot { width: 6px; height: 6px; border-radius: 999px; background: #e4dfd5; }
-        .al-modal-dot-done { background: #a9d6bc; }
-        .al-modal-dot-active { width: 16px; background: linear-gradient(90deg, #F06A37, #E15D2D); }
-        .al-modal-footer { border-top: 1px solid #f0ece2; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
-        .al-modal-footer-row { display: flex; gap: 8px; }
-        .al-modal-btn-primary { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 42px; border-radius: 13px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 13px; font-weight: 700; box-shadow: 0 10px 24px rgba(225,93,45,0.25); border: none; cursor: pointer; text-decoration: none; flex-direction: column; line-height: 1.25; }
-        .al-modal-btn-primary small { font-weight: 500; font-size: 10.5px; opacity: 0.85; }
-        .al-modal-btn-secondary { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 16px; border-radius: 13px; border: 1px solid #ece7dc; background: white; color: #333029; font-size: 12.5px; font-weight: 600; cursor: pointer; }
-        .al-modal-footer-hint { text-align: center; font-size: 10.5px; color: #9a958a; }
-      `}</style>
-      <div
-        ref={dialogRef}
-        className="al-modal-shell max-h-[calc(100svh-1.5rem)] w-full max-w-lg overflow-hidden sm:max-h-[calc(100svh-3rem)]"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
-        onKeyDown={handleDialogKeyDown}
-      >
-        <div className="al-modal-head">
-          <span className="al-modal-head-icon">
-            <Image src="/assets/hackathons/hackathons-modal-checklist-icon.png" alt="" width={160} height={160} className="h-full w-full object-contain" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 id={titleId} className="al-modal-title line-clamp-2">Requisitos para {item.name}</h2>
-            <p id={descriptionId} className="al-modal-subtitle">Todo lo que conviene dominar antes de presentarte.</p>
-          </div>
-          <button ref={closeButtonRef} type="button" className="al-modal-close" onClick={onClose} aria-label="Cerrar">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        {currentStep ? (
-          <>
-            <div className="al-modal-step-scroll">
-              <div className="al-modal-step-top">
-                <span className={cn("al-modal-step-badge", currentStep.obligatoria_para_item ? "al-modal-step-badge-oblig" : "al-modal-step-badge-reco")}>
-                  {currentStep.obligatoria_para_item ? "Imprescindible" : "Recomendada"}
-                </span>
-                <span className="al-modal-step-count">Paso {safeIndex + 1} de {steps.length}</span>
-              </div>
-              <CompetencyRequirement
-                competency={currentStep}
-                actions={actions}
-                onMarkDone={() => setStepIndex((i) => Math.min(steps.length - 1, i + 1))}
-              />
-            </div>
-            <div className="al-modal-nav">
-              <button type="button" className="al-modal-nav-btn" onClick={() => setStepIndex((i) => Math.max(0, i - 1))} disabled={safeIndex === 0}>
-                <ChevronLeft className="h-3.5 w-3.5" />Anterior
-              </button>
-              <div className="al-modal-dots">
-                {steps.map((step, i) => (
-                  <span key={step.id} className={cn("al-modal-dot", i === safeIndex && "al-modal-dot-active", i !== safeIndex && isCompetencyDone(step) && "al-modal-dot-done")} />
-                ))}
-              </div>
-              <button type="button" className="al-modal-nav-btn" onClick={() => setStepIndex((i) => Math.min(steps.length - 1, i + 1))} disabled={safeIndex === steps.length - 1}>
-                Siguiente<ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="al-modal-step-scroll">
-            <EmptyText>No hay aptitudes registradas todavía para este evento o reto.</EmptyText>
-          </div>
-        )}
-        <div className="al-modal-footer">
-          <div className="al-modal-footer-row">
-            {canFavorite && (
-              <button
-                type="button"
-                className="al-modal-btn-secondary"
-                aria-pressed={!!item.is_favorite}
-                onClick={() => toggleHackathonFavoriteFor(item, actions)}
-              >
-                <Heart className="h-4 w-4" fill={item.is_favorite ? "currentColor" : "none"} />
-                {item.is_favorite ? "Guardado" : "Guardar"}
-              </button>
-            )}
-            <button type="button" className="al-modal-btn-primary" onClick={continueOrClose}>
-              {!currentStep ? "Cerrar" : isLastStep ? "Terminar" : "Continuar"}
-            </button>
-          </div>
-          <p className="al-modal-footer-hint">Parte del aprendizaje se queda en AL-LÍO. Tú eliges dónde estudiar.</p>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
 function isCompetencyDone(competency: RequiredCompetency): boolean {
   return !!competency.completed;
 }
@@ -3255,64 +3042,226 @@ function hackPriorityClass(value?: string): string {
   return "al-hack-chip-amber";
 }
 
-function CompetencyRequirement({
-  competency,
-  actions,
-  onMarkDone,
-}: {
-  competency: RequiredCompetency;
-  actions: ReturnTypeActions;
-  onMarkDone?: () => void;
-}) {
+// A single requirement, fully expanded (title, description, its own
+// grounded internal-course links, mark-done action) - not a compact
+// checklist row behind a second "see more" button. Folding the old
+// step-by-step modal's content directly into the page is issue #135's
+// explicit follow-up ask: one entry point (Ver detalles), not two
+// competing ones for the same information.
+function RequirementRow({ competency, actions }: { competency: RequiredCompetency; actions: ReturnTypeActions }) {
   const done = isCompetencyDone(competency);
-  // Only videos already present in AL-LIO's learning catalogue are clickable.
-  // Legacy references without an internal course stay as short, read-only text.
   const internalCourses = selectAptitudeVideos(competency.learningItems)
-    .flatMap((item) => item.internal_learning_slug
-      ? [{ ...item, internal_learning_slug: item.internal_learning_slug }]
+    .flatMap((learningItem) => learningItem.internal_learning_slug
+      ? [{ ...learningItem, internal_learning_slug: learningItem.internal_learning_slug }]
       : [])
-    .filter((item, index, items) => items.findIndex((candidate) => candidate.internal_learning_slug === item.internal_learning_slug) === index);
-  const internalCourseIds = new Set(internalCourses.map((item) => item.id));
+    .filter((learningItem, index, items) => items.findIndex((candidate) => candidate.internal_learning_slug === learningItem.internal_learning_slug) === index);
+  const internalCourseIds = new Set(internalCourses.map((learningItem) => learningItem.id));
   const referenceTitles = [...new Set(
     competency.learningItems
-      .filter((item) => !internalCourseIds.has(item.id))
-      .map((item) => item.title.trim())
+      .filter((learningItem) => !internalCourseIds.has(learningItem.id))
+      .map((learningItem) => learningItem.title.trim())
       .filter(Boolean),
   )].slice(0, 2);
 
-  function markDone() {
-    actions.markCompetencyCompleted(competency.id);
-    onMarkDone?.();
+  return (
+    <div className="rounded-2xl border border-[#ece7dc] p-3.5">
+      <div className="flex items-start gap-2.5">
+        <span className={cn("al-modal-req-check mt-0.5", done ? "al-modal-req-check-done" : "al-modal-req-check-pending")}>
+          <Check className="h-3 w-3" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[13.5px] font-bold text-[#111111]">{competency.titulo}</p>
+            <span className={cn("al-modal-step-badge", competency.obligatoria_para_item ? "al-modal-step-badge-oblig" : "al-modal-step-badge-reco")}>
+              {competency.obligatoria_para_item ? "Imprescindible" : "Recomendada"}
+            </span>
+          </div>
+          {competency.descripcion && <p className="mt-1.5 text-xs leading-5 text-[#4b4740]">{competency.descripcion}</p>}
+          <div className="al-modal-req-actions mt-2">
+            {internalCourses.map((learningItem) => (
+              <Link key={learningItem.id} href={`/aprende/${encodeURIComponent(learningItem.internal_learning_slug)}`} className="al-modal-req-btn al-modal-req-btn-video">
+                <Youtube className="h-3 w-3" />{learningItem.title}
+              </Link>
+            ))}
+            {referenceTitles.length > 0 && <EmptyText>Otros recursos: {referenceTitles.join(" · ")}</EmptyText>}
+            {internalCourses.length === 0 && referenceTitles.length === 0 && <EmptyText>Sin curso interno disponible todavía.</EmptyText>}
+          </div>
+          {done ? (
+            <span className="al-modal-mark-done al-modal-mark-done-active mt-3">
+              <CheckCircle2 className="h-3.5 w-3.5" />Marcado como hecho
+            </span>
+          ) : (
+            <button type="button" className="al-modal-mark-done mt-3" onClick={() => actions.markCompetencyCompleted(competency.id)}>
+              <Check className="h-3.5 w-3.5" />Marcar como hecho
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function HackathonDetailView({ id }: { id: string }) {
+  const { store, actions } = useStore();
+  const allHackathons = useMemo(
+    () => getDisplayHackathons(store.hackathons, store.techOpportunities, store.fpContent),
+    [store.hackathons, store.techOpportunities, store.fpContent]
+  );
+  const item = useMemo(() => allHackathons.find((h) => h.id === id) ?? null, [allHackathons, id]);
+  const [pendingComplete, setPendingComplete] = useState(false);
+
+  if (!item) {
+    return (
+      <div className="space-y-4">
+        <style>{`
+          .al-hack-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+          .al-hack-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
+          .al-hack-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
+          .al-hack-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
+          .al-hack-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; text-decoration: none; }
+        `}</style>
+        <PageHeader eyebrow="Eventos y retos" title="Evento no disponible" actions={<StudentHeaderActions />} />
+        <div className="al-hack-empty">
+          <span className="al-hack-empty-icon"><Trophy className="h-6 w-6" /></span>
+          <p className="al-hack-empty-title">Ya no podemos mostrar este evento</p>
+          <p className="al-hack-empty-desc">Puede haberse retirado del catálogo o no estar disponible para tu ciclo. Vuelve al listado para ver los eventos activos.</p>
+          <Link href="/hackathons" className="al-hack-empty-btn">Volver a Eventos y retos</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const description = hackathonPublicDescription(item);
+  const canFavorite = canToggleHackathonFavorite(item);
+  const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
+  const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
+  const requirements = item.requiredCompetencies ?? [];
+  const progress = hackathonAptitudeProgress(item);
+  const past = isHackathonPast(item);
+  const archived = isHackathonArchived(item);
+  const cardClass = "space-y-3 rounded-[18px] border border-[#ece7dc] bg-white p-4 shadow-[0_10px_26px_rgba(17,17,17,0.045)] sm:p-5";
+
+  async function handleComplete(target: Hackathon) {
+    if (pendingComplete) return;
+    setPendingComplete(true);
+    try {
+      await actions.completeHackathon(target);
+    } catch {
+      // Store action already surfaced a toast and rolled back optimistic state.
+    } finally {
+      setPendingComplete(false);
+    }
   }
 
   return (
-    <div className="al-modal-step-card">
-      <div className="al-modal-step-card-head">
-        <span className={cn("al-modal-req-check", done ? "al-modal-req-check-done" : "al-modal-req-check-pending")}>
-          <Check className="h-3.5 w-3.5" />
-        </span>
-        <p className="al-modal-req-title">{competency.titulo}</p>
+    <div className="space-y-5">
+      <style>{`
+        .al-hack-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
+        .al-hack-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+        .al-hack-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
+        .al-hack-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .al-hack-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .al-hack-heart.al-hack-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
+        .al-hack-chip-green { border-color: rgba(31, 122, 77, 0.3) !important; background: #e7f5ee !important; color: #1f7a4d !important; }
+        .al-hack-prep-ready { display: inline-flex; align-items: center; gap: 4px; }
+        .al-modal-req-check { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; flex-shrink: 0; }
+        .al-modal-req-check-done { background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
+        .al-modal-req-check-pending { border: 2px solid #e4dfd5; color: transparent; }
+        .al-modal-step-badge { display: inline-flex; align-items: center; height: 20px; padding: 0 9px; border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; flex-shrink: 0; }
+        .al-modal-step-badge-oblig { background: #e7f5ee; color: #1f7a4d; }
+        .al-modal-step-badge-reco { background: #fdf1dd; color: #b4791f; }
+        .al-modal-req-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+        .al-modal-req-btn { display: inline-flex; align-items: center; gap: 5px; height: 29px; padding: 0 10px; border-radius: 8px; border: 1px solid #ece7dc; background: white; font-size: 11px; font-weight: 600; color: #333029; text-decoration: none; cursor: pointer; }
+        .al-modal-req-btn-video { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
+        .al-modal-mark-done { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 9px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 700; background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
+        .al-modal-mark-done-active { background: #e7f5ee; color: #1f7a4d; cursor: default; }
+      `}</style>
+      <Link href="/hackathons" className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b6f72] transition hover:text-[#c94f21]">
+        <ChevronLeft className="h-3.5 w-3.5" />Eventos y retos
+      </Link>
+      <PageHeader eyebrow={item.type || "Evento o reto"} title={item.name} subtitle={item.organizer} actions={<StudentHeaderActions />} />
+
+      <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+        <div className="min-w-0 space-y-4">
+          <div className={cardClass}>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className={cn(hackathonStatusClass(item.status))}>{hackathonStatusLabel(item.status)}</Badge>
+              {!archived && isPreparationComplete(item) && (
+                <Badge className="al-hack-prep-ready al-hack-chip-green"><CheckCircle2 className="h-3 w-3" />Preparación lista</Badge>
+              )}
+              {canFavorite && (
+                <button
+                  type="button"
+                  className={cn("al-hack-heart", item.is_favorite && "al-hack-heart-active")}
+                  aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
+                  aria-pressed={!!item.is_favorite}
+                  onClick={() => toggleHackathonFavoriteFor(item, actions)}
+                >
+                  <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+                </button>
+              )}
+            </div>
+            {past && <p className="rounded-lg bg-[#f3ece1] px-3 py-2 text-xs font-semibold text-[#6b6f72]">Este evento ya ha finalizado.</p>}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Fechas</p>
+                <p className="text-[13px] font-semibold text-[#333029]">{item.start_at ? formatDateLabel(item.start_at) : "Sin fecha indicada"}{item.end_at ? ` → ${formatDateLabel(item.end_at)}` : ""}</p>
+              </div>
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Inscripción hasta</p>
+                <p className="text-[13px] font-semibold text-[#333029]">{inscripcionFin ? formatDateLabel(inscripcionFin) : "No especificada"}</p>
+              </div>
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Ubicación</p>
+                <p className="text-[13px] font-semibold text-[#333029]">{place || "No especificada"}</p>
+              </div>
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Modalidad</p>
+                <p className="text-[13px] font-semibold text-[#333029]">{item.modalidad || "No especificada"}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Descripción</p>
+              <p className="mt-1 whitespace-pre-wrap text-[13px] leading-6 text-[#4b4740]">{description || "Este evento todavía no tiene una descripción disponible."}</p>
+            </div>
+          </div>
+
+          {requirements.length > 0 && (
+            <div className={cardClass}>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-bold text-[#111111]">Requisitos y preparación</p>
+                {progress.total > 0 && <span className="text-xs font-semibold text-[#9a958a]">{progress.done}/{progress.total} completadas</span>}
+              </div>
+              <div className="space-y-3">
+                {requirements.map((competency) => (
+                  <RequirementRow key={competency.id} competency={competency} actions={actions} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          <div className={cardClass}>
+            <p className="text-sm font-bold text-[#111111]">Acciones</p>
+            <div className="flex flex-col gap-2">
+              {isSafeHttpUrl(item.url) && (
+                <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-hack-btn al-hack-btn-primary justify-center">
+                  <ExternalLink className="h-3.5 w-3.5" />Abrir convocatoria oficial
+                </a>
+              )}
+              <button type="button" className="al-hack-btn justify-center" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" }).catch(() => {})}>
+                <Plus className="h-3.5 w-3.5" />Crear tarea
+              </button>
+              {!archived && item.sourceTable !== "tech_opportunities" && (
+                <button type="button" className="al-hack-btn justify-center" disabled={pendingComplete} onClick={() => handleComplete(item)}>
+                  <CheckCircle2 className="h-3.5 w-3.5" />{pendingComplete ? "Guardando…" : "Realizado"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-      {competency.descripcion && <p className="al-modal-req-desc">{competency.descripcion}</p>}
-      <div className="al-modal-req-actions">
-        {internalCourses.map((learningItem) => (
-          <Link key={learningItem.id} href={`/aprende/${encodeURIComponent(learningItem.internal_learning_slug)}`} className="al-modal-req-btn al-modal-req-btn-video">
-            <Youtube className="h-3 w-3" />
-            {learningItem.title}
-          </Link>
-        ))}
-        {referenceTitles.length > 0 && <EmptyText>Otros recursos: {referenceTitles.join(" · ")}</EmptyText>}
-        {internalCourses.length === 0 && referenceTitles.length === 0 && <EmptyText>Sin curso interno disponible todavía.</EmptyText>}
-      </div>
-      {done ? (
-        <span className="al-modal-mark-done al-modal-mark-done-active">
-          <CheckCircle2 className="h-3.5 w-3.5" />Marcado como hecho
-        </span>
-      ) : (
-        <button type="button" className="al-modal-mark-done" onClick={markDone}>
-          <Check className="h-3.5 w-3.5" />Marcar como hecho
-        </button>
-      )}
     </div>
   );
 }
@@ -3532,11 +3481,7 @@ function CompanyCard({ company, onToggleFavorite }: { company: Company; onToggle
 }
 
 
-const techCourseCategories = new Set(["curso"]);
-const techHackathonCategories = new Set(["hackathon_reto"]);
-const techEventCategories = new Set(["evento_tech", "reto_programacion", "concurso_programacion"]);
-
-function getDisplayCourses(courses: Course[], items: TechOpportunity[], fpItems: FpCatalogItem[] = []) {
+export function getDisplayCourses(courses: Course[], items: TechOpportunity[], fpItems: FpCatalogItem[] = []) {
   const seen = new Set(courses.map(courseIdentityKey));
   const fromTech = items
     .filter(isTechCourse)
@@ -3551,7 +3496,7 @@ function getDisplayCourses(courses: Course[], items: TechOpportunity[], fpItems:
   return [...fromTech, ...fromFp, ...courses].sort(sortCoursesForDisplay);
 }
 
-function getDisplayHackathons(hackathons: Hackathon[], items: TechOpportunity[], fpItems: FpCatalogItem[] = []) {
+export function getDisplayHackathons(hackathons: Hackathon[], items: TechOpportunity[], fpItems: FpCatalogItem[] = []) {
   const seen = new Set(hackathons.map(hackathonIdentityKey));
   const fromTech = items
     .filter(isTechHackathonOrEvent)
@@ -3564,152 +3509,6 @@ function getDisplayHackathons(hackathons: Hackathon[], items: TechOpportunity[],
     .filter((hackathon) => addUniqueIdentity(seen, hackathonIdentityKey(hackathon)));
 
   return [...fromTech, ...fromFp, ...hackathons].sort(sortHackathonsForDisplay);
-}
-
-function techOpportunityToCourse(item: TechOpportunity): Course {
-  return {
-    id: `tech-${item.id_slug}`,
-    id_slug: item.id_slug,
-    title: item.nombre,
-    platform: item.entidad ?? undefined,
-    url: item.fuente_url ?? undefined,
-    price: item.coste ?? undefined,
-    category: item.area_o_tipo ?? item.categoria ?? undefined,
-    start_at: item.fecha_inicio ?? "",
-    deadline_at: item.fecha_fin ?? "",
-    status: normalizeCourseStatus(item.estado),
-    entidad: item.entidad ?? undefined,
-    area: item.area_o_tipo ?? undefined,
-    modalidad: item.modalidad ?? undefined,
-    localidad: item.localidad ?? undefined,
-    provincia: item.provincia ?? undefined,
-    certificacion_tipo: item.certificacion_o_premio ?? undefined,
-    practicas_empresa: textLooksPositive(item.practicas_empresa),
-    horas_totales: item.horas_totales ?? undefined,
-    horas_practicas: item.horas_practicas ?? undefined,
-    fecha_inicio: item.fecha_inicio ?? undefined,
-    fecha_fin: item.fecha_fin ?? undefined,
-    estado: item.estado ?? undefined,
-    coste: item.coste ?? undefined,
-    requisitos_resumen: item.requisitos_resumen ?? undefined,
-    encaje_daw_1_5: item.encaje_daw_1_5 ?? undefined,
-    prioridad: item.prioridad ?? undefined,
-    tags: item.tags ?? undefined,
-    fuente_url: item.fuente_url ?? undefined,
-    ultima_revision: item.ultima_revision ?? undefined,
-    notes: [item.requisitos_resumen, item.notas].filter(Boolean).join("\n\n") || undefined,
-    sourceTable: "tech_opportunities",
-    created_at: item.created_at,
-  };
-}
-
-function techOpportunityToHackathon(item: TechOpportunity): Hackathon {
-  return {
-    id: `tech-${item.id_slug}`,
-    id_slug: item.id_slug,
-    categoria: item.categoria ?? undefined,
-    name: item.nombre,
-    organizer: item.entidad ?? undefined,
-    province: item.provincia ?? undefined,
-    city: item.localidad ?? undefined,
-    type: item.area_o_tipo ?? item.categoria ?? undefined,
-    modalidad: item.modalidad ?? undefined,
-    localidad: item.localidad ?? undefined,
-    status: normalizeHackathonStatus(item.estado),
-    priority: normalizeTechPriority(item.prioridad),
-    start_at: item.fecha_inicio ?? "",
-    end_at: item.fecha_fin ?? "",
-    registration_deadline_at: "",
-    certificacion_o_premio: item.certificacion_o_premio ?? undefined,
-    practicas_empresa: textLooksPositive(item.practicas_empresa),
-    encaje_daw_1_5: item.encaje_daw_1_5 ?? undefined,
-    tags: item.tags ?? undefined,
-    ultima_revision: item.ultima_revision ?? undefined,
-    url: item.fuente_url ?? undefined,
-    notes: [item.requisitos_resumen, item.notas].filter(Boolean).join("\n\n") || undefined,
-    sourceTable: "tech_opportunities",
-    created_at: item.created_at,
-  };
-}
-
-const fpCourseTypes = new Set(["curso_basico", "curso_complementario", "herramienta", "recurso", "evidencia_recomendada"]);
-const fpHackathonTypes = new Set(["hackathon", "evento", "reto", "convocatoria_practicas"]);
-
-function isFpCourseLike(item: FpCatalogItem) {
-  return fpCourseTypes.has(item.type);
-}
-
-function isFpHackathonLike(item: FpCatalogItem) {
-  return fpHackathonTypes.has(item.type);
-}
-
-function fpItemNotes(item: FpCatalogItem) {
-  // `item.notes` contains import and moderation provenance. Keep it out of
-  // student-facing display models; only the suggested action is public copy.
-  return item.suggested_action || undefined;
-}
-
-function fpItemToCourse(item: FpCatalogItem): Course {
-  return {
-    id: `fp-${item.id_slug}`,
-    id_slug: item.id_slug,
-    title: item.title,
-    platform: item.entity ?? undefined,
-    url: item.source_url ?? undefined,
-    price: item.cost ?? undefined,
-    category: item.type,
-    start_at: item.start_date ?? "",
-    deadline_at: item.end_date ?? "",
-    status: fpUserStatusToCourseStatus(item.user_status) ?? normalizeCourseStatus(item.status),
-    entidad: item.entity ?? undefined,
-    area: item.type,
-    modalidad: item.delivery_mode ?? undefined,
-    localidad: item.location ?? undefined,
-    provincia: item.province ?? undefined,
-    certificacion_tipo: item.certification ?? undefined,
-    practicas_empresa: item.practices === "si",
-    fecha_inicio: item.start_date ?? undefined,
-    fecha_fin: item.end_date ?? undefined,
-    estado: item.status ?? undefined,
-    coste: item.cost ?? undefined,
-    requisitos_resumen: item.description ?? undefined,
-    prioridad: item.priority,
-    tags: item.tags ?? undefined,
-    fuente_url: item.source_url ?? undefined,
-    notes: fpItemNotes(item),
-    sourceTable: "fp_content_items",
-    created_at: item.created_at,
-  };
-}
-
-function fpItemToHackathon(item: FpCatalogItem): Hackathon {
-  return {
-    id: `fp-${item.id_slug}`,
-    id_slug: item.id_slug,
-    categoria: item.type,
-    name: item.title,
-    organizer: item.entity ?? undefined,
-    province: item.province ?? undefined,
-    city: item.location ?? undefined,
-    type: item.type,
-    modalidad: item.delivery_mode ?? undefined,
-    localidad: item.location ?? undefined,
-    status: fpUserStatusToHackathonStatus(item.user_status) ?? normalizeHackathonStatus(item.status),
-    priority: (item.priority.toLowerCase() as Hackathon["priority"]),
-    start_at: item.start_date ?? "",
-    end_at: item.end_date ?? "",
-    registration_deadline_at: "",
-    certificacion_o_premio: item.certification ?? undefined,
-    practicas_empresa: item.practices === "si",
-    tags: item.tags ?? undefined,
-    url: item.source_url ?? undefined,
-    description: item.description ?? undefined,
-    notes: fpItemNotes(item),
-    sourceTable: "fp_content_items",
-    requiredCompetencies: item.requiredCompetencies,
-    is_favorite: item.is_favorite ?? false,
-    created_at: item.created_at,
-  };
 }
 
 function fpItemToCalendarEvents(item: FpCatalogItem): CalendarEvent[] {
@@ -3767,66 +3566,6 @@ function techCalendarType(item: TechOpportunity): CalendarEvent["type"] {
   if (isTechCourse(item)) return "course";
   if (isTechHackathonOrEvent(item)) return "hackathon";
   return "event";
-}
-
-function isTechCourse(item: TechOpportunity) {
-  const category = techCategory(item);
-  return techCourseCategories.has(category);
-}
-
-function isTechHackathon(item: TechOpportunity) {
-  const category = techCategory(item);
-  return techHackathonCategories.has(category) || category.includes("hackathon");
-}
-
-function isTechHackathonOrEvent(item: TechOpportunity) {
-  const category = techCategory(item);
-  return isTechHackathon(item) || techEventCategories.has(category) || category.includes("evento") || category.includes("reto") || category.includes("concurso");
-}
-
-function techCategory(item: TechOpportunity) {
-  return String(item.categoria || "").trim().toLowerCase();
-}
-
-function textLooksPositive(value?: string | null) {
-  const normalized = String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  return normalized.startsWith("si") || normalized.includes("beca formativa");
-}
-
-function normalizeCourseStatus(value?: string | null): Course["status"] {
-  const normalized = String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (normalized.includes("final") || normalized.includes("termin")) return "terminado";
-  if (normalized.includes("paus")) return "pausado";
-  if (normalized.includes("descart")) return "descartado";
-  if (normalized.includes("curso") || normalized.includes("abiert")) return "empezado";
-  return "pendiente";
-}
-
-// The per-user fp_user_content_state status (saved/started/completed/dismissed)
-// takes priority over the catalogue's own display status once the student has
-// actually interacted with the item - "saved" alone isn't a lifecycle verdict,
-// so it falls through to the catalogue status like an untouched item would.
-function fpUserStatusToCourseStatus(userStatus?: string | null): Course["status"] | undefined {
-  if (userStatus === "completed") return "terminado";
-  if (userStatus === "dismissed") return "descartado";
-  if (userStatus === "started") return "empezado";
-  return undefined;
-}
-
-function normalizeHackathonStatus(value?: string | null): Hackathon["status"] {
-  const normalized = String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (normalized.includes("final") || normalized.includes("realiz")) return "realizado";
-  if (normalized.includes("descart")) return "descartado";
-  if (normalized.includes("abiert") || normalized.includes("inscrip")) return "inscripcion_abierta";
-  if (normalized.includes("futura")) return "revisar_futura_edicion";
-  return "pendiente";
-}
-
-function normalizeTechPriority(value?: string | null): Hackathon["priority"] {
-  const normalized = String(value || "").toLowerCase();
-  if (normalized.includes("alta")) return "alta";
-  if (normalized.includes("baja")) return "baja";
-  return "media";
 }
 
 function courseIdentityKey(course: Course) {

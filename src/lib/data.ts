@@ -16,6 +16,7 @@ import { getLearningOverview } from "@/lib/learning/overview";
 import {
   getFpContentForProfile,
   getRequiredCompetenciesForItems,
+  getCourseAptitudesForItems,
   getLearningItemsForCompetencies,
   getUserContentStatesForItems,
   getUserCompetencyStatesForSkills,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/db/repositories/fp_catalog";
 
 export const FP_APTITUDE_GATED_TYPES = new Set(["hackathon", "evento", "reto", "convocatoria_practicas"]);
+export const FP_COURSE_APTITUDE_TYPES = new Set(["curso_basico", "curso_complementario", "herramienta", "recurso", "evidencia_recomendada"]);
 
 export type StoreLoadSection = "tasks" | "courses" | "hackathons" | "opportunities" | "companies" | "roadmap";
 
@@ -59,8 +61,16 @@ export const getGlobalStore = cache(async () => {
   const aptitudeGatedItemIds = fpContent
     .filter((item) => FP_APTITUDE_GATED_TYPES.has(item.type))
     .map((item) => item.id);
-  const requiredCompetenciesByItem = await getRequiredCompetenciesForItems(aptitudeGatedItemIds);
+  const courseAptitudeItemIds = fpContent
+    .filter((item) => FP_COURSE_APTITUDE_TYPES.has(item.type))
+    .map((item) => item.id);
+  const [requiredCompetenciesByItem, courseAptitudesByItem] = await Promise.all([
+    getRequiredCompetenciesForItems(aptitudeGatedItemIds),
+    getCourseAptitudesForItems(courseAptitudeItemIds),
+  ]);
   const requiredCompetencyIds = [...new Set([...requiredCompetenciesByItem.values()].flat().map((c) => c.id))];
+  const courseAptitudeIds = [...new Set([...courseAptitudesByItem.values()].flat().map((c) => c.id))];
+  const visibleCompetencyIds = [...new Set([...requiredCompetencyIds, ...courseAptitudeIds])];
   const learningItemsByCompetency = profile.cycle_code
     ? await getLearningItemsForCompetencies(requiredCompetencyIds, profile.cycle_code)
     : new Map();
@@ -80,7 +90,7 @@ export const getGlobalStore = cache(async () => {
     : new Map<string, string>();
   const learningItemIds = [...new Set([...learningItemsByCompetency.values()].flat().map((li) => li.id))];
   const learningItemStatusById = await getUserContentStatesForItems(userId, learningItemIds);
-  const userCompetencyStates = await getUserCompetencyStatesForSkills(userId, requiredCompetencyIds);
+  const userCompetencyStates = await getUserCompetencyStatesForSkills(userId, visibleCompetencyIds);
 
   const rawName =
     pgUser?.display_name ||
@@ -131,6 +141,15 @@ export const getGlobalStore = cache(async () => {
             : null,
           user_status: learningItemStatusById.get(learningItem.id) ?? null,
         })),
+      })),
+      courseAptitudes: (courseAptitudesByItem.get(item.id) ?? []).map((aptitude) => ({
+        id: aptitude.id,
+        titulo: aptitude.titulo,
+        descripcion: aptitude.descripcion ?? undefined,
+        horas_estimadas: aptitude.horas_estimadas ?? undefined,
+        evidencia_minima: aptitude.evidencia_minima ?? undefined,
+        relation: aptitude.tipo_relacion,
+        completed: userCompetencyStates.has(aptitude.id),
       })),
     })),
     hackathons: serializeHackathons(hackathons),

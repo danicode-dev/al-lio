@@ -69,3 +69,14 @@ export async function deleteCoursesByUserLike(userId: string, pattern: string): 
     [userId, pattern]
   );
 }
+
+// Atomic flip (no read-then-write race) scoped to the caller's own row.
+// Returns null when the row doesn't exist or isn't owned by this user, so
+// the caller can distinguish "not found/not yours" from a real DB error.
+export async function toggleCourseFavorite(userId: string, id: string): Promise<boolean | null> {
+  const res = await query<{ is_favorite: boolean }>(
+    `UPDATE public.courses SET is_favorite = NOT is_favorite WHERE id = $1 AND user_id = $2 RETURNING is_favorite`,
+    [id, userId]
+  );
+  return res.rows[0]?.is_favorite ?? null;
+}

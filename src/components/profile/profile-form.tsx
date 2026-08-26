@@ -21,6 +21,7 @@ import type { RoadmapOverview } from "@/lib/fp/roadmap";
 import { FieldListbox, type FieldListboxOption } from "@/components/ui/field-listbox";
 import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
+import { SavedHub } from "@/components/profile/saved-hub";
 
 const INTEREST_META: Record<
   (typeof ONBOARDING_INTEREST_OPTIONS)[number],
@@ -365,6 +366,7 @@ export function ProfileForm({
         </div>
       </div>
 
+      <SavedHub />
     </>
   );
 }

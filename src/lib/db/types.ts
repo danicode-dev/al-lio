@@ -394,6 +394,7 @@ export interface DbCourse {
   fuente_url: string | null;
   ultima_revision: string | null;
   notes: string | null;
+  is_favorite: boolean;
   created_at: string;
   updated_at: string;
 }

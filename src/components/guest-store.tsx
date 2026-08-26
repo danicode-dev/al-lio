@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { toast } from "sonner";
 
 import { toggleCompanyFavoriteAction } from "@/lib/companies/actions";
+import { toggleCourseFavoriteAction } from "@/lib/courses/actions";
 import { toggleHackathonFavoriteAction } from "@/lib/hackathons/actions";
 import { deleteDb, insertDb, updateDb } from "@/lib/db";
 import { markCompetencyCompletedAction } from "@/lib/fp/competency-actions";
@@ -298,6 +299,25 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
         throw error;
       }
     },
+    // Dedicated action (not updateCourse) so a failed write always rolls
+    // back the optimistic flip and surfaces an honest error toast, mirroring
+    // toggleHackathonFavorite/toggleCompanyFavorite (issue #120).
+    toggleCourseFavorite: (id: string) => {
+      const current = store.courses.find((course) => course.id === id);
+      const nextValue = !current?.is_favorite;
+      setStore((current) => ({
+        ...current,
+        courses: current.courses.map((course) => course.id === id ? { ...course, is_favorite: nextValue } : course),
+      }));
+      void toggleCourseFavoriteAction(id).then((result) => {
+        if (!result.error) return;
+        setStore((current) => ({
+          ...current,
+          courses: current.courses.map((course) => course.id === id ? { ...course, is_favorite: !nextValue } : course),
+        }));
+        toast.error("No se pudo guardar el curso");
+      });
+    },
     addHackathon: async (data: Omit<Hackathon, "id" | "created_at">) => {
       const id = makeId();
       setStore((current) => ({ ...current, hackathons: [{ id, created_at: nowIso(), ...data }, ...current.hackathons] }));
@@ -466,6 +486,9 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
         ...item,
         requiredCompetencies: item.requiredCompetencies?.map((competency) => (
           competency.id === skillId ? { ...competency, completed } : competency
+        )),
+        courseAptitudes: item.courseAptitudes?.map((aptitude) => (
+          aptitude.id === skillId ? { ...aptitude, completed } : aptitude
         )),
       }));
       setStore((current) => ({ ...current, fpContent: patchCompetencies(current.fpContent, true) }));
