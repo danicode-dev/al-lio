@@ -170,12 +170,8 @@ export function GuestApp({ view }: { view: View }) {
         <CalendarView
           events={getCalendarEvents(store)}
           completedTasks={store.tasks}
-          headerActions={
-            <>
-              <StudentHeaderActions />
-              <GoogleCalendarStatusControl />
-            </>
-          }
+          headerActions={<StudentHeaderActions />}
+          calendarStatus={<GoogleCalendarStatusControl />}
         />
       )}
       {view === "links" && <LinksView store={store} actions={actions} />}
@@ -223,31 +219,37 @@ function GoogleCalendarStatusControl() {
     }
   }
 
-  const statusTone = loading ? "bg-muted-foreground" : connected ? "bg-emerald-500" : "bg-amber-500";
-  const label = connected ? "Calendar" : "Conectar Calendar";
-  const content = (
-    <>
-      <span className="grid h-3.5 w-3.5 shrink-0 grid-cols-2 overflow-hidden rounded-[3px] border border-background/80 shadow-sm" aria-hidden="true">
-        <span className="bg-blue-500" />
-        <span className="bg-green-500" />
-        <span className="bg-yellow-400" />
-        <span className="bg-red-500" />
-      </span>
-      <span className={cn("h-1.5 w-1.5 rounded-full", statusTone)} />
-      <span className="hidden sm:inline truncate text-xs font-medium">{label}</span>
-    </>
+  const label = connected ? "Google Calendar conectado" : "Conectar Google Calendar";
+  const googleMark = (
+    <span className="grid h-3.5 w-3.5 shrink-0 grid-cols-2 overflow-hidden rounded-[3px] border border-white/80 shadow-sm" aria-hidden="true">
+      <span className="bg-blue-500" />
+      <span className="bg-green-500" />
+      <span className="bg-yellow-400" />
+      <span className="bg-red-500" />
+    </span>
   );
+
+  if (loading) {
+    return (
+      <span className="inline-flex h-9 w-fit items-center gap-2 rounded-xl border border-[#ece7dc] bg-white px-3 text-xs font-semibold text-[#9a958a]">
+        {googleMark}
+        Comprobando Google Calendar…
+      </span>
+    );
+  }
 
   if (connected) {
     return (
       <button
         type="button"
-        className="inline-flex h-8 w-fit items-center gap-2 rounded-md border bg-card/90 px-2.5 text-foreground shadow-sm transition-colors hover:bg-muted disabled:opacity-60"
+        className="inline-flex h-9 w-fit items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3 text-xs font-bold text-emerald-800 shadow-sm transition-colors hover:bg-emerald-100 disabled:opacity-60"
         onClick={disconnect}
         disabled={busy}
-        title="Google Calendar conectado. Click para desconectar."
+        title="Google Calendar conectado. Toca para desconectar."
       >
-        {content}
+        {googleMark}
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+        <span className="truncate">{busy ? "Desconectando…" : label}</span>
       </button>
     );
   }
@@ -255,11 +257,11 @@ function GoogleCalendarStatusControl() {
   return (
     <a
       href="/api/google/calendar/auth?next=/dashboard"
-      className={cn("inline-flex h-8 w-fit items-center gap-2 rounded-md border bg-card/90 px-2.5 text-foreground shadow-sm transition-colors hover:bg-muted", loading && "pointer-events-none opacity-60")}
+      className="inline-flex h-9 w-fit items-center gap-2 rounded-xl border border-[#f4b398] bg-[#fff7f3] px-3 text-xs font-bold text-[#c94f21] shadow-sm transition-colors hover:bg-[#ffe9df]"
       title="Conectar Google Calendar"
-      aria-disabled={loading}
     >
-      {content}
+      {googleMark}
+      <span className="truncate">{label}</span>
     </a>
   );
 }

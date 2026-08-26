@@ -2106,6 +2106,71 @@ test("tech_opportunities-sourced events are excluded from saving with a document
   assert.match(precedingComment, /deliberately excluded/i, "the exclusion must be explained, not just present with no rationale");
 });
 
+test("Nueva tarea moved out of the crowded top header into the Tu lista row, next to Pendientes/Hechas/Todas - not competing with the global +/calendar/bell icons anymore (owner-reported follow-up)", async () => {
+  const source = await readFile(new URL("../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8");
+
+  const headerStart = source.indexOf("<PageHeader");
+  const headerEnd = source.indexOf("/>", source.indexOf('actions={', headerStart)) + 2;
+  const headerJsx = source.slice(headerStart, headerEnd);
+  assert.doesNotMatch(headerJsx, /Nueva tarea/, "the top PageHeader must no longer carry the page-specific composer button");
+  assert.match(headerJsx, /<StudentHeaderActions \/>/, "the global icon cluster must remain there, same as every other page");
+
+  const listRowStart = source.indexOf("Tu lista");
+  const listRowEnd = source.indexOf("</div>\r\n\r\n        {store.loadIssues");
+  const listRow = source.slice(listRowStart, listRowEnd === -1 ? listRowStart + 1200 : listRowEnd);
+  assert.match(listRow, /FilterButton active=\{filter === "pending"\}/);
+  assert.match(listRow, /setComposerOpen\(\(open\) => !open\)/, "the exact same composer toggle handler must be reused, not reimplemented");
+  const filterIdx = listRow.indexOf("Pendientes");
+  const buttonIdx = listRow.indexOf("Nueva tarea");
+  assert.ok(filterIdx > -1 && buttonIdx > filterIdx, "Pendientes/Hechas/Todas must come before Nueva tarea in reading order (filters left, action right)");
+});
+
+test("Nuevo evento and the Google Calendar status move into the calendar's own month-navigation toolbar, next to Hoy - the top header keeps only the global icon cluster (owner-reported follow-up)", async () => {
+  const source = await readFile(new URL("../src/components/calendar/app-calendar.tsx", import.meta.url), "utf8");
+
+  const headerStart = source.indexOf("<PageHeader");
+  const headerEnd = source.indexOf("/>", headerStart) + 2;
+  const pageHeaderJsx = source.slice(headerStart, headerEnd);
+  assert.doesNotMatch(pageHeaderJsx, /Nuevo evento/, "the top PageHeader must no longer carry the event-creation button");
+  assert.doesNotMatch(pageHeaderJsx, /calendarStatus/, "the Google Calendar status must not render in the top header anymore");
+  assert.match(pageHeaderJsx, /\{headerActions\}/, "the global icon cluster must remain there, same as every other page");
+
+  assert.match(source, /statusSlot\?: React\.ReactNode;/, "CalendarHeader needs a dedicated slot for the connection status, distinct from the anchored-popover children prop used by the compact variant");
+  const nonCompactButtonRow = source.slice(source.indexOf('<Button type="button" size="sm" variant="outline"'), source.indexOf("</div>\r\n    </div>\r\n  );\r\n}"));
+  assert.match(nonCompactButtonRow, />Hoy<\/Button>/);
+  assert.match(nonCompactButtonRow, /\{statusSlot\}/);
+  assert.match(nonCompactButtonRow, /Nuevo evento/);
+
+  const calendarViewCall = source.slice(source.indexOf("<CalendarHeader", source.indexOf("export function CalendarView")), source.indexOf("<CalendarHeader", source.indexOf("export function CalendarView")) + 300);
+  assert.match(calendarViewCall, /onCreate=\{\(\) => setNewEventOpen\(true\)\}/, "must reuse the exact same handler the old header button called, not a new one");
+  assert.match(calendarViewCall, /statusSlot=\{calendarStatus\}/);
+
+  const guestApp = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.match(guestApp, /headerActions=\{<StudentHeaderActions \/>\}/);
+  assert.match(guestApp, /calendarStatus=\{<GoogleCalendarStatusControl \/>\}/);
+});
+
+test("GoogleCalendarStatusControl's connected/disconnected/loading states are visually distinct (green when connected, inviting when not) with unchanged underlying logic - same state variables, same effect, same disconnect handler (owner-reported follow-up)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("function GoogleCalendarStatusControl");
+  const fnEnd = source.indexOf("function TaskBoard");
+  const fn = source.slice(fnStart, fnEnd);
+
+  // Logic untouched: same state, same effect endpoint, same disconnect call.
+  assert.match(fn, /const \[connected, setConnected\] = useState\(false\);/);
+  assert.match(fn, /const \[loading, setLoading\] = useState\(true\);/);
+  assert.match(fn, /const \[busy, setBusy\] = useState\(false\);/);
+  assert.match(fn, /fetch\("\/api\/google\/calendar\/status", \{ cache: "no-store" \}\)/);
+  assert.match(fn, /method: "DELETE"/);
+
+  // Presentation: clearly distinct per state, not just a small dot.
+  assert.match(fn, /bg-emerald-50 px-3 text-xs font-bold text-emerald-800/, "connected state must read as green/positive, not generic");
+  assert.match(fn, /border-\[#f4b398\] bg-\[#fff7f3\] px-3 text-xs font-bold text-\[#c94f21\]/, "disconnected state must read as an inviting call-to-connect, not generic");
+  assert.match(fn, /"Google Calendar conectado"/);
+  assert.match(fn, /"Conectar Google Calendar"/);
+  assert.doesNotMatch(fn, /hidden sm:inline/, "the status label must always be visible now that it lives in the calendar's own toolbar, not squeezed into a narrow global header");
+});
+
 test("Guardados is a real heart-driven filter tab, independent of and additional to Activos/Archivados/Todos - not just the heart control on its own (issue #131)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const hackathonsFnStart = source.indexOf("function Hackathons(");
