@@ -26,6 +26,25 @@ changes blindly or replacing unrelated healthy services.
 - enough free space for the current and candidate images plus restore data;
 - a production `.env` outside Git.
 
+## Automated routine release
+
+For an owner-approved commit already merged into `main`, the supported routine
+path is the guarded deployment script:
+
+```bash
+./scripts/deploy-production.sh <full-40-character-main-commit-sha>
+```
+
+The script implements the immutable worktree, candidate build, conditional
+backup and migration rehearsal, web-only replacement, health/readiness checks,
+private release record and automatic web rollback described below. It refuses
+infrastructure, operator-managed catalogue, divergent, downgrade and
+non-additive migration cases instead of guessing.
+
+The owner-facing step-by-step instructions are maintained in
+[`AUTONOMOUS_PRODUCTION_DEPLOY.md`](AUTONOMOUS_PRODUCTION_DEPLOY.md). The rest of
+this runbook remains authoritative for exceptional and manual releases.
+
 ## 1. Select exact revisions
 
 ```bash

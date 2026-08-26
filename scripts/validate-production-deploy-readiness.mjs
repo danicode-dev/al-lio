@@ -32,6 +32,18 @@ function read(path) {
   return existsSync(fullPath) ? readFileSync(fullPath, "utf-8").replace(/\r\n/g, "\n") : "";
 }
 
+console.log("\n-- scripts/deploy-production.sh --");
+const deployScript = read("scripts/deploy-production.sh");
+check("guarded production deploy script exists", existsSync(join(root, "scripts/deploy-production.sh")));
+check("deploy script requires an exact full SHA", deployScript.includes("^[0-9a-f]{40}$"));
+check("deploy script accepts only commits reachable from main", deployScript.includes('merge-base --is-ancestor "$release_sha" origin/main'));
+check("deploy script serializes releases", deployScript.includes("flock -n"));
+check("deploy script creates and verifies PostgreSQL backups", deployScript.includes("backup-production.sh") && deployScript.includes("verify-backup-production.sh"));
+check("deploy script rehearses migrations in an isolated database", deployScript.includes("al_lio_rehearsal_"));
+check("deploy script replaces only the web service", deployScript.includes("up -d --no-deps al_lio_web"));
+check("deploy script has an automatic web rollback", deployScript.includes("rollback_web"));
+check("deploy script never removes Compose volumes", !deployScript.includes("down -v") && !deployScript.includes("docker volume rm"));
+
 console.log("\n-- infra/docker-compose.prod.yml --");
 const compose = read("infra/docker-compose.prod.yml");
 check("docker-compose.prod.yml exists", existsSync(join(root, "infra/docker-compose.prod.yml")));
