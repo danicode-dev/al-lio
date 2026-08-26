@@ -2171,26 +2171,29 @@ test("GoogleCalendarStatusControl's connected/disconnected/loading states are vi
   assert.doesNotMatch(fn, /hidden sm:inline/, "the status label must always be visible now that it lives in the calendar's own toolbar, not squeezed into a narrow global header");
 });
 
-test("Competencias' progress card sits below the header, not beside it - so PageHeader's actions land flush at the page's true right edge, same as every other page, instead of being squeezed left of a sibling card (owner-reported follow-up)", async () => {
+test("Competencias' progress card sits inside PageHeader's own actions, glued to the +/calendar/bell icon cluster in the same top row - not stacked below it in its own row leaving an empty gap (owner-reported follow-up)", async () => {
   const source = await readFile(new URL("../src/components/learning/competencies-view.tsx", import.meta.url), "utf8");
 
-  // PageHeader must no longer share a flex row with the progress card -
-  // a row-level sibling is exactly what pushed the actions cluster in from
-  // the true right edge in the previous attempt at this fix.
-  const wrapperStart = source.indexOf('<div className="space-y-4 border-b');
-  assert.ok(wrapperStart > -1, "the header/progress-card container must stack vertically (space-y), not sit in a shared flex row");
-  const pageHeaderIdx = source.indexOf("<PageHeader", wrapperStart);
-  const progressCardIdx = source.indexOf("Progreso guardado", wrapperStart);
-  assert.ok(pageHeaderIdx > -1 && progressCardIdx > pageHeaderIdx, "PageHeader must render before, and outside of, the progress card's own row");
+  // The old two-row stack (a dedicated space-y wrapper around PageHeader
+  // plus a sibling card row below it) is exactly what left the large,
+  // "unprofessional" empty gap under the subtitle. That wrapper must be
+  // gone - PageHeader now renders directly, and the card lives inside it.
+  assert.doesNotMatch(source, /<div className="space-y-4 border-b/, "the old wrapper that stacked PageHeader and the progress card into two separate rows must be removed");
 
-  const betweenHeaderAndCard = source.slice(pageHeaderIdx, progressCardIdx);
-  assert.doesNotMatch(betweenHeaderAndCard, /md:flex-row|lg:flex-row|justify-between/, "no flex row may span PageHeader and the progress card together");
+  const headerStart = source.indexOf("<PageHeader");
+  const actionsIdx = source.indexOf("actions={", headerStart);
+  const headerEnd = source.indexOf("\n      />", actionsIdx);
+  assert.ok(headerStart > -1 && actionsIdx > headerStart && headerEnd > actionsIdx, "PageHeader must declare an actions prop");
+  const actionsBlock = source.slice(actionsIdx, headerEnd);
 
-  const cardDivStart = source.lastIndexOf('<div className="', progressCardIdx);
-  const cardTag = source.slice(cardDivStart, source.indexOf(">", cardDivStart) + 1);
-  assert.match(cardTag, /bg-\[#114b3b\]/, "must have located the progress card's own div, not an unrelated ancestor");
-  assert.match(cardTag, /w-fit/, "the progress card must size to its own content on its own row, not stretch to fill/compete for the header's row width");
-  assert.match(cardTag, /ml-auto/, "the compact card defaults to the left edge of its own full-width row unless pushed - it must align right, matching where it sat before it moved below the header");
+  const cardIdx = actionsBlock.indexOf("bg-[#114b3b]");
+  const iconsIdx = actionsBlock.indexOf("<StudentHeaderActions />");
+  assert.ok(cardIdx > -1, "the progress card must render inside PageHeader's actions, next to the icon cluster");
+  assert.ok(iconsIdx > -1 && iconsIdx > cardIdx, "the progress card must come before StudentHeaderActions in reading order - glued to its left, same top row");
+
+  assert.match(actionsBlock, /Progreso guardado/);
+  assert.match(actionsBlock, /\{progress\}%/);
+  assert.match(actionsBlock, /shrink-0/, "the card must not be allowed to stretch/shrink oddly when squeezed next to the icon cluster");
 });
 
 test("Guardados is a real heart-driven filter tab, independent of and additional to Activos/Archivados/Todos - not just the heart control on its own (issue #131)", async () => {

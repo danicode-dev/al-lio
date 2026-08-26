@@ -19,26 +19,26 @@ export function CompetenciesView({
 
   return (
     <div className="space-y-7">
-      <div className="space-y-4 border-b border-[#e8e2d7] pb-7">
-        <PageHeader
-          className="mb-0"
-          eyebrow={`Competencias · ${cycleName}`}
-          title="Elige qué quieres aprender"
-          subtitle="Cada competencia agrupa cursos en español revisados por AL-LIO. Puedes elegir uno, tomar notas y continuar otro día desde el mismo punto."
-          actions={
+      <PageHeader
+        className="mb-0 border-b border-[#e8e2d7] pb-7"
+        eyebrow={`Competencias · ${cycleName}`}
+        title="Elige qué quieres aprender"
+        subtitle="Cada competencia agrupa cursos en español revisados por AL-LIO. Puedes elegir uno, tomar notas y continuar otro día desde el mismo punto."
+        actions={
+          <>
+            <div className="flex shrink-0 items-center gap-3 rounded-2xl bg-[#114b3b] px-4 py-2.5 text-white">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/10 text-xs font-extrabold">{progress}%</span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold leading-tight">Progreso guardado</p>
+                <p className="text-[11px] leading-tight text-white/70">{completedResources} de {totalResources} cursos</p>
+              </div>
+            </div>
             <div className="hidden md:flex md:items-center md:gap-2">
               <StudentHeaderActions />
             </div>
-          }
-        />
-        <div className="ml-auto flex w-fit min-w-[220px] items-center gap-4 rounded-2xl bg-[#114b3b] px-5 py-4 text-white">
-          <span className="grid h-12 w-12 place-items-center rounded-full bg-white/10 text-sm font-extrabold">{progress}%</span>
-          <div>
-            <p className="text-sm font-bold">Progreso guardado</p>
-            <p className="mt-0.5 text-xs text-white/70">{completedResources} de {totalResources} cursos</p>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {competencies.length === 0 ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-6 text-sm text-amber-950">
