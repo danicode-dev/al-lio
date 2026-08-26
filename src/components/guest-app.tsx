@@ -2204,7 +2204,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
             <Input placeholder="Buscar título, entidad, tag..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           </div>
           <div className="al-course-tabs">
-            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
+            {([["activos", `Activos ${activos.length}`], ["archivados", `Terminado ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
               <button key={id} type="button" className={cn("al-course-tab", viewTab === id && "al-course-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
                 {id === "guardados" && <Heart className="mr-1 inline h-3 w-3 align-[-1px]" fill={viewTab === "guardados" ? "currentColor" : "none"} />}
                 {label}
@@ -2304,8 +2304,8 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
             ) : viewTab === "archivados" && !search && activeFilterCount === 0 ? (
               <div className="al-course-empty">
                 <Image src="/assets/cursos/cursos-empty-archivados.png" alt="" width={480} height={294} className="al-course-empty-illustration" />
-                <p className="al-course-empty-title">No tienes cursos archivados</p>
-                <p className="al-course-empty-desc">Cuando archives un curso aparecerá aquí.</p>
+                <p className="al-course-empty-title">No tienes cursos terminados</p>
+                <p className="al-course-empty-desc">Cuando marques un curso como Terminado, aparecerá aquí.</p>
               </div>
             ) : viewTab === "guardados" && !search && activeFilterCount === 0 ? (
               <div className="al-course-empty">
@@ -2561,7 +2561,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   const archivados = useMemo(() => sorted.filter(isHackathonArchived), [sorted]);
   const activos = useMemo(() => sorted.filter((h) => !isHackathonArchived(h) && !isHackathonPast(h)), [sorted]);
   // Guardados (issue #131): a heart-driven filter, independent of the
-  // Activos/Archivados lifecycle split above - saving an event never moves
+  // Activos/Realizado lifecycle split above - saving an event never moves
   // it between those tabs, so the same event can appear in both Guardados
   // and whichever lifecycle tab it already belongs to.
   const guardados = useMemo(() => sorted.filter((h) => h.is_favorite), [sorted]);
@@ -2713,7 +2713,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             <Input placeholder="Buscar nombre, organizador, tema, aptitud..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           </div>
           <div className="al-hack-tabs">
-            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
+            {([["activos", `Activos ${activos.length}`], ["archivados", `Realizado ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
               <button key={id} type="button" className={cn("al-hack-tab", viewTab === id && "al-hack-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
                 {id === "guardados" && <Heart className="mr-1 inline h-3 w-3 align-[-1px]" fill={viewTab === "guardados" ? "currentColor" : "none"} />}
                 {label}

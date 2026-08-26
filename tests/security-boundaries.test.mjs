@@ -2677,3 +2677,40 @@ test("A second user cannot reach another user's saved items through the hub - it
   assert.doesNotMatch(source, /from "@\/lib\/db\/repositories/, "the hub must not query the database directly - store.companies/courses/hackathons are already session-scoped by the layout's own getGlobalStore() call");
   assert.doesNotMatch(source, /userId|user_id/, "no user id of any kind should appear here - there is nothing to scope, since the input data is already scoped");
 });
+
+// ---------------------------------------------------------------------------
+// Owner-reported follow-up: the "Archivados" tab is renamed to match the
+// action that actually populates it, on both Cursos and Eventos y retos -
+// "Guardados" already owns the heart/favorite concept, so a second tab also
+// implying "archived" was redundant/confusing. Pure copy change: the
+// underlying isCourseArchived/isHackathonArchived status-driven logic, the
+// "archivados" view-tab key, and independence from is_favorite are untouched
+// (see the #120 Archivado/Guardado independence test above).
+// ---------------------------------------------------------------------------
+
+test("The Cursos tab formerly labelled Archivados now reads Terminado - matching the button that populates it - and its empty state copy matches", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const coursesFnStart = source.indexOf("function Courses(");
+  const coursesFnEnd = source.indexOf("function coursePriorityClass");
+  const fnSource = source.slice(coursesFnStart, coursesFnEnd);
+
+  assert.match(fnSource, /\["archivados", `Terminado \$\{archivados\.length\}`\]/, "the displayed label changes; the internal \"archivados\" view-tab key does not, so isCourseArchived/status logic stays untouched");
+  assert.doesNotMatch(fnSource, /Archivados \$\{archivados\.length\}/, "the old label must not survive alongside the new one");
+  assert.match(fnSource, /No tienes cursos terminados/);
+  assert.match(fnSource, /Cuando marques un curso como Terminado, aparecerá aquí\./);
+});
+
+test("The Eventos y retos tab formerly labelled Archivados now reads Realizado - matching that page's own completion button, so Cursos and Eventos y retos use consistent, button-matching terminology", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const hackathonsFnStart = source.indexOf("function Hackathons(");
+  const hackathonsFnEnd = source.indexOf("function HackathonsEmptyState");
+  const fnSource = source.slice(hackathonsFnStart, hackathonsFnEnd);
+
+  assert.match(fnSource, /\["archivados", `Realizado \$\{archivados\.length\}`\]/, "the displayed label changes; the internal \"archivados\" view-tab key does not, so isHackathonArchived/status logic stays untouched");
+  assert.doesNotMatch(fnSource, /Archivados \$\{archivados\.length\}/, "the old label must not survive alongside the new one");
+});
+
+test("No user-facing 'Archivados' label survives anywhere in the app - Cursos and Eventos y retos were the only two", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /Archivados/, "every remaining reference to archiving must be the internal \"archivados\" key (lowercase), never the old user-visible label");
+});
