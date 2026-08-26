@@ -6,7 +6,7 @@ import { consumeAuthRateLimit } from "@/lib/auth/login-rate-limit";
 import { issueAuthToken } from "@/lib/auth/tokens";
 import { absoluteAppUrl } from "@/lib/auth/app-url";
 import { sendTransactionalEmail } from "@/lib/email/send";
-import { confirmEmailTemplate } from "@/lib/email/templates";
+import { alreadyRegisteredTemplate, confirmEmailTemplate } from "@/lib/email/templates";
 import { createUnconfirmedUser, getUserByEmail } from "@/lib/db/repositories/users";
 
 const BCRYPT_COST = 12;
@@ -30,18 +30,15 @@ const GENERIC_SUCCESS: RegisterState = { error: null, submitted: true };
 async function sendConfirmationEmail(userId: string, email: string): Promise<void> {
   const rawToken = await issueAuthToken(userId, "email_confirm");
   const confirmUrl = absoluteAppUrl(`/confirmar?token=${encodeURIComponent(rawToken)}`);
-  const { subject, html } = confirmEmailTemplate(email, confirmUrl);
-  await sendTransactionalEmail({ to: email, subject, html });
+  const { subject, html, text } = confirmEmailTemplate(email, confirmUrl);
+  await sendTransactionalEmail({ to: email, subject, html, text });
 }
 
 async function sendAlreadyRegisteredNotice(email: string): Promise<void> {
   const loginUrl = absoluteAppUrl("/login");
   const resetUrl = absoluteAppUrl("/recuperar");
-  await sendTransactionalEmail({
-    to: email,
-    subject: "Alguien ha intentado registrarse con tu correo en AL-LÍO",
-    html: `<p>Ya tienes una cuenta en AL-LÍO con este correo. Si has sido tú, <a href="${loginUrl}">inicia sesión aquí</a> o <a href="${resetUrl}">recupera tu contraseña</a>. Si no has sido tú, puedes ignorar este mensaje.</p>`,
-  });
+  const { subject, html, text } = alreadyRegisteredTemplate(loginUrl, resetUrl);
+  await sendTransactionalEmail({ to: email, subject, html, text });
 }
 
 export async function registerAction(

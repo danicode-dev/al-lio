@@ -43,8 +43,8 @@ export async function requestPasswordResetAction(
     if (user?.password_hash) {
       const rawToken = await issueAuthToken(user.id, "password_reset");
       const resetUrl = absoluteAppUrl(`/restablecer?token=${encodeURIComponent(rawToken)}`);
-      const { subject, html } = passwordResetTemplate(email, resetUrl);
-      await sendTransactionalEmail({ to: email, subject, html });
+      const { subject, html, text } = passwordResetTemplate(email, resetUrl);
+      await sendTransactionalEmail({ to: email, subject, html, text });
     }
   } catch {
     // Fall through to the same generic response - never surface a

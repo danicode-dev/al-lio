@@ -3133,12 +3133,16 @@ test(".env.example documents every new production-authentication variable (issue
   }
 });
 
-test("Email templates never interpolate raw user-supplied HTML - the recipient email is the only dynamic value and it is always escaped (issue #132)", async () => {
+test("Email templates never interpolate raw user-supplied HTML - the recipient email is the only dynamic value and it is always escaped, and every template ships a plain-text alternative (issue #132)", async () => {
   const source = await readFile(new URL("../src/lib/email/templates.ts", import.meta.url), "utf8");
   assert.match(source, /function escapeHtml\(value: string\): string \{/);
-  assert.match(source, /\$\{escapeHtml\(email\)\}/g);
-  const matches = source.match(/\$\{escapeHtml\(email\)\}/g) ?? [];
-  assert.equal(matches.length, 2, "both the confirmation and reset templates must escape the email they embed");
+  const escapeCalls = source.match(/const safeEmail = escapeHtml\(email\);/g) ?? [];
+  assert.equal(escapeCalls.length, 2, "both the confirmation and reset templates must escape the email they embed");
+  const htmlUsages = source.match(/\$\{safeEmail\}/g) ?? [];
+  assert.equal(htmlUsages.length, 2, "the HTML body must render the escaped variable, not the raw email, in both templates");
+
+  const textFields = source.match(/text: `/g) ?? [];
+  assert.equal(textFields.length, 3, "confirmEmailTemplate, passwordResetTemplate and alreadyRegisteredTemplate must each return a plain-text alternative - a missing text/plain part is itself a spam signal");
 });
 
 test("sendTransactionalEmail never throws a provider error up to a caller and never logs the email body (which carries a one-time link) (issue #132)", async () => {
@@ -3146,4 +3150,22 @@ test("sendTransactionalEmail never throws a provider error up to a caller and ne
   assert.match(source, /return \{ ok: false \};/);
   assert.doesNotMatch(source, /console\.(log|error)\([^)]*params\.html/, "the email body must never be logged");
   assert.doesNotMatch(source, /console\.(log|error)\([^)]*result\.error\)/, "logs the error's name/category, not the raw provider error object which could carry request detail");
+});
+
+test("Owner-reported follow-up: sendTransactionalEmail requires a text alternative and forwards it to Resend, and every template embeds the app's real public logo via an absolute production URL, not a bare text wordmark (issue #132)", async () => {
+  const sendSource = await readFile(new URL("../src/lib/email/send.ts", import.meta.url), "utf8");
+  assert.match(sendSource, /text: string;/, "text must be a required field on the params type, not optional - every caller must supply one");
+  assert.match(sendSource, /text: params\.text,/, "must actually be forwarded to resend.emails.send, not just accepted and dropped");
+
+  const templatesSource = await readFile(new URL("../src/lib/email/templates.ts", import.meta.url), "utf8");
+  assert.match(templatesSource, /import \{ absolutePublicAssetUrl \} from "@\/lib\/auth\/app-url";/);
+  assert.match(templatesSource, /const logoUrl = absolutePublicAssetUrl\("\/assets\/al_lio_logo_horizontal_transparent\.png"\);/);
+
+  const appUrlSource = await readFile(new URL("../src/lib/auth/app-url.ts", import.meta.url), "utf8");
+  assert.match(appUrlSource, /const base = process\.env\.PUBLIC_ASSET_BASE_URL \?\? process\.env\.BASE_URL \?\? "http:\/\/localhost:3000";/, "must fall back to BASE_URL when unset, so production needs no extra config for this to work");
+  assert.match(templatesSource, /<img src="\$\{logoUrl\}" alt="AL-LÍO"/);
+
+  for (const templateFn of ["confirmEmailTemplate", "passwordResetTemplate", "alreadyRegisteredTemplate"]) {
+    assert.match(templatesSource, new RegExp(`export function ${templateFn}\\(`), `${templateFn} must exist and be exported`);
+  }
 });

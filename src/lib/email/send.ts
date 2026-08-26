@@ -10,6 +10,10 @@ export async function sendTransactionalEmail(params: {
   to: string;
   subject: string;
   html: string;
+  // A missing plain-text alternative is itself a real spam-filtering
+  // signal (multipart/alternative is expected of legitimate mail), so
+  // every caller must supply one rather than relying on an HTML-only send.
+  text: string;
 }): Promise<{ ok: boolean }> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL;
@@ -26,6 +30,7 @@ export async function sendTransactionalEmail(params: {
       to: params.to,
       subject: params.subject,
       html: params.html,
+      text: params.text,
     });
     if (result.error) {
       console.error("Resend rejected an email send", result.error.name);

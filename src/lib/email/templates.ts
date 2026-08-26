@@ -1,7 +1,12 @@
-// Plain, safe HTML templates - no external assets, no user-supplied free
-// text beyond the recipient's own (defensively escaped) email address, so
-// there is no email-body injection surface. Confirmation/reset links are
-// server-generated absolute URLs, not user input.
+import { absolutePublicAssetUrl } from "@/lib/auth/app-url";
+
+// Plain, safe HTML templates - no user-supplied free text beyond the
+// recipient's own (defensively escaped) email address, so there is no
+// email-body injection surface. Confirmation/reset links are
+// server-generated absolute URLs, not user input. The logo is the app's
+// own already-public static asset, referenced by absolute production URL
+// (email clients fetch images over the real internet, not the local
+// filesystem).
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -11,41 +16,90 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
+const TAGLINE = "Menos planes. Más acción.";
+
+// A single centered button. Email clients (Outlook especially) don't
+// reliably center a bare <table> via margin:auto, so the standard,
+// widely-compatible pattern is a full-width outer table with align="center"
+// on its cell, wrapping an auto-width inner table for the pill shape.
+function centeredButton(href: string, label: string, variant: "solid" | "outline" = "solid"): string {
+  const style =
+    variant === "solid"
+      ? "background:#E15D2D;color:#ffffff;"
+      : "background:#ffffff;color:#111111;border:1px solid #DDD7CE;";
+  return `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:8px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;${style}">
+          <a href="${href}" style="display:inline-block;padding:14px 32px;${style}text-decoration:none;font-weight:700;font-size:16px;">${label}</a>
+        </td></tr></table>
+      </td></tr></table>`;
+}
+
 function baseLayout(bodyHtml: string): string {
+  const logoUrl = absolutePublicAssetUrl("/assets/al_lio_logo_horizontal_transparent.png");
+  const year = new Date().getFullYear();
+
   return `<!doctype html>
 <html lang="es">
-  <body style="margin:0;padding:32px 16px;background:#F5F2EC;font-family:Arial,Helvetica,sans-serif;color:#111111;">
-    <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px;">
-      <tr><td>
-        <p style="font-size:18px;font-weight:700;margin:0 0 20px;color:#E15D2D;">AL-LÍO</p>
-        ${bodyHtml}
-        <p style="font-size:12px;color:#9a9589;margin-top:32px;">Si no esperabas este correo, puedes ignorarlo con seguridad.</p>
+  <body style="margin:0;padding:0;background:#F5F2EC;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F5F2EC;padding:40px 16px;">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 12px 32px rgba(17,17,17,0.06);">
+          <tr><td style="padding:36px 44px 26px;text-align:center;border-bottom:1px solid #ece7dc;">
+            <img src="${logoUrl}" alt="AL-LÍO" width="180" style="display:block;margin:0 auto;height:auto;max-width:180px;" />
+          </td></tr>
+          <tr><td style="padding:36px 44px;">
+            ${bodyHtml}
+          </td></tr>
+          <tr><td style="padding:22px 44px 36px;border-top:1px solid #ece7dc;">
+            <p style="font-size:13px;color:#9a9589;line-height:1.7;margin:0 0 6px;">Si no esperabas este correo, puedes ignorarlo con seguridad.</p>
+            <p style="font-size:13px;color:#bbb5a8;line-height:1.7;margin:14px 0 0;">AL-LÍO — ${TAGLINE}<br />Granada, España · © ${year}</p>
+          </td></tr>
+        </table>
       </td></tr>
     </table>
   </body>
 </html>`;
 }
 
-export function confirmEmailTemplate(email: string, confirmUrl: string): { subject: string; html: string } {
+export function confirmEmailTemplate(email: string, confirmUrl: string): { subject: string; html: string; text: string } {
+  const safeEmail = escapeHtml(email);
   return {
     subject: "Confirma tu cuenta en AL-LÍO",
     html: baseLayout(`
-      <p style="font-size:15px;line-height:1.5;">Hola,</p>
-      <p style="font-size:15px;line-height:1.5;">Confirma que <strong>${escapeHtml(email)}</strong> es tu correo para activar tu cuenta en AL-LÍO.</p>
-      <p style="margin:24px 0;"><a href="${confirmUrl}" style="display:inline-block;background:#E15D2D;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;">Confirmar mi cuenta</a></p>
-      <p style="font-size:13px;color:#6b6f72;line-height:1.5;">Este enlace caduca en 24 horas y solo se puede usar una vez.</p>
+      <p style="font-size:17px;line-height:1.6;margin:0 0 14px;color:#111111;">Hola,</p>
+      <p style="font-size:17px;line-height:1.6;margin:0 0 28px;color:#111111;">Confirma que <strong>${safeEmail}</strong> es tu correo para activar tu cuenta en AL-LÍO.</p>
+      ${centeredButton(confirmUrl, "Confirmar mi cuenta")}
+      <p style="font-size:14px;color:#6b6f72;line-height:1.6;margin:28px 0 0;text-align:center;">Este enlace caduca en 24 horas y solo se puede usar una vez.</p>
     `),
+    text: `Hola,\n\nConfirma que ${email} es tu correo para activar tu cuenta en AL-LÍO abriendo este enlace:\n${confirmUrl}\n\nEste enlace caduca en 24 horas y solo se puede usar una vez.\n\nSi no esperabas este correo, puedes ignorarlo con seguridad.\n\nAL-LÍO — ${TAGLINE}`,
   };
 }
 
-export function passwordResetTemplate(email: string, resetUrl: string): { subject: string; html: string } {
+export function passwordResetTemplate(email: string, resetUrl: string): { subject: string; html: string; text: string } {
+  const safeEmail = escapeHtml(email);
   return {
     subject: "Recupera tu contraseña de AL-LÍO",
     html: baseLayout(`
-      <p style="font-size:15px;line-height:1.5;">Hola,</p>
-      <p style="font-size:15px;line-height:1.5;">Hemos recibido una solicitud para restablecer la contraseña de <strong>${escapeHtml(email)}</strong>.</p>
-      <p style="margin:24px 0;"><a href="${resetUrl}" style="display:inline-block;background:#E15D2D;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;">Restablecer contraseña</a></p>
-      <p style="font-size:13px;color:#6b6f72;line-height:1.5;">Este enlace caduca en 1 hora y solo se puede usar una vez. Al completarlo, se cerrará el acceso en cualquier otro dispositivo.</p>
+      <p style="font-size:17px;line-height:1.6;margin:0 0 14px;color:#111111;">Hola,</p>
+      <p style="font-size:17px;line-height:1.6;margin:0 0 28px;color:#111111;">Hemos recibido una solicitud para restablecer la contraseña de <strong>${safeEmail}</strong>.</p>
+      ${centeredButton(resetUrl, "Restablecer contraseña")}
+      <p style="font-size:14px;color:#6b6f72;line-height:1.6;margin:28px 0 0;text-align:center;">Este enlace caduca en 1 hora y solo se puede usar una vez. Al completarlo, se cerrará el acceso en cualquier otro dispositivo.</p>
     `),
+    text: `Hola,\n\nHemos recibido una solicitud para restablecer la contraseña de ${email}. Abre este enlace para continuar:\n${resetUrl}\n\nEste enlace caduca en 1 hora y solo se puede usar una vez. Al completarlo, se cerrará el acceso en cualquier otro dispositivo.\n\nSi no esperabas este correo, puedes ignorarlo con seguridad.\n\nAL-LÍO — ${TAGLINE}`,
+  };
+}
+
+export function alreadyRegisteredTemplate(loginUrl: string, resetUrl: string): { subject: string; html: string; text: string } {
+  return {
+    subject: "Alguien ha intentado registrarse con tu correo en AL-LÍO",
+    html: baseLayout(`
+      <p style="font-size:17px;line-height:1.6;margin:0 0 14px;color:#111111;">Hola,</p>
+      <p style="font-size:17px;line-height:1.6;margin:0 0 28px;color:#111111;">Ya tienes una cuenta en AL-LÍO con este correo. Si has sido tú, puedes iniciar sesión o recuperar tu contraseña.</p>
+      ${centeredButton(loginUrl, "Iniciar sesión")}
+      ${centeredButton(resetUrl, "Recuperar contraseña", "outline")}
+      <p style="font-size:14px;color:#6b6f72;line-height:1.6;margin:28px 0 0;text-align:center;">Si no has sido tú, puedes ignorar este mensaje con seguridad.</p>
+    `),
+    text: `Hola,\n\nYa tienes una cuenta en AL-LÍO con este correo.\n\nIniciar sesión: ${loginUrl}\nRecuperar contraseña: ${resetUrl}\n\nSi no has sido tú, puedes ignorar este mensaje con seguridad.\n\nAL-LÍO — ${TAGLINE}`,
   };
 }
