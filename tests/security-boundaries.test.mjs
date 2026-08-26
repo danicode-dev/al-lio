@@ -610,7 +610,7 @@ test("fp course completion is per-user isolated and never mutates the shared cou
   assert.match(guestAppSource, /fpUserStatusToCourseStatus\(item\.user_status\)/, "the Courses view must read the per-user completion state, not just the catalogue's own display status");
 });
 
-test("Course cards clamp title, provider and description consistently and stay inside the grid (issue #94)", async () => {
+test("Course cards clamp title, provider and description consistently and stay inside the grid (issue #94, issue #130)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const cardStart = guestAppSource.indexOf('key={item.id} className="al-course-card"');
   const cardEnd = guestAppSource.indexOf("al-course-card-actions", cardStart);
@@ -621,15 +621,62 @@ test("Course cards clamp title, provider and description consistently and stay i
   assert.match(cardSource, /al-course-card-org line-clamp-1/);
   assert.match(cardSource, /al-course-card-desc line-clamp-2/);
   // Clamping must not hide content with no fallback - each clamped element
-  // keeps the full text reachable via a native accessible title attribute.
-  assert.match(cardSource, /title=\{item\.title\}/);
-  assert.match(cardSource, /title=\{item\.entidad \|\| item\.platform\}/);
-  assert.match(cardSource, /title=\{item\.requisitos_resumen\}/);
+  // keeps the full text reachable via a native accessible title attribute,
+  // sourced from the one shared presentation model (issue #130).
+  assert.match(cardSource, /title=\{presentation\.title\}/);
+  assert.match(cardSource, /title=\{presentation\.provider\}/);
+  assert.match(cardSource, /title=\{presentation\.description\}/);
   // Long, unbroken tag/location text wraps instead of overflowing the card.
   assert.match(cardSource, /className="max-w-full break-words"/);
+  // issue #130: the header row wraps a min-w-0 title block and a shrink-0
+  // badge cluster - the same shape Trabajo/Eventos y retos use, ready for
+  // the #120 heart to slot in without another layout rework.
+  assert.match(cardSource, /al-course-card-title-wrap/);
+  assert.match(cardSource, /al-course-card-badges/);
 
-  const styleSource = guestAppSource.slice(guestAppSource.indexOf(".al-course-card {"), guestAppSource.indexOf(".al-course-card-top"));
+  const styleSource = guestAppSource.slice(guestAppSource.indexOf(".al-course-card {"), guestAppSource.indexOf(".al-course-card-actions {"));
   assert.match(styleSource, /min-width:\s*0/, "the grid cell itself must be allowed to shrink below its content's intrinsic width");
+  assert.match(styleSource, /overflow-wrap:\s*anywhere/, "title/org/description must break long unbroken strings instead of overflowing the card");
+});
+
+test("Course cards validate the source URL before linking out, matching the isSafeHttpUrl hardening Hackathons already has (issue #130)", async () => {
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const cardStart = guestAppSource.indexOf('key={item.id} className="al-course-card"');
+  assert.ok(cardStart > -1, "could not locate the course card JSX");
+  const cardSource = guestAppSource.slice(cardStart, cardStart + 2500);
+  assert.match(cardSource, /isSafeHttpUrl\(presentation\.sourceUrl\)/, "Abrir must not link to an unvalidated URL (javascript:/data: guard)");
+  assert.match(cardSource, /rel="noopener noreferrer"/);
+});
+
+test("Every course card offers Ver detalles, opening an accessible modal built from the same shared presentation model used by the card (issue #130)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.match(source, /setDetailItemId\(item\.id\)/, "the card's Ver detalles action must open the detail modal for that exact item");
+  assert.match(source, /function CourseDetailModal/);
+  assert.match(source, /<CourseDetailModal item=\{detailItem\}/);
+
+  const modalStart = source.indexOf("function CourseDetailModal");
+  const modalEnd = source.indexOf("function hackathonPublicDescription");
+  const modalSource = source.slice(modalStart, modalEnd);
+  assert.match(modalSource, /getCoursePresentation\(item\)/, "the modal must reuse the shared presentation model, not re-derive its own field mapping");
+  assert.match(modalSource, /createPortal\(/);
+  assert.match(modalSource, /role="dialog"/);
+  assert.match(modalSource, /aria-modal="true"/);
+  assert.match(modalSource, /aria-labelledby=\{titleId\}/);
+  assert.match(modalSource, /event\.key === "Escape"/);
+  assert.match(modalSource, /el\.inert = true/, "background content must be made inert while the modal is open");
+  assert.match(modalSource, /closeButtonRef\.current\?\.focus\(\)/);
+});
+
+test("Course descriptions never fall back to raw import/moderation notes for any origin - the same regression class fixed for Hackathons in issue #118 (issue #130)", async () => {
+  const source = await readFile(new URL("../src/lib/courses/course-presentation.ts", import.meta.url), "utf8");
+  assert.match(source, /description: nonEmpty\(course\.requisitos_resumen\)/);
+  assert.doesNotMatch(source, /\.notes|suggested_action/, "the public presentation model must never read Course.notes as a description source");
+
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const courseFnStart = guestAppSource.indexOf("function Courses(");
+  const courseFnEnd = guestAppSource.indexOf("function coursePriorityClass");
+  const courseFnSource = guestAppSource.slice(courseFnStart, courseFnEnd);
+  assert.doesNotMatch(courseFnSource, /item\.notes|\.notes\b/, "the Courses view must never render Course.notes as student-facing copy");
 });
 
 test("Competency completion is authorized against the caller's session and cycle, never a client-supplied user (issue #96)", async () => {
