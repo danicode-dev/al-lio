@@ -1,5 +1,20 @@
 # Production deployment
 
+## Release control flow
+
+```mermaid
+flowchart LR
+    PR["Reviewed pull request"] --> Merge["Merge to main"]
+    Merge --> CI["Post-merge CI"]
+    CI -->|success + exact SHA| Actions["Production workflow"]
+    CI -->|failure| Stop["No deployment"]
+    Actions -->|restricted SSH command| Guarded["Guarded VPS deploy script"]
+    Guarded -->|healthy| Release["Production release record"]
+    Guarded -->|failure after cutover| Rollback["Automatic web rollback"]
+```
+
+## Runtime topology
+
 ```mermaid
 flowchart TB
     Internet[Internet]

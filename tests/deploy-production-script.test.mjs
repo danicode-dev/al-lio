@@ -44,6 +44,23 @@ test("the command replaces only web and preserves automatic recovery", async () 
   assert.doesNotMatch(source, /git reset --hard/);
 });
 
+test("the command permits only reviewed additive web environment passthroughs in Compose", async () => {
+  const source = await readFile(deployScriptUrl, "utf8");
+
+  assert.match(source, /validate_compose_web_env_additions/);
+  assert.match(source, /GOOGLE_IDENTITY_REDIRECT_URI/);
+  assert.match(source, /RESEND_API_KEY/);
+  assert.match(source, /RESEND_FROM_EMAIL/);
+  assert.match(source, /awk '!\/\^--- \/ && !\/\^\\\+\\\+\\\+ \/ && \/\^\[\+-\]\//);
+  assert.match(source, /\*\) return 1 ;;/);
+  assert.match(source, /match_count.*-eq 1/);
+  assert.match(source, /Docker Compose changed outside the allowlisted web environment passthroughs/);
+  assert.doesNotMatch(
+    source,
+    /blocked_runtime_changes=.*infra\/docker-compose\.prod\.yml/s,
+  );
+});
+
 test("release worktrees and public assets remain readable by the runtime user", async () => {
   const source = await readFile(deployScriptUrl, "utf8");
   const dockerfile = await readFile(dockerfileUrl, "utf8");

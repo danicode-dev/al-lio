@@ -28,8 +28,12 @@ changes blindly or replacing unrelated healthy services.
 
 ## Automated routine release
 
-For an owner-approved commit already merged into `main`, the supported routine
-path is the guarded deployment script:
+For an owner-approved commit merged into `main`, the normal path is the
+post-merge workflow documented in
+[`GITHUB_PRODUCTION_DEPLOY.md`](GITHUB_PRODUCTION_DEPLOY.md). GitHub passes the
+exact successful CI SHA to the guarded deployment script.
+
+The direct operator fallback is:
 
 ```bash
 ./scripts/deploy-production.sh <full-40-character-main-commit-sha>
