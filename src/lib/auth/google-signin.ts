@@ -2,7 +2,7 @@ import "server-only";
 
 import type { GoogleIdentity } from "@/lib/google/identity";
 import { findExternalIdentity, linkExternalIdentity } from "@/lib/db/repositories/external_identities";
-import { confirmUserEmail, ensureUserByEmail, getUserByEmail } from "@/lib/db/repositories/users";
+import { confirmUserEmail, ensureUserByEmail, getUserByEmail, getUserById } from "@/lib/db/repositories/users";
 import type { DbUser } from "@/lib/db/types";
 
 // Resolves a verified Google identity to an AL-LÍO user, in priority order:
@@ -24,7 +24,10 @@ import type { DbUser } from "@/lib/db/types";
 export async function resolveOrProvisionGoogleUser(identity: GoogleIdentity): Promise<DbUser> {
   const linked = await findExternalIdentity("google", identity.providerUserId);
   if (linked) {
-    const user = await getUserByEmail(linked.email);
+    // The immutable foreign key is authoritative. Looking the account up by
+    // the email copied at link time would break a valid identity if either
+    // side later changed its email address.
+    const user = await getUserById(linked.user_id);
     if (user) {
       await confirmUserEmail(user.id);
       return user;

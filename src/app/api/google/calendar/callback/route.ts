@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/session";
+import { getValidatedSession } from "@/lib/auth/session";
 import {
   assertGoogleOAuthState,
   createGoogleOAuthClient,
@@ -19,7 +19,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const baseUrl = process.env.BASE_URL ?? url.origin;
 
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) {
     return NextResponse.redirect(new URL("/login", baseUrl));
   }

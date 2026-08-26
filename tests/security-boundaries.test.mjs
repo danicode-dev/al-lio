@@ -2921,6 +2921,7 @@ test("0009_production_authentication.sql is additive and backfills email_confirm
   assert.match(sql, /token_hash\s+text\s+not null unique/, "only the hash may be persisted");
   assert.match(sql, /create table if not exists public\.external_identities/);
   assert.match(sql, /unique\(provider, provider_user_id\)/);
+  assert.match(sql, /unique\(user_id, provider\)/, "one AL-LÍO account may link at most one identity per provider");
   assert.match(sql, /create table if not exists public\.rate_limit_buckets/);
 });
 
@@ -3030,6 +3031,35 @@ test("Real session revocation: getGlobalStore compares the session's embedded st
   assert.match(fnSource, /redirect\("\/api\/auth\/logout-stale"\);/, "must route through the dedicated Route Handler that can actually clear the cookie - redirect() alone here would leave a stale-but-signature-valid cookie that middleware (no database access) would bounce right back to /dashboard");
 });
 
+test("Real session revocation also guards direct Server Action and API calls, not only dashboard navigation (issue #132)", async () => {
+  const sessionSource = await readFile(new URL("../src/lib/auth/session.ts", import.meta.url), "utf8");
+  assert.match(sessionSource, /export async function getValidatedSession\(\): Promise<SessionPayload \| null>/);
+  assert.match(sessionSource, /const user = await getUserById\(session\.uid\);/);
+  assert.match(sessionSource, /if \(!user \|\| user\.security_stamp !== session\.sv\) \{/);
+  assert.match(sessionSource, /redirect\("\/api\/auth\/logout-stale"\);/, "a stale signed cookie must be cleared, not redirected into a middleware loop");
+
+  const guardedBoundaries = [
+    "../src/app/api/google/calendar/auth/route.ts",
+    "../src/app/api/google/calendar/callback/route.ts",
+    "../src/lib/auth/authorization.ts",
+    "../src/lib/auth/current-user.ts",
+    "../src/lib/bloc/notes-actions.ts",
+    "../src/lib/companies/actions.ts",
+    "../src/lib/courses/actions.ts",
+    "../src/lib/fp/competency-actions.ts",
+    "../src/lib/fp/resource-notes-actions.ts",
+    "../src/lib/hackathons/actions.ts",
+    "../src/lib/learning/actions.ts",
+    "../src/lib/profile/onboarding-actions.ts",
+    "../src/lib/work/actions.ts",
+  ];
+  for (const file of guardedBoundaries) {
+    const source = await readFile(new URL(file, import.meta.url), "utf8");
+    assert.match(source, /getValidatedSession\(\)/, `${file} must reject a revoked session before reading or mutating user data`);
+    assert.doesNotMatch(source, /\bgetSession\(\)/, `${file} must not use signature-only session verification at an authorization boundary`);
+  }
+});
+
 test("Owner-reported follow-up (caught live in production): /api/auth/logout-stale actually clears the session cookie - the exact capability a Server Component's render is forbidden from doing itself, which is why getGlobalStore redirects here instead of clearing inline (issue #132)", async () => {
   const source = await readFile(new URL("../src/app/api/auth/logout-stale/route.ts", import.meta.url), "utf8");
   assert.match(source, /export async function GET\(req: Request\)/);
@@ -3058,10 +3088,10 @@ test("Every existing createSession caller (password login, demo login) was updat
 
 test("Calendar consent (src/app/api/google/calendar/*) now requires an existing AL-LÍO session and no longer creates or links an account - identity creation is the separate /api/auth/google/* flow's job (issue #132)", async () => {
   const authRoute = await readFile(new URL("../src/app/api/google/calendar/auth/route.ts", import.meta.url), "utf8");
-  assert.match(authRoute, /const session = await getSession\(\);\s*\n\s*if \(!session\) \{/);
+  assert.match(authRoute, /const session = await getValidatedSession\(\);\s*\n\s*if \(!session\) \{/);
 
   const callbackRoute = await readFile(new URL("../src/app/api/google/calendar/callback/route.ts", import.meta.url), "utf8");
-  assert.match(callbackRoute, /const session = await getSession\(\);\s*\n\s*if \(!session\) \{/);
+  assert.match(callbackRoute, /const session = await getValidatedSession\(\);\s*\n\s*if \(!session\) \{/);
   assert.doesNotMatch(callbackRoute, /ensureUserByEmail/, "the callback must not create/find a user by email any more");
   assert.doesNotMatch(callbackRoute, /createSession/, "the callback must not create a session - one must already exist to reach here");
   assert.doesNotMatch(callbackRoute, /upsertProfile/, "the placeholder 'Usuario AL-LIO'/'Granada' profile hack is gone now that this path never provisions an account");
@@ -3080,13 +3110,14 @@ test("The new Google identity sign-in flow (src/lib/google/identity.ts) requests
     assert.match(source, new RegExp(cookieName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${cookieName} must be distinct from Calendar's d1os_google_calendar_* cookies so the two flows can never cross-contaminate state`);
   }
 
-  assert.match(source, /if \(!userInfo\.data\.id \|\| !userInfo\.data\.email \|\| userInfo\.data\.verified_email === false\) \{\s*\n\s*return null;/, "an unverified Google email must never resolve to an identity");
+  assert.match(source, /if \(!userInfo\.data\.id \|\| !userInfo\.data\.email \|\| userInfo\.data\.verified_email !== true\) \{\s*\n\s*return null;/, "only an explicitly verified Google email may resolve to an identity");
 });
 
 test("resolveOrProvisionGoogleUser links a verified Google identity to an existing password account by email instead of creating a duplicate, and only after Google itself vouches for the email (issue #132)", async () => {
   const source = await readFile(new URL("../src/lib/auth/google-signin.ts", import.meta.url), "utf8");
 
   assert.match(source, /const linked = await findExternalIdentity\("google", identity\.providerUserId\);/);
+  assert.match(source, /const user = await getUserById\(linked\.user_id\);/, "an existing link must resolve through its immutable user_id foreign key, never a copied email");
   assert.match(source, /const existingByEmail = await getUserByEmail\(identity\.email\.toLowerCase\(\)\);/);
   assert.match(source, /const user = existingByEmail \?\? \(await ensureUserByEmail\(identity\.email, identity\.displayName\)\);/, "an existing account by email is reused, never duplicated");
   assert.match(source, /await linkExternalIdentity\(\{/);
@@ -3127,7 +3158,7 @@ test("login-rate-limit.ts is backed by the shared rate_limit_buckets table, not 
   assert.doesNotMatch(source, /new Map\(/);
   assert.match(source, /INSERT INTO public\.rate_limit_buckets/);
   assert.match(source, /const key = digest\(`\$\{scope\}:\$\{address\}:\$\{identity\.trim\(\)\.toLowerCase\(\)\}`\);/);
-  assert.match(source, /createHash\("sha256"\)/);
+  assert.match(source, /createHmac\("sha256", secret\)/, "bucket digests must be keyed so a database leak cannot be brute-forced as raw email/IP hashes");
 
   for (const scope of ["register", "email_confirm_resend", "password_reset_request", "password_reset_consume"]) {
     assert.match(source, new RegExp(`"${scope}"`), `${scope} must be a recognized rate-limit scope for the new endpoints`);

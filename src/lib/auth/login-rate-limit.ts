@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { headers } from "next/headers";
 import { query } from "@/lib/db/pool";
 
@@ -61,7 +61,9 @@ async function getClientAddress(): Promise<string> {
 }
 
 function digest(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) throw new Error("SESSION_SECRET is required for auth rate limiting");
+  return createHmac("sha256", secret).update(value).digest("hex");
 }
 
 function opportunisticCleanup(): void {

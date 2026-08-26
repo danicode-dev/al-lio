@@ -110,7 +110,7 @@ export async function exchangeGoogleIdentityCode(code: string, codeVerifier: str
   client.setCredentials(tokens);
 
   const userInfo = await google.oauth2({ version: "v2", auth: client }).userinfo.get();
-  if (!userInfo.data.id || !userInfo.data.email || userInfo.data.verified_email === false) {
+  if (!userInfo.data.id || !userInfo.data.email || userInfo.data.verified_email !== true) {
     return null;
   }
 

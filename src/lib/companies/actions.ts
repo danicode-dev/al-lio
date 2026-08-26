@@ -1,13 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth/session";
+import { getValidatedSession } from "@/lib/auth/session";
 import { toggleCompanyFavorite } from "@/lib/db/repositories/companies";
 
 export async function toggleCompanyFavoriteAction(
   companyId: string
 ): Promise<{ error: string | null; isFavorite: boolean | null }> {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) redirect("/login");
 
   try {

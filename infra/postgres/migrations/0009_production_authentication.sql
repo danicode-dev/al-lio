@@ -60,7 +60,8 @@ create table if not exists public.external_identities (
   provider_user_id  text        not null,
   email             text        not null,
   created_at        timestamptz not null default now(),
-  unique(provider, provider_user_id)
+  unique(provider, provider_user_id),
+  unique(user_id, provider)
 );
 
 create index if not exists external_identities_user_idx

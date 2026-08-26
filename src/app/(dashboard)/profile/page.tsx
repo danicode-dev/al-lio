@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth/session";
+import { getValidatedSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import { getActiveFpCycles } from "@/lib/db/repositories/fp_catalog";
 import { getUserById } from "@/lib/db/repositories/users";
@@ -9,7 +9,7 @@ import { ProfileForm } from "@/components/profile/profile-form";
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) redirect("/login");
 
   const profile = await getProfileByUser(session.uid);

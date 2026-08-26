@@ -1,6 +1,8 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { SESSION_COOKIE, signSessionToken, verifySessionToken, type SessionPayload } from "@/lib/auth/session-token";
+import { getUserById } from "@/lib/db/repositories/users";
 
 const SESSION_DAYS = 30;
 
@@ -28,6 +30,26 @@ export async function createSession(user: { id: string; email: string; name?: st
 export async function getSession(): Promise<SessionPayload | null> {
   const cookieStore = await cookies();
   return verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value);
+}
+
+// Use this at every authorization boundary outside middleware. Middleware
+// intentionally performs signature-only verification because the Edge
+// runtime has no PostgreSQL connection; server components, actions and route
+// handlers must also compare the database-backed stamp so a password reset
+// revokes direct action/API calls, not just normal dashboard navigation.
+export async function getValidatedSession(): Promise<SessionPayload | null> {
+  const session = await getSession();
+  if (!session) return null;
+
+  const user = await getUserById(session.uid);
+  if (!user || user.security_stamp !== session.sv) {
+    // Clear the still-valid signed cookie through a Route Handler. Sending a
+    // stale cookie straight to /login would loop because middleware can only
+    // see its valid signature and would redirect it back to /dashboard.
+    redirect("/api/auth/logout-stale");
+  }
+
+  return session;
 }
 
 export async function clearSession(): Promise<void> {
