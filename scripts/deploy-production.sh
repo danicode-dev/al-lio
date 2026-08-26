@@ -441,9 +441,12 @@ if [[ "$migration_required" -eq 1 ]]; then
   radar_stopped=1
   radar_backup_file="$backup_dir/radar-data-$release_started_at.tgz"
   docker run --rm \
+    -e BACKUP_FILE="$(basename "$radar_backup_file")" \
+    -e BACKUP_UID="$(id -u)" \
+    -e BACKUP_GID="$(id -g)" \
     -v al_lio_radar_data:/source:ro \
     -v "$backup_dir":/backup \
-    alpine:3.20 sh -c "cd /source && tar -czf /backup/$(basename "$radar_backup_file") ." </dev/null
+    alpine:3.20 sh -c 'cd /source && tar -czf "/backup/$BACKUP_FILE" . && chown "$BACKUP_UID:$BACKUP_GID" "/backup/$BACKUP_FILE" && chmod 600 "/backup/$BACKUP_FILE"' </dev/null
   [[ -s "$radar_backup_file" ]] || fail "Radar backup is empty."
   chmod 600 "$radar_backup_file"
   sha256sum "$radar_backup_file" > "$radar_backup_file.sha256"

@@ -46,6 +46,15 @@ test("the command replaces only web and preserves automatic recovery", async () 
   assert.doesNotMatch(source, /git reset --hard/);
 });
 
+test("the Radar backup remains private and readable by the deploy user", async () => {
+  const source = await readFile(deployScriptUrl, "utf8");
+
+  assert.match(source, /-e BACKUP_UID="\$\(id -u\)"/);
+  assert.match(source, /-e BACKUP_GID="\$\(id -g\)"/);
+  assert.match(source, /chown "\$BACKUP_UID:\$BACKUP_GID"/);
+  assert.match(source, /chmod 600 "\/backup\/\$BACKUP_FILE"/);
+});
+
 test("the command permits only reviewed additive web environment passthroughs in Compose", async () => {
   const source = await readFile(deployScriptUrl, "utf8");
 
