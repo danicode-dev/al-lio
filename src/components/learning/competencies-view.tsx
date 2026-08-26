@@ -31,7 +31,7 @@ export function CompetenciesView({
             </div>
           }
         />
-        <div className="flex w-fit min-w-[220px] items-center gap-4 rounded-2xl bg-[#114b3b] px-5 py-4 text-white">
+        <div className="ml-auto flex w-fit min-w-[220px] items-center gap-4 rounded-2xl bg-[#114b3b] px-5 py-4 text-white">
           <span className="grid h-12 w-12 place-items-center rounded-full bg-white/10 text-sm font-extrabold">{progress}%</span>
           <div>
             <p className="text-sm font-bold">Progreso guardado</p>

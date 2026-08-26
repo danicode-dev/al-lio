@@ -2186,9 +2186,11 @@ test("Competencias' progress card sits below the header, not beside it - so Page
   const betweenHeaderAndCard = source.slice(pageHeaderIdx, progressCardIdx);
   assert.doesNotMatch(betweenHeaderAndCard, /md:flex-row|lg:flex-row|justify-between/, "no flex row may span PageHeader and the progress card together");
 
-  const cardDivStart = source.lastIndexOf('<div className="flex', progressCardIdx);
+  const cardDivStart = source.lastIndexOf('<div className="', progressCardIdx);
   const cardTag = source.slice(cardDivStart, source.indexOf(">", cardDivStart) + 1);
+  assert.match(cardTag, /bg-\[#114b3b\]/, "must have located the progress card's own div, not an unrelated ancestor");
   assert.match(cardTag, /w-fit/, "the progress card must size to its own content on its own row, not stretch to fill/compete for the header's row width");
+  assert.match(cardTag, /ml-auto/, "the compact card defaults to the left edge of its own full-width row unless pushed - it must align right, matching where it sat before it moved below the header");
 });
 
 test("Guardados is a real heart-driven filter tab, independent of and additional to Activos/Archivados/Todos - not just the heart control on its own (issue #131)", async () => {
