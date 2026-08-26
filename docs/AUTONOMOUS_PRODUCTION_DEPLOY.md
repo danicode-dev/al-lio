@@ -1,5 +1,11 @@
 # Autonomous production deployment
 
+> **Manual fallback:** routine releases are normally started by GitHub after a
+> successful post-merge CI run. See
+> [`GITHUB_PRODUCTION_DEPLOY.md`](GITHUB_PRODUCTION_DEPLOY.md). Use this guide
+> when automatic deployment is disabled or a transient GitHub/SSH failure needs
+> an operator retry.
+
 Esta guía permite al propietario revisar una versión en local, fusionarla en
 GitHub y desplegarla personalmente en el VPS con una sola orden. El script no
 sustituye la revisión funcional: automatiza la parte operativa repetitiva y

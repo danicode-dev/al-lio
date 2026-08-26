@@ -19,6 +19,7 @@ boundaries. They do not replace executable configuration or tests.
 | [0003](0003-require-reviewed-signed-radar-delivery.md) | Require reviewed, signed and idempotent Radar delivery | Accepted |
 | [0004](0004-use-english-engineering-and-spanish-product-content.md) | Use English engineering artefacts and Spanish product content | Accepted |
 | [0005](0005-use-controlled-single-vps-releases.md) | Use controlled single-VPS releases with explicit migration and rollback | Accepted |
+| [0006](0006-trigger-production-deploy-after-main-ci.md) | Trigger production deployment after successful main CI | Accepted |
 
 ## Required sections
 

@@ -44,6 +44,21 @@ check("deploy script replaces only the web service", deployScript.includes("up -
 check("deploy script has an automatic web rollback", deployScript.includes("rollback_web"));
 check("deploy script never removes Compose volumes", !deployScript.includes("down -v") && !deployScript.includes("docker volume rm"));
 
+console.log("\n-- .github/workflows/deploy-production.yml --");
+const deployWorkflow = read(".github/workflows/deploy-production.yml");
+const deployEntrypoint = read("scripts/github-actions-deploy-entrypoint.sh");
+check("production workflow exists", existsSync(join(root, ".github/workflows/deploy-production.yml")));
+check("production workflow waits for completed CI", deployWorkflow.includes("workflow_run:") && deployWorkflow.includes("workflows: [CI]") && deployWorkflow.includes("types: [completed]"));
+check("automatic deploys require successful main pushes", deployWorkflow.includes("workflow_run.conclusion == 'success'") && deployWorkflow.includes("workflow_run.event == 'push'") && deployWorkflow.includes("workflow_run.head_branch == 'main'"));
+check("production workflow deploys the triggering SHA", deployWorkflow.includes("github.event.workflow_run.head_sha"));
+check("production workflow has an explicit activation switch", deployWorkflow.includes("PRODUCTION_AUTO_DEPLOY_ENABLED == 'true'"));
+check("production workflow serializes without cancelling a release", deployWorkflow.includes("group: al-lio-production") && deployWorkflow.includes("cancel-in-progress: false"));
+check("production workflow uses the protected environment", deployWorkflow.includes("name: Production"));
+check("production SSH verifies a pinned host key", deployWorkflow.includes("StrictHostKeyChecking=yes") && deployWorkflow.includes("PRODUCTION_SSH_KNOWN_HOSTS") && !deployWorkflow.includes("ssh-keyscan"));
+check("production SSH key invokes only the deploy operation", deployWorkflow.includes('"deploy $RELEASE_SHA"'));
+check("forced deploy entrypoint validates SSH_ORIGINAL_COMMAND", deployEntrypoint.includes("SSH_ORIGINAL_COMMAND") && deployEntrypoint.includes("^deploy[[:space:]]([0-9a-f]{40})$"));
+check("forced deploy entrypoint calls the guarded release script", deployEntrypoint.includes('AL_LIO_DEPLOY_CONFIRMATION="$release_sha"') && deployEntrypoint.includes('./scripts/deploy-production.sh "$release_sha"'));
+
 console.log("\n-- infra/docker-compose.prod.yml --");
 const compose = read("infra/docker-compose.prod.yml");
 check("docker-compose.prod.yml exists", existsSync(join(root, "infra/docker-compose.prod.yml")));

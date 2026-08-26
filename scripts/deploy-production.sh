@@ -35,11 +35,11 @@ usage() {
 Usage:
   ./scripts/deploy-production.sh <full-40-character-main-commit-sha>
 
-The command must run interactively on the AL-LIO VPS. It deploys only an exact
-commit already reachable from origin/main. It builds before cutover, rehearses
-and backs up additive migrations, preserves Radar/PostgreSQL container identity,
-checks internal and public readiness, and rolls the web container back if the
-new release does not become healthy.
+The command runs on the AL-LIO VPS and deploys only an exact commit already
+reachable from origin/main. It builds before cutover, rehearses and backs up
+additive migrations, preserves Radar/PostgreSQL container identity, checks
+internal and public readiness, and rolls the web container back if the new
+release does not become healthy.
 
 Non-interactive operators must set AL_LIO_DEPLOY_CONFIRMATION to the exact SHA.
 EOF

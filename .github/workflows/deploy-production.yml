@@ -1,0 +1,108 @@
+name: Deploy production
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Full 40-character commit SHA already reachable from main
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: al-lio-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy exact main SHA
+    if: >-
+      vars.PRODUCTION_AUTO_DEPLOY_ENABLED == 'true' &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.head_repository.full_name == github.repository
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: Production
+      url: https://al-lio.danielcode.dev
+    env:
+      RELEASE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.release_sha }}
+      SSH_HOST: ${{ secrets.PRODUCTION_SSH_HOST }}
+      SSH_PORT: ${{ secrets.PRODUCTION_SSH_PORT }}
+      SSH_USER: ${{ secrets.PRODUCTION_SSH_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+      SSH_KNOWN_HOSTS: ${{ secrets.PRODUCTION_SSH_KNOWN_HOSTS }}
+
+    steps:
+      - name: Validate immutable release and deployment configuration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "Release SHA must contain exactly 40 lowercase hexadecimal characters." >&2
+            exit 1
+          }
+          [[ "$SSH_HOST" =~ ^[A-Za-z0-9.-]+$ ]] || {
+            echo "PRODUCTION_SSH_HOST contains unsupported characters." >&2
+            exit 1
+          }
+          [[ "$SSH_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] || {
+            echo "PRODUCTION_SSH_USER contains unsupported characters." >&2
+            exit 1
+          }
+          SSH_PORT="${SSH_PORT:-22}"
+          [[ "$SSH_PORT" =~ ^[0-9]+$ ]] && ((SSH_PORT >= 1 && SSH_PORT <= 65535)) || {
+            echo "PRODUCTION_SSH_PORT must be a valid TCP port." >&2
+            exit 1
+          }
+          [[ -n "$SSH_PRIVATE_KEY" ]] || {
+            echo "PRODUCTION_SSH_PRIVATE_KEY is missing." >&2
+            exit 1
+          }
+          [[ -n "$SSH_KNOWN_HOSTS" ]] || {
+            echo "PRODUCTION_SSH_KNOWN_HOSTS is missing." >&2
+            exit 1
+          }
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+
+      - name: Configure pinned SSH identity
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > "$HOME/.ssh/al-lio-production"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" | tr -d '\r' > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/al-lio-production" "$HOME/.ssh/known_hosts"
+
+      - name: Deploy exact merge SHA through the validated VPS command
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ssh \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            -i "$HOME/.ssh/al-lio-production" \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            "deploy $RELEASE_SHA"
+
+      - name: Remove ephemeral SSH material
+        if: always()
+        shell: bash
+        run: rm -f "$HOME/.ssh/al-lio-production" "$HOME/.ssh/known_hosts"
