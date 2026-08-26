@@ -11,6 +11,7 @@ import {
   Check,
   CheckCircle2,
   CheckSquare2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -42,6 +43,8 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
+import { SPANISH_PROVINCES } from "@/lib/deeplinks/spanish-provinces";
+import { getQuickSearchesAction, saveQuickSearchAction, type SavedQuickSearch } from "@/lib/work/actions";
 import { isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
 import { isSafeHttpUrl, selectAptitudeVideos } from "@/lib/fp/event-cta";
 import {
@@ -942,6 +945,30 @@ const workBrandCss = `
   .al-work-portal-field { display: grid; gap: 3px; }
   .al-work-portal-field-label { font-size: 10px; font-weight: 700; color: #9a958a; text-transform: uppercase; letter-spacing: .03em; }
   .al-work-portal-search-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; height: 34px; padding: 0 14px; border-radius: 10px; border: none; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; text-decoration: none; }
+  .al-work-portal-search-btn-disabled { opacity: .5; cursor: not-allowed; pointer-events: none; }
+
+  .al-work-province { position: relative; }
+  .al-work-province-trigger { width: 100%; height: 32px; display: flex; align-items: center; justify-content: space-between; gap: 6px; border-radius: 8px; border: 1px solid #e4dfd5; background: white; padding: 0 10px; cursor: pointer; font-size: 12px; color: #111111; transition: border-color .15s, box-shadow .15s; }
+  .al-work-province-trigger:hover:not(:disabled) { border-color: #d8d1c2; }
+  .al-work-province-trigger[aria-expanded="true"] { border-color: rgba(225, 93, 45, 0.5); box-shadow: 0 0 0 3px rgba(225, 93, 45, 0.12); }
+  .al-work-province-trigger:disabled { cursor: not-allowed; background: #f5f2ea; color: #9a958a; }
+  .al-work-province-value { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .al-work-province-placeholder { color: #a39d8e; }
+  .al-work-province-chevron { width: 14px; height: 14px; color: #9a9589; flex-shrink: 0; transition: transform .15s; }
+  .al-work-province-trigger[aria-expanded="true"] .al-work-province-chevron { transform: rotate(180deg); }
+  .al-work-province-panel { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; right: 0; background: white; border: 1px solid #ece7dc; border-radius: 12px; box-shadow: 0 16px 40px rgba(17, 17, 17, 0.12); padding: 6px; }
+  .al-work-province-filter { width: 100%; height: 30px; border-radius: 7px; border: 1px solid #ece7dc; padding: 0 8px; font-size: 12px; margin-bottom: 4px; }
+  .al-work-province-list { list-style: none; margin: 0; padding: 0; max-height: 180px; overflow-y: auto; }
+  .al-work-province-option { width: 100%; display: block; text-align: left; padding: 6px 8px; border-radius: 7px; border: none; background: transparent; font-size: 12px; color: #111111; cursor: pointer; }
+  .al-work-province-option:hover { background: #f7f4ee; }
+  .al-work-province-option-selected { background: #fbe7dd; color: #e15d2d; font-weight: 600; }
+  .al-work-province-empty { padding: 8px; font-size: 12px; color: #9a958a; text-align: center; }
+
+  .al-work-remote-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .al-work-remote-switch { position: relative; display: inline-flex; height: 20px; width: 36px; flex-shrink: 0; align-items: center; border-radius: 999px; border: none; cursor: pointer; background: #e4dfd5; transition: background-color .15s; }
+  .al-work-remote-switch[aria-checked="true"] { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); }
+  .al-work-remote-switch-thumb { display: inline-block; height: 14px; width: 14px; border-radius: 999px; background: white; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); transform: translateX(3px); transition: transform .15s; }
+  .al-work-remote-switch[aria-checked="true"] .al-work-remote-switch-thumb { transform: translateX(19px); }
 
   .al-work-portal-link-grid { display: grid; gap: 8px; }
   .al-work-portal-link-card { display: flex; align-items: center; gap: 8px; border: 1px solid #ece7dc; border-radius: 12px; background: white; padding: 8px 10px; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
@@ -971,10 +998,153 @@ const workBrandCss = `
   .al-work-empty-desc { font-size: 12px; color: #9a958a; max-width: 360px; }
 `;
 
-const QuickJobSearchCard = memo(function QuickJobSearchCard({ platform, expanded, onToggle }: { platform: JobPlatform; expanded: boolean; onToggle: (p: JobPlatform) => void }) {
-  const [query, setQuery] = useState("programador java");
-  const [scope, setScope] = useState<"Granada" | "Teletrabajo">("Granada");
-  const url = useMemo(() => buildJobSearchUrl(platform, query, scope), [platform, query, scope]);
+// Duplicated diacritics-strip pattern (see course-presentation.ts /
+// hackathon-presentation.ts for why this is built via String.fromCharCode
+// rather than a \u escape) so province type-ahead matches "leon" -> "León".
+const WORK_DIACRITICS_PATTERN = new RegExp(`[${String.fromCharCode(0x0300)}-${String.fromCharCode(0x036f)}]`, "g");
+
+function normalizeForProvinceSearch(value: string) {
+  return value.trim().toLowerCase().normalize("NFD").replace(WORK_DIACRITICS_PATTERN, "");
+}
+
+function ProvinceCombobox({
+  value,
+  onChange,
+  disabled,
+  placeholder,
+  ariaLabel,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  placeholder: string;
+  ariaLabel: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    setFilter("");
+    const raf = requestAnimationFrame(() => filterRef.current?.focus());
+    return () => cancelAnimationFrame(raf);
+  }, [open]);
+
+  const results = useMemo(() => {
+    const needle = normalizeForProvinceSearch(filter);
+    if (!needle) return SPANISH_PROVINCES;
+    return SPANISH_PROVINCES.filter((province) => normalizeForProvinceSearch(province).includes(needle));
+  }, [filter]);
+
+  return (
+    <div className="al-work-province" ref={containerRef}>
+      <button
+        type="button"
+        className="al-work-province-trigger"
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span className={cn("al-work-province-value", (disabled || !value) && "al-work-province-placeholder")}>
+          {disabled ? placeholder : value || placeholder}
+        </span>
+        <ChevronDown className="al-work-province-chevron" aria-hidden="true" />
+      </button>
+      {open && !disabled && (
+        <div className="al-work-province-panel">
+          <input
+            ref={filterRef}
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            placeholder="Buscar provincia..."
+            className="al-work-province-filter"
+            aria-label="Filtrar provincias"
+          />
+          <ul className="al-work-province-list" role="listbox" aria-label={ariaLabel}>
+            {results.length === 0 && <li className="al-work-province-empty">Sin resultados</li>}
+            {results.map((province) => {
+              const isSelected = province === value;
+              return (
+                <li key={province}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    className={cn("al-work-province-option", isSelected && "al-work-province-option-selected")}
+                    onClick={() => {
+                      onChange(province);
+                      setOpen(false);
+                    }}
+                  >
+                    {province}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const QuickJobSearchCard = memo(function QuickJobSearchCard({
+  platform,
+  expanded,
+  onToggle,
+  saved,
+  onSearch,
+}: {
+  platform: JobPlatform;
+  expanded: boolean;
+  onToggle: (p: JobPlatform) => void;
+  saved?: SavedQuickSearch;
+  onSearch: (platform: JobPlatform, keyword: string, location: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [province, setProvince] = useState("");
+  const [remote, setRemote] = useState(false);
+  const hydrated = useRef(false);
+
+  useEffect(() => {
+    if (hydrated.current || !saved) return;
+    hydrated.current = true;
+    setQuery(saved.keyword);
+    const location = saved.location ?? "";
+    if (normalizeForProvinceSearch(location) === "teletrabajo") {
+      setRemote(true);
+    } else if (location) {
+      setProvince(location);
+    }
+  }, [saved]);
+
+  const effectiveLocation = remote ? "Teletrabajo" : province;
+  const url = useMemo(() => buildJobSearchUrl(platform, query, effectiveLocation), [platform, query, effectiveLocation]);
+  const canSearch = query.trim().length > 0;
 
   return (
     <div className={cn("al-work-portal-card", expanded && "al-work-portal-card-expanded")}>
@@ -989,16 +1159,41 @@ const QuickJobSearchCard = memo(function QuickJobSearchCard({ platform, expanded
         <div className="al-work-portal-expand">
           <div className="al-work-portal-field">
             <span className="al-work-portal-field-label">Qué buscas</span>
-            <Input value={query} onChange={(event) => setQuery(event.target.value)} className="h-8 text-xs" placeholder="programador java" aria-label={`Busqueda en ${platform}`} />
+            <Input value={query} onChange={(event) => setQuery(event.target.value)} className="h-8 text-xs" placeholder="Puesto o palabra clave" aria-label={`Busqueda en ${platform}`} />
           </div>
           <div className="al-work-portal-field">
-            <span className="al-work-portal-field-label">Dónde</span>
-            <Select value={scope} onChange={(event) => setScope(event.target.value as "Granada" | "Teletrabajo")} className="h-8 text-xs" aria-label={`Ambito de busqueda en ${platform}`}>
-              <option value="Granada">Granada</option>
-              <option value="Teletrabajo">Teletrabajo</option>
-            </Select>
+            <span className="al-work-portal-field-label">Provincia</span>
+            <ProvinceCombobox
+              value={province}
+              onChange={setProvince}
+              disabled={remote}
+              placeholder={remote ? "Teletrabajo" : "Elige provincia"}
+              ariaLabel={`Provincia de busqueda en ${platform}`}
+            />
           </div>
-          <a href={url} target="_blank" rel="noreferrer" className="al-work-portal-search-btn">
+          <label className="al-work-remote-row">
+            <span className="al-work-portal-field-label">Teletrabajo</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={remote}
+              onClick={() => setRemote((current) => !current)}
+              className="al-work-remote-switch"
+            >
+              <span className="al-work-remote-switch-thumb" />
+            </button>
+          </label>
+          <a
+            href={canSearch ? url : undefined}
+            target="_blank"
+            rel="noreferrer"
+            aria-disabled={!canSearch}
+            className={cn("al-work-portal-search-btn", !canSearch && "al-work-portal-search-btn-disabled")}
+            onClick={(event) => {
+              if (!canSearch) { event.preventDefault(); return; }
+              onSearch(platform, query, effectiveLocation);
+            }}
+          >
             Buscar <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
@@ -1114,6 +1309,8 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
   const [expandedPortal, setExpandedPortal] = useState<JobPlatform | null>(null);
   const [companySearch, setCompanySearch] = useState("");
   const [companyView, setCompanyView] = useState<"all" | "favorites">("all");
+  const [savedSearches, setSavedSearches] = useState<Record<string, SavedQuickSearch>>({});
+  const [savedSearchesLoaded, setSavedSearchesLoaded] = useState(false);
 
   // Candidaturas state
   const [applications, setApplications] = useState<JobApplication[]>([]);
@@ -1125,6 +1322,26 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
   const [manualForm, setManualForm] = useState({ company_name: "", company_url: "", job_title: "", job_url: "" });
 
   const handleToggleWork = useCallback((p: JobPlatform) => setExpandedPortal((v) => v === p ? null : p), []);
+
+  useEffect(() => {
+    if (tab !== "portals" || savedSearchesLoaded) return;
+    let cancelled = false;
+    getQuickSearchesAction().then((rows) => {
+      if (cancelled) return;
+      const map: Record<string, SavedQuickSearch> = {};
+      for (const row of rows) {
+        if (!map[row.platform]) map[row.platform] = row;
+      }
+      setSavedSearches(map);
+      setSavedSearchesLoaded(true);
+    });
+    return () => { cancelled = true; };
+  }, [tab, savedSearchesLoaded]);
+
+  const handlePortalSearch = useCallback((platform: JobPlatform, keyword: string, location: string) => {
+    setSavedSearches((prev) => ({ ...prev, [platform]: { platform, keyword, location } }));
+    saveQuickSearchAction(platform, keyword, location).catch(() => {});
+  }, []);
 
   const filteredCompanies = useMemo(() => store.companies.filter((company) => {
     if (companyView === "favorites" && !company.is_favorite) return false;
@@ -1221,7 +1438,7 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
   return (
     <>
       <style>{workBrandCss}</style>
-      <div className="al-work-tabs">
+      <div className="al-work-tabs" style={{ marginTop: 8 }}>
         {WORK_TABS.map(([id, label]) => (
           <button
             key={id}
@@ -1240,7 +1457,7 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
             <div>
               <p className="al-work-section-title">Búsqueda rápida</p>
               <p className="text-sm text-muted-foreground">
-                Estos portales funcionan bien con nuestro buscador. Haz clic, escribe tu puesto y elige Granada o teletrabajo para abrir la búsqueda ya filtrada.
+                Estos portales funcionan bien con nuestro buscador. Haz clic, escribe tu puesto y elige tu provincia (o activa teletrabajo) para abrir la búsqueda ya filtrada.
               </p>
             </div>
             <div className="al-work-portal-grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
@@ -1250,6 +1467,8 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
                   platform={platform}
                   expanded={expandedPortal === platform}
                   onToggle={handleToggleWork}
+                  saved={savedSearches[platform]}
+                  onSearch={handlePortalSearch}
                 />
               ))}
             </div>
