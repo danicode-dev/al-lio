@@ -68,6 +68,7 @@ export type Course = {
   ultima_revision?: string;
   notes?: string;
   sourceTable?: "courses" | "tech_opportunities" | "fp_content_items";
+  is_favorite?: boolean;
   created_at: string;
 };
 
@@ -203,6 +204,7 @@ export type ReturnTypeActions = {
   addCourse: (data: Omit<Course, "id" | "created_at">) => Promise<void>;
   updateCourse: (id: string, data: Partial<Course>) => Promise<void>;
   completeCourse: (course: Course) => Promise<void>;
+  toggleCourseFavorite: (id: string) => void;
   addHackathon: (data: Omit<Hackathon, "id" | "created_at">) => Promise<void>;
   updateHackathon: (id: string, data: Partial<Hackathon>) => void;
   toggleHackathonFavorite: (id: string) => void;
