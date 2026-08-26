@@ -23,6 +23,7 @@ private operational evidence do not belong here.
 
 ## Operations
 
+- [`AUTONOMOUS_PRODUCTION_DEPLOY.md`](AUTONOMOUS_PRODUCTION_DEPLOY.md): owner-facing one-command routine release guide.
 - [`DEPLOY_VPS.md`](DEPLOY_VPS.md): controlled VPS deployment, backup, smoke test and rollback.
 - [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md): repository capabilities and per-release gates.
 - [`operations/README.md`](operations/README.md): monitoring, recovery and release handbook.

@@ -25,6 +25,11 @@ A release is blocked unless all of the following are true:
 
 ## Controlled sequence
 
+Routine owner-approved web releases use
+[`../AUTONOMOUS_PRODUCTION_DEPLOY.md`](../AUTONOMOUS_PRODUCTION_DEPLOY.md). Its
+versioned script enforces the applicable gates below and stops when the change
+requires this manual runbook instead.
+
 1. Complete [`release-records/TEMPLATE.md`](release-records/TEMPLATE.md) in a private evidence location.
 2. Follow [`../DEPLOY_VPS.md`](../DEPLOY_VPS.md) without skipping steps.
 3. Replace only the approved release unit.
