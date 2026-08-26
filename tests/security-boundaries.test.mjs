@@ -36,6 +36,16 @@ import {
 import { toIsoTimestamp } from "../src/lib/bloc/timestamps.ts";
 import { compareByRecentFirst, sortByRecentFirst } from "../src/lib/bloc/notes-sort.ts";
 import { buildNoteExportHtml, formatExportTimestamp } from "../src/lib/bloc/note-export.ts";
+import {
+  canToggleHackathonFavorite as canToggleHackathonFavoriteShared,
+  fpItemToHackathon,
+  getHackathonPresentation,
+  hackathonPublicDescription,
+  isFpHackathonLike,
+  isTechHackathonOrEvent,
+  resolveHackathonById,
+  techOpportunityToHackathon,
+} from "../src/lib/hackathons/hackathon-presentation.ts";
 
 const validSessionSecret = "session-test-secret-with-32-characters";
 
@@ -465,12 +475,14 @@ test("Each page's own header mounts StudentHeaderActions exactly once for its de
     const mounts = (source.match(/<StudentHeaderActions \/>/g) ?? []).length;
     assert.equal(mounts, 1, `${file} should mount StudentHeaderActions exactly once`);
   }
-  // guest-app.tsx mounts it twice by design: once inside the shared
+  // guest-app.tsx mounts it four times by design: once inside the shared
   // work/courses/hackathons/bloc header, once for the separately-composed
-  // Calendario header - never inside the per-view render functions themselves.
+  // Calendario header, and twice inside HackathonDetailView (issue #135) -
+  // its own PageHeader and its not-found fallback state, mutually exclusive
+  // at runtime but both present in the source as static JSX.
   const guestApp = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const guestAppMounts = (guestApp.match(/<StudentHeaderActions \/>/g) ?? []).length;
-  assert.equal(guestAppMounts, 2, "guest-app.tsx should mount StudentHeaderActions exactly twice: shared header + Calendario");
+  assert.equal(guestAppMounts, 4, "guest-app.tsx should mount StudentHeaderActions exactly four times: shared header + Calendario + HackathonDetailView's two branches");
 });
 
 test("The notifications popover meets the accessibility requirements (issue #91)", async () => {
@@ -643,7 +655,7 @@ test("Course cards validate the source URL before linking out, matching the isSa
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const cardStart = guestAppSource.indexOf('key={item.id} className="al-course-card"');
   assert.ok(cardStart > -1, "could not locate the course card JSX");
-  const cardSource = guestAppSource.slice(cardStart, cardStart + 2500);
+  const cardSource = guestAppSource.slice(cardStart, cardStart + 3200);
   assert.match(cardSource, /isSafeHttpUrl\(presentation\.sourceUrl\)/, "Abrir must not link to an unvalidated URL (javascript:/data: guard)");
   assert.match(cardSource, /rel="noopener noreferrer"/);
 });
@@ -655,7 +667,7 @@ test("Every course card offers Ver detalles, opening an accessible modal built f
   assert.match(source, /<CourseDetailModal item=\{detailItem\}/);
 
   const modalStart = source.indexOf("function CourseDetailModal");
-  const modalEnd = source.indexOf("function hackathonPublicDescription");
+  const modalEnd = source.indexOf("function canToggleCourseFavorite");
   const modalSource = source.slice(modalStart, modalEnd);
   assert.match(modalSource, /getCoursePresentation\(item\)/, "the modal must reuse the shared presentation model, not re-derive its own field mapping");
   assert.match(modalSource, /createPortal\(/);
@@ -695,7 +707,7 @@ test("Competency completion is authorized against the caller's session and cycle
 test("A competency with no linked learning item can still be marked complete (issue #96)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const componentStart = guestAppSource.indexOf("function CompetencyRequirement(");
-  const componentEnd = guestAppSource.indexOf("\nfunction LinksView", componentStart);
+  const componentEnd = guestAppSource.indexOf("\nfunction relatedLearningLinks", componentStart);
   assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the CompetencyRequirement component");
   const componentSource = guestAppSource.slice(componentStart, componentEnd);
 
@@ -795,7 +807,7 @@ test("The event aptitude modal footer never links to the retired internal ruta s
 test("A competency shows at most two non-clickable legacy references (issue #96)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const componentStart = guestAppSource.indexOf("function CompetencyRequirement(");
-  const componentEnd = guestAppSource.indexOf("\nfunction LinksView", componentStart);
+  const componentEnd = guestAppSource.indexOf("\nfunction relatedLearningLinks", componentStart);
   assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the CompetencyRequirement component");
   const componentSource = guestAppSource.slice(componentStart, componentEnd);
 
@@ -1354,11 +1366,13 @@ test("the featured hackathon hero and hackathon list cards always open a validat
   assert.doesNotMatch(source, /\/ruta\//, "no CTA anywhere in this file may construct a /ruta/ URL any more");
   assert.match(
     source,
-    /\{isSafeHttpUrl\(featuredHackathon\.url\) \? \(\s*<a href=\{featuredHackathon\.url\} target="_blank" rel="noopener noreferrer" className="al-hack-hero-btn-primary">/,
+    /\{isSafeHttpUrl\(featuredHackathon\.url\) \? \(\s*<a href=\{featuredHackathon\.url\} target="_blank" rel="noopener noreferrer" className="al-hack-hero-btn-ghost">/,
+    "Abrir convocatoria is now the secondary action next to Ver detalles (issue #135), but must still be URL-validated the same way",
   );
   assert.match(
     source,
-    /\{isSafeHttpUrl\(item\.url\) && \(\s*<a href=\{item\.url\} target="_blank" rel="noopener noreferrer" className="al-hack-btn al-hack-btn-primary">/,
+    /\{isSafeHttpUrl\(item\.url\) && \(\s*<a href=\{item\.url\} target="_blank" rel="noopener noreferrer" className="al-hack-btn">/,
+    "Abrir web is now the secondary action next to Ver detalles (issue #135), but must still be URL-validated the same way",
   );
   assert.match(source, /Abrir convocatoria/);
   assert.match(source, /Abrir web/);
@@ -1372,7 +1386,7 @@ test("the featured hackathon hero and hackathon list cards always open a validat
 test("each aptitude links only to exact internal courses and keeps legacy references as short text", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const componentStart = guestAppSource.indexOf("function CompetencyRequirement(");
-  const componentEnd = guestAppSource.indexOf("\nfunction LinksView", componentStart);
+  const componentEnd = guestAppSource.indexOf("\nfunction relatedLearningLinks", componentStart);
   assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the CompetencyRequirement component");
   const componentSource = guestAppSource.slice(componentStart, componentEnd);
 
@@ -2100,18 +2114,18 @@ test("ReturnTypeActions declares toggleHackathonFavorite, so the store's action 
   assert.match(source, /toggleHackathonFavorite: \(id: string\) => void;/);
 });
 
-test("The heart control appears in the card, the featured hero and the requirements modal, all driven by the same canToggleHackathonFavorite/toggleHackathonFavoriteFor helpers - so the three surfaces can never drift out of sync (issue #131)", async () => {
+test("The heart control appears in the card, the featured hero, the requirements modal and the detail view, all driven by the same shared canToggleHackathonFavorite/toggleHackathonFavoriteFor helpers - so no surface can drift out of sync (issue #131, extended by #135)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
 
-  assert.match(source, /function canToggleHackathonFavorite\(item: Hackathon\): boolean/);
-  assert.match(source, /function toggleHackathonFavoriteFor\(item: Hackathon, actions: ReturnTypeActions\)/);
+  assert.match(source, /canToggleHackathonFavorite,[\s\S]*\} from "@\/lib\/hackathons\/hackathon-presentation";/, "guest-app.tsx must import the shared helper (issue #135), not keep a local copy");
+  assert.match(source, /toggleHackathonFavoriteFor,[\s\S]*\} from "@\/lib\/hackathons\/hackathon-presentation";/);
 
   const heartSites = source.match(/onClick=\{\(\) => toggleHackathonFavoriteFor\(/g) ?? [];
-  assert.equal(heartSites.length, 3, "the card, the hero and the requirements modal must all call the same dispatcher - expected exactly 3 call sites");
+  assert.equal(heartSites.length, 4, "the card, the hero, the requirements modal and the detail view must all call the same dispatcher - expected exactly 4 call sites");
 
   assert.doesNotMatch(source, /import \{[^}]*\bBookmark\b/, "the retired Bookmark icon import must be gone, not left unused");
   const heartIconUses = source.match(/<Heart className=/g) ?? [];
-  assert.ok(heartIconUses.length >= 4, "Heart is used by Trabajo's CompanyCard plus the 3 new hackathon surfaces");
+  assert.ok(heartIconUses.length >= 5, "Heart is used by Trabajo's CompanyCard plus the 4 hackathon surfaces");
 });
 
 test("Saving copy is consistent everywhere - Guardar / Guardado / Quitar de guardados - and the old ambiguous \"Guardar para despues\" wording from the requirements modal is gone (issue #131)", async () => {
@@ -2121,13 +2135,16 @@ test("Saving copy is consistent everywhere - Guardar / Guardado / Quitar de guar
   assert.match(source, /item\.is_favorite \? "Guardado" : "Guardar"/, "the modal's visible label pattern (unsaved -> Guardar, saved -> Guardado)");
 });
 
-test("tech_opportunities-sourced events are excluded from saving with a documented reason, not silently broken or given a non-functional heart (issue #131)", async () => {
-  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  const fnStart = source.indexOf("function canToggleHackathonFavorite");
-  const fnSource = source.slice(fnStart, source.indexOf("function toggleHackathonFavoriteFor"));
+test("tech_opportunities-sourced events are excluded from saving with a documented reason, not silently broken or given a non-functional heart (issue #131, relocated to hackathon-presentation.ts by issue #135)", async () => {
+  const source = await readFile(new URL("../src/lib/hackathons/hackathon-presentation.ts", import.meta.url), "utf8");
+  const fnStart = source.indexOf("export function canToggleHackathonFavorite");
+  const fnSource = source.slice(fnStart, source.indexOf("export function toggleHackathonFavoriteFor"));
   assert.match(fnSource, /sourceTable === "tech_opportunities"\) return false/);
   const precedingComment = source.slice(Math.max(0, fnStart - 700), fnStart);
   assert.match(precedingComment, /deliberately excluded/i, "the exclusion must be explained, not just present with no rationale");
+
+  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(guestAppSource, /function canToggleHackathonFavorite/, "guest-app.tsx must not keep a second, potentially-drifting local copy");
 });
 
 test("Nueva tarea moved out of the crowded top header into the Tu lista row, next to Pendientes/Hechas/Todas - not competing with the global +/calendar/bell icons anymore (owner-reported follow-up)", async () => {
@@ -2239,4 +2256,336 @@ test("Toggling the heart is wired through a distinct action from completion/stat
   assert.ok(completeFnStart !== -1 && completeFnEnd > completeFnStart);
   const completeFn = source.slice(completeFnStart, completeFnEnd);
   assert.doesNotMatch(completeFn, /is_favorite/, "completing/archiving an event must never read or write is_favorite - the two concepts stay independent");
+});
+
+// ---------------------------------------------------------------------------
+// Issue #120 - Courses: favorite/save, independent from Archivados
+// ---------------------------------------------------------------------------
+
+test("The course_favorites migration is additive only, and documents the tech_opportunities exclusion consistently with the sibling hackathon migration (issue #120)", async () => {
+  const source = await readFile(new URL("../infra/postgres/migrations/0008_course_favorites.sql", import.meta.url), "utf8");
+  assert.match(source, /alter table public\.courses\s*\r?\n\s*add column if not exists is_favorite boolean not null default false/);
+  assert.match(source, /create index if not exists courses_user_favorite_idx/);
+  assert.doesNotMatch(source, /\bdrop\s+(table|schema)|truncate\s+table/i);
+  assert.match(source, /0007_hackathon_favorites\.sql/, "must reference the sibling migration's identical tech_opportunities decision instead of re-arguing it");
+});
+
+test("toggleCourseFavorite is an atomic, user-scoped UPDATE - never touches status/lifecycle columns, and returns null for a row the caller doesn't own (issue #120)", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/courses.ts", import.meta.url), "utf8");
+  const fnSource = source.slice(source.indexOf("export async function toggleCourseFavorite"));
+  assert.match(fnSource, /UPDATE public\.courses SET is_favorite = NOT is_favorite WHERE id = \$1 AND user_id = \$2/, "must be a single atomic flip, not a read-then-write, and must filter by user_id");
+  assert.doesNotMatch(fnSource, /\bstatus\b/, "toggling the heart must never touch the status/lifecycle column");
+  assert.match(fnSource, /rows\[0\]\?\.is_favorite \?\? null/);
+});
+
+test("toggleCourseFavoriteAction is session-gated and redirects unauthenticated callers, matching toggleCompanyFavoriteAction/toggleHackathonFavoriteAction (issue #120)", async () => {
+  const source = await readFile(new URL("../src/lib/courses/actions.ts", import.meta.url), "utf8");
+  assert.match(source, /"use server"/);
+  assert.match(source, /const session = await getSession\(\);/);
+  assert.match(source, /if \(!session\) redirect\("\/login"\);/);
+  assert.match(source, /toggleCourseFavorite\(session\.uid, courseId\)/, "must scope to session.uid, never a client-supplied user id");
+});
+
+test("The toggleCourseFavorite store action applies an optimistic flip with rollback and an honest error toast on failure (issue #120)", async () => {
+  const source = await readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const start = source.indexOf("toggleCourseFavorite: (id: string)");
+  const end = source.indexOf("addHackathon: async (data: Omit<Hackathon");
+  assert.ok(start !== -1 && end !== -1 && end > start, "toggleCourseFavorite must be its own dedicated action");
+  const fn = source.slice(start, end);
+  assert.match(fn, /setStore\(/, "must apply an optimistic update");
+  assert.match(fn, /toggleCourseFavoriteAction\(id\)\.then\(\(result\) => \{/);
+  assert.match(fn, /if \(!result\.error\) return;/);
+  assert.match(fn, /toast\.error\(/, "a failed save must surface an honest error toast");
+  assert.match(fn, /is_favorite: !nextValue/, "the failure branch must flip is_favorite back, not leave the optimistic value stuck");
+});
+
+test("ReturnTypeActions declares toggleCourseFavorite, so the store's action object type-checks against the shared interface (issue #120)", async () => {
+  const source = await readFile(new URL("../src/components/store/types.ts", import.meta.url), "utf8");
+  assert.match(source, /toggleCourseFavorite: \(id: string\) => void;/);
+  assert.match(source, /is_favorite\?: boolean;\r?\n\s*created_at: string;\r?\n\};/, "Course must declare is_favorite, matching Hackathon's shape");
+});
+
+test("fpItemToCourse maps fp_user_content_state.is_favorite through to Course.is_favorite - the exact gap issue #120 identified (fpItemToHackathon already did this)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("function fpItemToCourse(item: FpCatalogItem): Course {");
+  const fnEnd = source.indexOf("function fpItemToCalendarEvents");
+  const fnSource = source.slice(fnStart, fnEnd);
+  assert.match(fnSource, /is_favorite: item\.is_favorite \?\? false,/);
+});
+
+test("The heart control appears in the course card and the detail modal, both driven by the same canToggleCourseFavorite/toggleCourseFavoriteFor helpers (issue #120)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.match(source, /function canToggleCourseFavorite\(item: Course\): boolean/);
+  assert.match(source, /function toggleCourseFavoriteFor\(item: Course, actions: ReturnTypeActions\)/);
+  const heartSites = source.match(/onClick=\{\(\) => toggleCourseFavoriteFor\(/g) ?? [];
+  assert.equal(heartSites.length, 2, "the card and the detail modal must both call the same dispatcher - expected exactly 2 call sites (courses have no featured hero)");
+});
+
+test("tech_opportunities-sourced courses are excluded from favoriting, mirroring the identical hackathon decision (issue #120)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("function canToggleCourseFavorite");
+  const fnSource = source.slice(fnStart, source.indexOf("function toggleCourseFavoriteFor"));
+  assert.match(fnSource, /sourceTable === "tech_opportunities"\) return false/);
+});
+
+test("Favoriting a course is wired through a distinct action from completion/archival - completeCourse and updateCourse's callers never flip is_favorite as a side effect (issue #120)", async () => {
+  const source = await readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const completeFnStart = source.indexOf("completeCourse: async (course: Course)");
+  const completeFnEnd = source.indexOf("toggleCourseFavorite: (id: string)");
+  const completeFn = source.slice(completeFnStart, completeFnEnd);
+  assert.doesNotMatch(completeFn, /is_favorite/, "completing/archiving a course must never read or write is_favorite - the two concepts stay independent");
+});
+
+test("Guardados is a real heart-driven filter tab in Courses, independent of and additional to Activos/Archivados/Todos (issue #120)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const coursesFnStart = source.indexOf("function Courses(");
+  const coursesFnEnd = source.indexOf("function coursePriorityClass");
+  const fnSource = source.slice(coursesFnStart, coursesFnEnd);
+
+  assert.match(fnSource, /useState<"activos" \| "archivados" \| "guardados" \| "todos">/);
+  assert.match(fnSource, /const guardados = useMemo\(\(\) => sorted\.filter\(\(c\) => c\.is_favorite\), \[sorted\]\);/);
+  assert.match(fnSource, /viewTab === "guardados" \? guardados/);
+  assert.match(fnSource, /"guardados", `Guardados \$\{guardados\.length\}`/, "the tab must show a live heart count");
+});
+
+test("Course favorite state survives a reload - serializeCourses passes the DB row through unfiltered, it never strips is_favorite before it reaches the client store (issue #120)", async () => {
+  const source = await readFile(new URL("../src/lib/data.ts", import.meta.url), "utf8");
+  const fnStart = source.indexOf("function serializeCourses");
+  const fnEnd = source.indexOf("function serializeHackathons");
+  const fnSource = source.slice(fnStart, fnEnd);
+  assert.match(fnSource, /\.\.\.course,/, "must spread the full DB row (which now includes is_favorite) rather than picking individual fields");
+});
+
+// ---------------------------------------------------------------------------
+// Issue #135 - Events & challenges: internal detail experience
+// ---------------------------------------------------------------------------
+
+const fixtureTechEvent = {
+  id: "t1", id_slug: "reto-granada", categoria: "hackathon_reto", nombre: "Reto Granada",
+  entidad: "Ayuntamiento", area_o_tipo: null, modalidad: "Presencial", localidad: "Granada",
+  provincia: "Granada", fecha_inicio: "2026-09-01", fecha_fin: "2026-09-02", estado: "activo",
+  certificacion_o_premio: null, practicas_empresa: null, horas_totales: null, horas_practicas: null,
+  coste: null, requisitos_resumen: null, encaje_daw_1_5: null, prioridad: "alta", tags: null,
+  fuente_url: "https://example.org/reto", ultima_revision: null, notas: null,
+  created_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z",
+};
+
+const fixtureTechCourse = { ...fixtureTechEvent, id: "t2", id_slug: "curso-x", categoria: "curso", nombre: "Curso X" };
+
+const fixtureFpEvent = {
+  id: "f1", id_slug: "hackathon-fp", type: "hackathon", title: "Hackathon FP",
+  entity: "AL-LIO", delivery_mode: "Online", location: "Granada", province: "Granada",
+  start_date: "2026-10-01", end_date: "2026-10-02", status: "activo", cost: null,
+  certification: null, practices: null, source_url: "https://example.org/fp-hackathon",
+  tags: null, suggested_action: "Revisar bases del reto", notes: "Importado 2026-01-01 desde FEED.json, pendiente de revision",
+  priority: "Alta", requiredCompetencies: [], is_favorite: true, user_status: null,
+  user_completed_at: null, created_at: "2026-01-01T00:00:00.000Z",
+};
+
+const fixtureOwnHackathon = {
+  id: "real-uuid-1", name: "Mi propio evento", status: "pendiente", priority: "media",
+  is_favorite: false, created_at: "2026-01-01T00:00:00.000Z",
+};
+
+test("resolveHackathonById resolves tech-/fp-/plain ids to the correct source and returns null for a wrong-category or nonexistent slug (issue #135)", () => {
+  assert.equal(resolveHackathonById("tech-reto-granada", [], [fixtureTechEvent], [])?.name, "Reto Granada");
+  assert.equal(resolveHackathonById("tech-curso-x", [], [fixtureTechCourse], []), null, "a tech_opportunities row categorized as a course must not resolve on the events route");
+  assert.equal(resolveHackathonById("fp-hackathon-fp", [], [], [fixtureFpEvent])?.name, "Hackathon FP");
+  assert.equal(resolveHackathonById("real-uuid-1", [fixtureOwnHackathon], [], [])?.name, "Mi propio evento");
+  assert.equal(resolveHackathonById("tech-does-not-exist", [], [fixtureTechEvent], []), null);
+  assert.equal(resolveHackathonById("real-uuid-does-not-exist", [fixtureOwnHackathon], [], []), null, "an id belonging to another user is simply absent from this user's already-scoped arrays, so it resolves to null exactly like a nonexistent id - not found and not yours are indistinguishable by construction");
+});
+
+test("getHackathonPresentation never leaks fp_content_items' raw notes (import/moderation provenance) as the public description (issue #135, same regression class as #118)", () => {
+  const hackathon = fpItemToHackathon(fixtureFpEvent);
+  const presentation = getHackathonPresentation(hackathon);
+  assert.equal(presentation.description, undefined, "fp_content_items-sourced events have no public description field set on this fixture, and must never fall back to notes");
+  assert.doesNotMatch(JSON.stringify(presentation), /pendiente de revision|Importado/, "moderation/import provenance must never reach the presentation model");
+  assert.equal(presentation.isFavorite, true);
+  assert.equal(presentation.canToggleFavorite, true);
+});
+
+test("getHackathonPresentation marks tech_opportunities-sourced events as not favoritable, and techOpportunityToHackathon/isTechHackathonOrEvent agree on category (issue #135)", () => {
+  assert.equal(isTechHackathonOrEvent(fixtureTechEvent), true);
+  assert.equal(isTechHackathonOrEvent(fixtureTechCourse), false);
+  const hackathon = techOpportunityToHackathon(fixtureTechEvent);
+  const presentation = getHackathonPresentation(hackathon);
+  assert.equal(presentation.canToggleFavorite, false);
+  assert.equal(canToggleHackathonFavoriteShared(hackathon), false);
+});
+
+test("isFpHackathonLike only matches the event/hackathon fp_content_items types, keeping the events detail route from resolving a course-typed row", () => {
+  assert.equal(isFpHackathonLike(fixtureFpEvent), true);
+  assert.equal(isFpHackathonLike({ ...fixtureFpEvent, type: "curso_basico" }), false);
+});
+
+test("hackathonPublicDescription prefers item.description, and only falls back to item.notes for non-fp_content_items sources (issue #135)", () => {
+  assert.equal(hackathonPublicDescription({ status: "pendiente", is_favorite: false, name: "x", created_at: "", description: "Clean copy", notes: "raw notes", sourceTable: undefined, priority: "media" }), "Clean copy");
+  assert.equal(hackathonPublicDescription({ status: "pendiente", is_favorite: false, name: "x", created_at: "", notes: "own notes", sourceTable: undefined, priority: "media" }), "own notes");
+  assert.equal(hackathonPublicDescription({ status: "pendiente", is_favorite: false, name: "x", created_at: "", notes: "raw import notes", sourceTable: "fp_content_items", priority: "media" }), undefined, "fp_content_items rows must never expose notes as description");
+});
+
+test("Every hackathon card and the featured hero link unconditionally to the internal /hackathons/[id] detail route - not gated by requiredCompetencies like the old 'Ver detalles' button was (issue #135)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const hackathonsFnStart = source.indexOf("function Hackathons(");
+  const hackathonsFnEnd = source.indexOf("function HackathonsEmptyState");
+  const fnSource = source.slice(hackathonsFnStart, hackathonsFnEnd);
+
+  const cardLinkIdx = fnSource.indexOf('<Link href={`/hackathons/${encodeURIComponent(item.id)}`}');
+  const heroLinkIdx = fnSource.indexOf('<Link href={`/hackathons/${encodeURIComponent(featuredHackathon.id)}`}');
+  assert.ok(cardLinkIdx > -1, "the card must always render a Link to its own detail page");
+  assert.ok(heroLinkIdx > -1, "the featured hero must always render a Link to its own detail page");
+
+  const cardActionsStart = fnSource.indexOf('<div className="al-hack-card-actions">');
+  const cardConditionalWrap = fnSource.slice(cardActionsStart, cardLinkIdx);
+  assert.doesNotMatch(cardConditionalWrap, /requiredCompetencies/, "the detail Link must render unconditionally, unlike the old gated button");
+});
+
+test("The requirements modal's opening button is relabeled 'Ver requisitos' (distinct from the new 'Ver detalles' page link) but keeps its exact original gating and handler (issue #135)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const hackathonsFnStart = source.indexOf("function Hackathons(");
+  const hackathonsFnEnd = source.indexOf("function HackathonsEmptyState");
+  const fnSource = source.slice(hackathonsFnStart, hackathonsFnEnd);
+
+  assert.match(fnSource, /item\.requiredCompetencies && item\.requiredCompetencies\.length > 0 && \(\s*<button type="button" className="al-hack-btn" onClick=\{\(\) => setRequirementsItemId\(item\.id\)\}>\s*<ListChecks className="h-3\.5 w-3\.5" \/>Ver requisitos/, "the card's requirements-modal button must keep its exact original gate and handler, only the label changed");
+  assert.doesNotMatch(fnSource, />Ver detalles<\/button>/, "no button may still claim to be 'Ver detalles' while actually opening the modal - that label now belongs exclusively to the page Link");
+});
+
+test("HackathonDetailPage resolves the item via the already user/cycle-scoped global store and calls notFound() instead of querying by a client-supplied id (issue #135)", async () => {
+  const source = await readFile(new URL("../src/app/(dashboard)/hackathons/[id]/page.tsx", import.meta.url), "utf8");
+  assert.match(source, /const store = \(await getGlobalStore\(\)\) as unknown as Store;/, "must reuse the session-authenticated, cache()-deduped global store - never a second, independently-authorized query");
+  assert.match(source, /resolveHackathonById\(id, store\.hackathons, store\.techOpportunities, store\.fpContent\)/);
+  assert.match(source, /if \(!item\) notFound\(\);/, "an id outside this user's authorized catalogue must 404, not render an empty/broken page");
+});
+
+test("HackathonDetailView shows an honest not-found state with a way back when the id doesn't resolve, and reuses the untouched HackathonRequirementsModal for the step-by-step flow (issue #135)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("export function HackathonDetailView");
+  const fnEnd = source.indexOf("function LinksView");
+  const fnSource = source.slice(fnStart, fnEnd);
+
+  assert.match(fnSource, /if \(!item\) \{/);
+  assert.match(fnSource, /Ya no podemos mostrar este evento/);
+  assert.match(fnSource, /<Link href="\/hackathons" className="al-hack-empty-btn">Volver a Eventos y retos<\/Link>/);
+  assert.match(fnSource, /<HackathonRequirementsModal item=\{item\} actions=\{actions\} onClose=\{\(\) => setRequirementsOpen\(false\)\} \/>/, "must reuse the existing modal component, not a second reimplementation");
+  assert.doesNotMatch(fnSource, /function HackathonRequirementsModal/, "must not redefine the modal locally - only call the existing one");
+});
+
+test("HackathonDetailView never renders item.notes directly - the description always goes through hackathonPublicDescription, same as the card and hero (issue #135)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("export function HackathonDetailView");
+  const fnEnd = source.indexOf("function LinksView");
+  const fnSource = source.slice(fnStart, fnEnd);
+  assert.match(fnSource, /const description = hackathonPublicDescription\(item\);/);
+  assert.doesNotMatch(fnSource, /\{item\.notes\}/, "notes must never be interpolated directly into the page");
+});
+
+test("Related learning links on the detail view are deduped by internal_learning_slug and only render when grounded - no fabricated recommendations to fill space (issue #135)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("function relatedLearningLinks");
+  const fnEnd = source.indexOf("export function HackathonDetailView");
+  const fnSource = source.slice(fnStart, fnEnd);
+  assert.match(fnSource, /selectAptitudeVideos\(competency\.learningItems\)/, "must reuse the same safe-video selector CompetencyRequirement uses, not a new unfiltered pass over every learning item");
+  assert.match(fnSource, /if \(!learningItem\.internal_learning_slug \|\| seen\.has\(learningItem\.internal_learning_slug\)\) continue;/);
+
+  const viewFnStart = source.indexOf("export function HackathonDetailView");
+  const viewFnEnd = source.indexOf("function LinksView");
+  const viewFnSource = source.slice(viewFnStart, viewFnEnd);
+  assert.match(viewFnSource, /\{related\.length > 0 && \(/, "the related-learning section must not render at all when nothing is grounded");
+});
+
+test("The detail view's official source link is gated by isSafeHttpUrl, same as the card and hero (issue #135)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("export function HackathonDetailView");
+  const fnEnd = source.indexOf("function LinksView");
+  const fnSource = source.slice(fnStart, fnEnd);
+  assert.match(fnSource, /\{isSafeHttpUrl\(item\.url\) && \(/);
+  assert.match(fnSource, /rel="noopener noreferrer"/);
+});
+
+test("The detail view heart control reuses the exact shared canToggleHackathonFavorite/toggleHackathonFavoriteFor helpers - card, hero, modal and detail can never drift out of sync on saved state (issue #135)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const heartSites = source.match(/onClick=\{\(\) => toggleHackathonFavoriteFor\(/g) ?? [];
+  assert.equal(heartSites.length, 4, "card, hero, requirements modal and the new detail view must all call the same dispatcher - expected exactly 4 call sites now");
+  assert.match(source, /from "@\/lib\/hackathons\/hackathon-presentation"/, "guest-app.tsx must import the shared helpers rather than keep a second local copy that could drift");
+});
+
+test("An event past its actionable date shows an honest 'ya ha finalizado' notice on the detail view instead of presenting stale registration as still open (issue #135)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("export function HackathonDetailView");
+  const fnEnd = source.indexOf("function LinksView");
+  const fnSource = source.slice(fnStart, fnEnd);
+  assert.match(fnSource, /const past = isHackathonPast\(item\);/);
+  assert.match(fnSource, /\{past && <p[^>]*>Este evento ya ha finalizado\.<\/p>\}/);
+});
+
+// ---------------------------------------------------------------------------
+// Issue #136 - Profile: Saved hub for hearted companies, courses, events
+// ---------------------------------------------------------------------------
+
+test("Perfil renders the Saved hub, wrapped in a real error boundary so a rendering bug there cannot take down the profile edit form above it (issue #136)", async () => {
+  const profileFormSource = await readFile(new URL("../src/components/profile/profile-form.tsx", import.meta.url), "utf8");
+  assert.match(profileFormSource, /import \{ SavedHub \} from "@\/components\/profile\/saved-hub";/);
+  assert.match(profileFormSource, /<SavedHub \/>/);
+  const savedHubIdx = profileFormSource.indexOf("<SavedHub />");
+  const formIdx = profileFormSource.indexOf("<form action={formAction}");
+  assert.ok(formIdx > -1 && savedHubIdx > formIdx, "the edit form must render before/outside SavedHub, not nested inside it");
+
+  const source = await readFile(new URL("../src/components/profile/saved-hub.tsx", import.meta.url), "utf8");
+  assert.match(source, /class SavedHubBoundary extends Component/, "must be a real React error boundary (class component), not a try/catch that can't catch render errors");
+  assert.match(source, /static getDerivedStateFromError\(\)/);
+  assert.match(source, /export function SavedHub\(\) \{\s*return \(\s*<SavedHubBoundary>\s*<SavedHubContent \/>\s*<\/SavedHubBoundary>/);
+});
+
+test("The Saved hub derives every section from the same live store the rest of the app uses - no new fetch, no parallel storage, no reimplemented merge/dedupe logic (issue #136)", async () => {
+  const source = await readFile(new URL("../src/components/profile/saved-hub.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /fetch\(|useEffect\(/, "must not introduce a separate data fetch - everything comes from useStore()'s already-loaded, session-scoped data");
+  assert.match(source, /const \{ store, actions \} = useStore\(\);/);
+  assert.match(source, /const savedCompanies = useMemo\(\(\) => store\.companies\.filter\(\(c\) => c\.is_favorite\), \[store\.companies\]\);/);
+  assert.match(source, /getDisplayCourses\(store\.courses, store\.techOpportunities, store\.fpContent\)\.filter\(\(c\) => c\.is_favorite\)/, "courses must reuse the exact same merge function Cursos itself uses, not a second parallel implementation");
+  assert.match(source, /getDisplayHackathons\(store\.hackathons, store\.techOpportunities, store\.fpContent\)\.filter\(\(h\) => h\.is_favorite\)/, "events must reuse the exact same merge function Eventos y retos itself uses");
+  assert.match(source, /from "@\/components\/guest-app"/, "getDisplayCourses/getDisplayHackathons must be imported, not redefined");
+});
+
+test("Unsaving from the hub calls the exact same dispatchers as the origin modules, so all surfaces stay in sync with the same optimistic-update/rollback behavior (issue #136)", async () => {
+  const source = await readFile(new URL("../src/components/profile/saved-hub.tsx", import.meta.url), "utf8");
+  assert.match(source, /onUnsave=\{\(\) => actions\.toggleCompanyFavorite\(company\.id\)\}/, "companies must reuse the exact same store action Trabajo uses");
+  assert.match(source, /onUnsave=\{canToggleCourseFavorite\(course\) \? \(\) => toggleCourseFavoriteFor\(course, actions\) : undefined\}/, "courses must reuse the exact same dispatcher Cursos uses, including its fp_content_items/tech_opportunities branching");
+  assert.match(source, /onUnsave=\{canToggleHackathonFavorite\(hackathon\) \? \(\) => toggleHackathonFavoriteFor\(hackathon, actions\) : undefined\}/, "events must reuse the exact same dispatcher Eventos y retos uses");
+});
+
+test("Each saved item links to its internal detail when one exists (events -> /hackathons/[id]) or its filtered module otherwise (companies/courses), with the official URL as a validated secondary action (issue #136)", async () => {
+  const source = await readFile(new URL("../src/components/profile/saved-hub.tsx", import.meta.url), "utf8");
+  assert.match(source, /primaryHref=\{`\/hackathons\/\$\{encodeURIComponent\(hackathon\.id\)\}`\}/, "events must link to the real internal detail page from issue #135");
+  assert.match(source, /primaryHref="\/courses"/);
+  assert.match(source, /primaryHref="\/work"/);
+  const secondaryHrefSites = source.match(/secondaryHref=\{isSafeHttpUrl\(/g) ?? [];
+  assert.equal(secondaryHrefSites.length, 3, "every one of the 3 saved types must validate its external URL through isSafeHttpUrl before offering it");
+});
+
+test("The hub shows one overall empty state when nothing is saved anywhere, and a distinct per-section hint when only that module has nothing saved yet (issue #136)", async () => {
+  const source = await readFile(new URL("../src/components/profile/saved-hub.tsx", import.meta.url), "utf8");
+  assert.match(source, /const totalSaved = savedCompanies\.length \+ savedCourses\.length \+ savedHackathons\.length;/);
+  assert.match(source, /\{totalSaved === 0 \? \(/);
+  assert.match(source, /Todavía no has guardado nada/);
+
+  const sectionStart = source.indexOf("function SavedSection(");
+  const sectionSource = source.slice(sectionStart, source.indexOf("function SavedRow("));
+  assert.match(sectionSource, /\{count === 0 \? \(\s*<p[^>]*>\{emptyHint\}<\/p>/, "an individually-empty section must show its own hint, distinct from the page-level empty state");
+});
+
+test("The hub caps each section's preview and offers Ver todos for longer collections, instead of rendering every saved item into the profile form (issue #136)", async () => {
+  const source = await readFile(new URL("../src/components/profile/saved-hub.tsx", import.meta.url), "utf8");
+  assert.match(source, /const VISIBLE_PER_SECTION = 4;/);
+  assert.match(source, /\.slice\(0, VISIBLE_PER_SECTION\)/g);
+  const sliceCalls = source.match(/\.slice\(0, VISIBLE_PER_SECTION\)/g) ?? [];
+  assert.equal(sliceCalls.length, 3, "all three sections (companies, courses, events) must be capped");
+  assert.match(source, /const hasMore = count > VISIBLE_PER_SECTION;/);
+  assert.match(source, /\{hasMore \? `Ver todos \(\$\{count\}\)` : "Ver módulo"\}/);
+});
+
+test("A second user cannot reach another user's saved items through the hub - it reads only the current session's already-authorized store, introducing no new query surface (issue #136)", async () => {
+  const source = await readFile(new URL("../src/components/profile/saved-hub.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /from "@\/lib\/db\/repositories/, "the hub must not query the database directly - store.companies/courses/hackathons are already session-scoped by the layout's own getGlobalStore() call");
+  assert.doesNotMatch(source, /userId|user_id/, "no user id of any kind should appear here - there is nothing to scope, since the input data is already scoped");
 });
