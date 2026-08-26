@@ -46,6 +46,14 @@ import {
   resolveHackathonById,
   techOpportunityToHackathon,
 } from "../src/lib/hackathons/hackathon-presentation.ts";
+import {
+  fpItemToCourse,
+  getCoursePresentation,
+  isFpCourseLike,
+  isTechCourse,
+  resolveCourseById,
+  techOpportunityToCourse,
+} from "../src/lib/courses/course-presentation.ts";
 
 const validSessionSecret = "session-test-secret-with-32-characters";
 
@@ -475,14 +483,16 @@ test("Each page's own header mounts StudentHeaderActions exactly once for its de
     const mounts = (source.match(/<StudentHeaderActions \/>/g) ?? []).length;
     assert.equal(mounts, 1, `${file} should mount StudentHeaderActions exactly once`);
   }
-  // guest-app.tsx mounts it four times by design: once inside the shared
+  // guest-app.tsx mounts it six times by design: once inside the shared
   // work/courses/hackathons/bloc header, once for the separately-composed
-  // Calendario header, and twice inside HackathonDetailView (issue #135) -
-  // its own PageHeader and its not-found fallback state, mutually exclusive
-  // at runtime but both present in the source as static JSX.
+  // Calendario header, twice inside HackathonDetailView (issue #135) and
+  // twice inside CourseDetailView (owner-reported follow-up) - each
+  // detail view's own PageHeader and its not-found fallback state,
+  // mutually exclusive at runtime but both present in the source as
+  // static JSX.
   const guestApp = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const guestAppMounts = (guestApp.match(/<StudentHeaderActions \/>/g) ?? []).length;
-  assert.equal(guestAppMounts, 4, "guest-app.tsx should mount StudentHeaderActions exactly four times: shared header + Calendario + HackathonDetailView's two branches");
+  assert.equal(guestAppMounts, 6, "guest-app.tsx should mount StudentHeaderActions exactly six times: shared header + Calendario + two detail views' two branches each");
 });
 
 test("The notifications popover meets the accessibility requirements (issue #91)", async () => {
@@ -618,8 +628,8 @@ test("fp course completion is per-user isolated and never mutates the shared cou
   assert.match(fnSource, /upsertFpUserContentState\(session\.uid, item\.id/, "must write scoped to session.uid, not a caller-supplied id");
   assert.match(fnSource, /revalidatePath\("\/courses"\)/);
 
-  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  assert.match(guestAppSource, /fpUserStatusToCourseStatus\(item\.user_status\)/, "the Courses view must read the per-user completion state, not just the catalogue's own display status");
+  const coursePresentationSource = await readFile(new URL("../src/lib/courses/course-presentation.ts", import.meta.url), "utf8");
+  assert.match(coursePresentationSource, /fpUserStatusToCourseStatus\(item\.user_status\)/, "fpItemToCourse must read the per-user completion state, not just the catalogue's own display status");
 });
 
 test("Course cards clamp title, provider and description consistently and stay inside the grid (issue #94, issue #130)", async () => {
@@ -660,29 +670,26 @@ test("Course cards validate the source URL before linking out, matching the isSa
   assert.match(cardSource, /rel="noopener noreferrer"/);
 });
 
-test("Every course card offers Ver detalles, opening an accessible modal built from the same shared presentation model used by the card (issue #130)", async () => {
+test("Every course card offers Ver detalles, linking to the real internal /courses/[id] page - the old CourseDetailModal was retired outright, mirroring the hackathons detail route (owner-reported follow-up to #135/#120)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  assert.match(source, /setDetailItemId\(item\.id\)/, "the card's Ver detalles action must open the detail modal for that exact item");
-  assert.match(source, /function CourseDetailModal/);
-  assert.match(source, /<CourseDetailModal item=\{detailItem\}/);
+  assert.match(source, /<Link href=\{`\/courses\/\$\{encodeURIComponent\(item\.id\)\}`\}\s*className="al-course-btn al-course-btn-primary">/, "the card's Ver detalles action must be an unconditional Link to the course's own detail page");
+  assert.doesNotMatch(source, /function CourseDetailModal/, "the modal must be removed entirely, not just left unreachable");
+  assert.doesNotMatch(source, /setDetailItemId|detailItemId/, "no state should remain for opening a modal that no longer exists");
 
-  const modalStart = source.indexOf("function CourseDetailModal");
-  const modalEnd = source.indexOf("function canToggleCourseFavorite");
-  const modalSource = source.slice(modalStart, modalEnd);
-  assert.match(modalSource, /getCoursePresentation\(item\)/, "the modal must reuse the shared presentation model, not re-derive its own field mapping");
-  assert.match(modalSource, /createPortal\(/);
-  assert.match(modalSource, /role="dialog"/);
-  assert.match(modalSource, /aria-modal="true"/);
-  assert.match(modalSource, /aria-labelledby=\{titleId\}/);
-  assert.match(modalSource, /event\.key === "Escape"/);
-  assert.match(modalSource, /el\.inert = true/, "background content must be made inert while the modal is open");
-  assert.match(modalSource, /closeButtonRef\.current\?\.focus\(\)/);
+  assert.match(source, /export function CourseDetailView\(\{ id \}: \{ id: string \}\)/);
+  const viewFnStart = source.indexOf("export function CourseDetailView");
+  const viewFnEnd = source.indexOf("function Hackathons(");
+  const viewFnSource = source.slice(viewFnStart, viewFnEnd);
+  assert.match(viewFnSource, /const presentation = getCoursePresentation\(item\);/, "the detail view must reuse the shared presentation model, not re-derive its own field mapping");
 });
 
 test("Course descriptions never fall back to raw import/moderation notes for any origin - the same regression class fixed for Hackathons in issue #118 (issue #130)", async () => {
   const source = await readFile(new URL("../src/lib/courses/course-presentation.ts", import.meta.url), "utf8");
   assert.match(source, /description: nonEmpty\(course\.requisitos_resumen\)/);
-  assert.doesNotMatch(source, /\.notes|suggested_action/, "the public presentation model must never read Course.notes as a description source");
+  const presentationFnStart = source.indexOf("export function getCoursePresentation");
+  const presentationFnEnd = source.indexOf("\n}", presentationFnStart);
+  const presentationFnSource = source.slice(presentationFnStart, presentationFnEnd);
+  assert.doesNotMatch(presentationFnSource, /\.notes|suggested_action/, "the public presentation model must never read Course.notes as a description source - fpItemToCourse elsewhere in this file legitimately builds the internal notes field, but getCoursePresentation must never touch it");
 
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const courseFnStart = guestAppSource.indexOf("function Courses(");
@@ -2258,19 +2265,19 @@ test("ReturnTypeActions declares toggleCourseFavorite, so the store's action obj
 });
 
 test("fpItemToCourse maps fp_user_content_state.is_favorite through to Course.is_favorite - the exact gap issue #120 identified (fpItemToHackathon already did this)", async () => {
-  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  const fnStart = source.indexOf("function fpItemToCourse(item: FpCatalogItem): Course {");
-  const fnEnd = source.indexOf("function fpItemToCalendarEvents");
+  const source = await readFile(new URL("../src/lib/courses/course-presentation.ts", import.meta.url), "utf8");
+  const fnStart = source.indexOf("export function fpItemToCourse(item: FpCatalogItem): Course {");
+  const fnEnd = source.indexOf("export function resolveCourseById");
   const fnSource = source.slice(fnStart, fnEnd);
   assert.match(fnSource, /is_favorite: item\.is_favorite \?\? false,/);
 });
 
-test("The heart control appears in the course card and the detail modal, both driven by the same canToggleCourseFavorite/toggleCourseFavoriteFor helpers (issue #120)", async () => {
+test("The heart control appears in the course card and the detail page, both driven by the same canToggleCourseFavorite/toggleCourseFavoriteFor helpers (issue #120, extended by the owner-reported follow-up to #135)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  assert.match(source, /function canToggleCourseFavorite\(item: Course\): boolean/);
-  assert.match(source, /function toggleCourseFavoriteFor\(item: Course, actions: ReturnTypeActions\)/);
+  assert.match(source, /export function canToggleCourseFavorite\(item: Course\): boolean/);
+  assert.match(source, /export function toggleCourseFavoriteFor\(item: Course, actions: ReturnTypeActions\)/);
   const heartSites = source.match(/onClick=\{\(\) => toggleCourseFavoriteFor\(/g) ?? [];
-  assert.equal(heartSites.length, 2, "the card and the detail modal must both call the same dispatcher - expected exactly 2 call sites (courses have no featured hero)");
+  assert.equal(heartSites.length, 2, "the card and the detail page must both call the same dispatcher - expected exactly 2 call sites (courses have no featured hero)");
 });
 
 test("tech_opportunities-sourced courses are excluded from favoriting, mirroring the identical hackathon decision (issue #120)", async () => {
@@ -2306,6 +2313,113 @@ test("Course favorite state survives a reload - serializeCourses passes the DB r
   const fnEnd = source.indexOf("function serializeHackathons");
   const fnSource = source.slice(fnStart, fnEnd);
   assert.match(fnSource, /\.\.\.course,/, "must spread the full DB row (which now includes is_favorite) rather than picking individual fields");
+});
+
+// ---------------------------------------------------------------------------
+// Owner-reported follow-up to #135/#120 - Courses: internal detail page,
+// replacing CourseDetailModal outright (mirrors the hackathons detail route)
+// ---------------------------------------------------------------------------
+
+const fixtureTechCourseItem = {
+  id: "t3", id_slug: "curso-frontend", categoria: "curso", nombre: "Curso Frontend",
+  entidad: "MDN", area_o_tipo: null, modalidad: "Online", localidad: "Granada",
+  provincia: "Granada", fecha_inicio: "2026-09-01", fecha_fin: "2026-12-01", estado: "activo",
+  certificacion_o_premio: null, practicas_empresa: null, horas_totales: null, horas_practicas: null,
+  coste: "Gratis", requisitos_resumen: null, encaje_daw_1_5: null, prioridad: "alta", tags: null,
+  fuente_url: "https://example.org/curso", ultima_revision: null, notas: null,
+  created_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z",
+};
+
+const fixtureTechEventItem = { ...fixtureTechCourseItem, id: "t4", id_slug: "reto-y", categoria: "hackathon_reto", nombre: "Reto Y" };
+
+const fixtureFpCourseItem = {
+  id: "f2", id_slug: "curso-fp-react", type: "curso_basico", title: "React desde cero",
+  entity: "AL-LIO", delivery_mode: "Online", location: "Granada", province: "Granada",
+  start_date: "2026-09-01", end_date: "2026-11-01", status: "activo", cost: "Gratis",
+  certification: null, practices: null, source_url: "https://example.org/fp-react",
+  tags: null, suggested_action: "Repasar antes de empezar", notes: "Importado 2026-01-01 desde FEED.json, revisar",
+  priority: "Alta", is_favorite: true, user_status: null, user_completed_at: null,
+  created_at: "2026-01-01T00:00:00.000Z",
+};
+
+const fixtureOwnCourse = {
+  id: "real-course-1", title: "Mi propio curso", status: "pendiente",
+  created_at: "2026-01-01T00:00:00.000Z",
+};
+
+test("resolveCourseById resolves tech-/fp-/plain ids to the correct source and returns null for a wrong-category or nonexistent slug", () => {
+  assert.equal(resolveCourseById("tech-curso-frontend", [], [fixtureTechCourseItem], [])?.title, "Curso Frontend");
+  assert.equal(resolveCourseById("tech-reto-y", [], [fixtureTechEventItem], []), null, "a tech_opportunities row categorized as an event must not resolve on the courses route");
+  assert.equal(resolveCourseById("fp-curso-fp-react", [], [], [fixtureFpCourseItem])?.title, "React desde cero");
+  assert.equal(resolveCourseById("real-course-1", [fixtureOwnCourse], [], [])?.title, "Mi propio curso");
+  assert.equal(resolveCourseById("tech-does-not-exist", [], [fixtureTechCourseItem], []), null);
+  assert.equal(resolveCourseById("real-course-does-not-exist", [fixtureOwnCourse], [], []), null, "an id belonging to another user is simply absent from this user's already-scoped arrays, so it resolves to null exactly like a nonexistent id");
+});
+
+test("isTechCourse/isFpCourseLike agree with resolveCourseById on category, and getCoursePresentation never leaks fp_content_items' raw notes as the public description", () => {
+  assert.equal(isTechCourse(fixtureTechCourseItem), true);
+  assert.equal(isTechCourse(fixtureTechEventItem), false);
+  assert.equal(isFpCourseLike(fixtureFpCourseItem), true);
+  assert.equal(isFpCourseLike({ ...fixtureFpCourseItem, type: "hackathon" }), false);
+
+  const course = fpItemToCourse(fixtureFpCourseItem);
+  const presentation = getCoursePresentation(course);
+  assert.doesNotMatch(JSON.stringify(presentation), /Importado|revisar/i, "moderation/import provenance must never reach the presentation model");
+  assert.equal(presentation.title, "React desde cero");
+
+  const techCourse = techOpportunityToCourse(fixtureTechCourseItem);
+  assert.equal(techCourse.sourceTable, "tech_opportunities");
+});
+
+test("CourseDetailPage resolves the item via the already user/cycle-scoped global store and calls notFound() instead of querying by a client-supplied id", async () => {
+  const source = await readFile(new URL("../src/app/(dashboard)/courses/[id]/page.tsx", import.meta.url), "utf8");
+  assert.match(source, /const store = \(await getGlobalStore\(\)\) as unknown as Store;/, "must reuse the session-authenticated, cache()-deduped global store - never a second, independently-authorized query");
+  assert.match(source, /resolveCourseById\(id, store\.courses, store\.techOpportunities, store\.fpContent\)/);
+  assert.match(source, /if \(!item\) notFound\(\);/, "an id outside this user's authorized catalogue must 404, not render an empty/broken page");
+});
+
+test("CourseDetailView shows an honest not-found state with a way back when the id doesn't resolve, and never renders item.notes directly", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("export function CourseDetailView");
+  const fnEnd = source.indexOf("function Hackathons(");
+  const fnSource = source.slice(fnStart, fnEnd);
+
+  assert.match(fnSource, /if \(!item\) \{/);
+  assert.match(fnSource, /Ya no podemos mostrar este curso/);
+  assert.match(fnSource, /<Link href="\/courses" className="al-course-empty-btn">Volver a Cursos<\/Link>/);
+  assert.doesNotMatch(fnSource, /\{item\.notes\}/, "notes must never be interpolated directly into the page");
+  assert.match(fnSource, /const presentation = getCoursePresentation\(item\);/);
+});
+
+test("The course detail page's official source link is gated by isSafeHttpUrl and the heart control reuses the exact shared dispatcher, same as the card", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("export function CourseDetailView");
+  const fnEnd = source.indexOf("function Hackathons(");
+  const fnSource = source.slice(fnStart, fnEnd);
+  assert.match(fnSource, /\{isSafeHttpUrl\(presentation\.sourceUrl\) && \(/);
+  assert.match(fnSource, /rel="noopener noreferrer"/);
+  assert.match(fnSource, /onClick=\{\(\) => toggleCourseFavoriteFor\(item, actions\)\}/);
+});
+
+test("Archivado and Guardado stay fully independent for courses: is_favorite never gates the Activos/Archivados split, and completing/archiving never touches is_favorite (confirms the existing #120 guarantee the owner asked to double check)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+
+  const archivedFnStart = source.indexOf('function isCourseArchived(course: Pick<Course, "status">) {');
+  const archivedFnEnd = source.indexOf("\n}", archivedFnStart);
+  const archivedFnSource = source.slice(archivedFnStart, archivedFnEnd);
+  assert.doesNotMatch(archivedFnSource, /is_favorite/, "archived status must be derived purely from course.status, never from is_favorite");
+  assert.match(archivedFnSource, /course\.status === "terminado" \|\| course\.status === "descartado"/, "a course becomes archived when the student marks it Terminado (or Descartado) - the same action, not a separate one");
+
+  const coursesFnStart = source.indexOf("function Courses(");
+  const coursesFnEnd = source.indexOf("function coursePriorityClass");
+  const coursesFnSource = source.slice(coursesFnStart, coursesFnEnd);
+  assert.match(coursesFnSource, /const guardados = useMemo\(\(\) => sorted\.filter\(\(c\) => c\.is_favorite\), \[sorted\]\);/, "Guardados is driven purely by is_favorite, independent of the Terminado-driven Archivados split");
+
+  const storeSource = await readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const completeFnStart = storeSource.indexOf("completeCourse: async (course: Course)");
+  const completeFnEnd = storeSource.indexOf("toggleCourseFavorite: (id: string)");
+  const completeFn = storeSource.slice(completeFnStart, completeFnEnd);
+  assert.doesNotMatch(completeFn, /is_favorite/, "marking a course Terminado (which archives it) must never read or write is_favorite");
 });
 
 // ---------------------------------------------------------------------------
@@ -2531,8 +2645,8 @@ test("Unsaving from the hub calls the exact same dispatchers as the origin modul
 test("Each saved item links to its internal detail when one exists (events -> /hackathons/[id]) or its filtered module otherwise (companies/courses), with the official URL as a validated secondary action (issue #136)", async () => {
   const source = await readFile(new URL("../src/components/profile/saved-hub.tsx", import.meta.url), "utf8");
   assert.match(source, /primaryHref=\{`\/hackathons\/\$\{encodeURIComponent\(hackathon\.id\)\}`\}/, "events must link to the real internal detail page from issue #135");
-  assert.match(source, /primaryHref="\/courses"/);
-  assert.match(source, /primaryHref="\/work"/);
+  assert.match(source, /primaryHref=\{`\/courses\/\$\{encodeURIComponent\(course\.id\)\}`\}/, "courses must link to their own real internal detail page too (owner-reported follow-up to #135)");
+  assert.match(source, /primaryHref="\/work"/, "companies still have no per-item internal detail, so they fall back to the filtered module");
   const secondaryHrefSites = source.match(/secondaryHref=\{isSafeHttpUrl\(/g) ?? [];
   assert.equal(secondaryHrefSites.length, 3, "every one of the 3 saved types must validate its external URL through isSafeHttpUrl before offering it");
 });

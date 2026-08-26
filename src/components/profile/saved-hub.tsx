@@ -135,7 +135,7 @@ function SavedCourseRow({ course, actions }: { course: Course; actions: ReturnTy
     <SavedRow
       title={presentation.title}
       subtitle={presentation.provider}
-      primaryHref="/courses"
+      primaryHref={`/courses/${encodeURIComponent(course.id)}`}
       secondaryHref={isSafeHttpUrl(presentation.sourceUrl) ? presentation.sourceUrl : undefined}
       onUnsave={canToggleCourseFavorite(course) ? () => toggleCourseFavoriteFor(course, actions) : undefined}
     />

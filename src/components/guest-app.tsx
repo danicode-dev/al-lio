@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlarmClock,
   BookOpen,
@@ -45,17 +44,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
 import { isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
 import { isSafeHttpUrl, selectAptitudeVideos } from "@/lib/fp/event-cta";
-import { getCoursePresentation } from "@/lib/courses/course-presentation";
+import {
+  getCoursePresentation,
+  isFpCourseLike,
+  isTechCourse,
+  fpItemToCourse,
+  techOpportunityToCourse,
+} from "@/lib/courses/course-presentation";
 import {
   canToggleHackathonFavorite,
-  fpItemNotes,
   fpItemToHackathon,
   hackathonPublicDescription,
   isFpHackathonLike,
   isTechHackathonOrEvent,
-  techCategory,
   techOpportunityToHackathon,
-  textLooksPositive,
   toggleHackathonFavoriteFor,
 } from "@/lib/hackathons/hackathon-presentation";
 import { toast } from "sonner";
@@ -2068,7 +2070,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
-  const [detailItemId, setDetailItemId] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
@@ -2145,14 +2146,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   }, [tabBase]);
 
   const activeFilterCount = [monthFilter, dayFilter, estadoFilter, modalidadFilter, prioridadFilter, soloGratuitos].filter(Boolean).length;
-
-  // Resolved against the live allCourses collection, not the object captured
-  // when the modal opened, so a status change (e.g. Terminado) is reflected
-  // immediately without closing and reopening the modal.
-  const detailItem = useMemo(
-    () => (detailItemId ? allCourses.find((c) => c.id === detailItemId) ?? null : null),
-    [detailItemId, allCourses],
-  );
 
   function clearAll() {
     setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setModalidadFilter(""); setPrioridadFilter(""); setSoloGratuitos(false); setSearchInput(""); setSearch("");
@@ -2293,9 +2286,9 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                       </div>
                       {presentation.description && <p className="al-course-card-desc line-clamp-2" title={presentation.description}>{presentation.description}</p>}
                       <div className="al-course-card-actions">
-                        <button type="button" className="al-course-btn al-course-btn-primary" onClick={() => setDetailItemId(item.id)}>
+                        <Link href={`/courses/${encodeURIComponent(item.id)}`} className="al-course-btn al-course-btn-primary">
                           <Eye className="h-3.5 w-3.5" />Ver detalles
-                        </button>
+                        </Link>
                         {isSafeHttpUrl(presentation.sourceUrl) && <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-course-btn"><ExternalLink className="h-3.5 w-3.5" />Abrir</a>}
                         {!isCourseArchived(item) && (
                           <button type="button" className="al-course-btn" onClick={() => actions.completeCourse(item).catch(() => {})}>
@@ -2367,8 +2360,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
             </FilterPanel>
           )}
         </div>
-
-        <CourseDetailModal item={detailItem} actions={actions} onClose={() => setDetailItemId(null)} />
       </div>
     </>
   );
@@ -2379,172 +2370,6 @@ function coursePriorityClass(value?: string): string {
   if (priority.includes("alta")) return "al-course-chip-terracotta";
   if (priority.includes("baja")) return "al-course-chip-green";
   return "al-course-chip-amber";
-}
-
-function CourseDetailModal({
-  item,
-  actions,
-  onClose,
-}: {
-  item: Course | null;
-  actions: ReturnTypeActions;
-  onClose: () => void;
-}) {
-  const [mounted, setMounted] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const titleId = useId();
-
-  // Portals require a DOM to attach to, so the actual portal render is
-  // deferred one tick past the server-rendered pass.
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!item?.id) return;
-
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousPaddingRight = document.body.style.paddingRight;
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-    if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
-    }
-
-    const backgroundSiblings = Array.from(document.body.children).filter(
-      (el): el is HTMLElement => el instanceof HTMLElement && el !== rootRef.current,
-    );
-    const previousInertStates = backgroundSiblings.map((el) => el.inert);
-    backgroundSiblings.forEach((el) => { el.inert = true; });
-
-    closeButtonRef.current?.focus();
-
-    return () => {
-      document.documentElement.style.overflow = previousHtmlOverflow;
-      document.body.style.overflow = previousBodyOverflow;
-      document.body.style.paddingRight = previousPaddingRight;
-      backgroundSiblings.forEach((el, index) => { el.inert = previousInertStates[index]; });
-    };
-  }, [item?.id]);
-
-  function handleDialogKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "Escape") {
-      onClose();
-      return;
-    }
-    if (event.key !== "Tab") return;
-    const focusableElements = dialogRef.current?.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
-    );
-    if (!focusableElements?.length) return;
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-    if (event.shiftKey && document.activeElement === firstElement) {
-      event.preventDefault();
-      lastElement.focus();
-    } else if (!event.shiftKey && document.activeElement === lastElement) {
-      event.preventDefault();
-      firstElement.focus();
-    }
-  }
-
-  if (!mounted || !item) return null;
-
-  const presentation = getCoursePresentation(item);
-
-  return createPortal(
-    <div
-      ref={rootRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6"
-      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
-    >
-      <style>{`
-        .al-course-modal-shell { background: white; border-radius: 22px; box-shadow: 0 24px 60px rgba(17,17,17,0.18); display: flex; flex-direction: column; }
-        .al-course-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px; border-bottom: 1px solid #f0ece2; flex-shrink: 0; }
-        .al-course-modal-title { font-size: 18px; font-weight: 700; color: #111111; line-height: 24px; letter-spacing: -0.02em; overflow-wrap: anywhere; }
-        .al-course-modal-org { font-size: 12px; color: #6b6f72; margin-top: 3px; }
-        .al-course-modal-close { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; flex-shrink: 0; }
-        .al-course-modal-body { flex: 1; min-height: 0; overflow-y: auto; padding: 18px; }
-        .al-course-modal-meta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
-        .al-course-modal-meta-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #9a958a; margin: 0 0 3px; }
-        .al-course-modal-meta-value { font-size: 13px; font-weight: 600; color: #333029; overflow-wrap: anywhere; }
-        .al-course-modal-desc { font-size: 13px; line-height: 1.6; color: #4b4740; white-space: pre-wrap; overflow-wrap: anywhere; }
-        .al-course-modal-footer { border-top: 1px solid #f0ece2; padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 8px; flex-shrink: 0; }
-      `}</style>
-      <div
-        ref={dialogRef}
-        className="al-course-modal-shell max-h-[calc(100svh-1.5rem)] w-full max-w-lg overflow-hidden sm:max-h-[calc(100svh-3rem)]"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        onKeyDown={handleDialogKeyDown}
-      >
-        <div className="al-course-modal-head">
-          <div className="min-w-0 flex-1">
-            <h2 id={titleId} className="al-course-modal-title">{presentation.title}</h2>
-            {presentation.provider && <p className="al-course-modal-org">{presentation.provider}</p>}
-          </div>
-          <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
-          {canToggleCourseFavorite(item) && (
-            <button
-              type="button"
-              className={cn("al-course-heart", item.is_favorite && "al-course-heart-active")}
-              aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
-              aria-pressed={!!item.is_favorite}
-              onClick={() => toggleCourseFavoriteFor(item, actions)}
-            >
-              <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
-            </button>
-          )}
-          <button ref={closeButtonRef} type="button" className="al-course-modal-close" onClick={onClose} aria-label="Cerrar">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="al-course-modal-body">
-          <div className="al-course-modal-meta-grid">
-            <div>
-              <p className="al-course-modal-meta-label">Fechas</p>
-              <p className="al-course-modal-meta-value">
-                {presentation.startDate ? formatDateLabel(presentation.startDate) : "Sin fecha indicada"}
-                {presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}
-              </p>
-            </div>
-            <div>
-              <p className="al-course-modal-meta-label">Ubicación</p>
-              <p className="al-course-modal-meta-value">{presentation.location || "No especificada"}</p>
-            </div>
-            <div>
-              <p className="al-course-modal-meta-label">Modalidad</p>
-              <p className="al-course-modal-meta-value">{presentation.modality || "No especificada"}</p>
-            </div>
-            <div>
-              <p className="al-course-modal-meta-label">Prioridad</p>
-              <p className="al-course-modal-meta-value">{presentation.priority ? priorityText(presentation.priority) : "No especificada"}</p>
-            </div>
-          </div>
-          <p className="al-course-modal-meta-label">Descripción</p>
-          <p className="al-course-modal-desc">{presentation.description || "Este curso todavía no tiene una descripción disponible."}</p>
-        </div>
-        <div className="al-course-modal-footer">
-          {isSafeHttpUrl(presentation.sourceUrl) && (
-            <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-course-btn al-course-btn-primary">
-              <ExternalLink className="h-3.5 w-3.5" />Abrir
-            </a>
-          )}
-          {!isCourseArchived(item) && (
-            <button type="button" className="al-course-btn" onClick={() => actions.completeCourse(item).catch(() => {})}>
-              <CheckCircle2 className="h-3.5 w-3.5" />Terminado
-            </button>
-          )}
-        </div>
-      </div>
-    </div>,
-    document.body,
-  );
 }
 
 // Mirrors canToggleHackathonFavorite/toggleHackathonFavoriteFor exactly -
@@ -2563,6 +2388,128 @@ export function toggleCourseFavoriteFor(item: Course, actions: ReturnTypeActions
   } else {
     actions.toggleCourseFavorite(item.id);
   }
+}
+
+// The internal detail surface for Courses, mirroring HackathonDetailView
+// (issue #135) exactly: a real route (/courses/[id]) replacing the old
+// CourseDetailModal outright - one entry point (Ver detalles), not a page
+// link competing with a still-present popup. Resolves the item from the
+// live client store by id (same getDisplayCourses pipeline the list uses)
+// so favorite/status state always matches the card - it can never show a
+// stale or contradictory state. Courses have no requirements/aptitudes
+// concept (unlike Hackathon.requiredCompetencies), so there is no
+// step-by-step section to fold in here - this mirrors exactly what
+// CourseDetailModal already showed, just as a full page instead of a modal.
+export function CourseDetailView({ id }: { id: string }) {
+  const { store, actions } = useStore();
+  const allCourses = useMemo(
+    () => getDisplayCourses(store.courses, store.techOpportunities, store.fpContent),
+    [store.courses, store.techOpportunities, store.fpContent]
+  );
+  const item = useMemo(() => allCourses.find((c) => c.id === id) ?? null, [allCourses, id]);
+
+  if (!item) {
+    return (
+      <div className="space-y-4">
+        <style>{`
+          .al-course-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+          .al-course-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
+          .al-course-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
+          .al-course-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
+          .al-course-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; text-decoration: none; }
+        `}</style>
+        <PageHeader eyebrow="Cursos" title="Curso no disponible" actions={<StudentHeaderActions />} />
+        <div className="al-course-empty">
+          <span className="al-course-empty-icon"><BookOpen className="h-6 w-6" /></span>
+          <p className="al-course-empty-title">Ya no podemos mostrar este curso</p>
+          <p className="al-course-empty-desc">Puede haberse retirado del catálogo o no estar disponible para tu ciclo. Vuelve al listado para ver los cursos activos.</p>
+          <Link href="/courses" className="al-course-empty-btn">Volver a Cursos</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const presentation = getCoursePresentation(item);
+  const canFavorite = canToggleCourseFavorite(item);
+  const archived = isCourseArchived(item);
+  const cardClass = "space-y-3 rounded-[18px] border border-[#ece7dc] bg-white p-4 shadow-[0_10px_26px_rgba(17,17,17,0.045)] sm:p-5";
+
+  return (
+    <div className="space-y-5">
+      <style>{`
+        .al-course-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
+        .al-course-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+        .al-course-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
+        .al-course-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .al-course-heart.al-course-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
+      `}</style>
+      <Link href="/courses" className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b6f72] transition hover:text-[#c94f21]">
+        <ChevronLeft className="h-3.5 w-3.5" />Cursos
+      </Link>
+      <PageHeader eyebrow="Curso" title={presentation.title} subtitle={presentation.provider} actions={<StudentHeaderActions />} />
+
+      <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+        <div className="min-w-0 space-y-4">
+          <div className={cardClass}>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className={cn(courseStatusClass(item.status))}>{item.status}</Badge>
+              {presentation.priority && <ChipTag className={coursePriorityClass(presentation.priority)}>{priorityText(presentation.priority)}</ChipTag>}
+              {canFavorite && (
+                <button
+                  type="button"
+                  className={cn("al-course-heart", item.is_favorite && "al-course-heart-active")}
+                  aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
+                  aria-pressed={!!item.is_favorite}
+                  onClick={() => toggleCourseFavoriteFor(item, actions)}
+                >
+                  <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Fechas</p>
+                <p className="text-[13px] font-semibold text-[#333029]">
+                  {presentation.startDate ? formatDateLabel(presentation.startDate) : "Sin fecha indicada"}
+                  {presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Ubicación</p>
+                <p className="text-[13px] font-semibold text-[#333029]">{presentation.location || "No especificada"}</p>
+              </div>
+              <div>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Modalidad</p>
+                <p className="text-[13px] font-semibold text-[#333029]">{presentation.modality || "No especificada"}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Descripción</p>
+              <p className="mt-1 whitespace-pre-wrap text-[13px] leading-6 text-[#4b4740]">{presentation.description || "Este curso todavía no tiene una descripción disponible."}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className={cardClass}>
+            <p className="text-sm font-bold text-[#111111]">Acciones</p>
+            <div className="flex flex-col gap-2">
+              {isSafeHttpUrl(presentation.sourceUrl) && (
+                <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-course-btn al-course-btn-primary justify-center">
+                  <ExternalLink className="h-3.5 w-3.5" />Abrir
+                </a>
+              )}
+              {!archived && (
+                <button type="button" className="al-course-btn justify-center" onClick={() => actions.completeCourse(item).catch(() => {})}>
+                  <CheckCircle2 className="h-3.5 w-3.5" />Terminado
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
@@ -3490,7 +3437,6 @@ function CompanyCard({ company, onToggleFavorite }: { company: Company; onToggle
 }
 
 
-const techCourseCategories = new Set(["curso"]);
 export function getDisplayCourses(courses: Course[], items: TechOpportunity[], fpItems: FpCatalogItem[] = []) {
   const seen = new Set(courses.map(courseIdentityKey));
   const fromTech = items
@@ -3519,83 +3465,6 @@ export function getDisplayHackathons(hackathons: Hackathon[], items: TechOpportu
     .filter((hackathon) => addUniqueIdentity(seen, hackathonIdentityKey(hackathon)));
 
   return [...fromTech, ...fromFp, ...hackathons].sort(sortHackathonsForDisplay);
-}
-
-function techOpportunityToCourse(item: TechOpportunity): Course {
-  return {
-    id: `tech-${item.id_slug}`,
-    id_slug: item.id_slug,
-    title: item.nombre,
-    platform: item.entidad ?? undefined,
-    url: item.fuente_url ?? undefined,
-    price: item.coste ?? undefined,
-    category: item.area_o_tipo ?? item.categoria ?? undefined,
-    start_at: item.fecha_inicio ?? "",
-    deadline_at: item.fecha_fin ?? "",
-    status: normalizeCourseStatus(item.estado),
-    entidad: item.entidad ?? undefined,
-    area: item.area_o_tipo ?? undefined,
-    modalidad: item.modalidad ?? undefined,
-    localidad: item.localidad ?? undefined,
-    provincia: item.provincia ?? undefined,
-    certificacion_tipo: item.certificacion_o_premio ?? undefined,
-    practicas_empresa: textLooksPositive(item.practicas_empresa),
-    horas_totales: item.horas_totales ?? undefined,
-    horas_practicas: item.horas_practicas ?? undefined,
-    fecha_inicio: item.fecha_inicio ?? undefined,
-    fecha_fin: item.fecha_fin ?? undefined,
-    estado: item.estado ?? undefined,
-    coste: item.coste ?? undefined,
-    requisitos_resumen: item.requisitos_resumen ?? undefined,
-    encaje_daw_1_5: item.encaje_daw_1_5 ?? undefined,
-    prioridad: item.prioridad ?? undefined,
-    tags: item.tags ?? undefined,
-    fuente_url: item.fuente_url ?? undefined,
-    ultima_revision: item.ultima_revision ?? undefined,
-    notes: [item.requisitos_resumen, item.notas].filter(Boolean).join("\n\n") || undefined,
-    sourceTable: "tech_opportunities",
-    created_at: item.created_at,
-  };
-}
-
-const fpCourseTypes = new Set(["curso_basico", "curso_complementario", "herramienta", "recurso", "evidencia_recomendada"]);
-
-function isFpCourseLike(item: FpCatalogItem) {
-  return fpCourseTypes.has(item.type);
-}
-
-function fpItemToCourse(item: FpCatalogItem): Course {
-  return {
-    id: `fp-${item.id_slug}`,
-    id_slug: item.id_slug,
-    title: item.title,
-    platform: item.entity ?? undefined,
-    url: item.source_url ?? undefined,
-    price: item.cost ?? undefined,
-    category: item.type,
-    start_at: item.start_date ?? "",
-    deadline_at: item.end_date ?? "",
-    status: fpUserStatusToCourseStatus(item.user_status) ?? normalizeCourseStatus(item.status),
-    entidad: item.entity ?? undefined,
-    area: item.type,
-    modalidad: item.delivery_mode ?? undefined,
-    localidad: item.location ?? undefined,
-    provincia: item.province ?? undefined,
-    certificacion_tipo: item.certification ?? undefined,
-    practicas_empresa: item.practices === "si",
-    fecha_inicio: item.start_date ?? undefined,
-    fecha_fin: item.end_date ?? undefined,
-    estado: item.status ?? undefined,
-    coste: item.cost ?? undefined,
-    requisitos_resumen: item.description ?? undefined,
-    prioridad: item.priority,
-    tags: item.tags ?? undefined,
-    fuente_url: item.source_url ?? undefined,
-    notes: fpItemNotes(item),
-    sourceTable: "fp_content_items",
-    is_favorite: item.is_favorite ?? false,
-    created_at: item.created_at,
-  };
 }
 
 function fpItemToCalendarEvents(item: FpCatalogItem): CalendarEvent[] {
@@ -3653,31 +3522,6 @@ function techCalendarType(item: TechOpportunity): CalendarEvent["type"] {
   if (isTechCourse(item)) return "course";
   if (isTechHackathonOrEvent(item)) return "hackathon";
   return "event";
-}
-
-function isTechCourse(item: TechOpportunity) {
-  const category = techCategory(item);
-  return techCourseCategories.has(category);
-}
-
-function normalizeCourseStatus(value?: string | null): Course["status"] {
-  const normalized = String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (normalized.includes("final") || normalized.includes("termin")) return "terminado";
-  if (normalized.includes("paus")) return "pausado";
-  if (normalized.includes("descart")) return "descartado";
-  if (normalized.includes("curso") || normalized.includes("abiert")) return "empezado";
-  return "pendiente";
-}
-
-// The per-user fp_user_content_state status (saved/started/completed/dismissed)
-// takes priority over the catalogue's own display status once the student has
-// actually interacted with the item - "saved" alone isn't a lifecycle verdict,
-// so it falls through to the catalogue status like an untouched item would.
-function fpUserStatusToCourseStatus(userStatus?: string | null): Course["status"] | undefined {
-  if (userStatus === "completed") return "terminado";
-  if (userStatus === "dismissed") return "descartado";
-  if (userStatus === "started") return "empezado";
-  return undefined;
 }
 
 function courseIdentityKey(course: Course) {
