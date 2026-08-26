@@ -29,6 +29,8 @@ test("the command protects state before applying pending migrations", async () =
   assert.ok(productionMigrationIndex > rehearsalIndex);
   assert.match(source, /al_lio_rehearsal_/);
   assert.match(source, /schema_migrations/);
+  assert.match(source, /migration_file_count="\$\(find "\$release_dir\/infra\/postgres\/migrations"/);
+  assert.match(source, /expected_migration_count="\$\(\(migration_file_count \+ 1\)\)"/, "the recorded 0001 baseline must be counted in addition to files from migrations/ (which start at 0002)");
 });
 
 test("the command replaces only web and preserves automatic recovery", async () => {

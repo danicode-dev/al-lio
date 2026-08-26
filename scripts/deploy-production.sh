@@ -426,7 +426,12 @@ if [[ "$migration_required" -eq 1 ]]; then
   "${compose[@]}" --profile ops run --rm -T -e DATABASE_MIGRATION_URL al_lio_migrator </dev/null
   unset DATABASE_MIGRATION_URL
 
-  expected_migration_count="$(find "$release_dir/infra/postgres/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d '[:space:]')"
+  # schema_migrations also contains the audited 0001 baseline represented by
+  # infra/postgres/schema.sql. The migrations/ directory intentionally starts
+  # at 0002, so comparing the table count to only the incremental files is
+  # always off by one as soon as a real pending migration is rehearsed.
+  migration_file_count="$(find "$release_dir/infra/postgres/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d '[:space:]')"
+  expected_migration_count="$((migration_file_count + 1))"
   rehearsal_migration_count="$(docker exec "$POSTGRES_CONTAINER" psql -U al_lio -d "$rehearsal_database" -Atc 'select count(*) from public.schema_migrations;')"
   [[ "$rehearsal_migration_count" == "$expected_migration_count" ]] || fail "Migration rehearsal ended with $rehearsal_migration_count/$expected_migration_count migrations."
   drop_rehearsal_database
