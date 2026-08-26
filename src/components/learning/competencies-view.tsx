@@ -19,7 +19,7 @@ export function CompetenciesView({
 
   return (
     <div className="space-y-7">
-      <div className="flex flex-col gap-5 border-b border-[#e8e2d7] pb-7 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-5 border-b border-[#e8e2d7] pb-7 md:flex-row md:items-start md:justify-between">
         <PageHeader
           className="mb-0"
           eyebrow={`Competencias · ${cycleName}`}

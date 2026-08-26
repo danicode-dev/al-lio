@@ -2171,6 +2171,15 @@ test("GoogleCalendarStatusControl's connected/disconnected/loading states are vi
   assert.doesNotMatch(fn, /hidden sm:inline/, "the status label must always be visible now that it lives in the calendar's own toolbar, not squeezed into a narrow global header");
 });
 
+test("Competencias' outer header wrapper (the only page that nests PageHeader inside an extra flex row, for the progress card) uses the same items-start anchor and the same md: breakpoint as PageHeader itself - a mismatched items-end/lg: on the outer wrapper is exactly the bug class already fixed once, just one nesting level up (owner-reported follow-up)", async () => {
+  const source = await readFile(new URL("../src/components/learning/competencies-view.tsx", import.meta.url), "utf8");
+  const wrapperStart = source.indexOf('<div className="flex flex-col gap-5 border-b');
+  const wrapperTag = source.slice(wrapperStart, source.indexOf(">", wrapperStart) + 1);
+  assert.match(wrapperTag, /md:flex-row/, "the outer wrapper must switch to a row at the same breakpoint PageHeader itself uses (md), not a wider one (lg), or the two disagree about layout mode between 768-1023px");
+  assert.match(wrapperTag, /md:items-start/, "the outer wrapper must anchor to the top, matching PageHeader's own items-start - an items-end here re-introduces the exact bug already fixed inside PageHeader, just one level up");
+  assert.doesNotMatch(wrapperTag, /items-end|lg:flex-row|lg:items/);
+});
+
 test("Guardados is a real heart-driven filter tab, independent of and additional to Activos/Archivados/Todos - not just the heart control on its own (issue #131)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const hackathonsFnStart = source.indexOf("function Hackathons(");
