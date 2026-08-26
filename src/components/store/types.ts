@@ -205,6 +205,7 @@ export type ReturnTypeActions = {
   completeCourse: (course: Course) => Promise<void>;
   addHackathon: (data: Omit<Hackathon, "id" | "created_at">) => Promise<void>;
   updateHackathon: (id: string, data: Partial<Hackathon>) => void;
+  toggleHackathonFavorite: (id: string) => void;
   completeHackathon: (item: Hackathon) => Promise<void>;
   addLink: (data: Omit<QuickLink, "id" | "created_at">) => void;
   toggleFpFavorite: (idSlug: string, nextValue: boolean) => void;

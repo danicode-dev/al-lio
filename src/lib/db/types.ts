@@ -355,6 +355,7 @@ export interface DbHackathon {
   url: string | null;
   notes: string | null;
   priority: string | null;
+  is_favorite: boolean;
   created_at: string;
   updated_at: string;
 }

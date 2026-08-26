@@ -2031,3 +2031,98 @@ test("Calendario, Noticias and Competencias each compose StudentHeaderActions in
   assert.match(noticias, /StudentHeaderActions/);
   assert.match(competencies, /StudentHeaderActions/);
 });
+
+test("The hackathon_favorites migration is additive only - a new column and index, no destructive DDL, and only ever mentions fp_user_content_state in an explanatory comment, never in DDL (issue #131)", async () => {
+  const source = await readFile(new URL("../infra/postgres/migrations/0007_hackathon_favorites.sql", import.meta.url), "utf8");
+  assert.match(source, /alter table public\.hackathons\s*\n\s*add column if not exists is_favorite boolean not null default false/);
+  assert.match(source, /create index if not exists hackathons_user_favorite_idx/);
+  assert.doesNotMatch(source, /\bdrop\s+(table|schema)|truncate\s+table/i);
+  const ddlLines = source.split(/\r?\n/).filter((line) => !line.trim().startsWith("--") && line.trim());
+  assert.ok(!ddlLines.some((line) => line.includes("fp_user_content_state")), "fp_user_content_state must only appear in comments explaining it's untouched, never in an actual DDL statement");
+});
+
+test("toggleHackathonFavorite is an atomic, user-scoped UPDATE - never touches status/lifecycle columns, and returns null (not a thrown error) for a row the caller doesn't own (issue #131)", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/hackathons.ts", import.meta.url), "utf8");
+  const fnSource = source.slice(source.indexOf("export async function toggleHackathonFavorite"));
+  assert.match(fnSource, /UPDATE public\.hackathons SET is_favorite = NOT is_favorite WHERE id = \$1 AND user_id = \$2/, "must be a single atomic flip, not a read-then-write, and must filter by user_id");
+  assert.doesNotMatch(fnSource, /\bstatus\b/, "toggling the heart must never touch the status/lifecycle column");
+  assert.match(fnSource, /rows\[0\]\?\.is_favorite \?\? null/);
+});
+
+test("toggleHackathonFavoriteAction is session-gated and redirects unauthenticated callers, matching the toggleCompanyFavoriteAction pattern it mirrors (issue #131)", async () => {
+  const source = await readFile(new URL("../src/lib/hackathons/actions.ts", import.meta.url), "utf8");
+  assert.match(source, /"use server"/);
+  assert.match(source, /const session = await getSession\(\);/);
+  assert.match(source, /if \(!session\) redirect\("\/login"\);/);
+  assert.match(source, /toggleHackathonFavorite\(session\.uid, hackathonId\)/, "must scope to session.uid, never a client-supplied user id");
+});
+
+test("The toggleHackathonFavorite store action applies an optimistic flip with rollback and an honest error toast on failure, mirroring toggleCompanyFavorite/toggleFpFavorite - not the unguarded fire-and-forget updateHackathon (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const start = source.indexOf("toggleHackathonFavorite: (id: string)");
+  const end = source.indexOf("updateHackathon: async (id: string, data: Partial<Hackathon>)");
+  assert.ok(start !== -1 && end !== -1 && end > start, "toggleHackathonFavorite must be defined as its own dedicated action, before updateHackathon");
+  const fn = source.slice(start, end);
+  assert.match(fn, /setStore\(/, "must apply an optimistic update");
+  assert.match(fn, /toggleHackathonFavoriteAction\(id\)\.then\(\(result\) => \{/);
+  assert.match(fn, /if \(!result\.error\) return;/);
+  assert.match(fn, /toast\.error\(/, "a failed save must surface an honest error toast");
+  const rollbackAssignments = fn.match(/is_favorite: !nextValue/g) ?? [];
+  assert.ok(rollbackAssignments.length >= 1, "the failure branch must flip is_favorite back, not leave the optimistic value stuck");
+});
+
+test("ReturnTypeActions declares toggleHackathonFavorite, so the store's action object type-checks against the shared interface (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/store/types.ts", import.meta.url), "utf8");
+  assert.match(source, /toggleHackathonFavorite: \(id: string\) => void;/);
+});
+
+test("The heart control appears in the card, the featured hero and the requirements modal, all driven by the same canToggleHackathonFavorite/toggleHackathonFavoriteFor helpers - so the three surfaces can never drift out of sync (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function canToggleHackathonFavorite\(item: Hackathon\): boolean/);
+  assert.match(source, /function toggleHackathonFavoriteFor\(item: Hackathon, actions: ReturnTypeActions\)/);
+
+  const heartSites = source.match(/onClick=\{\(\) => toggleHackathonFavoriteFor\(/g) ?? [];
+  assert.equal(heartSites.length, 3, "the card, the hero and the requirements modal must all call the same dispatcher - expected exactly 3 call sites");
+
+  assert.doesNotMatch(source, /import \{[^}]*\bBookmark\b/, "the retired Bookmark icon import must be gone, not left unused");
+  const heartIconUses = source.match(/<Heart className=/g) ?? [];
+  assert.ok(heartIconUses.length >= 4, "Heart is used by Trabajo's CompanyCard plus the 3 new hackathon surfaces");
+});
+
+test("Saving copy is consistent everywhere - Guardar / Guardado / Quitar de guardados - and the old ambiguous \"Guardar para despues\" wording from the requirements modal is gone (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /Guardar para despu[eé]s/, "the requirements modal's old inconsistent copy must not survive anywhere in the file");
+  assert.match(source, /"Quitar de guardados" : "Guardar"/, "the card's aria-label pattern (unsaved -> Guardar, saved -> Quitar de guardados)");
+  assert.match(source, /item\.is_favorite \? "Guardado" : "Guardar"/, "the modal's visible label pattern (unsaved -> Guardar, saved -> Guardado)");
+});
+
+test("tech_opportunities-sourced events are excluded from saving with a documented reason, not silently broken or given a non-functional heart (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const fnStart = source.indexOf("function canToggleHackathonFavorite");
+  const fnSource = source.slice(fnStart, source.indexOf("function toggleHackathonFavoriteFor"));
+  assert.match(fnSource, /sourceTable === "tech_opportunities"\) return false/);
+  const precedingComment = source.slice(Math.max(0, fnStart - 700), fnStart);
+  assert.match(precedingComment, /deliberately excluded/i, "the exclusion must be explained, not just present with no rationale");
+});
+
+test("Guardados is a real heart-driven filter tab, independent of and additional to Activos/Archivados/Todos - not just the heart control on its own (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const hackathonsFnStart = source.indexOf("function Hackathons(");
+  const hackathonsFnEnd = source.indexOf("function HackathonsEmptyState");
+  const fnSource = source.slice(hackathonsFnStart, hackathonsFnEnd);
+
+  assert.match(fnSource, /useState<"activos" \| "archivados" \| "guardados" \| "todos">/);
+  assert.match(fnSource, /const guardados = useMemo\(\(\) => sorted\.filter\(\(h\) => h\.is_favorite\), \[sorted\]\);/);
+  assert.match(fnSource, /viewTab === "guardados" \? guardados/);
+  assert.match(fnSource, /"guardados", `Guardados \$\{guardados\.length\}`/, "the tab must show a live heart count, matching the issue's explicit ask");
+});
+
+test("Toggling the heart is wired through a distinct action from completion/status changes - completeHackathon and the Realizado button never touch is_favorite (issue #131)", async () => {
+  const source = await readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const completeFnStart = source.indexOf("completeHackathon: async (item: Hackathon)");
+  const completeFnEnd = source.indexOf("addLink:", completeFnStart);
+  assert.ok(completeFnStart !== -1 && completeFnEnd > completeFnStart);
+  const completeFn = source.slice(completeFnStart, completeFnEnd);
+  assert.doesNotMatch(completeFn, /is_favorite/, "completing/archiving an event must never read or write is_favorite - the two concepts stay independent");
+});

@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { toast } from "sonner";
 
 import { toggleCompanyFavoriteAction } from "@/lib/companies/actions";
+import { toggleHackathonFavoriteAction } from "@/lib/hackathons/actions";
 import { deleteDb, insertDb, updateDb } from "@/lib/db";
 import { markCompetencyCompletedAction } from "@/lib/fp/competency-actions";
 import { markResourceStatusAction, toggleFavoriteAction } from "@/lib/fp/resource-notes-actions";
@@ -323,6 +324,27 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
         toast.error("Error al añadir el evento o reto");
         throw error;
       }
+    },
+    // Dedicated action (not the generic updateHackathon below) so a failed
+    // write always rolls back the optimistic flip and surfaces an honest
+    // error toast - updateHackathon is fire-and-forget with no rollback,
+    // which is fine for its current callers but not for a Saved toggle a
+    // student expects to be trustworthy (issue #131).
+    toggleHackathonFavorite: (id: string) => {
+      const current = store.hackathons.find((hackathon) => hackathon.id === id);
+      const nextValue = !current?.is_favorite;
+      setStore((current) => ({
+        ...current,
+        hackathons: current.hackathons.map((hackathon) => hackathon.id === id ? { ...hackathon, is_favorite: nextValue } : hackathon),
+      }));
+      void toggleHackathonFavoriteAction(id).then((result) => {
+        if (!result.error) return;
+        setStore((current) => ({
+          ...current,
+          hackathons: current.hackathons.map((hackathon) => hackathon.id === id ? { ...hackathon, is_favorite: !nextValue } : hackathon),
+        }));
+        toast.error("No se pudo guardar el evento o reto");
+      });
     },
     updateHackathon: async (id: string, data: Partial<Hackathon>) => {
       setStore((current) => ({ ...current, hackathons: patchById(current.hackathons, id, data) }));

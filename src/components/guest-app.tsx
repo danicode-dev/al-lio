@@ -6,7 +6,6 @@ import React, { memo, useCallback, useEffect, useId, useMemo, useRef, useState }
 import { createPortal } from "react-dom";
 import {
   AlarmClock,
-  Bookmark,
   BookOpen,
   Building2,
   CalendarDays,
@@ -2502,6 +2501,25 @@ function CourseDetailModal({
   );
 }
 
+// tech_opportunities-sourced events are deliberately excluded (issue #131) -
+// that shared catalogue has no per-user favorites table (see the migration
+// notes in 0007_hackathon_favorites.sql); everything else - fp_content_items
+// and the student's own hackathons rows (sourceTable is undefined for those,
+// since addHackathon never sets it) - can be saved.
+function canToggleHackathonFavorite(item: Hackathon): boolean {
+  if (item.sourceTable === "tech_opportunities") return false;
+  if (item.sourceTable === "fp_content_items") return !!item.id_slug;
+  return true;
+}
+
+function toggleHackathonFavoriteFor(item: Hackathon, actions: ReturnTypeActions) {
+  if (item.sourceTable === "fp_content_items") {
+    actions.toggleFpFavorite(item.id_slug!, !item.is_favorite);
+  } else {
+    actions.toggleHackathonFavorite(item.id);
+  }
+}
+
 function hackathonPublicDescription(item: Hackathon) {
   if (item.description) return item.description;
   return item.sourceTable === "fp_content_items" ? undefined : item.notes;
@@ -2513,7 +2531,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     [store.hackathons, store.techOpportunities, store.fpContent]
   );
 
-  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "todos">("activos");
+  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "guardados" | "todos">("activos");
   const [showFilters, setShowFilters] = useState(false);
   const [monthFilter, setMonthFilter] = useState("");
   const [dayFilter, setDayFilter] = useState("");
@@ -2556,9 +2574,14 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
 
   const archivados = useMemo(() => sorted.filter(isHackathonArchived), [sorted]);
   const activos = useMemo(() => sorted.filter((h) => !isHackathonArchived(h) && !isHackathonPast(h)), [sorted]);
+  // Guardados (issue #131): a heart-driven filter, independent of the
+  // Activos/Archivados lifecycle split above - saving an event never moves
+  // it between those tabs, so the same event can appear in both Guardados
+  // and whichever lifecycle tab it already belongs to.
+  const guardados = useMemo(() => sorted.filter((h) => h.is_favorite), [sorted]);
   const tabBase = useMemo(
-    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : sorted,
-    [viewTab, activos, archivados, sorted]
+    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : viewTab === "guardados" ? guardados : sorted,
+    [viewTab, activos, archivados, guardados, sorted]
   );
 
   const monthGroups = useMemo(() => {
@@ -2686,8 +2709,10 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
         .al-hack-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; }
         .al-hack-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; }
-        .al-hack-bookmark { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
-        .al-hack-bookmark.al-hack-bookmark-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
+        .al-hack-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .al-hack-heart.al-hack-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
+        .al-hack-hero-heart { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+        .al-hack-hero-heart.al-hack-hero-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
         .al-hack-card-meta { font-size: 11px; color: #6b6f72; }
         .al-hack-card-desc { font-size: 11.5px; color: #4b4740; line-height: 1.4; }
         .al-hack-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
@@ -2710,8 +2735,9 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             <Input placeholder="Buscar nombre, organizador, tema, aptitud..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           </div>
           <div className="al-hack-tabs">
-            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
+            {([["activos", `Activos ${activos.length}`], ["archivados", `Archivados ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
               <button key={id} type="button" className={cn("al-hack-tab", viewTab === id && "al-hack-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
+                {id === "guardados" && <Heart className="mr-1 inline h-3 w-3 align-[-1px]" fill={viewTab === "guardados" ? "currentColor" : "none"} />}
                 {label}
               </button>
             ))}
@@ -2749,7 +2775,20 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             {featuredHackathon ? (
               <div className="al-hack-hero">
                 <div className="al-hack-hero-main">
-                  <span className="al-hack-hero-kicker">Próximo evento o reto</span>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="al-hack-hero-kicker">Próximo evento o reto</span>
+                    {canToggleHackathonFavorite(featuredHackathon) && (
+                      <button
+                        type="button"
+                        className={cn("al-hack-hero-heart", featuredHackathon.is_favorite && "al-hack-hero-heart-active")}
+                        aria-label={featuredHackathon.is_favorite ? "Quitar de guardados" : "Guardar"}
+                        aria-pressed={!!featuredHackathon.is_favorite}
+                        onClick={() => toggleHackathonFavoriteFor(featuredHackathon, actions)}
+                      >
+                        <Heart className="h-4 w-4" fill={featuredHackathon.is_favorite ? "currentColor" : "none"} />
+                      </button>
+                    )}
+                  </div>
                   <p className="al-hack-hero-title">{featuredHackathon.name}</p>
                   {featuredHackathon.organizer && <p className="al-hack-hero-org">{featuredHackathon.organizer}</p>}
                   {(featuredHackathon.start_at || featuredHackathon.end_at) && (
@@ -2810,7 +2849,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
                   const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
                   const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
-                  const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
+                  const canFavorite = canToggleHackathonFavorite(item);
                   const description = hackathonPublicDescription(item);
                   return (
                     <div key={item.id} className="al-hack-card">
@@ -2829,11 +2868,12 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                           {canFavorite && (
                             <button
                               type="button"
-                              className={cn("al-hack-bookmark", item.is_favorite && "al-hack-bookmark-active")}
+                              className={cn("al-hack-heart", item.is_favorite && "al-hack-heart-active")}
                               aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
-                              onClick={() => actions.toggleFpFavorite(item.id_slug!, !item.is_favorite)}
+                              aria-pressed={!!item.is_favorite}
+                              onClick={() => toggleHackathonFavoriteFor(item, actions)}
                             >
-                              <Bookmark className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+                              <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
                             </button>
                           )}
                         </div>
@@ -3059,7 +3099,7 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
 
   if (!mounted || !item) return null;
 
-  const canFavorite = item.sourceTable === "fp_content_items" && !!item.id_slug;
+  const canFavorite = canToggleHackathonFavorite(item);
   const safeIndex = steps.length > 0 ? Math.min(stepIndex, steps.length - 1) : 0;
   const currentStep = steps[safeIndex] ?? null;
   const isLastStep = !currentStep || safeIndex === steps.length - 1;
@@ -3175,9 +3215,14 @@ function HackathonRequirementsModal({ item, actions, onClose }: { item: Hackatho
         <div className="al-modal-footer">
           <div className="al-modal-footer-row">
             {canFavorite && (
-              <button type="button" className="al-modal-btn-secondary" onClick={() => actions.toggleFpFavorite(item.id_slug!, !item.is_favorite)}>
-                <Bookmark className="h-4 w-4" fill={item.is_favorite ? "currentColor" : "none"} />
-                {item.is_favorite ? "Guardado" : "Guardar para después"}
+              <button
+                type="button"
+                className="al-modal-btn-secondary"
+                aria-pressed={!!item.is_favorite}
+                onClick={() => toggleHackathonFavoriteFor(item, actions)}
+              >
+                <Heart className="h-4 w-4" fill={item.is_favorite ? "currentColor" : "none"} />
+                {item.is_favorite ? "Guardado" : "Guardar"}
               </button>
             )}
             <button type="button" className="al-modal-btn-primary" onClick={continueOrClose}>
