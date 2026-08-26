@@ -1966,6 +1966,13 @@ test("PageHeader renders exactly one h1 with eyebrow/title/subtitle/actions slot
   assert.doesNotMatch(source, /font-barlow/, "product headings use Inter (the default body font), not the display font");
 });
 
+test("PageHeader anchors its actions slot to the top of the text block (items-start), not its bottom - items-end tied the actions' position to subtitle length/wrapping, which differs per page and made the same icon cluster land at a different height on every route (issue #129 follow-up)", async () => {
+  const source = await readFile(new URL("../src/components/page-header.tsx", import.meta.url), "utf8");
+  assert.match(source, /md:items-start/);
+  assert.doesNotMatch(source, /md:items-end|md:items-center/, "the actions slot must anchor to the eyebrow line - the one element whose size never varies by page - not to a page-dependent midpoint or bottom");
+  assert.match(source, /flex shrink-0 flex-wrap items-center gap-2/, "the actions cluster must never be compressed by a long title/subtitle next to it");
+});
+
 test("The shared page-header tokens in globals.css style the eyebrow/title/subtitle with Inter (the default body font), not --font-barlow (issue #129)", async () => {
   const source = await readFile(new URL("../src/app/globals.css", import.meta.url), "utf8");
   assert.match(source, /\.al-page-header-title \{[^}]*color: #111111/, "the title must be black, matching the Tareas/Competencias reference");
