@@ -68,7 +68,7 @@ check("Google identity callback no usa Supabase", !googleIdentityCallback.includ
 console.log("\nGoogle Calendar callback (consent only)");
 const googleCalendarCallback = read("src/app/api/google/calendar/callback/route.ts");
 check("Google Calendar callback existe", existsSync(join(root, "src/app/api/google/calendar/callback/route.ts")));
-check("Google Calendar callback exige sesion existente", googleCalendarCallback.includes("getSession"));
+check("Google Calendar callback exige sesion validada contra PostgreSQL", googleCalendarCallback.includes("getValidatedSession"));
 check("Google Calendar callback ya no crea el usuario", !googleCalendarCallback.includes("ensureUserByEmail"));
 check("Google Calendar callback ya no crea sesion", !googleCalendarCallback.includes("createSession"));
 check("Google Calendar callback no usa Supabase", !googleCalendarCallback.includes("@supabase") && !googleCalendarCallback.includes("supabase/"));
