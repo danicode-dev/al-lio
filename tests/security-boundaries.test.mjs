@@ -3085,6 +3085,12 @@ test("resolveOrProvisionGoogleUser links a verified Google identity to an existi
   assert.match(source, /await linkExternalIdentity\(\{/);
 });
 
+test("Owner-reported follow-up (caught live): resolveOrProvisionGoogleUser confirms the email on every path, not just fresh creation - linking to a password account that registered but never confirmed must not leave it permanently unable to log in with its own password (issue #132)", async () => {
+  const source = await readFile(new URL("../src/lib/auth/google-signin.ts", import.meta.url), "utf8");
+  const confirmCalls = source.match(/await confirmUserEmail\(user\.id\);/g) ?? [];
+  assert.equal(confirmCalls.length, 2, "both the already-linked fast path and the resolve-or-create path must confirm - a password account that registered but never confirmed, then signed in with Google, was left permanently unable to log in with its own password otherwise");
+});
+
 test("GoogleLoginButton on the login page points at the new minimal-scope identity route, not the Calendar OAuth route (issue #132)", async () => {
   const source = await readFile(new URL("../src/components/auth/google-login-button.tsx", import.meta.url), "utf8");
   assert.match(source, /href="\/api\/auth\/google\/start\?next=\/dashboard"/);
