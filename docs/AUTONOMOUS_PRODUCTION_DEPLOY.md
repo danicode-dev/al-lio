@@ -1,5 +1,11 @@
 # Autonomous production deployment
 
+> **Manual fallback:** routine releases are normally started by GitHub after a
+> successful post-merge CI run. See
+> [`GITHUB_PRODUCTION_DEPLOY.md`](GITHUB_PRODUCTION_DEPLOY.md). Use this guide
+> when automatic deployment is disabled or a transient GitHub/SSH failure needs
+> an operator retry.
+
 Esta guía permite al propietario revisar una versión en local, fusionarla en
 GitHub y desplegarla personalmente en el VPS con una sola orden. El script no
 sustituye la revisión funcional: automatiza la parte operativa repetitiva y
@@ -139,14 +145,16 @@ situaciones:
 - algún contenedor obligatorio ya estaba enfermo antes de empezar;
 - se modificó una migración existente;
 - una migración nueva contiene DDL destructivo;
-- cambiaron `Dockerfile`, Docker Compose o un catálogo con importación
-  operativa propia;
+- cambió `Dockerfile`, un catálogo con importación operativa propia o cualquier
+  parte de Docker Compose distinta de una adición expresamente permitida al
+  entorno de `al_lio_web`;
 - la configuración, build, backup, restauración o migración falla;
 - el contenedor nuevo no supera health/readiness;
 - PostgreSQL o Radar cambian de identidad inesperadamente.
 
-Cuando cambian Docker/Compose, un catálogo operado mediante importador, Radar o
-una migración no aditiva, utiliza el procedimiento completo de
+Cuando cambia Docker, Docker Compose fuera de esa lista mínima, un catálogo
+operado mediante importador, Radar o una migración no aditiva, utiliza el
+procedimiento completo de
 [`DEPLOY_VPS.md`](DEPLOY_VPS.md). Esos casos no son una release web rutinaria.
 
 ## Failure and rollback
