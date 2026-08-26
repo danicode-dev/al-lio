@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth/session";
+import { getValidatedSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import {
   addLearningNoteToBloc,
@@ -33,7 +33,7 @@ export async function saveLearningProgressAction(
   durationSeconds: number | null,
   status: FpLearningStatus = "started",
 ): Promise<{ error: string | null; positionSeconds: number | null; status: FpLearningStatus | null }> {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) redirect("/login");
 
   const safePosition = normalizeSeconds(positionSeconds);
@@ -71,7 +71,7 @@ export async function addLearningNoteAction(
   timestampSeconds: number,
   body: string,
 ): Promise<{ error: string | null; note: DbFpLearningNote | null }> {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) redirect("/login");
 
   const safeTimestamp = normalizeSeconds(timestampSeconds);

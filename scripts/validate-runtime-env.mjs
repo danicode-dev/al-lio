@@ -40,6 +40,23 @@ if (process.env.GOOGLE_TOKEN_ENCRYPTION_KEY && process.env.GOOGLE_TOKEN_ENCRYPTI
   errors.push("GOOGLE_TOKEN_ENCRYPTION_KEY debe tener al menos 32 caracteres");
 }
 
+const googleIdentityRedirect = parseUrl("GOOGLE_IDENTITY_REDIRECT_URI", production);
+if (googleIdentityRedirect && baseUrl && googleIdentityRedirect.origin !== baseUrl.origin) {
+  errors.push("GOOGLE_IDENTITY_REDIRECT_URI debe compartir origen con BASE_URL");
+}
+if (googleIdentityRedirect && !googleIdentityRedirect.pathname.endsWith("/api/auth/google/callback")) {
+  errors.push("GOOGLE_IDENTITY_REDIRECT_URI debe terminar en /api/auth/google/callback");
+}
+
+const resendValues = [process.env.RESEND_API_KEY, process.env.RESEND_FROM_EMAIL];
+const configuredResendValues = resendValues.filter((value) => Boolean(value?.trim())).length;
+if (configuredResendValues !== 0 && configuredResendValues !== resendValues.length) {
+  errors.push("RESEND_API_KEY y RESEND_FROM_EMAIL deben configurarse juntas");
+}
+if (production && configuredResendValues !== resendValues.length) {
+  errors.push("El envío de correo transaccional (Resend) debe estar configurado en producción");
+}
+
 const demoFlag = process.env.AL_LIO_DEMO_ACCESS_ENABLED?.trim().toLowerCase();
 if (demoFlag && demoFlag !== "true" && demoFlag !== "false") {
   errors.push("AL_LIO_DEMO_ACCESS_ENABLED debe ser true o false");

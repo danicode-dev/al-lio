@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth/session";
+import { getValidatedSession } from "@/lib/auth/session";
 import { getFpContentItemBySlugForCycle, upsertFpUserContentState } from "@/lib/db/repositories/fp_catalog";
 import { addResourceNote } from "@/lib/db/repositories/fp_resource_notes";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
@@ -21,7 +21,7 @@ export async function addResourceNoteAction(
   timestampSeconds: number,
   body: string
 ): Promise<{ error: string | null; note: DbFpResourceNote | null }> {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) redirect("/login");
 
   const trimmedBody = body.trim();
@@ -46,7 +46,7 @@ export async function toggleFavoriteAction(
   idSlug: string,
   isFavorite: boolean
 ): Promise<{ error: string | null }> {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) redirect("/login");
 
   const item = await getAuthorizedResource(session.uid, idSlug);
@@ -64,7 +64,7 @@ export async function markResourceStatusAction(
   idSlug: string,
   status: DbFpUserContentState["status"]
 ): Promise<{ error: string | null; status: DbFpUserContentState["status"] | null }> {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) redirect("/login");
 
   if (!CONTENT_STATUSES.has(status)) {

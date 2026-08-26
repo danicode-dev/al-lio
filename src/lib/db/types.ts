@@ -41,8 +41,31 @@ export interface DbUser {
   password_hash: string | null;
   display_name: string | null;
   role: string;
+  email_confirmed_at: string | null;
+  security_stamp: string;
   created_at: string;
   updated_at: string;
+}
+
+export type AuthTokenPurpose = "email_confirm" | "password_reset";
+
+export interface DbAuthToken {
+  id: string;
+  user_id: string;
+  purpose: AuthTokenPurpose;
+  token_hash: string;
+  expires_at: string;
+  used_at: string | null;
+  created_at: string;
+}
+
+export interface DbExternalIdentity {
+  id: string;
+  user_id: string;
+  provider: "google";
+  provider_user_id: string;
+  email: string;
+  created_at: string;
 }
 
 export type FpCycleCode = "DAW" | "DAM" | "AF" | "TSAF" | "MP";

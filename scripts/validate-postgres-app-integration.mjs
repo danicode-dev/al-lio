@@ -54,15 +54,24 @@ check("getCurrentUserId exportado", cu.includes("export async function getCurren
 check("tryGetCurrentUserId exportado", cu.includes("export async function tryGetCurrentUserId"));
 check("server-only importado", cu.includes("server-only"));
 
-// Google OAuth callback creates the PostgreSQL user.
+// Issue #132: identity (login) and Calendar consent are separate trust
+// boundaries. Only the identity callback may create a PostgreSQL user or a
+// session; the Calendar callback must require one to already exist.
 
-console.log("\nGoogle OAuth callback");
-const googleCallback = read("src/app/api/google/calendar/callback/route.ts");
-check("Google callback existe", existsSync(join(root, "src/app/api/google/calendar/callback/route.ts")));
-check("Google callback usa ensureUserByEmail", googleCallback.includes("ensureUserByEmail"));
-check("Google callback usa upsertProfile", googleCallback.includes("upsertProfile"));
-check("Google callback crea sesion propia", googleCallback.includes("createSession"));
-check("Google callback no usa Supabase", !googleCallback.includes("@supabase") && !googleCallback.includes("supabase/"));
+console.log("\nGoogle identity callback (login)");
+const googleIdentityCallback = read("src/app/api/auth/google/callback/route.ts");
+check("Google identity callback existe", existsSync(join(root, "src/app/api/auth/google/callback/route.ts")));
+check("Google identity callback resuelve/crea el usuario", googleIdentityCallback.includes("resolveOrProvisionGoogleUser"));
+check("Google identity callback crea sesion propia", googleIdentityCallback.includes("createSession"));
+check("Google identity callback no usa Supabase", !googleIdentityCallback.includes("@supabase") && !googleIdentityCallback.includes("supabase/"));
+
+console.log("\nGoogle Calendar callback (consent only)");
+const googleCalendarCallback = read("src/app/api/google/calendar/callback/route.ts");
+check("Google Calendar callback existe", existsSync(join(root, "src/app/api/google/calendar/callback/route.ts")));
+check("Google Calendar callback exige sesion validada contra PostgreSQL", googleCalendarCallback.includes("getValidatedSession"));
+check("Google Calendar callback ya no crea el usuario", !googleCalendarCallback.includes("ensureUserByEmail"));
+check("Google Calendar callback ya no crea sesion", !googleCalendarCallback.includes("createSession"));
+check("Google Calendar callback no usa Supabase", !googleCalendarCallback.includes("@supabase") && !googleCalendarCallback.includes("supabase/"));
 
 // ── lib/data.ts usa PostgreSQL ────────────────────────────────────────────────
 

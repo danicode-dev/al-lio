@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getSession } from "@/lib/auth/session";
+import { getValidatedSession } from "@/lib/auth/session";
 import { upsertProfile } from "@/lib/db/repositories/profiles";
 import { CYCLE_CODES, ONBOARDING_INTEREST_OPTIONS, cycleGroupForCode } from "@/lib/profile/onboarding-options";
 import type { FpAcademicYear } from "@/lib/db/types";
@@ -22,7 +22,7 @@ export async function completeOnboardingAction(
   _previousState: OnboardingState,
   formData: FormData
 ): Promise<OnboardingState> {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) redirect("/login");
 
   const parsed = onboardingSchema.safeParse({
@@ -62,7 +62,7 @@ export async function updateProfileAction(
   previousState: ProfileUpdateState,
   formData: FormData
 ): Promise<ProfileUpdateState> {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) redirect("/login");
 
   const parsed = onboardingSchema.safeParse({

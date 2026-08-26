@@ -1,6 +1,6 @@
 "use server";
 
-import { getSession } from "@/lib/auth/session";
+import { getValidatedSession } from "@/lib/auth/session";
 import { createQuickSearch, deleteQuickSearch, getQuickSearchesByUser } from "@/lib/db/repositories/quick_searches";
 import { buildJobSearchUrl } from "@/lib/deeplinks/job-search-urls";
 
@@ -11,7 +11,7 @@ export type SavedQuickSearch = { platform: string; keyword: string; location: st
 // unauthenticated caller to the login screen, since they run from a
 // useEffect/onClick, not a form submission.
 export async function getQuickSearchesAction(): Promise<SavedQuickSearch[]> {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) return [];
 
   try {
@@ -29,7 +29,7 @@ export async function saveQuickSearchAction(
   keyword: string,
   location: string
 ): Promise<{ error: string | null }> {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) return { error: "not_authenticated" };
 
   const cleanKeyword = keyword.trim();

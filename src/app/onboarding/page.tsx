@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth/session";
+import { getValidatedSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import { getActiveFpCycles } from "@/lib/db/repositories/fp_catalog";
 import { OnboardingForm } from "@/components/onboarding/onboarding-form";
@@ -7,7 +7,7 @@ import { OnboardingForm } from "@/components/onboarding/onboarding-form";
 export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) redirect("/login");
 
   const [cycles, profile] = await Promise.all([

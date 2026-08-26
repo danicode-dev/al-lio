@@ -38,6 +38,24 @@ export const getGlobalStore = cache(async () => {
     getProfileByUser(userId),
     getUserById(userId),
   ]);
+
+  // Real session revocation (issue #132): the signed cookie is otherwise
+  // stateless and stays cryptographically valid until it expires, so a
+  // password reset can only take effect by comparing the stamp it was
+  // issued with against the user's current one, here, where a database
+  // round trip for this exact row is already in flight. A mismatch (or a
+  // deleted user) means the session was revoked - treat it as logged out.
+  // Routed through /api/auth/logout-stale rather than clearing the cookie
+  // here directly: this runs inside a Server Component's render, and
+  // Next.js only allows cookie mutation from a Server Action or Route
+  // Handler (caught live - see the commit message). redirect() alone here
+  // would leave the stale-but-signature-valid cookie in place, which
+  // middleware (no database access, so it can't see the mismatch) would
+  // bounce straight back to /dashboard - an infinite loop.
+  if (!pgUser || pgUser.security_stamp !== session.sv) {
+    redirect("/api/auth/logout-stale");
+  }
+
   if (!profile || !profile.onboarding_completed_at) redirect("/onboarding");
 
   const issues: StoreLoadSection[] = [];

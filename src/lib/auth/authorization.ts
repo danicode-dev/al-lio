@@ -2,11 +2,11 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 
-import { getSession } from "@/lib/auth/session";
+import { getValidatedSession } from "@/lib/auth/session";
 import { getUserById } from "@/lib/db/repositories/users";
 
 export async function getCurrentUser() {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) return null;
   return getUserById(session.uid);
 }

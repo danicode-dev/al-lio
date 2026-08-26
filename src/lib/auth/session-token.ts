@@ -2,6 +2,14 @@ export type SessionPayload = {
   uid: string;
   email: string;
   name?: string;
+  // security_stamp at issuance time. Compared against the user's current
+  // stamp wherever a session is resolved with a database round trip
+  // already in flight (getGlobalStore) - a mismatch means the session was
+  // revoked (e.g. a password reset) and must be treated as logged out,
+  // even though the signature itself still verifies. Middleware's Edge
+  // runtime has no database access, so it intentionally checks only the
+  // signature - see 0009_production_authentication.sql.
+  sv: string;
   exp: number;
 };
 
@@ -68,7 +76,7 @@ export async function verifySessionToken(token: string | undefined | null): Prom
     if (!valid) return null;
 
     const payload = JSON.parse(new TextDecoder().decode(fromBase64Url(parts[0]))) as SessionPayload;
-    if (!payload.uid || !payload.email) return null;
+    if (!payload.uid || !payload.email || !payload.sv) return null;
     if (typeof payload.exp !== "number" || payload.exp * 1000 < Date.now()) return null;
     return payload;
   } catch {

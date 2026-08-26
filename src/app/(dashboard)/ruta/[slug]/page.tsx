@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { getSession } from "@/lib/auth/session";
+import { getValidatedSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import { getActiveVideoResourcesForCompetency, getFpContentItemBySlugForCycle, getRequiredCompetenciesForItems } from "@/lib/db/repositories/fp_catalog";
 import { getInternalLearningTargetsForVideoUrls } from "@/lib/db/repositories/learning";
@@ -18,7 +18,7 @@ export default async function LegacyRutaRedirectPage({
 }) {
   const { slug } = await params;
   const { paso } = await searchParams;
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) redirect("/login");
 
   const profile = await getProfileByUser(session.uid);

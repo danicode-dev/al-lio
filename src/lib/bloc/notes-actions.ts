@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth/session";
+import { getValidatedSession } from "@/lib/auth/session";
 import { getBlocNotesByUser, countBlocNotesByUser, insertBlocNotesBatch, type BlocNoteSeed } from "@/lib/db/repositories/bloc_notes";
 import type { DbBlocNote } from "@/lib/db/types";
 import { toIsoTimestamp } from "@/lib/bloc/timestamps";
@@ -46,7 +46,7 @@ function splitRows(rows: DbBlocNote[]): { notes: BlocNoteDTO[]; trashedNotes: Bl
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function fetchBlocNotes(): Promise<{ notes: BlocNoteDTO[]; trashedNotes: BlocTrashedNoteDTO[]; migrated: boolean }> {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) redirect("/login");
 
   const rows = await getBlocNotesByUser(session.uid);
@@ -58,7 +58,7 @@ export async function migrateLocalBlocNotes(
   localNotes: Array<{ id: string; title: string; contentHtml: string; contentText: string; favorite: boolean; created_at: string; updated_at: string }>,
   localTrashed: Array<{ id: string; title: string; contentHtml: string; contentText: string; favorite: boolean; created_at: string; updated_at: string; deleted_at: string }>
 ): Promise<{ notes: BlocNoteDTO[]; trashedNotes: BlocTrashedNoteDTO[]; migrated: boolean }> {
-  const session = await getSession();
+  const session = await getValidatedSession();
   if (!session) redirect("/login");
 
   const existing = await countBlocNotesByUser(session.uid);
