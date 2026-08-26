@@ -145,14 +145,16 @@ situaciones:
 - algún contenedor obligatorio ya estaba enfermo antes de empezar;
 - se modificó una migración existente;
 - una migración nueva contiene DDL destructivo;
-- cambiaron `Dockerfile`, Docker Compose o un catálogo con importación
-  operativa propia;
+- cambió `Dockerfile`, un catálogo con importación operativa propia o cualquier
+  parte de Docker Compose distinta de una adición expresamente permitida al
+  entorno de `al_lio_web`;
 - la configuración, build, backup, restauración o migración falla;
 - el contenedor nuevo no supera health/readiness;
 - PostgreSQL o Radar cambian de identidad inesperadamente.
 
-Cuando cambian Docker/Compose, un catálogo operado mediante importador, Radar o
-una migración no aditiva, utiliza el procedimiento completo de
+Cuando cambia Docker, Docker Compose fuera de esa lista mínima, un catálogo
+operado mediante importador, Radar o una migración no aditiva, utiliza el
+procedimiento completo de
 [`DEPLOY_VPS.md`](DEPLOY_VPS.md). Esos casos no son una release web rutinaria.
 
 ## Failure and rollback

@@ -43,6 +43,8 @@ check("deploy script rehearses migrations in an isolated database", deployScript
 check("deploy script replaces only the web service", deployScript.includes("up -d --no-deps al_lio_web"));
 check("deploy script has an automatic web rollback", deployScript.includes("rollback_web"));
 check("deploy script never removes Compose volumes", !deployScript.includes("down -v") && !deployScript.includes("docker volume rm"));
+check("deploy script narrowly allowlists additive auth web environment mappings", deployScript.includes("validate_compose_web_env_additions") && deployScript.includes("GOOGLE_IDENTITY_REDIRECT_URI") && deployScript.includes("RESEND_API_KEY") && deployScript.includes("RESEND_FROM_EMAIL"));
+check("deploy script rejects every other Compose edit", deployScript.includes("Docker Compose changed outside the allowlisted web environment passthroughs"));
 
 console.log("\n-- .github/workflows/deploy-production.yml --");
 const deployWorkflow = read(".github/workflows/deploy-production.yml");

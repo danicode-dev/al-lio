@@ -29,6 +29,7 @@ postgres_backup_file=""
 radar_backup_file=""
 radar_stopped=0
 web_replacement_started=0
+allowed_compose_env_keys=()
 
 usage() {
   cat <<'EOF'
@@ -97,6 +98,50 @@ write_env_value() {
 
   chmod 600 "$temp_file"
   mv -- "$temp_file" "$env_file"
+}
+
+validate_compose_web_env_additions() {
+  local change_lines=""
+  local line=""
+  local key=""
+  local target_web_environment=""
+  local expected_line=""
+  local match_count=0
+
+  change_lines="$(
+    git -C "$repository_dir" diff --no-ext-diff --unified=0 "$current_sha" "$release_sha" -- "$COMPOSE_FILE" |
+      awk '!/^--- / && !/^\+\+\+ / && /^[+-]/ { print }'
+  )"
+  [[ -n "$change_lines" ]] || return 1
+
+  while IFS= read -r line; do
+    case "$line" in
+      '+      GOOGLE_IDENTITY_REDIRECT_URI: ${GOOGLE_IDENTITY_REDIRECT_URI:-}') key="GOOGLE_IDENTITY_REDIRECT_URI" ;;
+      '+      RESEND_API_KEY: ${RESEND_API_KEY:-}') key="RESEND_API_KEY" ;;
+      '+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}') key="RESEND_FROM_EMAIL" ;;
+      *) return 1 ;;
+    esac
+
+    [[ ! " ${allowed_compose_env_keys[*]} " =~ [[:space:]]${key}[[:space:]] ]] || return 1
+    allowed_compose_env_keys+=("$key")
+  done <<< "$change_lines"
+
+  target_web_environment="$(
+    git -C "$repository_dir" show "$release_sha:$COMPOSE_FILE" |
+      awk '
+        /^  al_lio_web:$/ { in_web = 1; next }
+        in_web && /^  [^ ]/ { in_web = 0; in_environment = 0 }
+        in_web && /^    environment:$/ { in_environment = 1; next }
+        in_web && in_environment && /^    [^ ]/ { in_environment = 0 }
+        in_web && in_environment { print }
+      '
+  )"
+
+  for key in "${allowed_compose_env_keys[@]}"; do
+    expected_line="      ${key}: \${${key}:-}"
+    match_count="$(grep -Fxc -- "$expected_line" <<< "$target_web_environment" || true)"
+    [[ "$match_count" -eq 1 ]] || return 1
+  done
 }
 
 container_status() {
@@ -264,10 +309,15 @@ if [[ "$release_sha" == "$current_sha" ]]; then
 fi
 
 blocked_runtime_changes="$(git -C "$repository_dir" diff --name-only "$current_sha" "$release_sha" -- \
-  infra/docker-compose.prod.yml infra/Dockerfile data/learning-competencies.json scripts/import-learning-competencies.mjs)"
+  infra/Dockerfile data/learning-competencies.json scripts/import-learning-competencies.mjs)"
 if [[ -n "$blocked_runtime_changes" ]]; then
   printf '%s\n' "$blocked_runtime_changes" >&2
   fail "This release changes infrastructure or an operator-managed catalogue. Follow docs/DEPLOY_VPS.md manually."
+fi
+
+if ! git -C "$repository_dir" diff --quiet "$current_sha" "$release_sha" -- "$COMPOSE_FILE"; then
+  validate_compose_web_env_additions ||
+    fail "Docker Compose changed outside the allowlisted web environment passthroughs. Follow docs/DEPLOY_VPS.md manually."
 fi
 
 migration_changes="$(git -C "$repository_dir" diff --name-status "$current_sha" "$release_sha" -- infra/postgres/migrations)"
@@ -286,6 +336,10 @@ if [[ -n "$migration_changes" ]]; then
 fi
 
 printf '\nCurrent release: %s\nRequested release: %s\n' "$current_sha" "$release_sha"
+if [[ "${#allowed_compose_env_keys[@]}" -gt 0 ]]; then
+  printf 'Allowlisted web environment additions:\n'
+  printf '  - %s\n' "${allowed_compose_env_keys[@]}"
+fi
 if [[ "${#added_migrations[@]}" -gt 0 ]]; then
   printf 'New additive migrations:\n'
   printf '  - %s\n' "${added_migrations[@]}"

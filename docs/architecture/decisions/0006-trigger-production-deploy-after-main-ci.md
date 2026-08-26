@@ -38,7 +38,8 @@ duplicate build, migration, health or rollback logic in the GitHub workflow.
 - GitHub availability and the configured SSH credential become dependencies of
   the automatic path; the manual VPS path remains independent.
 - Infrastructure and exceptional database changes continue to stop for manual
-  review under ADR-0005.
+  review under ADR-0005. A narrowly versioned allowlist may admit additive web
+  environment passthroughs without permitting unrelated Compose changes.
 
 ## Evidence
 
