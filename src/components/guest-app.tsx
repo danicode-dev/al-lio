@@ -1438,7 +1438,7 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
   return (
     <>
       <style>{workBrandCss}</style>
-      <div className="al-work-tabs">
+      <div className="al-work-tabs" style={{ marginTop: 8 }}>
         {WORK_TABS.map(([id, label]) => (
           <button
             key={id}

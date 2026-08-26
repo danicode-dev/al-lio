@@ -2876,3 +2876,16 @@ test("src/lib/work/actions.ts is session-scoped, never redirects (it runs from b
   assert.match(source, /category: "work"/, "createQuickSearch's `data.category ?? null` falls through to null unless this is passed explicitly, silently overriding the column's SQL default");
   assert.match(source, /\.filter\(\(row\) => row\.category === "work"\)/, "reads must not leak rows from an unrelated future category sharing this table");
 });
+
+test("Owner-reported follow-up: the gap between the Trabajo header and the Portales/Empresas tabs is tightened with an inline style, not a competing class, because Tailwind's space-y-6 sibling selector outranks a plain .al-work-tabs class rule", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const workStart = source.indexOf("function Work(");
+  const workEnd = source.indexOf("\nconst workBrandCss", workStart);
+  const workSource = source.slice(workStart, workEnd);
+
+  assert.match(
+    workSource,
+    /<div className="al-work-tabs" style=\{\{ marginTop: 8 \}\}>/,
+    "an inline style is required here - a .al-work-tabs CSS rule has lower specificity than the space-y-6-generated sibling selector currently setting this element's margin-top, so a plain class override would silently lose"
+  );
+});
