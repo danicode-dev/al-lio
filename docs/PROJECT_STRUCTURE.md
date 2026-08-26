@@ -22,6 +22,7 @@
 - `infra/docker-compose.prod.yml`: supported VPS topology.
 - `infra/Caddyfile.example`: reverse-proxy example.
 - `infra/systemd/`: reviewed host-level service and timer units.
+- `scripts/deploy-production.sh`: guarded one-command routine VPS release.
 - `scripts/`: validation, import, migration, backup and smoke-test commands.
 - `.env.example`: local configuration contract.
 - `.env.production.example`: production configuration contract.
@@ -30,6 +31,7 @@
 
 - `README.md`: public product and engineering entry point.
 - `docs/`: maintained project documentation.
+- `docs/AUTONOMOUS_PRODUCTION_DEPLOY.md`: owner-facing routine release guide.
 - `docs/architecture/decisions/`: accepted architecture decision records.
 - Root governance files: contribution, security, conduct, notice and licence.
 

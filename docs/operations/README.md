@@ -14,6 +14,7 @@ It supplements the executable deployment sequence in [`../DEPLOY_VPS.md`](../DEP
 
 ## Maintained runbooks
 
+- [`../AUTONOMOUS_PRODUCTION_DEPLOY.md`](../AUTONOMOUS_PRODUCTION_DEPLOY.md): routine owner-operated release command and stop conditions.
 - [`monitoring.md`](monitoring.md): health signals, alert ownership, and incident triage.
 - [`backup-and-recovery.md`](backup-and-recovery.md): backup boundaries and restore evidence.
 - [`release-and-rollback.md`](release-and-rollback.md): release approval and recovery decisions.
