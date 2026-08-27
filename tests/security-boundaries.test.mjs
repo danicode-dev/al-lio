@@ -686,7 +686,11 @@ test("The course source URL is only linked from the detail view, and gated by is
 
 test("Every course card offers Ver detalles, linking to the real internal /courses/[id] page - the old CourseDetailModal was retired outright, mirroring the hackathons detail route (owner-reported follow-up to #135/#120)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  assert.match(source, /<Link href=\{`\/courses\/\$\{encodeURIComponent\(item\.id\)\}`\}\s*className="al-course-btn al-course-btn-primary">/, "the card's Ver detalles action must be an unconditional Link to the course's own detail page");
+  // issue #160: Ver detalles is the primary, prominent action on both the
+  // grid card and the featured card - a full-width solid button, the same
+  // weight the companies list gives its primary action.
+  assert.match(source, /<Link href=\{`\/courses\/\$\{encodeURIComponent\(item\.id\)\}`\}\s*className="al-course-btn-detail">/, "the grid card's Ver detalles must be an unconditional Link to the course's own detail page");
+  assert.match(source, /<Link href=\{`\/courses\/\$\{encodeURIComponent\(featuredCourse\.id\)\}`\}\s*className="al-course-btn-detail">/, "the featured card's Ver detalles must link to the same detail page with the same prominent styling");
   assert.doesNotMatch(source, /function CourseDetailModal/, "the modal must be removed entirely, not just left unreachable");
   assert.doesNotMatch(source, /setDetailItemId|detailItemId/, "no state should remain for opening a modal that no longer exists");
 

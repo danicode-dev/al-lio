@@ -2429,24 +2429,37 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-featured-media img { width: 100%; height: 100%; object-fit: cover; }
         .al-course-featured-tag { position: absolute; left: 14px; top: 14px; display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-radius: 999px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
         .al-course-featured-body { display: flex; flex-direction: column; gap: 10px; padding: 18px 18px 16px; min-width: 0; }
+        .al-course-featured-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
         .al-course-featured-title { font-size: 17px; font-weight: 800; line-height: 1.22; color: #111111; overflow-wrap: anywhere; }
-        .al-course-featured-org { font-size: 12px; color: #6b6f72; margin-top: -4px; }
+        .al-course-featured-org { font-size: 12px; color: #6b6f72; margin-top: 2px; }
         .al-course-featured-desc { font-size: 12.5px; line-height: 1.5; color: #4b4740; }
+        .al-course-featured-heart { position: absolute; right: 14px; top: 14px; z-index: 2; box-shadow: 0 2px 8px rgba(17,17,17,0.12); }
         .al-course-facts { display: flex; flex-wrap: wrap; gap: 8px; }
-        .al-course-fact { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 9px; background: #f7f3ec; border: 1px solid #ece7dc; font-size: 11px; font-weight: 600; color: #4b4740; }
+        .al-course-fact { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 9px; background: #f7f3ec; border: 1px solid #ece7dc; font-size: 11px; font-weight: 600; color: #4b4740; white-space: nowrap; }
         .al-course-fact svg { width: 13px; height: 13px; color: #9a958a; }
         .al-course-featured-actions { margin-top: auto; display: flex; align-items: center; gap: 8px; padding-top: 4px; }
-        .al-course-card { position: relative; display: flex; flex-direction: column; gap: 9px; min-width: 0; background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 15px; min-height: 210px; }
-        .al-course-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+        .al-course-status { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px 0 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+        .al-course-status::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; flex-shrink: 0; }
+        .al-course-status-pendiente { background: #fdf1dd; color: #97620f; }
+        .al-course-status-empezado { background: #e6eefc; color: #2f5fac; }
+        .al-course-status-terminado { background: #e7f5ee; color: #1f7a4d; }
+        .al-course-status-pausado { background: #f2ece1; color: #6b6f72; }
+        .al-course-status-descartado { background: #f6e4e0; color: #b23b2e; }
+        .al-course-btn-detail { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; height: 38px; border-radius: 11px; border: none; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; text-decoration: none; cursor: pointer; box-shadow: 0 8px 18px rgba(225, 93, 45, 0.22); transition: filter 0.15s; }
+        .al-course-btn-detail:hover { filter: brightness(1.05); }
+        .al-course-featured-actions .al-course-btn-detail { width: auto; padding: 0 22px; }
+        .al-course-card { position: relative; display: flex; flex-direction: column; gap: 10px; min-width: 0; background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 16px; transition: border-color 0.15s, box-shadow 0.15s; }
+        .al-course-card:hover { border-color: rgba(225, 93, 45, 0.28); box-shadow: 0 16px 34px rgba(17, 17, 17, 0.08); }
+        .al-course-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
         .al-course-card-title-wrap { min-width: 0; flex: 1 1 auto; }
-        .al-course-card-badges { display: flex; flex-shrink: 0; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+        .al-course-card-badges { display: flex; flex-shrink: 0; align-items: center; gap: 6px; }
         .al-course-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
         .al-course-heart.al-course-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
         .al-course-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; overflow-wrap: anywhere; word-break: break-word; }
         .al-course-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; overflow-wrap: anywhere; word-break: break-word; }
         .al-course-card-meta { font-size: 11px; color: #6b6f72; }
         .al-course-card-desc { font-size: 11.5px; color: #4b4740; line-height: 1.4; overflow-wrap: anywhere; word-break: break-word; }
-        .al-course-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
+        .al-course-card-actions { margin-top: auto; display: flex; gap: 6px; padding-top: 12px; border-top: 1px solid #f2ece1; }
         .al-course-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
         .al-course-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
         .al-course-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
@@ -2512,15 +2525,29 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
               const fp = getCoursePresentation(featuredCourse);
               return (
                 <article className="al-course-featured">
+                  {canToggleCourseFavorite(featuredCourse) && (
+                    <button
+                      type="button"
+                      className={cn("al-course-heart al-course-featured-heart", featuredCourse.is_favorite && "al-course-heart-active")}
+                      aria-label={featuredCourse.is_favorite ? "Quitar de guardados" : "Guardar"}
+                      aria-pressed={!!featuredCourse.is_favorite}
+                      onClick={() => toggleCourseFavoriteFor(featuredCourse, actions)}
+                    >
+                      <Heart className="h-3.5 w-3.5" fill={featuredCourse.is_favorite ? "currentColor" : "none"} />
+                    </button>
+                  )}
                   <div className="al-course-featured-media">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={courseHeroImage(featuredCourse)} alt="" />
                     <span className="al-course-featured-tag"><Flame className="h-3 w-3" />Destacado</span>
                   </div>
                   <div className="al-course-featured-body">
-                    <div>
-                      <p className="al-course-featured-title">{fp.title}</p>
-                      {fp.provider && <p className="al-course-featured-org">{fp.provider}</p>}
+                    <div className="al-course-featured-head">
+                      <div className="min-w-0">
+                        <p className="al-course-featured-title">{fp.title}</p>
+                        {fp.provider && <p className="al-course-featured-org">{fp.provider}</p>}
+                      </div>
+                      <span className={cn("al-course-status", courseStatusPillClass(featuredCourse.status))}>{capitalizeFirst(featuredCourse.status)}</span>
                     </div>
                     {fp.description && <p className="al-course-featured-desc line-clamp-3">{fp.description}</p>}
                     <div className="al-course-facts">
@@ -2529,20 +2556,9 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                       {fp.level && <span className="al-course-fact"><Target />{fp.level}</span>}
                     </div>
                     <div className="al-course-featured-actions">
-                      <Link href={`/courses/${encodeURIComponent(featuredCourse.id)}`} className="al-course-btn al-course-btn-primary">
-                        <Eye className="h-3.5 w-3.5" />Ver detalles
+                      <Link href={`/courses/${encodeURIComponent(featuredCourse.id)}`} className="al-course-btn-detail">
+                        <Eye className="h-4 w-4" />Ver detalles
                       </Link>
-                      {canToggleCourseFavorite(featuredCourse) && (
-                        <button
-                          type="button"
-                          className={cn("al-course-heart", featuredCourse.is_favorite && "al-course-heart-active")}
-                          aria-label={featuredCourse.is_favorite ? "Quitar de guardados" : "Guardar"}
-                          aria-pressed={!!featuredCourse.is_favorite}
-                          onClick={() => toggleCourseFavoriteFor(featuredCourse, actions)}
-                        >
-                          <Heart className="h-3.5 w-3.5" fill={featuredCourse.is_favorite ? "currentColor" : "none"} />
-                        </button>
-                      )}
                     </div>
                   </div>
                 </article>
@@ -2561,7 +2577,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                           {presentation.provider && <p className="al-course-card-org line-clamp-1" title={presentation.provider}>{presentation.provider}</p>}
                         </div>
                         <div className="al-course-card-badges">
-                          <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
+                          <span className={cn("al-course-status", courseStatusPillClass(item.status))}>{capitalizeFirst(item.status)}</span>
                           {canToggleCourseFavorite(item) && (
                             <button
                               type="button"
@@ -2581,8 +2597,8 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                         {presentation.level && <span className="al-course-fact"><Target />{presentation.level}</span>}
                       </div>
                       <div className="al-course-card-actions">
-                        <Link href={`/courses/${encodeURIComponent(item.id)}`} className="al-course-btn al-course-btn-primary">
-                          <Eye className="h-3.5 w-3.5" />Ver detalles
+                        <Link href={`/courses/${encodeURIComponent(item.id)}`} className="al-course-btn-detail">
+                          <Eye className="h-4 w-4" />Ver detalles
                         </Link>
                       </div>
                     </div>
@@ -2658,6 +2674,14 @@ function coursePriorityClass(value?: string): string {
   if (priority.includes("alta")) return "al-course-chip-terracotta";
   if (priority.includes("baja")) return "al-course-chip-green";
   return "al-course-chip-amber";
+}
+
+function courseStatusPillClass(status: Course["status"]): string {
+  return `al-course-status-${status}`;
+}
+
+function capitalizeFirst(value: string): string {
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
 }
 
 // Course hero image keyed by professional family. Files under
