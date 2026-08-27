@@ -103,21 +103,21 @@ export function TasksView() {
       )}
 
       <section className="overflow-hidden rounded-[20px] border border-[#ece7dc] bg-white shadow-[0_10px_26px_rgba(17,17,17,0.045)]">
-        <div className="flex flex-col gap-3 border-b border-[#f0ece2] p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-sm font-extrabold text-[#111111]">Tu lista</h2>
-            <p className="mt-0.5 text-xs text-[#777269]">Ordenada por prioridad y fecha.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex rounded-xl bg-[#f7f4ee] p-1">
-              <FilterButton active={filter === "pending"} onClick={() => setFilter("pending")}>Pendientes</FilterButton>
-              <FilterButton active={filter === "completed"} onClick={() => setFilter("completed")}>Hechas</FilterButton>
-              <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>Todas</FilterButton>
+        <div className="flex flex-col gap-3 border-b border-[#f0ece2] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-sm font-extrabold text-[#111111]">Tu lista</h2>
+              <p className="mt-0.5 text-xs text-[#777269]">Ordenada por prioridad y fecha.</p>
             </div>
-            <button type="button" onClick={() => setComposerOpen((open) => !open)} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#f06a37] px-3 text-xs font-extrabold text-white shadow-[0_6px_16px_rgba(240,106,55,0.22)] transition hover:bg-[#df5725]">
+            <button type="button" onClick={() => setComposerOpen((open) => !open)} className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#f06a37] px-3 text-xs font-extrabold text-white shadow-[0_6px_16px_rgba(240,106,55,0.22)] transition hover:bg-[#df5725]">
               {composerOpen ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
               {composerOpen ? "Cerrar" : "Nueva tarea"}
             </button>
+          </div>
+          <div className="flex self-start rounded-xl bg-[#f7f4ee] p-1">
+            <FilterButton active={filter === "pending"} onClick={() => setFilter("pending")}>Pendientes</FilterButton>
+            <FilterButton active={filter === "completed"} onClick={() => setFilter("completed")}>Hechas</FilterButton>
+            <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>Todas</FilterButton>
           </div>
         </div>
 
@@ -275,7 +275,17 @@ function EditTaskDialog({ task, onClose, onSave }: { task: Task; onClose: () => 
 
 function SummaryCard({ icon: Icon, value, label, tone }: { icon: typeof ListTodo; value: number; label: string; tone: "orange" | "green" | "blue" }) {
   const tones = { orange: "bg-[#fbe7dd] text-[#c94f21]", green: "bg-[#e7f5ee] text-[#1f7a4d]", blue: "bg-[#eaf2fb] text-[#2572b9]" };
-  return <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#ece7dc] bg-white p-3 shadow-sm sm:p-4"><span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-xl", tones[tone])}><Icon className="h-4 w-4" /></span><div className="min-w-0"><p className="text-xl font-extrabold leading-none text-[#111111]">{value}</p><p className="mt-1 truncate text-[10px] font-semibold text-[#6b6f72] sm:text-xs">{label}</p></div></div>;
+  return (
+    <div className="flex min-w-0 flex-col items-center gap-1.5 rounded-2xl border border-[#ece7dc] bg-white p-3 text-center shadow-sm sm:flex-row sm:items-center sm:gap-3 sm:p-4 sm:text-left">
+      <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-xl sm:h-10 sm:w-10", tones[tone])}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-lg font-extrabold leading-none text-[#111111] sm:text-xl">{value}</p>
+        <p className="mt-1 text-[11px] font-semibold leading-tight text-[#6b6f72] sm:text-xs">{label}</p>
+      </div>
+    </div>
+  );
 }
 
 function FilterButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
