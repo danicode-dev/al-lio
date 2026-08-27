@@ -1959,6 +1959,60 @@ test("Ver papelera stays reachable from Todas, Recientes and Favoritas alike - i
   assert.doesNotMatch(source, /listTab === "favoritas"[\s\S]{0,400}al-bloc-trash-link/, "the trash link must not be nested inside favorites-only conditional rendering");
 });
 
+test("Bloc exposes one Word-like formatting surface per viewport and removes the redundant insert/link/image controls (issue #151)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const toolbarStart = source.indexOf("function BlocEditorToolbar");
+  const toolbarEnd = source.indexOf("function MobileNoteCard");
+  const toolbar = source.slice(toolbarStart, toolbarEnd);
+
+  assert.match(toolbar, /role="toolbar" aria-label="Formato del documento"/);
+  assert.match(toolbar, /aria-label="Estilo de párrafo o título"/);
+  assert.match(toolbar, /<optgroup label="Párrafo">[\s\S]*?<optgroup label="Títulos">/);
+  assert.match(toolbar, /aria-label="Tipo de letra"/);
+  assert.match(source, /Aptos[\s\S]*?Calibri[\s\S]*?Verdana[\s\S]*?Georgia[\s\S]*?Courier New/);
+  assert.doesNotMatch(toolbar, /Insertar|Hipervínculo|Enlace|Imagen|onInsert|onLink|onImageClick/);
+  assert.doesNotMatch(source, /mobileSheet === "(?:format|insert|export|more)"/);
+});
+
+test("Bloc uses a numeric px font-size control and visibly pressed Word-style B/I/U buttons (issue #151)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const toolbar = source.slice(source.indexOf("function BlocEditorToolbar"), source.indexOf("function MobileNoteCard"));
+
+  assert.match(toolbar, /type="number"[\s\S]*?min="8"[\s\S]*?max="96"[\s\S]*?Tamaño de letra en píxeles/);
+  assert.match(toolbar, /formatState\.bold[\s\S]*?>B</);
+  assert.match(toolbar, /formatState\.italic[\s\S]*?>I</);
+  assert.match(toolbar, /formatState\.underline[\s\S]*?>U</);
+  assert.match(toolbar, /aria-pressed=\{active\}/);
+  assert.match(source, /font\.replaceWith\(span\)/, "browser font-size markers must be normalized to inline px styles before persistence");
+});
+
+test("Bloc combines bullets and numbering and keeps text/highlight colors in the main toolbar (issue #151)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const toolbar = source.slice(source.indexOf("function BlocEditorToolbar"), source.indexOf("function MobileNoteCard"));
+
+  assert.match(toolbar, /aria-label="Elegir entre viñetas o numeración"/);
+  assert.match(toolbar, /value="unordered">• Viñetas/);
+  assert.match(toolbar, /value="ordered">1\. Numeración/);
+  assert.match(toolbar, /Color de texto[\s\S]*?Color de resaltado/);
+  assert.doesNotMatch(toolbar, /showMore|onToggleMore|al-bloc-toolbar-more/);
+});
+
+test("Bloc keeps delete controls visible without hover and compacts the mobile notes/editor workflow (issue #151)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const guestApp = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const mobile = source.slice(source.indexOf("if (isMobile)"), source.indexOf("return (\n    <div className=\"relative\">"));
+
+  assert.match(source, /\.al-bloc-note-row-delete \{[^}]*opacity: 1/);
+  assert.doesNotMatch(source, /\.group:hover \.al-bloc-note-row-delete/);
+  assert.match(mobile, /al-bloc-mobile-card-delete/);
+  assert.match(mobile, /al-bloc-mobile-create[\s\S]*?<Plus/);
+  assert.ok(mobile.indexOf("<BlocEditorToolbar") < mobile.indexOf("ref={attachEditor}"), "mobile formatting controls must be above the writing surface");
+  assert.match(mobile, /min-h-\[clamp\(220px,38dvh,420px\)\]/);
+  assert.match(mobile, /al-bloc-mobile-status/);
+  assert.match(guestApp, /view === "bloc" \? "space-y-3 md:space-y-6"/);
+  assert.match(guestApp, /className=\{view === "bloc" \? "al-bloc-page-header"/);
+});
+
 test("PageHeader renders exactly one h1 with eyebrow/title/subtitle/actions slots, and never hardcodes the display font (issue #129)", async () => {
   const source = await readFile(new URL("../src/components/page-header.tsx", import.meta.url), "utf8");
   const h1Matches = source.match(/<h1[ >]/g) ?? [];

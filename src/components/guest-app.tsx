@@ -166,12 +166,13 @@ export function GuestApp({ view }: { view: View }) {
   const headerContent = VIEW_HEADER_CONTENT[view];
 
   return (
-    <div className="space-y-6 pb-20 md:pb-6">
+    <div className={cn("pb-20 md:pb-6", view === "bloc" ? "space-y-3 md:space-y-6" : "space-y-6")}>
       {view !== "dashboard" && view !== "calendar" && headerContent && (
         <PageHeader
           eyebrow={headerContent.eyebrow}
           title={headerContent.title}
           subtitle={headerContent.subtitle}
+          className={view === "bloc" ? "al-bloc-page-header" : undefined}
           actions={
             <div className="hidden md:flex md:items-center md:gap-2">
               <StudentHeaderActions />
