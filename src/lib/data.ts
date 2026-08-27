@@ -76,6 +76,18 @@ export const getGlobalStore = cache(async () => {
       loadStoreSection("roadmap", getLearningOverview(userId, profile), null, issues),
     ]);
 
+  // tech_opportunities is a DAW-scored radar (encaje_daw_1_5) with no cycle
+  // column. Its "curso" items only make sense for the DEV group - every
+  // other cycle gets its courses from getCoursesByUser plus the
+  // cycle-scoped fp_content_items, so a TSAF/AF/MP student never sees a DAW
+  // course. Event/hackathon items from the same table stay visible to all.
+  const techOpportunitiesForCycle =
+    profile.cycle_group === "DEV"
+      ? techOpportunities
+      : (techOpportunities as Array<{ categoria?: string | null }>).filter(
+          (item) => String(item.categoria ?? "").trim().toLowerCase() !== "curso",
+        );
+
   const aptitudeGatedItemIds = fpContent
     .filter((item) => FP_APTITUDE_GATED_TYPES.has(item.type))
     .map((item) => item.id);
@@ -129,7 +141,7 @@ export const getGlobalStore = cache(async () => {
       updated_at: iso(o.updated_at),
     })),
     techOpportunities: sortTechOpportunities(
-      (techOpportunities as unknown as TechOpportunity[]).map((item) => ({
+      (techOpportunitiesForCycle as unknown as TechOpportunity[]).map((item) => ({
         ...item,
         fecha_inicio: ymd(item.fecha_inicio),
         fecha_fin: ymd(item.fecha_fin),
