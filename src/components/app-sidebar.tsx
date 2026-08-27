@@ -61,7 +61,7 @@ export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
           <button
             type="button"
             onClick={toggleCollapsed}
-            className="mx-auto flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-muted"
+            className="mx-auto flex h-12 w-12 items-center justify-center rounded-md transition-colors hover:bg-muted"
             aria-label="Expandir menú"
             title="Expandir menú"
           >
@@ -70,7 +70,7 @@ export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
               alt="AL-LIO"
               width={1254}
               height={1254}
-              className="block h-7 w-7"
+              className="block h-11 w-11"
               priority
             />
           </button>
