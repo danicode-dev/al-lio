@@ -2201,6 +2201,160 @@ function ViewToggle({ value, onChange }: { value: "grid" | "lista"; onChange: (v
   );
 }
 
+type CollectionTab = { id: string; label: string; count: number; withHeart?: boolean };
+type CollectionStat = { icon: typeof BookOpen; tint: "orange" | "green" | "amber" | "grey"; value: number; label: string };
+
+// The shared control strip above the Cursos and Eventos y retos lists:
+// search, status tabs, the Filtros toggle, month chips, the KPI card and
+// the count / view-mode row. One component so both pages stay identical
+// and it only has to be made responsive once.
+function CollectionControls({
+  searchValue,
+  onSearchChange,
+  searchPlaceholder,
+  tabs,
+  activeTab,
+  onTabChange,
+  filterCount,
+  filtersOpen,
+  onToggleFilters,
+  monthGroups,
+  monthFilter,
+  monthTotal,
+  onMonthSelect,
+  stats,
+  metaText,
+  viewMode,
+  onViewModeChange,
+}: {
+  searchValue: string;
+  onSearchChange: (value: string) => void;
+  searchPlaceholder: string;
+  tabs: CollectionTab[];
+  activeTab: string;
+  onTabChange: (id: string) => void;
+  filterCount: number;
+  filtersOpen: boolean;
+  onToggleFilters: () => void;
+  monthGroups: Map<string, number>;
+  monthFilter: string;
+  monthTotal: number;
+  onMonthSelect: (month: string) => void;
+  stats: CollectionStat[];
+  metaText: string;
+  viewMode: "grid" | "lista";
+  onViewModeChange: (value: "grid" | "lista") => void;
+}) {
+  return (
+    <section className="al-cc">
+      <style>{`
+        .al-cc { display: flex; flex-direction: column; gap: 12px; }
+        .al-cc-bar { display: flex; gap: 8px; }
+        .al-cc-search { position: relative; flex: 1 1 auto; min-width: 0; }
+        .al-cc-search > svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #9a958a; pointer-events: none; }
+        .al-cc-search input { width: 100%; height: 42px; padding: 0 34px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 13.5px; color: #333029; outline: none; transition: border-color .15s, box-shadow .15s; }
+        .al-cc-search input::placeholder { color: #a59f94; }
+        .al-cc-search input:focus { border-color: var(--al-action-soft-border-hover); box-shadow: 0 0 0 3px var(--al-action-soft-focus); }
+        .al-cc-search-clear { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 22px; height: 22px; border-radius: 999px; border: none; background: transparent; color: #9a958a; cursor: pointer; }
+        .al-cc-search-clear:hover { background: #f3ece1; color: #333029; }
+        .al-cc-search-clear svg { width: 13px; height: 13px; }
+        .al-cc-filters { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid #ece7dc; background: white; color: #333029; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: border-color .15s, background .15s, color .15s; }
+        .al-cc-filters:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
+        .al-cc-filters svg { width: 15px; height: 15px; }
+        .al-cc-filters-badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--al-action-soft-text); color: white; font-size: 10.5px; font-weight: 700; }
+        @media (max-width: 420px) { .al-cc-filters-label { display: none; } .al-cc-filters { padding: 0 11px; } }
+        .al-cc-tabs { display: flex; gap: 3px; padding: 3px; border-radius: 12px; border: 1px solid #ece7dc; background: #faf7f1; overflow-x: auto; scrollbar-width: none; }
+        .al-cc-tabs::-webkit-scrollbar { display: none; }
+        .al-cc-tab { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: 1 0 auto; height: 34px; padding: 0 13px; border-radius: 9px; border: none; background: transparent; color: #6b6f72; font-size: 12.5px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: background .15s, color .15s; }
+        .al-cc-tab:hover:not(.al-cc-tab-active) { color: #333029; }
+        .al-cc-tab-active { background: white; color: var(--al-action-soft-text-hover); box-shadow: 0 1px 3px rgba(17,17,17,.09), inset 0 0 0 1px var(--al-action-soft-border); }
+        .al-cc-tab-count { font-size: 11px; font-weight: 700; color: #9a958a; }
+        .al-cc-tab-active .al-cc-tab-count { color: var(--al-action-soft-text); }
+        .al-cc-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: #f2ece1; border: 1px solid #ece7dc; border-radius: 16px; box-shadow: 0 8px 22px rgba(17,17,17,.045); overflow: hidden; }
+        @media (min-width: 720px) { .al-cc-kpis { grid-template-columns: repeat(4, 1fr); } }
+        .al-cc-kpi { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 13px 15px; background: white; }
+        .al-cc-kpi-icon { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; margin-bottom: 5px; }
+        .al-cc-kpi-icon svg { width: 15px; height: 15px; }
+        .al-cc-kpi-icon--orange { background: #fbe7dd; color: #E15D2D; }
+        .al-cc-kpi-icon--green { background: #e7f5ee; color: #1f7a4d; }
+        .al-cc-kpi-icon--amber { background: #fdf1dd; color: #b4791f; }
+        .al-cc-kpi-icon--grey { background: #f2ece1; color: #6b6f72; }
+        .al-cc-kpi-value { font-size: 21px; font-weight: 800; line-height: 1.05; color: #111111; font-variant-numeric: tabular-nums; }
+        .al-cc-kpi-label { font-size: 10.5px; font-weight: 600; letter-spacing: .02em; color: #6b6f72; }
+        .al-cc-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
+        .al-cc-meta-text { font-size: 12px; color: #777269; }
+      `}</style>
+
+      <div className="al-cc-bar">
+        <div className="al-cc-search">
+          <Search />
+          <input
+            value={searchValue}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
+          />
+          {searchValue && (
+            <button type="button" className="al-cc-search-clear" onClick={() => onSearchChange("")} aria-label="Limpiar búsqueda">
+              <X />
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          className={cn("al-cc-filters", filtersOpen && "al-action-soft-selected")}
+          onClick={onToggleFilters}
+          aria-pressed={filtersOpen}
+          aria-label={filterCount > 0 ? `Filtros, ${filterCount} activos` : "Filtros"}
+        >
+          <SlidersHorizontal />
+          <span className="al-cc-filters-label">Filtros</span>
+          {filterCount > 0 && <span className="al-cc-filters-badge">{filterCount}</span>}
+        </button>
+      </div>
+
+      <div className="al-cc-tabs" role="tablist">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              className={cn("al-cc-tab", isActive && "al-cc-tab-active")}
+              onClick={() => onTabChange(tab.id)}
+            >
+              {tab.withHeart && <Heart className="h-3 w-3" fill={isActive ? "currentColor" : "none"} />}
+              <span>{tab.label}</span>
+              <span className="al-cc-tab-count">{tab.count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={monthTotal} onSelect={onMonthSelect} />
+
+      <div className="al-cc-kpis">
+        {stats.map((stat) => (
+          <div key={stat.label} className="al-cc-kpi">
+            <span className={cn("al-cc-kpi-icon", `al-cc-kpi-icon--${stat.tint}`)}>
+              <stat.icon />
+            </span>
+            <span className="al-cc-kpi-value">{stat.value}</span>
+            <span className="al-cc-kpi-label">{stat.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="al-cc-meta">
+        <p className="al-cc-meta-text">{metaText}</p>
+        <ViewToggle value={viewMode} onChange={onViewModeChange} />
+      </div>
+    </section>
+  );
+}
+
 function FilterPanel({
   title = "Filtros",
   activeCount,
@@ -2412,23 +2566,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   return (
     <>
       <style>{`
-        .al-course-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-        .al-course-search { position: relative; flex: 1; min-width: 220px; }
-        .al-course-search input { padding-left: 36px; height: 40px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 13px; }
-        .al-course-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #9a958a; }
-        .al-course-tabs { display: flex; align-items: center; gap: 2px; border-radius: 12px; border: 1px solid #ece7dc; background: white; padding: 3px; }
-        .al-course-tab { height: 32px; padding: 0 12px; border-radius: 9px; font-size: 12.5px; font-weight: 600; color: #6b6f72; background: transparent; border: none; cursor: pointer; transition: background 0.15s, color 0.15s; }
-        .al-course-tab.al-course-tab-active { background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); box-shadow: inset 0 0 0 1px var(--al-action-soft-border), 0 4px 12px rgba(80, 43, 27, 0.05); }
-        .al-course-filter-btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 12.5px; font-weight: 600; color: #333029; cursor: pointer; }
-        .al-course-filter-btn.al-course-filter-btn-active { background: #fbe7dd; border-color: rgba(225, 93, 45, 0.3); color: #c94f21; }
-        .al-course-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        @media (min-width: 640px) { .al-course-stats { grid-template-columns: repeat(4, 1fr); } }
-        .al-course-stat-card { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid #ece7dc; border-radius: 18px; padding: 14px 16px; box-shadow: 0 8px 20px rgba(17, 17, 17, 0.04); }
-        .al-course-stat-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
-        .al-course-stat-value { font-size: 22px; font-weight: 800; line-height: 1; color: #111111; }
-        .al-course-stat-label { font-size: 11px; font-weight: 600; color: #6b6f72; margin-top: 3px; }
-        .al-course-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .al-course-count-text { font-size: 12px; color: #6b6f72; }
         .al-course-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
         .al-course-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
         .al-course-empty-illustration { width: 100%; max-width: 280px; height: auto; }
@@ -2437,56 +2574,38 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: var(--al-action-soft-bg); color: var(--al-action-soft-text); font-size: 12.5px; font-weight: 700; border: 1px solid var(--al-action-soft-border); cursor: pointer; }
       `}</style>
       <div className="space-y-4">
-        <div className="al-course-toolbar">
-          <div className="al-course-search">
-            <Search />
-            <Input placeholder="Buscar título, entidad, tag..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
-          </div>
-          <div className="al-course-tabs">
-            {([["activos", `Activos ${activos.length}`], ["archivados", `Terminado ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
-              <button key={id} type="button" className={cn("al-course-tab", viewTab === id && "al-course-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
-                {id === "guardados" && <Heart className="mr-1 inline h-3 w-3 align-[-1px]" fill={viewTab === "guardados" ? "currentColor" : "none"} />}
-                {label}
-              </button>
-            ))}
-          </div>
-          <button type="button" className={cn("al-course-filter-btn", showFilters && "al-course-filter-btn-active")} onClick={() => setShowFilters((v) => !v)} aria-label={activeFilterCount > 0 ? `Filtros, ${activeFilterCount} activos` : "Filtros"}>
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filtros
-            <span aria-hidden="true" className={cn("inline-block w-3 text-center tabular-nums", activeFilterCount === 0 && "invisible")}>{activeFilterCount || 0}</span>
-          </button>
-        </div>
-
-        <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
+        <CollectionControls
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          searchPlaceholder="Buscar título, entidad, tag..."
+          tabs={[
+            { id: "activos", label: "Activos", count: activos.length },
+            { id: "archivados", label: "Terminado", count: archivados.length },
+            { id: "guardados", label: "Guardados", count: guardados.length, withHeart: true },
+            { id: "todos", label: "Todos", count: sorted.length },
+          ]}
+          activeTab={viewTab}
+          onTabChange={(id) => { setViewTab(id as typeof viewTab); clearAll(); }}
+          filterCount={activeFilterCount}
+          filtersOpen={showFilters}
+          onToggleFilters={() => setShowFilters((v) => !v)}
+          monthGroups={monthGroups}
+          monthFilter={monthFilter}
+          monthTotal={tabBase.length}
+          onMonthSelect={(m) => { setMonthFilter(m); setDayFilter(""); }}
+          stats={[
+            { icon: BookOpen, tint: "orange", value: tabBase.length, label: "Total" },
+            { icon: CheckCircle2, tint: "green", value: kpiEmpezados, label: "Empezados" },
+            { icon: Clock, tint: "amber", value: kpiPendientes, label: "Pendientes" },
+            { icon: AlarmClock, tint: "grey", value: kpiProx, label: "Próx. inicio" },
+          ]}
+          metaText={`${filtered.length} ${filtered.length === 1 ? "curso" : "cursos"} · desde ${formatDateLabel(today)} · por fecha de inicio`}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
 
         <div className="flex flex-col gap-5 lg:flex-row">
           <div className="min-w-0 flex-1 space-y-4">
-            <div className="al-course-stats">
-              <div className="al-course-stat-card">
-                <span className="al-course-stat-icon" style={{ background: "#fbe7dd", color: "#E15D2D" }}><BookOpen className="h-4.5 w-4.5" /></span>
-                <div><p className="al-course-stat-value">{tabBase.length}</p><p className="al-course-stat-label">Total</p></div>
-              </div>
-              <div className="al-course-stat-card">
-                <span className="al-course-stat-icon" style={{ background: "#e7f5ee", color: "#1f7a4d" }}><CheckCircle2 className="h-4.5 w-4.5" /></span>
-                <div><p className="al-course-stat-value">{kpiEmpezados}</p><p className="al-course-stat-label">Empezados</p></div>
-              </div>
-              <div className="al-course-stat-card">
-                <span className="al-course-stat-icon" style={{ background: "#fdf1dd", color: "#b4791f" }}><Clock className="h-4.5 w-4.5" /></span>
-                <div><p className="al-course-stat-value">{kpiPendientes}</p><p className="al-course-stat-label">Pendientes</p></div>
-              </div>
-              <div className="al-course-stat-card">
-                <span className="al-course-stat-icon" style={{ background: "#f3ece1", color: "#6b6f72" }}><AlarmClock className="h-4.5 w-4.5" /></span>
-                <div><p className="al-course-stat-value">{kpiProx}</p><p className="al-course-stat-label">Próx. inicio</p></div>
-              </div>
-            </div>
-
-            <div className="al-course-count-row">
-              <p className="al-course-count-text">
-                Mostrando {filtered.length} {filtered.length === 1 ? "curso" : "cursos"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
-              </p>
-              <ViewToggle value={viewMode} onChange={setViewMode} />
-            </div>
-
             {featuredCourse && (() => {
               const fp = getCoursePresentation(featuredCourse);
               return (
@@ -3005,23 +3124,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   return (
     <>
       <style>{`
-        .al-hack-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-        .al-hack-search { position: relative; flex: 1; min-width: 220px; }
-        .al-hack-search input { padding-left: 36px; height: 40px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 13px; }
-        .al-hack-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #9a958a; }
-        .al-hack-tabs { display: flex; align-items: center; gap: 2px; border-radius: 12px; border: 1px solid #ece7dc; background: white; padding: 3px; }
-        .al-hack-tab { height: 32px; padding: 0 12px; border-radius: 9px; font-size: 12.5px; font-weight: 600; color: #6b6f72; background: transparent; border: none; cursor: pointer; transition: background 0.15s, color 0.15s; }
-        .al-hack-tab.al-hack-tab-active { background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); box-shadow: inset 0 0 0 1px var(--al-action-soft-border), 0 4px 12px rgba(80, 43, 27, 0.05); }
-        .al-hack-filter-btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 12.5px; font-weight: 600; color: #333029; cursor: pointer; }
-        .al-hack-filter-btn.al-hack-filter-btn-active { background: #fbe7dd; border-color: rgba(225, 93, 45, 0.3); color: #c94f21; }
-        .al-hack-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        @media (min-width: 640px) { .al-hack-stats { grid-template-columns: repeat(4, 1fr); } }
-        .al-hack-stat-card { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid #ece7dc; border-radius: 18px; padding: 14px 16px; box-shadow: 0 8px 20px rgba(17, 17, 17, 0.04); }
-        .al-hack-stat-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
-        .al-hack-stat-value { font-size: 22px; font-weight: 800; line-height: 1; color: #111111; }
-        .al-hack-stat-label { font-size: 11px; font-weight: 600; color: #6b6f72; margin-top: 3px; }
-        .al-hack-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .al-hack-count-text { font-size: 12px; color: #6b6f72; }
         .al-hack-empty-wrap { display: grid; gap: 14px; grid-template-columns: 1fr; }
         @media (min-width: 640px) { .al-hack-empty-wrap.al-hack-empty-two { grid-template-columns: 1fr 1fr; } }
         .al-hack-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
@@ -3032,56 +3134,38 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: var(--al-action-soft-bg); color: var(--al-action-soft-text); font-size: 12.5px; font-weight: 700; border: 1px solid var(--al-action-soft-border); cursor: pointer; }
       `}</style>
       <div className="space-y-4">
-        <div className="al-hack-toolbar">
-          <div className="al-hack-search">
-            <Search />
-            <Input placeholder="Buscar nombre, organizador, tema, aptitud..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
-          </div>
-          <div className="al-hack-tabs">
-            {([["activos", `Activos ${activos.length}`], ["archivados", `Realizado ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
-              <button key={id} type="button" className={cn("al-hack-tab", viewTab === id && "al-hack-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
-                {id === "guardados" && <Heart className="mr-1 inline h-3 w-3 align-[-1px]" fill={viewTab === "guardados" ? "currentColor" : "none"} />}
-                {label}
-              </button>
-            ))}
-          </div>
-          <button type="button" className={cn("al-hack-filter-btn", showFilters && "al-hack-filter-btn-active")} onClick={() => setShowFilters((v) => !v)} aria-label={activeFilterCount > 0 ? `Filtros, ${activeFilterCount} activos` : "Filtros"}>
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filtros
-            <span aria-hidden="true" className={cn("inline-block w-3 text-center tabular-nums", activeFilterCount === 0 && "invisible")}>{activeFilterCount || 0}</span>
-          </button>
-        </div>
-
-        <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
+        <CollectionControls
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          searchPlaceholder="Buscar nombre, organizador, tema, aptitud..."
+          tabs={[
+            { id: "activos", label: "Activos", count: activos.length },
+            { id: "archivados", label: "Realizado", count: archivados.length },
+            { id: "guardados", label: "Guardados", count: guardados.length, withHeart: true },
+            { id: "todos", label: "Todos", count: sorted.length },
+          ]}
+          activeTab={viewTab}
+          onTabChange={(id) => { setViewTab(id as typeof viewTab); clearAll(); }}
+          filterCount={activeFilterCount}
+          filtersOpen={showFilters}
+          onToggleFilters={() => setShowFilters((v) => !v)}
+          monthGroups={monthGroups}
+          monthFilter={monthFilter}
+          monthTotal={tabBase.length}
+          onMonthSelect={(m) => { setMonthFilter(m); setDayFilter(""); }}
+          stats={[
+            { icon: Trophy, tint: "orange", value: tabBase.length, label: "Total" },
+            { icon: CheckCircle2, tint: "green", value: kpiAbiertos, label: "Inscripción abierta" },
+            { icon: Clock, tint: "amber", value: kpiPendientes, label: "Pendientes" },
+            { icon: AlarmClock, tint: "grey", value: kpiProx, label: "Próx. inicio" },
+          ]}
+          metaText={`${filtered.length} ${filtered.length === 1 ? "evento o reto" : "eventos y retos"} · desde ${formatDateLabel(today)} · por fecha de inicio`}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
 
         <div className="flex flex-col gap-5 lg:flex-row">
           <div className="min-w-0 flex-1 space-y-4">
-            <div className="al-hack-stats">
-              <div className="al-hack-stat-card">
-                <span className="al-hack-stat-icon" style={{ background: "#fbe7dd", color: "#E15D2D" }}><Trophy className="h-4.5 w-4.5" /></span>
-                <div><p className="al-hack-stat-value">{tabBase.length}</p><p className="al-hack-stat-label">Total</p></div>
-              </div>
-              <div className="al-hack-stat-card">
-                <span className="al-hack-stat-icon" style={{ background: "#e7f5ee", color: "#1f7a4d" }}><CheckCircle2 className="h-4.5 w-4.5" /></span>
-                <div><p className="al-hack-stat-value">{kpiAbiertos}</p><p className="al-hack-stat-label">Inscripción abierta</p></div>
-              </div>
-              <div className="al-hack-stat-card">
-                <span className="al-hack-stat-icon" style={{ background: "#fdf1dd", color: "#b4791f" }}><Clock className="h-4.5 w-4.5" /></span>
-                <div><p className="al-hack-stat-value">{kpiPendientes}</p><p className="al-hack-stat-label">Pendientes</p></div>
-              </div>
-              <div className="al-hack-stat-card">
-                <span className="al-hack-stat-icon" style={{ background: "#f3ece1", color: "#6b6f72" }}><AlarmClock className="h-4.5 w-4.5" /></span>
-                <div><p className="al-hack-stat-value">{kpiProx}</p><p className="al-hack-stat-label">Próx. inicio</p></div>
-              </div>
-            </div>
-
-            <div className="al-hack-count-row">
-              <p className="al-hack-count-text">
-                Mostrando {filtered.length} {filtered.length === 1 ? "evento o reto" : "eventos y retos"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
-              </p>
-              <ViewToggle value={viewMode} onChange={setViewMode} />
-            </div>
-
             {featuredHackathon && (() => {
               const presentation = getHackathonPresentation(featuredHackathon);
               return (

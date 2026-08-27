@@ -2425,7 +2425,7 @@ test("Guardados is a real heart-driven filter tab, independent of and additional
   assert.match(fnSource, /useState<"activos" \| "archivados" \| "guardados" \| "todos">/);
   assert.match(fnSource, /const guardados = useMemo\(\(\) => sorted\.filter\(\(h\) => h\.is_favorite\), \[sorted\]\);/);
   assert.match(fnSource, /viewTab === "guardados" \? guardados/);
-  assert.match(fnSource, /"guardados", `Guardados \$\{guardados\.length\}`/, "the tab must show a live heart count, matching the issue's explicit ask");
+  assert.match(fnSource, /\{ id: "guardados", label: "Guardados", count: guardados\.length, withHeart: true \}/, "the tab must be a real filter tab with a live heart count, matching the issue's explicit ask");
 });
 
 test("Toggling the heart is wired through a distinct action from completion/status changes - completeHackathon and the Realizado button never touch is_favorite (issue #131)", async () => {
@@ -2524,7 +2524,7 @@ test("Guardados is a real heart-driven filter tab in Courses, independent of and
   assert.match(fnSource, /useState<"activos" \| "archivados" \| "guardados" \| "todos">/);
   assert.match(fnSource, /const guardados = useMemo\(\(\) => sorted\.filter\(\(c\) => c\.is_favorite\), \[sorted\]\);/);
   assert.match(fnSource, /viewTab === "guardados" \? guardados/);
-  assert.match(fnSource, /"guardados", `Guardados \$\{guardados\.length\}`/, "the tab must show a live heart count");
+  assert.match(fnSource, /\{ id: "guardados", label: "Guardados", count: guardados\.length, withHeart: true \}/, "the tab must be a real filter tab with a live heart count");
 });
 
 test("Course favorite state survives a reload - serializeCourses passes the DB row through unfiltered, it never strips is_favorite before it reaches the client store (issue #120)", async () => {
@@ -2968,8 +2968,8 @@ test("The Cursos tab formerly labelled Archivados now reads Terminado - matching
   const coursesFnEnd = source.indexOf("function coursePriorityClass");
   const fnSource = source.slice(coursesFnStart, coursesFnEnd);
 
-  assert.match(fnSource, /\["archivados", `Terminado \$\{archivados\.length\}`\]/, "the displayed label changes; the internal \"archivados\" view-tab key does not, so isCourseArchived/status logic stays untouched");
-  assert.doesNotMatch(fnSource, /Archivados \$\{archivados\.length\}/, "the old label must not survive alongside the new one");
+  assert.match(fnSource, /\{ id: "archivados", label: "Terminado", count: archivados\.length \}/, "the displayed label changes; the internal \"archivados\" view-tab key does not, so isCourseArchived/status logic stays untouched");
+  assert.doesNotMatch(fnSource, /label: "Archivados"/, "the old label must not survive alongside the new one");
   assert.match(fnSource, /No tienes cursos terminados/);
   assert.match(fnSource, /Cuando marques un curso como Terminado, aparecerá aquí\./);
 });
@@ -2980,8 +2980,8 @@ test("The Eventos y retos tab formerly labelled Archivados now reads Realizado -
   const hackathonsFnEnd = source.indexOf("function HackathonsEmptyState");
   const fnSource = source.slice(hackathonsFnStart, hackathonsFnEnd);
 
-  assert.match(fnSource, /\["archivados", `Realizado \$\{archivados\.length\}`\]/, "the displayed label changes; the internal \"archivados\" view-tab key does not, so isHackathonArchived/status logic stays untouched");
-  assert.doesNotMatch(fnSource, /Archivados \$\{archivados\.length\}/, "the old label must not survive alongside the new one");
+  assert.match(fnSource, /\{ id: "archivados", label: "Realizado", count: archivados\.length \}/, "the displayed label changes; the internal \"archivados\" view-tab key does not, so isHackathonArchived/status logic stays untouched");
+  assert.doesNotMatch(fnSource, /label: "Archivados"/, "the old label must not survive alongside the new one");
 });
 
 test("No user-facing 'Archivados' label survives anywhere in the app - Cursos and Eventos y retos were the only two", async () => {
