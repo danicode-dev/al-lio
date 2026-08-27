@@ -35,7 +35,7 @@ import {
 } from "../scripts/lib/company-catalogue.mjs";
 import { toIsoTimestamp } from "../src/lib/bloc/timestamps.ts";
 import { compareByRecentFirst, sortByRecentFirst } from "../src/lib/bloc/notes-sort.ts";
-import { buildNoteExportHtml, formatExportTimestamp } from "../src/lib/bloc/note-export.ts";
+import { buildNoteExportHtml } from "../src/lib/bloc/note-export.ts";
 import {
   canToggleHackathonFavorite as canToggleHackathonFavoriteShared,
   fpItemToHackathon,
@@ -1867,25 +1867,19 @@ test("Recientes ordering is chronological regardless of favorite state - favorit
   assert.deepEqual(sortByRecentFirst(notes).map((n) => n.id), ["new-plain", "old-fav"]);
 });
 
-test("buildNoteExportHtml escapes the title, embeds the already-sanitized content HTML verbatim, and stamps a generated-at line (issue #128)", () => {
+test("buildNoteExportHtml escapes the title, embeds sanitized content HTML, and omits export metadata (issues #128 and #151)", () => {
   const html = buildNoteExportHtml(
     { title: '<b>Plan</b> & notas', contentHtml: "<h1>Objetivo</h1><p>Texto con &amp; y <strong>énfasis</strong>.</p>" },
-    new Date("2026-08-26T09:30:00.000Z"),
   );
   assert.match(html, /&lt;b&gt;Plan&lt;\/b&gt; &amp; notas/, "title must be escaped, not injected as raw HTML");
   assert.match(html, /<h1>Objetivo<\/h1><p>Texto con &amp; y <strong>énfasis<\/strong>\.<\/p>/, "sanitized content HTML is embedded as-is, not double-escaped");
-  assert.match(html, /Exportado el/);
+  assert.doesNotMatch(html, /Exportado el|al-bloc-export-meta/, "the PDF must contain only the note title and content");
 });
 
 test("buildNoteExportHtml shows an honest empty-state message instead of an empty PDF page for a blank note (issue #128)", () => {
-  const html = buildNoteExportHtml({ title: "", contentHtml: "" }, new Date("2026-08-26T09:30:00.000Z"));
+  const html = buildNoteExportHtml({ title: "", contentHtml: "" });
   assert.match(html, /Documento sin titulo/);
   assert.match(html, /todavia no tiene contenido/);
-});
-
-test("formatExportTimestamp returns an empty label instead of the string \"Invalid Date\" leaking into an exported document (issue #128)", () => {
-  assert.equal(formatExportTimestamp(new Date("not-a-date")), "");
-  assert.notEqual(formatExportTimestamp(new Date("2026-08-26T09:30:00.000Z")), "");
 });
 
 test("Bloc's server boundary normalizes PostgreSQL timestamps before they reach the client, instead of passing raw Date values through (issue #128)", async () => {
@@ -2033,12 +2027,20 @@ test("Bloc keeps delete controls visible without hover and compacts the mobile n
   assert.match(mobile, /al-bloc-mobile-create[\s\S]*?<Plus/);
   assert.ok(mobile.indexOf("<BlocEditorToolbar") < mobile.indexOf("ref={attachEditor}"), "mobile formatting controls must be above the writing surface");
   assert.match(mobile, /al-bloc-mobile-actions[\s\S]*?Formato[\s\S]*?<ExportMenu[\s\S]*?<NoteOverflowMenu/);
-  assert.match(source, /aria-label="Formato esencial del documento"[\s\S]*?<BlocListSelect compact/);
+  assert.match(source, /aria-label="Formato esencial del documento"[\s\S]*?<MobileFontSizeSelect[\s\S]*?<MobileAlignmentSelect[\s\S]*?<BlocListSelect compact/);
   assert.match(source, /function MobileEditorFormatPanel[\s\S]*?Párrafo o título[\s\S]*?Tamaño de letra[\s\S]*?Alineación[\s\S]*?Listas[\s\S]*?Resaltado/);
   assert.match(mobile, /min-h-\[clamp\(220px,38dvh,420px\)\]/);
   assert.match(mobile, /al-bloc-mobile-status/);
   assert.match(guestApp, /view === "bloc" \? "space-y-3 md:space-y-6"/);
   assert.match(guestApp, /className=\{view === "bloc" \? "al-bloc-page-header"/);
+});
+
+test("Bloc uses the app empty-state pattern and no longer advertises unsupported slash commands (issue #151 final pass)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /Esta nota está vacía[\s\S]*?Empieza a escribir para guardar tus ideas\./);
+  assert.doesNotMatch(source, /presiona '\/' para comandos|al-bloc-content-watermark/);
+  assert.match(source, /wordCount === 0 && !editorFocused && <BlocEditorEmptyState \/>/);
 });
 
 test("PageHeader renders exactly one h1 with eyebrow/title/subtitle/actions slots, and never hardcodes the display font (issue #129)", async () => {

@@ -6,11 +6,14 @@ import {
   AlignJustify,
   AlignLeft,
   AlignRight,
+  ChevronDown,
   Copy,
   Download,
   FileText,
   Files,
   Highlighter,
+  List,
+  ListOrdered,
   MoreVertical,
   Palette,
   Pencil,
@@ -177,6 +180,7 @@ export function BlocNotepad() {
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [noteMenuOpen, setNoteMenuOpen] = useState(false);
+  const [editorFocused, setEditorFocused] = useState(false);
   const [editorFormat, setEditorFormat] = useState<EditorFormatState>(initialEditorFormat);
   const exportingPdfRef = useRef(false);
   const notesRef = useRef<BlocNote[]>([]);
@@ -705,10 +709,7 @@ export function BlocNotepad() {
       // keeps the temporary surface behind the application while it is
       // rasterized without hiding it from layout/paint.
       container.style.cssText = "position: fixed; top: 0; left: 0; z-index: -1; width: 800px; background: #ffffff; pointer-events: none;";
-      container.innerHTML = buildNoteExportHtml(
-        { title: activeNote.title || defaultTitle, contentHtml: activeNote.contentHtml },
-        new Date(),
-      );
+      container.innerHTML = buildNoteExportHtml({ title: activeNote.title || defaultTitle, contentHtml: activeNote.contentHtml });
       document.body.appendChild(container);
 
       await document.fonts.ready;
@@ -860,6 +861,7 @@ export function BlocNotepad() {
           />
 
           <div className="al-bloc-content-wrap">
+            {wordCount === 0 && !editorFocused && <BlocEditorEmptyState />}
             <div
               ref={attachEditor}
               role="textbox"
@@ -868,9 +870,10 @@ export function BlocNotepad() {
               contentEditable
               suppressContentEditableWarning
               spellCheck
-              data-placeholder="Empieza a escribir..."
+              data-placeholder="Escribe tu nota..."
+              onFocus={() => setEditorFocused(true)}
               onInput={() => { recordEditorContent(); rememberEditorSelection(); updateEditorFormatFromSelection(); }}
-              onBlur={() => recordEditorContent()}
+              onBlur={() => { setEditorFocused(false); recordEditorContent(); }}
               onPaste={handlePaste}
               onKeyDown={handleEditorKeyDown}
               onKeyUp={() => { rememberEditorSelection(); updateEditorFormatFromSelection(); }}
@@ -1008,15 +1011,7 @@ export function BlocNotepad() {
           />
 
           <div className="al-bloc-content-wrap">
-            {wordCount === 0 && (
-              <Image
-                src="/assets/bloc/bloc-empty-illustration.png"
-                alt=""
-                width={480}
-                height={343}
-                className="al-bloc-content-watermark"
-              />
-            )}
+            {wordCount === 0 && !editorFocused && <BlocEditorEmptyState />}
             <div
               ref={attachEditor}
               role="textbox"
@@ -1025,9 +1020,10 @@ export function BlocNotepad() {
               contentEditable
               suppressContentEditableWarning
               spellCheck
-              data-placeholder="Empieza a escribir, presiona '/' para comandos..."
+              data-placeholder="Escribe tu nota..."
+              onFocus={() => setEditorFocused(true)}
               onInput={() => { recordEditorContent(); rememberEditorSelection(); updateEditorFormatFromSelection(); }}
-              onBlur={() => recordEditorContent()}
+              onBlur={() => { setEditorFocused(false); recordEditorContent(); }}
               onPaste={handlePaste}
               onKeyDown={handleEditorKeyDown}
               onKeyUp={() => { rememberEditorSelection(); updateEditorFormatFromSelection(); }}
@@ -1329,6 +1325,8 @@ function BlocEditorToolbar({
             <BlocToolButton label="Subrayado" active={formatState.underline} onClick={() => onCommand("underline")}><span className="text-sm font-bold underline decoration-2 underline-offset-2">U</span></BlocToolButton>
           </div>
           <span className="al-bloc-toolbar-divider" />
+          <MobileFontSizeSelect value={formatState.fontSize} onChange={onFontSize} />
+          <MobileAlignmentSelect alignment={formatState.alignment} onCommand={onCommand} />
           <BlocListSelect compact list={formatState.list} onCommand={onCommand} />
         </div>
       </div>
@@ -1412,6 +1410,53 @@ function BlocEditorToolbar({
         </label>
       </div>
     </div>
+  );
+}
+
+function BlocEditorEmptyState() {
+  return (
+    <div className="al-bloc-editor-empty" aria-hidden="true">
+      <span className="al-bloc-editor-empty-icon"><FileText className="h-5 w-5" /></span>
+      <p>Esta nota está vacía</p>
+      <span>Empieza a escribir para guardar tus ideas.</span>
+    </div>
+  );
+}
+
+const mobileFontSizes = Array.from({ length: 41 }, (_, index) => index + 8).concat([54, 60, 72, 96]);
+
+function MobileFontSizeSelect({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+  const options = mobileFontSizes.includes(value) ? mobileFontSizes : [...mobileFontSizes, value].sort((a, b) => a - b);
+  return (
+    <label className="al-bloc-mobile-size-select" title="Tamaño de letra en píxeles">
+      <span className="sr-only">Tamaño de letra en píxeles</span>
+      <select value={value} onChange={(event) => onChange(Number(event.target.value))} aria-label="Tamaño de letra en píxeles">
+        {options.map((size) => <option key={size} value={size}>{size} px</option>)}
+      </select>
+    </label>
+  );
+}
+
+function MobileAlignmentSelect({ alignment, onCommand }: { alignment: EditorFormatState["alignment"]; onCommand: (command: string) => void }) {
+  const AlignmentIcon = alignment === "center" ? AlignCenter : alignment === "right" ? AlignRight : alignment === "justify" ? AlignJustify : AlignLeft;
+  const commandByAlignment: Record<EditorFormatState["alignment"], string> = {
+    left: "justifyLeft",
+    center: "justifyCenter",
+    right: "justifyRight",
+    justify: "justifyFull",
+  };
+  return (
+    <label className={cn("al-bloc-mobile-icon-select", alignment !== "left" && "al-bloc-toolbar-select-active")} title="Alineación del texto">
+      <span className="sr-only">Alineación del texto</span>
+      <AlignmentIcon className="h-4 w-4" />
+      <ChevronDown className="al-bloc-mobile-select-chevron" aria-hidden="true" />
+      <select value={alignment} onChange={(event) => onCommand(commandByAlignment[event.target.value as EditorFormatState["alignment"]])} aria-label="Alineación del texto">
+        <option value="left">Izquierda</option>
+        <option value="center">Centrado</option>
+        <option value="right">Derecha</option>
+        <option value="justify">Justificado</option>
+      </select>
+    </label>
   );
 }
 
@@ -1543,17 +1588,34 @@ function MobileEditorFormatPanel({
 }
 
 function BlocListSelect({ compact = false, panel = false, list, onCommand }: { compact?: boolean; panel?: boolean; list: EditorFormatState["list"]; onCommand: (command: string) => void }) {
+  function selectList(value: string) {
+    if (value === "unordered") onCommand("insertUnorderedList");
+    else if (value === "ordered") onCommand("insertOrderedList");
+    else if (list === "unordered") onCommand("insertUnorderedList");
+    else if (list === "ordered") onCommand("insertOrderedList");
+  }
+
+  if (compact) {
+    const ListIcon = list === "ordered" ? ListOrdered : List;
+    return (
+      <label className={cn("al-bloc-mobile-icon-select", list && "al-bloc-toolbar-select-active")} title="Viñetas o numeración">
+        <span className="sr-only">Elegir entre viñetas o numeración</span>
+        <ListIcon className="h-4 w-4" />
+        <ChevronDown className="al-bloc-mobile-select-chevron" aria-hidden="true" />
+        <select value={list ?? ""} onChange={(event) => selectList(event.target.value)} aria-label="Elegir entre viñetas o numeración">
+          <option value="">Sin lista</option>
+          <option value="unordered">Viñetas</option>
+          <option value="ordered">Numeración</option>
+        </select>
+      </label>
+    );
+  }
+
   return (
     <Select
       value={list ?? ""}
-      className={cn("al-bloc-toolbar-select al-bloc-list-select", compact && "al-bloc-list-select-compact", panel && "al-bloc-panel-select", list && "al-bloc-toolbar-select-active")}
-      onChange={(event) => {
-        const value = event.target.value;
-        if (value === "unordered") onCommand("insertUnorderedList");
-        else if (value === "ordered") onCommand("insertOrderedList");
-        else if (list === "unordered") onCommand("insertUnorderedList");
-        else if (list === "ordered") onCommand("insertOrderedList");
-      }}
+      className={cn("al-bloc-toolbar-select al-bloc-list-select", panel && "al-bloc-panel-select", list && "al-bloc-toolbar-select-active")}
+      onChange={(event) => selectList(event.target.value)}
       aria-label="Elegir entre viñetas o numeración"
       title="Elegir entre viñetas o numeración"
     >
@@ -1978,10 +2040,18 @@ const blocBrandCss = `
   .al-bloc-toolbar-mobile .al-bloc-toolbar-row { width: 100%; gap: 2px; overflow: hidden; padding: 6px; }
   .al-bloc-toolbar-mobile .al-bloc-tool-btn { width: 30px; min-width: 30px; padding: 0; }
   .al-bloc-toolbar-mobile .al-bloc-toolbar-divider { margin: 0; }
-  .al-bloc-list-select-compact { width: 80px; padding-right: 20px; padding-left: 7px; }
   .al-bloc-toolbar-mobile .al-bloc-toolbar-divider { height: 18px; }
+  .al-bloc-mobile-size-select { display: flex; width: 58px; min-width: 0; flex: 1 1 58px; }
+  .al-bloc-mobile-size-select select { box-sizing: border-box; width: 100%; height: 32px; border: 1px solid #ece7dc; border-radius: 8px; background: white; padding: 0 15px 0 5px; color: #333029; font-size: 11px; font-weight: 700; outline: none; }
+  .al-bloc-mobile-size-select:focus-within select, .al-bloc-mobile-icon-select:focus-within { border-color: rgba(225, 93, 45, 0.5); box-shadow: 0 0 0 2px rgba(225, 93, 45, 0.12); }
+  .al-bloc-mobile-icon-select { position: relative; display: inline-flex; width: 38px; min-width: 38px; height: 32px; flex-shrink: 0; align-items: center; justify-content: center; gap: 2px; border: 1px solid #ece7dc; border-radius: 8px; background: white; color: #6b6f72; }
+  .al-bloc-mobile-icon-select select { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; opacity: 0; }
+  .al-bloc-mobile-select-chevron { width: 9px; height: 9px; }
   .al-bloc-content-wrap { position: relative; display: flex; min-height: 0; flex: 1; overflow: hidden; background: white; }
-  .al-bloc-content-watermark { position: absolute; z-index: 0; right: 24px; bottom: 12px; width: 220px; height: auto; opacity: 0.55; pointer-events: none; user-select: none; }
+  .al-bloc-editor-empty { position: absolute; z-index: 2; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; pointer-events: none; text-align: center; }
+  .al-bloc-editor-empty-icon { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 16px; background: #f7f4ee; color: #aaa399; }
+  .al-bloc-editor-empty p { margin: 12px 0 0; color: #333029; font-size: 14px; font-weight: 800; }
+  .al-bloc-editor-empty > span:last-child { margin-top: 4px; max-width: 360px; color: #777269; font-size: 12px; line-height: 20px; }
   .al-bloc-content { position: relative; z-index: 1; min-width: 0; color: #333029; overflow-wrap: anywhere; }
   .al-bloc-content a { color: #c94f21; text-decoration: underline; }
   .al-bloc-content p { margin: 0 0 8px; }
@@ -2006,7 +2076,7 @@ const blocBrandCss = `
   .al-bloc-menu-divider { height: 1px; margin: 4px 6px; background: #f0ece2; }
   .al-bloc-export-doc { padding: 32px; color: #25221d; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
   .al-bloc-export-title { margin: 0 0 4px; font-size: 22px; font-weight: 700; color: #111111; }
-  .al-bloc-export-meta { margin: 0 0 18px; font-size: 11px; color: #9a958a; }
+  .al-bloc-export-title + .al-bloc-export-body { margin-top: 18px; }
   .al-bloc-export-body { font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; word-break: break-word; }
   .al-bloc-export-body p { margin: 0 0 10px; }
   .al-bloc-export-body h1 { font-size: 1.6em; font-weight: 700; margin: 0.6em 0 0.3em; }
