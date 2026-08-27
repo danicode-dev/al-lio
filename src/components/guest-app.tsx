@@ -17,7 +17,6 @@ import {
   Clock,
   MoreVertical,
   ExternalLink,
-  Eye,
   Flame,
   Heart,
   ListChecks,
@@ -57,6 +56,7 @@ import {
 import {
   canToggleHackathonFavorite,
   fpItemToHackathon,
+  getHackathonPresentation,
   hackathonPublicDescription,
   isFpHackathonLike,
   isTechHackathonOrEvent,
@@ -76,6 +76,15 @@ import { APPLICATION_STATUSES, STATUS_LABELS, STATUS_COLORS } from "@/lib/job-ra
 import { useStore } from "@/components/guest-store";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import { PageHeader } from "@/components/page-header";
+import {
+  CatalogCard,
+  CatalogFact,
+  CatalogFavoriteButton,
+  CatalogFeaturedCard,
+  CatalogInfoGrid,
+  CatalogNextLink,
+  CatalogPanel,
+} from "@/components/catalog/catalog-card";
 import type {
   Company,
   Course,
@@ -2030,14 +2039,6 @@ function courseStatusClass(status: string) {
   return "";
 }
 
-function hackathonStatusClass(status: string) {
-  if (status === "inscripcion_abierta") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700";
-  if (status === "realizado") return "border-slate-400/30 bg-slate-400/10 text-slate-600";
-  if (status === "descartado") return "border-red-500/30 bg-red-500/10 text-red-700";
-  if (status === "revisar_futura_edicion") return "border-amber-500/30 bg-amber-500/10 text-amber-700";
-  return "";
-}
-
 function hackathonStatusLabel(status: string) {
   const m: Record<string, string> = {
     inscripcion_abierta: "Inscripción abierta",
@@ -2414,55 +2415,8 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-stat-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
         .al-course-stat-value { font-size: 22px; font-weight: 800; line-height: 1; color: #111111; }
         .al-course-stat-label { font-size: 11px; font-weight: 600; color: #6b6f72; margin-top: 3px; }
-        .al-course-chip-terracotta { border-color: rgba(225, 93, 45, 0.3) !important; background: #fbe7dd !important; color: #c94f21 !important; }
-        .al-course-chip-amber { border-color: rgba(180, 121, 31, 0.3) !important; background: #fdf1dd !important; color: #8a5c14 !important; }
-        .al-course-chip-green { border-color: rgba(31, 122, 77, 0.3) !important; background: #e7f5ee !important; color: #1f7a4d !important; }
         .al-course-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .al-course-count-text { font-size: 12px; color: #6b6f72; }
-        .al-course-grid { display: grid; gap: 14px; }
-        .al-course-grid-2 { grid-template-columns: 1fr; }
-        @media (min-width: 640px) { .al-course-grid-2 { grid-template-columns: repeat(2, 1fr); } }
-        @media (min-width: 1024px) { .al-course-grid-2 { grid-template-columns: repeat(3, 1fr); } }
-        .al-course-featured { position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr; background: white; border: 1px solid #ece7dc; border-radius: 22px; box-shadow: 0 14px 36px rgba(17, 17, 17, 0.06); }
-        @media (min-width: 860px) { .al-course-featured { grid-template-columns: minmax(0, 300px) 1fr; } }
-        .al-course-featured-media { position: relative; min-height: 168px; background: #12100c; }
-        .al-course-featured-media img { width: 100%; height: 100%; object-fit: cover; }
-        .al-course-featured-tag { position: absolute; left: 14px; top: 14px; display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-radius: 999px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
-        .al-course-featured-body { display: flex; flex-direction: column; gap: 10px; padding: 18px 18px 16px; min-width: 0; }
-        .al-course-featured-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-        .al-course-featured-title { font-size: 17px; font-weight: 800; line-height: 1.22; color: #111111; overflow-wrap: anywhere; }
-        .al-course-featured-org { font-size: 12px; color: #6b6f72; margin-top: 2px; }
-        .al-course-featured-desc { font-size: 12.5px; line-height: 1.5; color: #4b4740; }
-        .al-course-featured-heart { position: absolute; right: 14px; top: 14px; z-index: 2; box-shadow: 0 2px 8px rgba(17,17,17,0.12); }
-        .al-course-facts { display: flex; flex-wrap: wrap; gap: 8px; }
-        .al-course-fact { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; height: 26px; padding: 0 10px; border-radius: 9px; background: #f7f3ec; border: 1px solid #ece7dc; font-size: 11px; font-weight: 600; color: #4b4740; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .al-course-fact svg { width: 13px; height: 13px; color: #9a958a; flex-shrink: 0; }
-        .al-course-featured-actions { margin-top: auto; display: flex; align-items: center; gap: 8px; padding-top: 4px; }
-        .al-course-status { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px 0 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0; background: #f2ece1; color: #6b6f72; }
-        .al-course-status::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; flex-shrink: 0; }
-        .al-course-status-pendiente { background: #fdf1dd; color: #97620f; }
-        .al-course-status-empezado { background: #e6eefc; color: #2f5fac; }
-        .al-course-status-terminado { background: #e7f5ee; color: #1f7a4d; }
-        .al-course-status-pausado { background: #f2ece1; color: #6b6f72; }
-        .al-course-status-descartado { background: #f6e4e0; color: #b23b2e; }
-        .al-course-btn-detail { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; height: 38px; border-radius: 11px; border: none; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; text-decoration: none; cursor: pointer; box-shadow: 0 8px 18px rgba(225, 93, 45, 0.22); transition: filter 0.15s; }
-        .al-course-btn-detail:hover { filter: brightness(1.05); }
-        .al-course-featured-actions .al-course-btn-detail { width: auto; padding: 0 22px; }
-        .al-course-card { position: relative; display: flex; flex-direction: column; gap: 10px; min-width: 0; background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 16px; transition: border-color 0.15s, box-shadow 0.15s; }
-        .al-course-card:hover { border-color: rgba(225, 93, 45, 0.28); box-shadow: 0 16px 34px rgba(17, 17, 17, 0.08); }
-        .al-course-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-        .al-course-card-title-wrap { min-width: 0; flex: 1 1 auto; }
-        .al-course-card-badges { display: flex; flex-shrink: 0; align-items: center; gap: 6px; }
-        .al-course-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
-        .al-course-heart.al-course-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
-        .al-course-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; overflow-wrap: anywhere; word-break: break-word; }
-        .al-course-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; overflow-wrap: anywhere; word-break: break-word; }
-        .al-course-card-meta { font-size: 11px; color: #6b6f72; }
-        .al-course-card-desc { font-size: 11.5px; color: #4b4740; line-height: 1.4; overflow-wrap: anywhere; word-break: break-word; }
-        .al-course-card-actions { margin-top: auto; display: flex; gap: 6px; padding-top: 12px; border-top: 1px solid #f2ece1; }
-        .al-course-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
-        .al-course-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
-        .al-course-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
         .al-course-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
         .al-course-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
         .al-course-empty-illustration { width: 100%; max-width: 280px; height: auto; }
@@ -2524,84 +2478,61 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
             {featuredCourse && (() => {
               const fp = getCoursePresentation(featuredCourse);
               return (
-                <article className="al-course-featured">
-                  {canToggleCourseFavorite(featuredCourse) && (
-                    <button
-                      type="button"
-                      className={cn("al-course-heart al-course-featured-heart", featuredCourse.is_favorite && "al-course-heart-active")}
-                      aria-label={featuredCourse.is_favorite ? "Quitar de guardados" : "Guardar"}
-                      aria-pressed={!!featuredCourse.is_favorite}
+                <CatalogFeaturedCard
+                  imageSrc={courseHeroImage(featuredCourse)}
+                  tag={<><Flame className="h-3 w-3" />Destacado</>}
+                  title={fp.title}
+                  subtitle={fp.provider}
+                  status={<span className={cn("al-catalog-status", courseStatusPillClass(featuredCourse.status))}>{capitalizeFirst(featuredCourse.status)}</span>}
+                  favorite={canToggleCourseFavorite(featuredCourse) ? (
+                    <CatalogFavoriteButton
+                      active={!!featuredCourse.is_favorite}
+                      featured
                       onClick={() => toggleCourseFavoriteFor(featuredCourse, actions)}
-                    >
-                      <Heart className="h-3.5 w-3.5" fill={featuredCourse.is_favorite ? "currentColor" : "none"} />
-                    </button>
+                    />
+                  ) : undefined}
+                  description={fp.description}
+                  facts={(
+                    <>
+                      {fp.startDate && <CatalogFact icon={<CalendarDays />}>{formatDateLabel(fp.startDate)}</CatalogFact>}
+                      {fp.modality && <CatalogFact icon={<Building2 />}>{fp.modality}</CatalogFact>}
+                      {fp.level && <CatalogFact icon={<Target />}>{fp.level}</CatalogFact>}
+                    </>
                   )}
-                  <div className="al-course-featured-media">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={courseHeroImage(featuredCourse)} alt="" />
-                    <span className="al-course-featured-tag"><Flame className="h-3 w-3" />Destacado</span>
-                  </div>
-                  <div className="al-course-featured-body">
-                    <div className="al-course-featured-head">
-                      <div className="min-w-0">
-                        <p className="al-course-featured-title">{fp.title}</p>
-                        {fp.provider && <p className="al-course-featured-org">{fp.provider}</p>}
-                      </div>
-                      <span className={cn("al-course-status", courseStatusPillClass(featuredCourse.status))}>{capitalizeFirst(featuredCourse.status)}</span>
-                    </div>
-                    {fp.description && <p className="al-course-featured-desc line-clamp-3">{fp.description}</p>}
-                    <div className="al-course-facts">
-                      {fp.startDate && <span className="al-course-fact"><CalendarDays />{formatDateLabel(fp.startDate)}</span>}
-                      {fp.modality && <span className="al-course-fact"><Building2 />{fp.modality}</span>}
-                      {fp.level && <span className="al-course-fact"><Target />{fp.level}</span>}
-                    </div>
-                    <div className="al-course-featured-actions">
-                      <Link href={`/courses/${encodeURIComponent(featuredCourse.id)}`} className="al-course-btn-detail">
-                        <Eye className="h-4 w-4" />Ver detalles
-                      </Link>
-                    </div>
-                  </div>
-                </article>
+                  detailHref={`/courses/${encodeURIComponent(featuredCourse.id)}`}
+                />
               );
             })()}
 
             {(featuredCourse || gridCourses.length) ? (
-              <div className={cn("al-course-grid", viewMode === "grid" ? "al-course-grid-2" : "")}>
+              <div className={cn("al-catalog-grid", viewMode === "grid" && "al-catalog-grid-cards")}>
                 {gridCourses.map((item) => {
                   const presentation = getCoursePresentation(item);
                   return (
-                    <div key={item.id} className="al-course-card">
-                      <div className="al-course-card-top">
-                        <div className="al-course-card-title-wrap">
-                          <p className="al-course-card-title line-clamp-2" title={presentation.title}>{presentation.title}</p>
-                          {presentation.provider && <p className="al-course-card-org line-clamp-1" title={presentation.provider}>{presentation.provider}</p>}
-                        </div>
-                        <div className="al-course-card-badges">
-                          <span className={cn("al-course-status", courseStatusPillClass(item.status))}>{capitalizeFirst(item.status)}</span>
+                    <CatalogCard
+                      key={item.id}
+                      title={presentation.title}
+                      subtitle={presentation.provider}
+                      badges={(
+                        <>
+                          <span className={cn("al-catalog-status", courseStatusPillClass(item.status))}>{capitalizeFirst(item.status)}</span>
                           {canToggleCourseFavorite(item) && (
-                            <button
-                              type="button"
-                              className={cn("al-course-heart", item.is_favorite && "al-course-heart-active")}
-                              aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
-                              aria-pressed={!!item.is_favorite}
+                            <CatalogFavoriteButton
+                              active={!!item.is_favorite}
                               onClick={() => toggleCourseFavoriteFor(item, actions)}
-                            >
-                              <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
-                            </button>
+                            />
                           )}
-                        </div>
-                      </div>
-                      <div className="al-course-facts">
-                        {presentation.startDate && <span className="al-course-fact"><CalendarDays />{formatDateLabel(presentation.startDate)}</span>}
-                        {presentation.modality && <span className="al-course-fact"><Building2 />{presentation.modality}</span>}
-                        {presentation.level && <span className="al-course-fact"><Target />{presentation.level}</span>}
-                      </div>
-                      <div className="al-course-card-actions">
-                        <Link href={`/courses/${encodeURIComponent(item.id)}`} className="al-course-btn-detail">
-                          <Eye className="h-4 w-4" />Ver detalles
-                        </Link>
-                      </div>
-                    </div>
+                        </>
+                      )}
+                      facts={(
+                        <>
+                          {presentation.startDate && <CatalogFact icon={<CalendarDays />}>{formatDateLabel(presentation.startDate)}</CatalogFact>}
+                          {presentation.modality && <CatalogFact icon={<Building2 />}>{presentation.modality}</CatalogFact>}
+                          {presentation.level && <CatalogFact icon={<Target />}>{presentation.level}</CatalogFact>}
+                        </>
+                      )}
+                      detailHref={`/courses/${encodeURIComponent(item.id)}`}
+                    />
                   );
                 })}
               </div>
@@ -2677,7 +2608,14 @@ function coursePriorityClass(value?: string): string {
 }
 
 function courseStatusPillClass(status: Course["status"]): string {
-  return `al-course-status-${status}`;
+  const classes: Record<Course["status"], string> = {
+    pendiente: "al-catalog-status-pending",
+    empezado: "al-catalog-status-active",
+    terminado: "al-catalog-status-complete",
+    pausado: "al-catalog-status-muted",
+    descartado: "al-catalog-status-dismissed",
+  };
+  return classes[status];
 }
 
 function capitalizeFirst(value: string): string {
@@ -2756,7 +2694,6 @@ export function CourseDetailView({ id }: { id: string }) {
   const canFavorite = canToggleCourseFavorite(item);
   const archived = isCourseArchived(item);
   const aptitudes = item.aptitudes ?? [];
-  const cardClass = "space-y-3 rounded-[18px] border border-[#ece7dc] bg-white p-4 shadow-[0_10px_26px_rgba(17,17,17,0.045)] sm:p-5";
 
   const learnings = aptitudes.filter((a) => a.relation === "ensena").map((a) => a.titulo).filter(Boolean);
   // requisitos_resumen is a single free-text field; only treat it as a
@@ -2786,26 +2723,6 @@ export function CourseDetailView({ id }: { id: string }) {
 
   return (
     <div className="space-y-5">
-      <style>{`
-        .al-course-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
-        .al-course-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
-        .al-course-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
-        .al-course-btn-solid { border: none; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; height: 38px; font-size: 12.5px; font-weight: 700; }
-        .al-course-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
-        .al-course-heart.al-course-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
-        .al-course-hero-media { position: relative; height: 176px; border-radius: 14px; overflow: hidden; background: #12100c; }
-        .al-course-hero-media img { width: 100%; height: 100%; object-fit: cover; }
-        .al-course-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 16px; }
-        @media (min-width: 640px) { .al-course-info-grid { grid-template-columns: repeat(3, 1fr); } }
-        .al-course-info-k { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: #9a958a; }
-        .al-course-info-v { font-size: 12.5px; font-weight: 600; color: #333029; margin-top: 2px; }
-        .al-course-cols { display: grid; gap: 14px; }
-        @media (min-width: 900px) { .al-course-cols { grid-template-columns: repeat(3, 1fr); } }
-        .al-course-side-panel { border: 1px solid #ece7dc; border-radius: 18px; background: white; box-shadow: 0 10px 26px rgba(17,17,17,0.045); padding: 16px; }
-        .al-course-side-title { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #9a958a; }
-        .al-course-next { display: flex; flex-direction: column; gap: 6px; border: 1px solid #ece7dc; border-radius: 14px; padding: 12px; text-decoration: none; transition: border-color 0.15s, box-shadow 0.15s; }
-        .al-course-next:hover { border-color: rgba(225, 93, 45, 0.35); box-shadow: 0 8px 18px rgba(17,17,17,0.05); }
-      `}</style>
       <Link href="/courses" className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b6f72] transition hover:text-[#c94f21]">
         <ChevronLeft className="h-3.5 w-3.5" />Cursos
       </Link>
@@ -2813,8 +2730,8 @@ export function CourseDetailView({ id }: { id: string }) {
 
       <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-4">
-          <div className={cardClass}>
-            <div className="al-course-hero-media">
+          <CatalogPanel>
+            <div className="al-catalog-hero-media">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={courseHeroImage(item)} alt="" />
             </div>
@@ -2822,23 +2739,24 @@ export function CourseDetailView({ id }: { id: string }) {
               <Badge className={cn(courseStatusClass(item.status))}>{item.status}</Badge>
               {presentation.priority && <ChipTag className={coursePriorityClass(presentation.priority)}>{priorityText(presentation.priority)}</ChipTag>}
             </div>
-            <div className="al-course-info-grid">
-              <div><p className="al-course-info-k">Fechas</p><p className="al-course-info-v">{presentation.startDate ? formatDateLabel(presentation.startDate) : "Sin fecha"}{presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}</p></div>
-              <div><p className="al-course-info-k">Ubicación</p><p className="al-course-info-v">{presentation.location || "No especificada"}</p></div>
-              <div><p className="al-course-info-k">Modalidad</p><p className="al-course-info-v">{presentation.modality || "No especificada"}</p></div>
-              {presentation.level && <div><p className="al-course-info-k">Nivel</p><p className="al-course-info-v">{presentation.level}</p></div>}
-              {presentation.duration && <div><p className="al-course-info-k">Duración</p><p className="al-course-info-v">{presentation.duration}</p></div>}
-              <div><p className="al-course-info-k">Estado</p><p className="al-course-info-v capitalize">{presentation.status}</p></div>
-            </div>
-          </div>
+            <CatalogInfoGrid items={[
+              {
+                label: "Fechas",
+                value: <>{presentation.startDate ? formatDateLabel(presentation.startDate) : "Sin fecha"}{presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}</>,
+              },
+              { label: "Ubicación", value: presentation.location || "No especificada" },
+              { label: "Modalidad", value: presentation.modality || "No especificada" },
+              { label: "Nivel", value: presentation.level || "No especificado" },
+              { label: "Duración", value: presentation.duration || "No especificada" },
+              { label: "Estado", value: capitalizeFirst(presentation.status) },
+            ]} />
+          </CatalogPanel>
 
-          <div className="al-course-cols">
-            <section className={cardClass}>
-              <h2 className="text-sm font-bold text-[#111111]">Sobre el curso</h2>
+          <div className="al-catalog-detail-cols">
+            <CatalogPanel title="Sobre el curso">
               <p className="whitespace-pre-wrap text-[12.5px] leading-6 text-[#4b4740]">{presentation.description || "Este curso todavía no tiene una descripción disponible."}</p>
-            </section>
-            <section className={cardClass}>
-              <h2 className="text-sm font-bold text-[#111111]">Qué aprenderás</h2>
+            </CatalogPanel>
+            <CatalogPanel title="Qué aprenderás">
               {learnings.length ? (
                 <ul className="space-y-2">
                   {learnings.map((t, i) => (
@@ -2848,9 +2766,8 @@ export function CourseDetailView({ id }: { id: string }) {
               ) : (
                 <p className="text-[12.5px] leading-6 text-[#6b6f72]">Los objetivos concretos se publicarán antes del inicio.</p>
               )}
-            </section>
-            <section className={cardClass}>
-              <h2 className="text-sm font-bold text-[#111111]">Requisitos de acceso</h2>
+            </CatalogPanel>
+            <CatalogPanel title="Requisitos de acceso">
               {hasRequirementList ? (
                 <ul className="space-y-2">
                   {requirements.map((t, i) => (
@@ -2860,12 +2777,11 @@ export function CourseDetailView({ id }: { id: string }) {
               ) : (
                 <p className="text-[12.5px] leading-6 text-[#6b6f72]">Consulta los requisitos en la convocatoria oficial.</p>
               )}
-            </section>
+            </CatalogPanel>
           </div>
 
           {aptitudes.length > 0 && (
-            <section className={cardClass}>
-              <h2 className="text-sm font-bold text-[#111111]">Estructura del curso</h2>
+            <CatalogPanel title="Estructura del curso">
               <ol className="space-y-2.5">
                 {aptitudes.map((a, i) => (
                   <li key={`${a.id}-${a.relation}`} className="flex items-start gap-3">
@@ -2877,28 +2793,23 @@ export function CourseDetailView({ id }: { id: string }) {
                   </li>
                 ))}
               </ol>
-            </section>
+            </CatalogPanel>
           )}
 
-          <section className={cardClass}>
-            <h2 className="text-sm font-bold text-[#111111]">Información adicional</h2>
-            <div className="al-course-info-grid">
-              {infoRows.filter(([, v]) => v).map(([k, v]) => (
-                <div key={k}><p className="al-course-info-k">{k}</p><p className="al-course-info-v">{v}</p></div>
-              ))}
-            </div>
-            {presentation.requirements && <p className="text-[11.5px] leading-5 text-[#777269]"><span className="al-course-info-k">Observaciones</span><br />{presentation.requirements}</p>}
-          </section>
+          <CatalogPanel title="Información adicional">
+            <CatalogInfoGrid items={infoRows.filter(([, value]) => value).map(([label, value]) => ({ label, value }))} />
+            {presentation.requirements && <p className="text-[11.5px] leading-5 text-[#777269]"><span className="al-catalog-info-k">Observaciones</span><br />{presentation.requirements}</p>}
+          </CatalogPanel>
 
         </div>
 
         <div className="space-y-4">
-          <div className="al-course-side-panel space-y-3">
-            <p className="al-course-side-title">Estado del curso</p>
+          <CatalogPanel>
+            <p className="al-catalog-side-title">Estado del curso</p>
             <Badge className={cn(courseStatusClass(item.status))}>{item.status}</Badge>
             <div>
-              <p className="al-course-info-k">Próximo hito</p>
-              <p className="al-course-info-v">{presentation.startDate ? `Inicio · ${formatDateLabel(presentation.startDate)}` : "Fecha por confirmar"}</p>
+              <p className="al-catalog-info-k">Próximo hito</p>
+              <p className="al-catalog-info-v">{presentation.startDate ? `Inicio · ${formatDateLabel(presentation.startDate)}` : "Fecha por confirmar"}</p>
             </div>
             {typeof daysUntil === "number" && daysUntil >= 0 && (
               <div className="rounded-xl bg-[#e7f5ee] px-3 py-2 text-[12px] font-semibold text-[#1f7a4d]">
@@ -2907,14 +2818,14 @@ export function CourseDetailView({ id }: { id: string }) {
             )}
             <div className="flex flex-col gap-2 pt-1">
               {isSafeHttpUrl(presentation.sourceUrl) && (
-                <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-course-btn al-course-btn-solid">
+                <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-catalog-action al-catalog-action-solid">
                   <ExternalLink className="h-3.5 w-3.5" />Abrir curso
                 </a>
               )}
               {canFavorite && (
                 <button
                   type="button"
-                  className={cn("al-course-btn", item.is_favorite ? "al-course-btn-primary" : "")}
+                  className={cn("al-catalog-action", item.is_favorite && "al-catalog-action-soft")}
                   aria-pressed={!!item.is_favorite}
                   onClick={() => toggleCourseFavoriteFor(item, actions)}
                 >
@@ -2923,26 +2834,25 @@ export function CourseDetailView({ id }: { id: string }) {
                 </button>
               )}
               {!archived && (
-                <button type="button" className="al-course-btn" onClick={() => actions.completeCourse(item).catch(() => {})}>
+                <button type="button" className="al-catalog-action" onClick={() => actions.completeCourse(item).catch(() => {})}>
                   <CheckCircle2 className="h-3.5 w-3.5" />Marcar como terminado
                 </button>
               )}
             </div>
-          </div>
+          </CatalogPanel>
 
           {nextCourse && (
-            <div className="al-course-side-panel space-y-3">
-              <p className="al-course-side-title">Siguiente curso</p>
-              <Link href={`/courses/${encodeURIComponent(nextCourse.id)}`} className="al-course-next">
-                <p className="text-[12.5px] font-bold leading-5 text-[#111111] line-clamp-2">{nextCourse.title}</p>
-                <p className="text-[11px] text-[#6b6f72]">
-                  {(nextCourse.fecha_inicio || nextCourse.start_at)
-                    ? `Inicio · ${formatDateLabel((nextCourse.fecha_inicio || nextCourse.start_at)!)}`
-                    : nextCourse.entidad || "Ver curso"}
-                </p>
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#c94f21]">Ver curso <ChevronRight className="h-3 w-3" /></span>
-              </Link>
-            </div>
+            <CatalogPanel>
+              <p className="al-catalog-side-title">Siguiente curso</p>
+              <CatalogNextLink
+                href={`/courses/${encodeURIComponent(nextCourse.id)}`}
+                title={nextCourse.title}
+                meta={(nextCourse.fecha_inicio || nextCourse.start_at)
+                  ? `Inicio · ${formatDateLabel((nextCourse.fecha_inicio || nextCourse.start_at)!)}`
+                  : nextCourse.entidad || "Ver curso"}
+                actionLabel="Ver curso"
+              />
+            </CatalogPanel>
           )}
         </div>
       </div>
@@ -2968,24 +2878,11 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
-  const [pendingCompleteId, setPendingCompleteId] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
     return () => clearTimeout(t);
   }, [searchInput]);
-
-  async function handleCompleteHackathon(item: Hackathon) {
-    if (pendingCompleteId) return;
-    setPendingCompleteId(item.id);
-    try {
-      await actions.completeHackathon(item);
-    } catch {
-      // Store action already surfaced a toast and rolled back optimistic state.
-    } finally {
-      setPendingCompleteId(null);
-    }
-  }
 
   const sorted = useMemo(() => [...allHackathons].sort((a, b) => {
     const da = (a.start_at || "").slice(0, 10);
@@ -3068,11 +2965,16 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setProvinciaFilter(""); setModalidadFilter(""); setPrioridadFilter(""); setSoloInscripcionAbierta(false); setSearchInput(""); setSearch("");
   }
 
-  const featuredHackathon = useMemo(() => {
-    return selectFeaturedHackathon(activos);
-  }, [activos]);
+  const showFeatured = (viewTab === "activos" || viewTab === "todos") && !search && activeFilterCount === 0 && viewMode === "grid";
+  const featuredHackathon = useMemo(
+    () => showFeatured ? selectFeaturedHackathon(activos) : null,
+    [activos, showFeatured],
+  );
+  const gridHackathons = useMemo(
+    () => featuredHackathon ? filtered.filter((item) => item.id !== featuredHackathon.id) : filtered,
+    [featuredHackathon, filtered],
+  );
   const featuredProgress = featuredHackathon ? hackathonAptitudeProgress(featuredHackathon) : null;
-  const featuredDescription = featuredHackathon ? hackathonPublicDescription(featuredHackathon) : undefined;
 
   return (
     <>
@@ -3092,49 +2994,8 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-stat-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
         .al-hack-stat-value { font-size: 22px; font-weight: 800; line-height: 1; color: #111111; }
         .al-hack-stat-label { font-size: 11px; font-weight: 600; color: #6b6f72; margin-top: 3px; }
-        .al-hack-chip-terracotta { border-color: rgba(225, 93, 45, 0.3) !important; background: #fbe7dd !important; color: #c94f21 !important; }
-        .al-hack-chip-amber { border-color: rgba(180, 121, 31, 0.3) !important; background: #fdf1dd !important; color: #8a5c14 !important; }
-        .al-hack-chip-green { border-color: rgba(31, 122, 77, 0.3) !important; background: #e7f5ee !important; color: #1f7a4d !important; }
-        .al-hack-hero { position: relative; overflow: hidden; border-radius: 22px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); color: #111111; padding: clamp(18px, 3vw, 26px); display: flex; flex-direction: column; gap: 18px; }
-        @media (min-width: 900px) { .al-hack-hero { flex-direction: row; align-items: stretch; } }
-        .al-hack-hero-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-        .al-hack-hero-kicker { display: inline-flex; align-items: center; gap: 6px; width: fit-content; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #c94f21; }
-        .al-hack-hero-title { font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; color: #111111; }
-        .al-hack-hero-org { font-size: 12.5px; color: #6b6f72; }
-        .al-hack-hero-meta { font-size: 12.5px; color: #4b4740; }
-        .al-hack-hero-desc { font-size: 13px; color: #4b4740; line-height: 1.5; max-width: 56ch; }
-        .al-hack-hero-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-        .al-hack-hero-btn-primary { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 16px; border-radius: 12px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 13px; font-weight: 700; box-shadow: 0 10px 24px rgba(225, 93, 45, 0.28); border: none; cursor: pointer; }
-        .al-hack-hero-btn-ghost { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-radius: 12px; background: white; color: #333029; font-size: 13px; font-weight: 600; border: 1px solid #ece7dc; cursor: pointer; }
-        .al-hack-hero-side { width: 100%; background: #faf8f4; border: 1px solid #ece7dc; border-radius: 16px; padding: 16px; }
-        @media (min-width: 900px) { .al-hack-hero-side { width: 220px; flex-shrink: 0; } }
-        .al-hack-hero-side-label { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; font-size: 11px; font-weight: 700; color: #6b6f72; text-transform: uppercase; letter-spacing: 0.05em; }
-        .al-hack-hero-side-value { font-size: 14px; font-weight: 700; color: #c94f21; }
-        .al-hack-hero-progress-bar { margin-top: 10px; height: 8px; border-radius: 999px; background: #f3ece1; overflow: hidden; }
-        .al-hack-hero-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #F06A37, #E15D2D); transition: width 0.3s ease; }
-        .al-hack-hero-side-hint { margin-top: 10px; font-size: 11.5px; color: #6b6f72; line-height: 1.4; }
-        .al-hack-hero-empty { align-items: center; justify-content: center; text-align: center; gap: 8px; padding: clamp(24px, 4vw, 36px); }
-        .al-hack-hero-empty-title { font-size: 15px; font-weight: 700; color: #111111; }
-        .al-hack-hero-empty-desc { font-size: 12.5px; color: #6b6f72; max-width: 46ch; line-height: 1.5; }
-        .al-hack-prep-ready { display: inline-flex; align-items: center; gap: 5px; }
         .al-hack-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .al-hack-count-text { font-size: 12px; color: #6b6f72; }
-        .al-hack-grid { display: grid; gap: 12px; }
-        .al-hack-grid-2 { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-        .al-hack-card { position: relative; display: flex; flex-direction: column; gap: 8px; background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 13px; }
-        .al-hack-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-        .al-hack-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; }
-        .al-hack-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; }
-        .al-hack-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
-        .al-hack-heart.al-hack-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
-        .al-hack-hero-heart { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
-        .al-hack-hero-heart.al-hack-hero-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
-        .al-hack-card-meta { font-size: 11px; color: #6b6f72; }
-        .al-hack-card-desc { font-size: 11.5px; color: #4b4740; line-height: 1.4; }
-        .al-hack-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
-        .al-hack-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; }
-        .al-hack-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
-        .al-hack-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
         .al-hack-empty-wrap { display: grid; gap: 14px; grid-template-columns: 1fr; }
         @media (min-width: 640px) { .al-hack-empty-wrap.al-hack-empty-two { grid-template-columns: 1fr 1fr; } }
         .al-hack-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
@@ -3188,68 +3049,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
               </div>
             </div>
 
-            {featuredHackathon ? (
-              <div className="al-hack-hero">
-                <div className="al-hack-hero-main">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="al-hack-hero-kicker">Próximo evento o reto</span>
-                    {canToggleHackathonFavorite(featuredHackathon) && (
-                      <button
-                        type="button"
-                        className={cn("al-hack-hero-heart", featuredHackathon.is_favorite && "al-hack-hero-heart-active")}
-                        aria-label={featuredHackathon.is_favorite ? "Quitar de guardados" : "Guardar"}
-                        aria-pressed={!!featuredHackathon.is_favorite}
-                        onClick={() => toggleHackathonFavoriteFor(featuredHackathon, actions)}
-                      >
-                        <Heart className="h-4 w-4" fill={featuredHackathon.is_favorite ? "currentColor" : "none"} />
-                      </button>
-                    )}
-                  </div>
-                  <p className="al-hack-hero-title">{featuredHackathon.name}</p>
-                  {featuredHackathon.organizer && <p className="al-hack-hero-org">{featuredHackathon.organizer}</p>}
-                  {(featuredHackathon.start_at || featuredHackathon.end_at) && (
-                    <p className="al-hack-hero-meta">
-                      {featuredHackathon.start_at ? formatDateLabel(featuredHackathon.start_at) : "—"}
-                      {featuredHackathon.end_at ? ` → ${formatDateLabel(featuredHackathon.end_at)}` : ""}
-                    </p>
-                  )}
-                  {featuredDescription && <p className="al-hack-hero-desc">{featuredDescription}</p>}
-                  <div className="al-hack-hero-actions">
-                    <Link href={`/hackathons/${encodeURIComponent(featuredHackathon.id)}`} className="al-hack-hero-btn-primary">
-                      <Eye className="h-4 w-4" />Ver detalles
-                    </Link>
-                    {isSafeHttpUrl(featuredHackathon.url) ? (
-                      <a href={featuredHackathon.url} target="_blank" rel="noopener noreferrer" className="al-hack-hero-btn-ghost">
-                        <ExternalLink className="h-4 w-4" />Abrir convocatoria
-                      </a>
-                    ) : null}
-                  </div>
-                </div>
-                {featuredProgress && featuredProgress.total > 0 && (
-                  <div className="al-hack-hero-side">
-                    <div className="al-hack-hero-side-label">
-                      <span>Tu progreso</span>
-                      <span className="al-hack-hero-side-value">{featuredProgress.done}/{featuredProgress.total} completadas</span>
-                    </div>
-                    <div className="al-hack-hero-progress-bar">
-                      <div className="al-hack-hero-progress-fill" style={{ width: `${Math.round((featuredProgress.done / featuredProgress.total) * 100)}%` }} />
-                    </div>
-                    <p className="al-hack-hero-side-hint">Aptitudes imprescindibles que ya has completado en tu ruta de aprendizaje.</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="al-hack-hero al-hack-hero-empty">
-                <CheckCircle2 className="h-6 w-6 text-[#1f7a4d]" />
-                <p className="al-hack-hero-empty-title">Sin próximo evento o reto pendiente</p>
-                <p className="al-hack-hero-empty-desc">
-                  {activos.length > 0
-                    ? "Has completado la preparación de todos tus eventos activos. En cuanto marques uno como realizado, o tengas otro con preparación pendiente, aparecerá aquí."
-                    : "En cuanto guardes o te inscribas en un evento o reto, aparecerá aquí."}
-                </p>
-              </div>
-            )}
-
             <div className="al-hack-count-row">
               <p className="al-hack-count-text">
                 Mostrando {filtered.length} {filtered.length === 1 ? "evento o reto" : "eventos y retos"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
@@ -3257,81 +3056,79 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
               <ViewToggle value={viewMode} onChange={setViewMode} />
             </div>
 
-            {filtered.length ? (
-              <div className={cn("al-hack-grid", viewMode === "grid" ? "al-hack-grid-2" : "")}>
-                {filtered.map((item) => {
-                  const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
-                  const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
-                  const readOnlyTechItem = item.sourceTable === "tech_opportunities" || item.sourceTable === "fp_content_items";
+            {featuredHackathon && (() => {
+              const presentation = getHackathonPresentation(featuredHackathon);
+              return (
+                <CatalogFeaturedCard
+                  imageSrc="/assets/hackathons/eventos-hero.svg"
+                  tag={<><Flame className="h-3 w-3" />Próximo</>}
+                  title={presentation.title}
+                  subtitle={presentation.organizer}
+                  status={(
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
+                      <span className={cn("al-catalog-status", hackathonStatusPillClass(featuredHackathon.status))}>{hackathonStatusLabel(featuredHackathon.status)}</span>
+                      {!isHackathonArchived(featuredHackathon) && isPreparationComplete(featuredHackathon) && (
+                        <Badge className="al-hack-prep-ready al-hack-chip-green"><CheckCircle2 className="h-3 w-3" />Preparación lista</Badge>
+                      )}
+                    </div>
+                  )}
+                  favorite={canToggleHackathonFavorite(featuredHackathon) ? (
+                    <CatalogFavoriteButton
+                      active={!!featuredHackathon.is_favorite}
+                      featured
+                      onClick={() => toggleHackathonFavoriteFor(featuredHackathon, actions)}
+                    />
+                  ) : undefined}
+                  description={presentation.description}
+                  facts={(
+                    <>
+                      {presentation.startDate && <CatalogFact icon={<CalendarDays />}>{formatDateLabel(presentation.startDate)}</CatalogFact>}
+                      {presentation.location && <CatalogFact icon={<MapPin />}>{presentation.location}</CatalogFact>}
+                      {presentation.modality && <CatalogFact icon={<Building2 />}>{presentation.modality}</CatalogFact>}
+                      {featuredProgress && featuredProgress.total > 0 && (
+                        <CatalogFact icon={<CheckCircle2 />}>{featuredProgress.done}/{featuredProgress.total} aptitudes</CatalogFact>
+                      )}
+                    </>
+                  )}
+                  detailHref={`/hackathons/${encodeURIComponent(featuredHackathon.id)}`}
+                />
+              );
+            })()}
+
+            {(featuredHackathon || gridHackathons.length) ? (
+              <div className={cn("al-catalog-grid", viewMode === "grid" && "al-catalog-grid-cards")}>
+                {gridHackathons.map((item) => {
+                  const presentation = getHackathonPresentation(item);
                   const canFavorite = canToggleHackathonFavorite(item);
-                  const description = hackathonPublicDescription(item);
                   return (
-                    <div key={item.id} className="al-hack-card">
-                      <div className="al-hack-card-top">
-                        <div className="min-w-0">
-                          <p className="al-hack-card-title">{item.name}</p>
-                          {item.organizer && <p className="al-hack-card-org">{item.organizer}</p>}
-                        </div>
-                        <div className="flex shrink-0 items-center gap-1.5">
-                          <Badge className={cn("shrink-0", hackathonStatusClass(item.status))}>{hackathonStatusLabel(item.status)}</Badge>
+                    <CatalogCard
+                      key={item.id}
+                      title={presentation.title}
+                      subtitle={presentation.organizer}
+                      badges={(
+                        <>
+                          <span className={cn("al-catalog-status", hackathonStatusPillClass(item.status))}>{hackathonStatusLabel(item.status)}</span>
                           {!isHackathonArchived(item) && isPreparationComplete(item) && (
-                            <Badge className="al-hack-prep-ready shrink-0 al-hack-chip-green">
-                              <CheckCircle2 className="h-3 w-3" />Preparación lista
-                            </Badge>
+                            <Badge className="al-hack-prep-ready al-hack-chip-green"><CheckCircle2 className="h-3 w-3" /><span className="sr-only sm:not-sr-only">Preparación lista</span></Badge>
                           )}
                           {canFavorite && (
-                            <button
-                              type="button"
-                              className={cn("al-hack-heart", item.is_favorite && "al-hack-heart-active")}
-                              aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
-                              aria-pressed={!!item.is_favorite}
+                            <CatalogFavoriteButton
+                              active={!!item.is_favorite}
                               onClick={() => toggleHackathonFavoriteFor(item, actions)}
-                            >
-                              <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
-                            </button>
+                            />
                           )}
-                        </div>
-                      </div>
-                      {(item.start_at || item.end_at) && (
-                        <p className="al-hack-card-meta">
-                          {item.start_at ? formatDateLabel(item.start_at) : "—"}{item.end_at ? ` → ${formatDateLabel(item.end_at)}` : ""}
-                          {inscripcionFin && <span className="ml-2 opacity-70">· Inscripción hasta {formatDateLabel(inscripcionFin)}</span>}
-                        </p>
+                        </>
                       )}
-                      <div className="flex flex-wrap gap-1.5">
-                        {place && <ChipTag icon="pin">{place}</ChipTag>}
-                        {item.modalidad && <ChipTag>{item.modalidad}</ChipTag>}
-                        {item.priority && <ChipTag className={hackPriorityClass(item.priority)}>{priorityText(item.priority)}</ChipTag>}
-                      </div>
-                      {description && <p className="al-hack-card-desc line-clamp-2">{description}</p>}
-                      <div className="al-hack-card-actions">
-                        <Link href={`/hackathons/${encodeURIComponent(item.id)}`} className="al-hack-btn al-hack-btn-primary">
-                          <Eye className="h-3.5 w-3.5" />Ver detalles
-                        </Link>
-                        {isSafeHttpUrl(item.url) && (
-                          <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-hack-btn">
-                            <ExternalLink className="h-3.5 w-3.5" />Abrir web
-                          </a>
-                        )}
-                        <button type="button" className="al-hack-btn" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" }).catch(() => {})}>
-                          <Plus className="h-3.5 w-3.5" />Crear tarea
-                        </button>
-                        {!isHackathonArchived(item) && item.sourceTable !== "tech_opportunities" && (
-                          <button
-                            type="button"
-                            className="al-hack-btn"
-                            disabled={pendingCompleteId === item.id}
-                            onClick={() => handleCompleteHackathon(item)}
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            {pendingCompleteId === item.id ? "Guardando…" : "Realizado"}
-                          </button>
-                        )}
-                        {!readOnlyTechItem && item.status === "revisar_futura_edicion" && (
-                          <button type="button" className="al-hack-btn" onClick={() => actions.updateHackathon(item.id, { status: "pendiente" })}>Revisado</button>
-                        )}
-                      </div>
-                    </div>
+                      facts={(
+                        <>
+                          {presentation.startDate && <CatalogFact icon={<CalendarDays />}>{formatDateLabel(presentation.startDate)}</CatalogFact>}
+                          {presentation.location && <CatalogFact icon={<MapPin />}>{presentation.location}</CatalogFact>}
+                          {presentation.modality && <CatalogFact icon={<Building2 />}>{presentation.modality}</CatalogFact>}
+                          {presentation.priority && <CatalogFact icon={<Target />}>{priorityText(presentation.priority)}</CatalogFact>}
+                        </>
+                      )}
+                      detailHref={`/hackathons/${encodeURIComponent(item.id)}`}
+                    />
                   );
                 })}
               </div>
@@ -3436,6 +3233,17 @@ function hackPriorityClass(value?: string): string {
   return "al-hack-chip-amber";
 }
 
+function hackathonStatusPillClass(status: Hackathon["status"]): string {
+  const classes: Record<Hackathon["status"], string> = {
+    inscripcion_abierta: "al-catalog-status-open",
+    pendiente: "al-catalog-status-pending",
+    realizado: "al-catalog-status-complete",
+    revisar_futura_edicion: "al-catalog-status-review",
+    descartado: "al-catalog-status-dismissed",
+  };
+  return classes[status];
+}
+
 // A single requirement, fully expanded (title, description, its own
 // grounded internal-course links, mark-done action) - not a compact
 // checklist row behind a second "see more" button. Folding the old
@@ -3526,14 +3334,23 @@ export function HackathonDetailView({ id }: { id: string }) {
   }
 
   const description = hackathonPublicDescription(item);
+  const presentation = getHackathonPresentation(item);
   const canFavorite = canToggleHackathonFavorite(item);
-  const place = [item.localidad || item.city, item.province].filter(Boolean).join(" / ");
   const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
   const requirements = item.requiredCompetencies ?? [];
   const progress = hackathonAptitudeProgress(item);
   const past = isHackathonPast(item);
   const archived = isHackathonArchived(item);
-  const cardClass = "space-y-3 rounded-[18px] border border-[#ece7dc] bg-white p-4 shadow-[0_10px_26px_rgba(17,17,17,0.045)] sm:p-5";
+  const requiredSkills = requirements.filter((competency) => competency.obligatoria_para_item);
+  const startKey = (presentation.startDate ?? "").slice(0, 10);
+  const nextHackathon = (() => {
+    const pool = allHackathons
+      .filter((candidate) => candidate.id !== item.id && !isHackathonArchived(candidate))
+      .map((candidate) => ({ candidate, key: (candidate.start_at || "").slice(0, 10) }))
+      .filter(({ key }) => key)
+      .sort((a, b) => a.key.localeCompare(b.key));
+    return (pool.find(({ key }) => key >= startKey) ?? pool[0])?.candidate ?? null;
+  })();
 
   async function handleComplete(target: Hackathon) {
     if (pendingComplete) return;
@@ -3550,14 +3367,6 @@ export function HackathonDetailView({ id }: { id: string }) {
   return (
     <div className="space-y-5">
       <style>{`
-        .al-hack-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
-        .al-hack-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
-        .al-hack-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
-        .al-hack-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .al-hack-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
-        .al-hack-heart.al-hack-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
-        .al-hack-chip-green { border-color: rgba(31, 122, 77, 0.3) !important; background: #e7f5ee !important; color: #1f7a4d !important; }
-        .al-hack-prep-ready { display: inline-flex; align-items: center; gap: 4px; }
         .al-modal-req-check { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; flex-shrink: 0; }
         .al-modal-req-check-done { background: linear-gradient(180deg, #4C9A6E, #1f7a4d); color: white; }
         .al-modal-req-check-pending { border: 2px solid #e4dfd5; color: transparent; }
@@ -3573,57 +3382,64 @@ export function HackathonDetailView({ id }: { id: string }) {
       <Link href="/hackathons" className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b6f72] transition hover:text-[#c94f21]">
         <ChevronLeft className="h-3.5 w-3.5" />Eventos y retos
       </Link>
-      <PageHeader eyebrow={item.type || "Evento o reto"} title={item.name} subtitle={item.organizer} actions={<StudentHeaderActions />} />
+      <PageHeader eyebrow={presentation.type || "Evento o reto"} title={presentation.title} subtitle={presentation.organizer} actions={<StudentHeaderActions />} />
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+      <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-4">
-          <div className={cardClass}>
+          <CatalogPanel>
+            <div className="al-catalog-hero-media">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/assets/hackathons/eventos-hero.svg" alt="" />
+            </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className={cn(hackathonStatusClass(item.status))}>{hackathonStatusLabel(item.status)}</Badge>
+              <span className={cn("al-catalog-status", hackathonStatusPillClass(item.status))}>{hackathonStatusLabel(item.status)}</span>
+              {presentation.priority && <ChipTag className={hackPriorityClass(presentation.priority)}>{priorityText(presentation.priority)}</ChipTag>}
               {!archived && isPreparationComplete(item) && (
                 <Badge className="al-hack-prep-ready al-hack-chip-green"><CheckCircle2 className="h-3 w-3" />Preparación lista</Badge>
               )}
-              {canFavorite && (
-                <button
-                  type="button"
-                  className={cn("al-hack-heart", item.is_favorite && "al-hack-heart-active")}
-                  aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
-                  aria-pressed={!!item.is_favorite}
-                  onClick={() => toggleHackathonFavoriteFor(item, actions)}
-                >
-                  <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
-                </button>
-              )}
             </div>
             {past && <p className="rounded-lg bg-[#f3ece1] px-3 py-2 text-xs font-semibold text-[#6b6f72]">Este evento ya ha finalizado.</p>}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div>
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Fechas</p>
-                <p className="text-[13px] font-semibold text-[#333029]">{item.start_at ? formatDateLabel(item.start_at) : "Sin fecha indicada"}{item.end_at ? ` → ${formatDateLabel(item.end_at)}` : ""}</p>
-              </div>
-              <div>
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Inscripción hasta</p>
-                <p className="text-[13px] font-semibold text-[#333029]">{inscripcionFin ? formatDateLabel(inscripcionFin) : "No especificada"}</p>
-              </div>
-              <div>
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Ubicación</p>
-                <p className="text-[13px] font-semibold text-[#333029]">{place || "No especificada"}</p>
-              </div>
-              <div>
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Modalidad</p>
-                <p className="text-[13px] font-semibold text-[#333029]">{item.modalidad || "No especificada"}</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Descripción</p>
-              <p className="mt-1 whitespace-pre-wrap text-[13px] leading-6 text-[#4b4740]">{description || "Este evento todavía no tiene una descripción disponible."}</p>
-            </div>
+            <CatalogInfoGrid items={[
+              {
+                label: "Fechas",
+                value: <>{presentation.startDate ? formatDateLabel(presentation.startDate) : "Sin fecha indicada"}{presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}</>,
+              },
+              { label: "Ubicación", value: presentation.location || "No especificada" },
+              { label: "Modalidad", value: presentation.modality || "No especificada" },
+              { label: "Inscripción hasta", value: inscripcionFin ? formatDateLabel(inscripcionFin) : "No especificada" },
+              { label: "Prioridad", value: presentation.priority ? priorityText(presentation.priority) : "No especificada" },
+              { label: "Estado", value: hackathonStatusLabel(item.status) },
+            ]} />
+          </CatalogPanel>
+
+          <div className="al-catalog-detail-cols">
+            <CatalogPanel title="Sobre el evento o reto">
+              <p className="whitespace-pre-wrap text-[12.5px] leading-6 text-[#4b4740]">{description || "Este evento todavía no tiene una descripción disponible."}</p>
+            </CatalogPanel>
+            <CatalogPanel title="Qué pondrás a prueba">
+              {requiredSkills.length ? (
+                <ul className="space-y-2">
+                  {requiredSkills.slice(0, 4).map((competency) => (
+                    <li key={competency.id} className="flex items-start gap-2 text-[12.5px] leading-5 text-[#4b4740]"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1f7a4d]" />{competency.titulo}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[12.5px] leading-6 text-[#6b6f72]">Las aptitudes concretas se publicarán cuando la convocatoria las confirme.</p>
+              )}
+            </CatalogPanel>
+            <CatalogPanel title="Cómo prepararte">
+              {requirements.length ? (
+                <p className="text-[12.5px] leading-6 text-[#4b4740]">Tienes {requirements.length} {requirements.length === 1 ? "aptitud vinculada" : "aptitudes vinculadas"}. Revisa debajo los cursos y recursos disponibles para cada una.</p>
+              ) : (
+                <p className="text-[12.5px] leading-6 text-[#6b6f72]">Consulta la convocatoria oficial y vuelve cuando publiquemos una preparación vinculada a tu ciclo.</p>
+              )}
+            </CatalogPanel>
           </div>
 
           {requirements.length > 0 && (
-            <div className={cardClass}>
+            <CatalogPanel title="Recursos para prepararte">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-bold text-[#111111]">Requisitos y preparación</p>
+                <p className="text-[12.5px] leading-5 text-[#6b6f72]">Cada aptitud muestra únicamente cursos internos o referencias ya vinculadas en el catálogo.</p>
                 {progress.total > 0 && <span className="text-xs font-semibold text-[#9a958a]">{progress.done}/{progress.total} completadas</span>}
               </div>
               <div className="space-y-3">
@@ -3631,29 +3447,88 @@ export function HackathonDetailView({ id }: { id: string }) {
                   <RequirementRow key={competency.id} competency={competency} actions={actions} />
                 ))}
               </div>
-            </div>
+            </CatalogPanel>
           )}
+
+          <CatalogPanel title="Información adicional">
+            <CatalogInfoGrid items={[
+              { label: "Tipo", value: presentation.type || "Evento o reto" },
+              { label: "Entidad", value: presentation.organizer || "No especificada" },
+              { label: "Certificación o premio", value: item.certificacion_o_premio || "No especificado" },
+              { label: "Modalidad", value: presentation.modality || "No especificada" },
+              { label: "Ubicación", value: presentation.location || "No especificada" },
+              { label: "Prioridad", value: presentation.priority ? priorityText(presentation.priority) : "No especificada" },
+            ]} />
+          </CatalogPanel>
         </div>
 
         <div className="space-y-4">
-          <div className={cardClass}>
-            <p className="text-sm font-bold text-[#111111]">Acciones</p>
-            <div className="flex flex-col gap-2">
+          <CatalogPanel>
+            <p className="al-catalog-side-title">Estado del evento</p>
+            <span className={cn("al-catalog-status w-fit", hackathonStatusPillClass(item.status))}>{hackathonStatusLabel(item.status)}</span>
+            <div>
+              <p className="al-catalog-info-k">Próximo hito</p>
+              <p className="al-catalog-info-v">
+                {inscripcionFin
+                  ? `Cierre de inscripción · ${formatDateLabel(inscripcionFin)}`
+                  : presentation.startDate
+                    ? `Inicio · ${formatDateLabel(presentation.startDate)}`
+                    : "Fecha por confirmar"}
+              </p>
+            </div>
+            {progress.total > 0 && (
+              <div className="rounded-xl bg-[#faf8f4] p-3">
+                <div className="flex items-center justify-between gap-2 text-[11.5px] font-semibold text-[#4b4740]">
+                  <span>Tu preparación</span>
+                  <span>{progress.done}/{progress.total}</span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#eee7dc]">
+                  <div className="h-full rounded-full bg-[#1f7a4d] transition-[width]" style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }} />
+                </div>
+              </div>
+            )}
+            <div className="flex flex-col gap-2 pt-1">
               {isSafeHttpUrl(item.url) && (
-                <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-hack-btn al-hack-btn-primary justify-center">
+                <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-catalog-action al-catalog-action-solid">
                   <ExternalLink className="h-3.5 w-3.5" />Abrir convocatoria oficial
                 </a>
               )}
-              <button type="button" className="al-hack-btn justify-center" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" }).catch(() => {})}>
+              {canFavorite && (
+                <button
+                  type="button"
+                  className={cn("al-catalog-action", item.is_favorite && "al-catalog-action-soft")}
+                  aria-pressed={!!item.is_favorite}
+                  onClick={() => toggleHackathonFavoriteFor(item, actions)}
+                >
+                  <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+                  {item.is_favorite ? "Guardado en favoritos" : "Guardar en favoritos"}
+                </button>
+              )}
+              <button type="button" className="al-catalog-action" onClick={() => actions.addTask({ title: `Revisar ${item.name}`, due_at: addDaysKeepingTime("", 1), status: "pendiente", priority: "media", description: "Evento o reto" }).catch(() => {})}>
                 <Plus className="h-3.5 w-3.5" />Crear tarea
               </button>
               {!archived && item.sourceTable !== "tech_opportunities" && (
-                <button type="button" className="al-hack-btn justify-center" disabled={pendingComplete} onClick={() => handleComplete(item)}>
+                <button type="button" className="al-catalog-action" disabled={pendingComplete} onClick={() => handleComplete(item)}>
                   <CheckCircle2 className="h-3.5 w-3.5" />{pendingComplete ? "Guardando…" : "Realizado"}
                 </button>
               )}
             </div>
-          </div>
+          </CatalogPanel>
+
+          {nextHackathon && (() => {
+            const nextPresentation = getHackathonPresentation(nextHackathon);
+            return (
+              <CatalogPanel>
+                <p className="al-catalog-side-title">Siguiente evento o reto</p>
+                <CatalogNextLink
+                  href={`/hackathons/${encodeURIComponent(nextHackathon.id)}`}
+                  title={nextPresentation.title}
+                  meta={nextPresentation.startDate ? `Inicio · ${formatDateLabel(nextPresentation.startDate)}` : nextPresentation.organizer || "Ver evento"}
+                  actionLabel="Ver evento"
+                />
+              </CatalogPanel>
+            );
+          })()}
         </div>
       </div>
     </div>
