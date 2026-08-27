@@ -152,7 +152,7 @@ export function QuickAdd({ open, setOpen, actions }: QuickAddProps) {
               </>
             )}
 
-            <Button disabled={submitting} className="w-full bg-[#f06a37] text-white hover:bg-[#df5725] disabled:opacity-60">
+            <Button disabled={submitting} className="w-full disabled:opacity-60">
               {submitting ? "Guardando…" : type === "task" ? "Añadir tarea" : type === "course" ? "Añadir curso" : "Añadir reto"}
             </Button>
           </QuickAddForm>

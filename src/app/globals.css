@@ -20,6 +20,13 @@
     --input: 214 15% 84%;
     --ring: 16 75% 53%;
     --radius: 0.5rem;
+    --al-action-soft-bg: #fff8f4;
+    --al-action-soft-bg-hover: #fbe7dd;
+    --al-action-soft-border: rgba(225, 93, 45, 0.24);
+    --al-action-soft-border-hover: rgba(225, 93, 45, 0.4);
+    --al-action-soft-text: #b94720;
+    --al-action-soft-text-hover: #a63f1a;
+    --al-action-soft-focus: rgba(225, 93, 45, 0.2);
   }
   * {
     @apply border-border;
@@ -276,8 +283,9 @@
   height: 24px;
   padding: 0 10px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #f06a37 0%, #e15d2d 100%);
-  color: white;
+  border: 1px solid var(--al-action-soft-border);
+  background: var(--al-action-soft-bg);
+  color: var(--al-action-soft-text);
   font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -479,6 +487,13 @@
   border-top: 1px solid #f2ece1;
 }
 
+.al-action-soft {
+  border: 1px solid var(--al-action-soft-border);
+  background: var(--al-action-soft-bg);
+  color: var(--al-action-soft-text);
+  box-shadow: 0 4px 12px rgba(80, 43, 27, 0.045);
+}
+
 .al-catalog-detail-link {
   display: inline-flex;
   align-items: center;
@@ -486,10 +501,10 @@
   gap: 6px;
   width: 100%;
   height: 38px;
-  border: 1px solid rgba(225, 93, 45, 0.24);
+  border: 1px solid var(--al-action-soft-border);
   border-radius: 11px;
-  background: #fff8f4;
-  color: #b94720;
+  background: var(--al-action-soft-bg);
+  color: var(--al-action-soft-text);
   font-size: 12.5px;
   font-weight: 700;
   text-decoration: none;
@@ -497,15 +512,45 @@
   transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
 }
 
+.al-action-soft:hover:not(:disabled),
 .al-catalog-detail-link:hover {
-  border-color: rgba(225, 93, 45, 0.4);
-  background: #fbe7dd;
-  color: #a63f1a;
+  border-color: var(--al-action-soft-border-hover);
+  background: var(--al-action-soft-bg-hover);
+  color: var(--al-action-soft-text-hover);
   transform: translateY(-1px);
 }
 
+.al-action-soft:focus-visible,
 .al-catalog-detail-link:focus-visible {
-  outline: 3px solid rgba(225, 93, 45, 0.2);
+  outline: 3px solid var(--al-action-soft-focus);
+  outline-offset: 2px;
+}
+
+.al-action-soft:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.al-action-soft-selected {
+  border: 1px solid var(--al-action-soft-border-hover);
+  background: var(--al-action-soft-bg-hover);
+  color: var(--al-action-soft-text-hover);
+}
+
+.al-course-empty-btn:hover,
+.al-hack-empty-btn:hover {
+  border-color: var(--al-action-soft-border-hover);
+  background: var(--al-action-soft-bg-hover);
+  color: var(--al-action-soft-text-hover);
+}
+
+.al-bloc-primary-btn:focus-visible,
+.al-course-empty-btn:focus-visible,
+.al-hack-empty-btn:focus-visible,
+.al-roadmap-hero-cta:focus-visible,
+.al-roadmap-toggle:focus-visible,
+.al-tasks-form-btn-primary:focus-visible,
+.al-tasks-detail-btn-primary:focus-visible {
+  outline: 3px solid var(--al-action-soft-focus);
   outline-offset: 2px;
 }
 
@@ -546,23 +591,23 @@
 
 .al-catalog-action-solid {
   min-height: 38px;
-  border-color: transparent;
-  background: linear-gradient(180deg, #f06a37 0%, #e15d2d 100%);
-  color: white;
+  border-color: var(--al-action-soft-border);
+  background: var(--al-action-soft-bg);
+  color: var(--al-action-soft-text);
   font-size: 12.5px;
   font-weight: 700;
 }
 
 .al-catalog-action-solid:hover {
-  border-color: transparent;
-  color: white;
-  filter: brightness(1.04);
+  border-color: var(--al-action-soft-border-hover);
+  background: var(--al-action-soft-bg-hover);
+  color: var(--al-action-soft-text-hover);
 }
 
 .al-catalog-action-soft {
-  border-color: rgba(225, 93, 45, 0.24);
-  background: #fff8f4;
-  color: #b94720;
+  border-color: var(--al-action-soft-border);
+  background: var(--al-action-soft-bg);
+  color: var(--al-action-soft-text);
 }
 
 .al-catalog-heart {

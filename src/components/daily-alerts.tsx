@@ -297,7 +297,7 @@ export function DailyAlerts() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
               tab === "all"
-                ? "bg-primary text-primary-foreground"
+                ? "al-action-soft-selected"
                 : "bg-muted text-muted-foreground hover:text-foreground",
             )}
           >
@@ -379,7 +379,7 @@ export function DailyAlerts() {
           <button
             type="button"
             onClick={goToAgenda}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            className="al-action-soft flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors"
           >
             <CalendarDays className="h-4 w-4" />
             Ver agenda

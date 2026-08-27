@@ -52,7 +52,7 @@ export function DashboardTodo({ store, actions }: { store: Store; actions: Retur
         <button
           type="button"
           onClick={() => setComposerOpen((open) => !open)}
-          className="grid h-9 w-9 place-items-center rounded-xl bg-[#f06a37] text-white shadow-[0_8px_18px_rgba(240,106,55,0.24)] transition hover:bg-[#df5725]"
+          className="al-action-soft grid h-9 w-9 place-items-center rounded-xl transition"
           aria-label={composerOpen ? "Cerrar alta de tarea" : "Añadir tarea"}
         >
           {composerOpen ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
@@ -81,7 +81,7 @@ export function DashboardTodo({ store, actions }: { store: Store; actions: Retur
           />
           <div className="mt-3 flex items-center justify-between gap-3">
             <p className="text-[11px] text-[#8e887e]">Se añadirá a Diario.</p>
-            <button type="submit" disabled={!title.trim()} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#f06a37] px-3 text-xs font-extrabold text-white transition hover:bg-[#df5725] disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="submit" disabled={!title.trim()} className="al-action-soft inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50">
               Añadir <Plus className="h-3.5 w-3.5" />
             </button>
           </div>

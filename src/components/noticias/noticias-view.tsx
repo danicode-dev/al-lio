@@ -335,7 +335,7 @@ function NewsCard({ item, featured = false, onRead, onSave }: {
       featured && "border-[#e98b67] bg-[#fffaf7] shadow-[0_12px_30px_rgba(225,93,45,0.10)]",
     )}>
       <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold">
-        {featured && <span className="rounded-full bg-[#E15D2D] px-2 py-0.5 text-white">Destacada</span>}
+        {featured && <span className="al-action-soft-selected rounded-full px-2 py-0.5">Destacada</span>}
         <span className="text-[#6b6f72]">{item.sourceName}</span>
         <span className={cn(
           "rounded-full px-2 py-0.5",
@@ -426,7 +426,7 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
       onClick={onClick}
       className={cn(
         "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition",
-        active ? "bg-[#E15D2D] text-white" : "bg-[#f7f4ee] text-[#6b6f72] hover:text-[#c94f21]",
+        active ? "al-action-soft-selected" : "bg-[#f7f4ee] text-[#6b6f72] hover:text-[#c94f21]",
       )}
     >
       {children}

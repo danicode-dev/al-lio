@@ -146,7 +146,7 @@ export function NewsDetailView({ id }: { id: string }) {
           <button
             type="button"
             onClick={() => void load()}
-            className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#E15D2D] px-4 text-sm font-bold text-white transition hover:bg-[#c94f21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D] focus-visible:ring-offset-2"
+            className="al-action-soft mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition"
           >
             <RefreshCw className="h-4 w-4" /> Reintentar
           </button>
@@ -214,7 +214,7 @@ export function NewsDetailView({ id }: { id: string }) {
               href={item.url}
               target="_blank"
               rel="noreferrer noopener"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#E15D2D] px-5 text-sm font-semibold text-white transition hover:bg-[#c94f21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D] focus-visible:ring-offset-2"
+              className="al-action-soft inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition"
             >
               Leer noticia original
               <ExternalLink className="h-4 w-4" />

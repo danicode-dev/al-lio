@@ -194,21 +194,22 @@ export function OnboardingForm({
         .onboarding-submit {
           height: 54px;
           border-radius: 14px;
-          border: none;
+          border: 1px solid var(--al-action-soft-border);
           cursor: pointer;
           font-size: 15px;
           font-weight: 700;
-          color: white;
-          background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%);
-          box-shadow: 0 16px 32px rgba(225, 93, 45, 0.24);
+          color: var(--al-action-soft-text);
+          background: var(--al-action-soft-bg);
+          box-shadow: 0 6px 18px rgba(80, 43, 27, 0.07);
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
-          transition: filter 0.15s;
+          transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
         }
-        .onboarding-submit:hover:not(:disabled) { filter: brightness(1.08); }
-        .onboarding-submit:active:not(:disabled) { filter: brightness(0.93); }
+        .onboarding-submit:hover:not(:disabled) { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); transform: translateY(-1px); }
+        .onboarding-submit:active:not(:disabled) { transform: translateY(0); }
+        .onboarding-submit:focus-visible { outline: 3px solid var(--al-action-soft-focus); outline-offset: 2px; }
         .onboarding-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .onboarding-submit-icon { width: 17px; height: 17px; }

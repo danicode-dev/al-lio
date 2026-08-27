@@ -97,7 +97,7 @@ export function TasksView() {
           <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_190px_auto]">
             <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={2} placeholder="Contexto o notas (opcional)" className="resize-none rounded-xl border border-[#e5d7cd] bg-white px-3 py-2 text-sm text-[#333029] outline-none placeholder:text-[#a59f94] focus:border-[#f06a37]" />
             <input type="date" value={dueAt} onChange={(event) => setDueAt(event.target.value)} aria-label="Fecha de la tarea" className="h-11 rounded-xl border border-[#e5d7cd] bg-white px-3 text-sm text-[#333029] outline-none focus:border-[#f06a37]" />
-            <button type="submit" disabled={!title.trim()} className="h-11 self-end rounded-xl bg-[#f06a37] px-5 text-sm font-extrabold text-white transition hover:bg-[#df5725] disabled:cursor-not-allowed disabled:opacity-50">Guardar</button>
+            <button type="submit" disabled={!title.trim()} className="al-action-soft h-11 self-end rounded-xl px-5 text-sm font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50">Guardar</button>
           </div>
         </form>
       )}
@@ -109,7 +109,7 @@ export function TasksView() {
               <h2 className="text-sm font-extrabold text-[#111111]">Tu lista</h2>
               <p className="mt-0.5 text-xs text-[#777269]">Ordenada por prioridad y fecha.</p>
             </div>
-            <button type="button" onClick={() => setComposerOpen((open) => !open)} className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#f06a37] px-3 text-xs font-extrabold text-white shadow-[0_6px_16px_rgba(240,106,55,0.22)] transition hover:bg-[#df5725]">
+            <button type="button" onClick={() => setComposerOpen((open) => !open)} className="al-action-soft inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-extrabold transition">
               {composerOpen ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
               {composerOpen ? "Cerrar" : "Nueva tarea"}
             </button>
@@ -265,7 +265,7 @@ function EditTaskDialog({ task, onClose, onSave }: { task: Task; onClose: () => 
           {error && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={onClose} disabled={saving} className="h-10 rounded-xl px-4 text-sm font-semibold text-[#777269] transition hover:bg-[#f7f4ee] disabled:cursor-not-allowed disabled:opacity-50">Cancelar</button>
-            <button type="submit" disabled={!title.trim() || saving} className="h-10 rounded-xl bg-[#f06a37] px-5 text-sm font-extrabold text-white transition hover:bg-[#df5725] disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Guardando…" : "Guardar"}</button>
+            <button type="submit" disabled={!title.trim() || saving} className="al-action-soft h-10 rounded-xl px-5 text-sm font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Guardando…" : "Guardar"}</button>
           </div>
         </form>
       </div>

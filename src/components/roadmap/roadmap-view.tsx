@@ -119,11 +119,11 @@ export function RoadmapView({ cycleName, modules }: { cycleName: string; modules
         .al-roadmap-hero-title { font-size: 17px; font-weight: 800; color: #111111; margin: 0 0 4px 0; }
         .al-roadmap-hero-desc { font-size: 13px; color: #6b6f72; margin: 0; }
         .al-roadmap-hero-cta {
-          display: inline-flex; align-items: center; gap: 7px; height: 40px; flex-shrink: 0; border-radius: 12px; border: none;
-          cursor: pointer; padding: 0 18px; font-size: 13.5px; font-weight: 700; color: white; text-decoration: none;
-          background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); box-shadow: 0 10px 24px rgba(225, 93, 45, 0.22); transition: filter 0.15s;
+          display: inline-flex; align-items: center; gap: 7px; height: 40px; flex-shrink: 0; border-radius: 12px; border: 1px solid var(--al-action-soft-border);
+          cursor: pointer; padding: 0 18px; font-size: 13.5px; font-weight: 700; color: var(--al-action-soft-text); text-decoration: none;
+          background: var(--al-action-soft-bg); box-shadow: 0 4px 12px rgba(80, 43, 27, 0.05); transition: background 0.15s, border-color 0.15s, color 0.15s;
         }
-        .al-roadmap-hero-cta:hover { filter: brightness(1.08); }
+        .al-roadmap-hero-cta:hover { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); }
         .al-roadmap-hero-cta-icon { width: 15px; height: 15px; }
 
         .al-roadmap-avance { background: white; border: 1px solid #ece7dc; border-radius: 20px; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.06); padding: 18px 20px; margin-bottom: 22px; }
@@ -139,7 +139,7 @@ export function RoadmapView({ cycleName, modules }: { cycleName: string; modules
           padding: 0 14px; font-size: 12.5px; font-weight: 600; color: #333029; cursor: pointer; transition: all 0.15s;
         }
         .al-roadmap-toggle:hover { border-color: #d8d1c2; }
-        .al-roadmap-toggle-active { border-color: transparent; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; }
+        .al-roadmap-toggle-active { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); }
 
         .al-roadmap-section { margin-bottom: 24px; }
         .al-roadmap-section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #6b6f72; margin: 0 0 14px 0; }
