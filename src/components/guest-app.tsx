@@ -2686,7 +2686,7 @@ function capitalizeFirst(value: string): string {
 
 // Number of banner variants available per professional family under
 // /assets/cursos/ (curso-hero-<family>-<1..N>.jpg).
-const COURSE_HERO_POOL = { desarrollo: 8, administracion: 7, marketing: 8, deporte: 7, generico: 9 } as const;
+const COURSE_HERO_POOL = { desarrollo: 5, administracion: 5, marketing: 6, deporte: 7, generico: 6 } as const;
 
 function courseHeroFamily(course: Course): keyof typeof COURSE_HERO_POOL {
   const hay = `${course.area ?? ""} ${course.category ?? ""} ${course.title ?? ""} ${Array.isArray(course.tags) ? course.tags.join(" ") : course.tags ?? ""}`
