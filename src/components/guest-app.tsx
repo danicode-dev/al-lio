@@ -2622,16 +2622,30 @@ function capitalizeFirst(value: string): string {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
 }
 
-// Course hero image keyed by professional family. Files under
-// /assets/cursos/ are placeholders until the final art lands.
-function courseHeroImage(course: Course): string {
+// Number of banner variants available per professional family under
+// /assets/cursos/ (curso-hero-<family>-<1..N>.jpg).
+const COURSE_HERO_POOL = { desarrollo: 5, administracion: 5, marketing: 6, deporte: 7, generico: 6 } as const;
+
+function courseHeroFamily(course: Course): keyof typeof COURSE_HERO_POOL {
   const hay = `${course.area ?? ""} ${course.category ?? ""} ${course.title ?? ""} ${Array.isArray(course.tags) ? course.tags.join(" ") : course.tags ?? ""}`
     .toLowerCase().normalize("NFD").replace(new RegExp(`[${String.fromCharCode(0x0300)}-${String.fromCharCode(0x036f)}]`, "g"), "");
-  if (/desarroll|program|web|software|java|kotlin|frontend|backend|\bapp\b|\bdev\b|\bdam\b|\bdaw\b/.test(hay)) return "/assets/cursos/curso-hero-desarrollo.png";
-  if (/administr|finan|contab|excel|gestion|factur|\baf\b/.test(hay)) return "/assets/cursos/curso-hero-administracion.png";
-  if (/marketing|publicidad|redes sociales|campan|\bmp\b/.test(hay)) return "/assets/cursos/curso-hero-marketing.png";
-  if (/deport|fitness|entrenam|fisic|gimnas|salud|tsaf/.test(hay)) return "/assets/cursos/curso-hero-deporte.png";
-  return "/assets/cursos/curso-hero-generico.png";
+  if (/desarroll|program|web|software|java|kotlin|frontend|backend|\bapp\b|\bdev\b|\bdam\b|\bdaw\b/.test(hay)) return "desarrollo";
+  if (/administr|finan|contab|excel|gestion|factur|\baf\b/.test(hay)) return "administracion";
+  if (/marketing|publicidad|redes sociales|campan|\bmp\b/.test(hay)) return "marketing";
+  if (/deport|fitness|entrenam|fisic|gimnas|salud|tsaf/.test(hay)) return "deporte";
+  return "generico";
+}
+
+// A course keeps one stable banner (hashed from its slug), but two courses
+// in the same family almost never share it - so the grid does not look
+// repetitive and a re-featured course still carries its own image.
+function courseHeroImage(course: Course): string {
+  const family = courseHeroFamily(course);
+  const key = course.id_slug || course.id || course.title || "x";
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) hash = (hash * 31 + key.charCodeAt(i)) | 0;
+  const index = (Math.abs(hash) % COURSE_HERO_POOL[family]) + 1;
+  return `/assets/cursos/curso-hero-${family}-${index}.jpg`;
 }
 
 // Mirrors canToggleHackathonFavorite/toggleHackathonFavoriteFor exactly -
