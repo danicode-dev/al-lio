@@ -982,11 +982,11 @@ const workBrandCss = `
   .al-work-company-view { display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 10px; border: none; border-radius: 8px; background: transparent; color: #6b6f72; font-size: 12px; font-weight: 600; cursor: pointer; }
   .al-work-company-view-active { background: #fbe7dd; color: #c94f21; }
   .al-work-company-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-  .al-work-company-card { position: relative; border: 1px solid #ece7dc; border-radius: 16px; background: white; padding: 16px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); display: flex; flex-direction: column; gap: 8px; }
+  .al-work-company-card { position: relative; border: 1px solid #ece7dc; border-radius: 16px; background: white; padding: 16px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); display: flex; flex-direction: column; gap: 8px; min-height: 178px; }
   .al-work-company-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
   .al-work-company-name { font-size: 14.5px; font-weight: 700; color: #111111; line-height: 1.3; }
-  .al-work-company-category { font-size: 11.5px; color: #6b6f72; line-height: 1.4; margin-top: 2px; }
-  .al-work-company-note { font-size: 11px; color: #9a958a; }
+  .al-work-company-category { font-size: 11.5px; color: #6b6f72; line-height: 1.4; margin-top: 2px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .al-work-company-note { font-size: 11px; color: #9a958a; line-height: 1.45; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
   .al-work-company-hint { font-size: 11px; color: #9a958a; line-height: 1.4; }
   .al-work-company-fav { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 999px; border: 1px solid #ece7dc; background: white; color: #c9c3b6; cursor: pointer; flex-shrink: 0; transition: color .15s, border-color .15s, background .15s; }
   .al-work-company-fav-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
@@ -3685,14 +3685,11 @@ function CompanyCard({ company, onToggleFavorite }: { company: Company; onToggle
       </div>
       {company.granada_note && <p className="al-work-company-note">{company.granada_note}</p>}
       {company.web ? (
-        <>
-          <p className="al-work-company-hint">En su web puedes ver ofertas de empleo y contactar directamente.</p>
-          <div className="al-work-company-actions">
-            <a href={company.web} target="_blank" rel="noreferrer" className="al-work-company-btn al-work-company-btn-solid">
-              Visitar web <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          </div>
-        </>
+        <div className="al-work-company-actions">
+          <a href={company.web} target="_blank" rel="noreferrer" className="al-work-company-btn al-work-company-btn-solid">
+            Visitar web <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        </div>
       ) : (
         <p className="al-work-company-hint">Todavía no tenemos web disponible para esta empresa.</p>
       )}
