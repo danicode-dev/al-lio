@@ -133,6 +133,11 @@ Git worktrees do not copy ignored environment files. Before starting a new
 worktree, copy or securely link the configured local `.env`/`.env.local` files
 into it; never commit those files.
 
+To add the single review-only event to every local demo profile, run
+`npm run seed:local-review-event` with
+`AL_LIO_SEED_LOCAL_REVIEW_EVENT=SEED_LOCAL_REVIEW_EVENT`. The command refuses
+non-local databases and never runs during normal startup or deployment.
+
 Run the same startup validation directly with `npm run verify:startup`.
 
 The minimum required local variables are documented in `.env.example`. Never

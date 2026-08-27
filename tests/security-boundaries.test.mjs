@@ -3380,6 +3380,18 @@ test("Development startup loads Next.js env files and validates auth secrets bef
   assert.equal(packageJson.devDependencies["@next/env"], "15.5.23");
 });
 
+test("The review event seed is explicit, idempotent and restricted to local demo profiles", async () => {
+  const source = await readFile(new URL("../scripts/seed-local-review-event.mjs", import.meta.url), "utf8");
+
+  assert.match(source, /AL_LIO_SEED_LOCAL_REVIEW_EVENT/);
+  assert.match(source, /\["localhost", "127\.0\.0\.1", "::1"\]\.includes\(hostname\)/);
+  assert.match(source, /WHERE id = ANY\(\$1::uuid\[\]\) AND role = 'user'/);
+  assert.match(source, /ON CONFLICT \(user_id, id_slug\) DO UPDATE SET/);
+  assert.match(source, /await client\.query\("BEGIN"\);/);
+  assert.match(source, /await client\.query\("COMMIT"\);/);
+  assert.doesNotMatch(source, /DELETE FROM public\.hackathons/);
+});
+
 test(".env.example documents every new production-authentication variable (issue #132)", async () => {
   const source = await readFile(new URL("../.env.example", import.meta.url), "utf8");
   for (const key of ["GOOGLE_IDENTITY_REDIRECT_URI", "RESEND_API_KEY", "RESEND_FROM_EMAIL"]) {
