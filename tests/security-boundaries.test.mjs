@@ -3367,6 +3367,19 @@ test("Runtime env validation enforces RESEND_API_KEY/RESEND_FROM_EMAIL together 
   assert.match(source, /googleIdentityRedirect\.pathname\.endsWith\("\/api\/auth\/google\/callback"\)/);
 });
 
+test("Development startup loads Next.js env files and validates auth secrets before starting the server", async () => {
+  const validatorSource = await readFile(new URL("../scripts/validate-runtime-env.mjs", import.meta.url), "utf8");
+  const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+
+  assert.match(validatorSource, /import nextEnv from "@next\/env";/);
+  assert.match(validatorSource, /const \{ loadEnvConfig \} = nextEnv;/);
+  assert.match(validatorSource, /loadEnvConfig\(process\.cwd\(\), process\.env\.NODE_ENV !== "production"\);/);
+  assert.match(validatorSource, /const baseUrl = parseUrl\("BASE_URL", production\);/);
+  assert.match(validatorSource, /requiredSecret\("AL_LIO_RADAR_WEBHOOK_SECRET", 32, production\);/);
+  assert.match(packageJson.scripts["verify:startup"], /^npm run validate:runtime && /);
+  assert.equal(packageJson.devDependencies["@next/env"], "15.5.23");
+});
+
 test(".env.example documents every new production-authentication variable (issue #132)", async () => {
   const source = await readFile(new URL("../.env.example", import.meta.url), "utf8");
   for (const key of ["GOOGLE_IDENTITY_REDIRECT_URI", "RESEND_API_KEY", "RESEND_FROM_EMAIL"]) {

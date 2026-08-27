@@ -126,6 +126,12 @@ npm run dev
 ```
 
 `npm run dev` executes the startup validation before starting Next.js.
+The validation loads the same environment files as Next.js and stops before
+the server starts when a required value such as `SESSION_SECRET` is missing.
+
+Git worktrees do not copy ignored environment files. Before starting a new
+worktree, copy or securely link the configured local `.env`/`.env.local` files
+into it; never commit those files.
 
 Run the same startup validation directly with `npm run verify:startup`.
 
