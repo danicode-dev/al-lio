@@ -2194,23 +2194,44 @@ test("tech_opportunities-sourced events are excluded from saving with a document
   assert.doesNotMatch(guestAppSource, /function canToggleHackathonFavorite/, "guest-app.tsx must not keep a second, potentially-drifting local copy");
 });
 
-test("Nueva tarea moved out of the crowded top header into the Tu lista row, next to Pendientes/Hechas/Todas - not competing with the global +/calendar/bell icons anymore (owner-reported follow-up)", async () => {
+test("Nueva tarea sits on the Tu lista heading row (top-right) with the status filter on its own row beneath, stays out of the global top header, and the summary tile labels are never truncated (issue #153, owner-reported follow-up)", async () => {
   const source = await readFile(new URL("../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8");
 
+  // The page-specific composer button must never live in the shared top header
+  // alongside the global +/calendar/bell cluster.
   const headerStart = source.indexOf("<PageHeader");
   const headerEnd = source.indexOf("/>", source.indexOf('actions={', headerStart)) + 2;
   const headerJsx = source.slice(headerStart, headerEnd);
-  assert.doesNotMatch(headerJsx, /Nueva tarea/, "the top PageHeader must no longer carry the page-specific composer button");
+  assert.doesNotMatch(headerJsx, /Nueva tarea/, "the top PageHeader must not carry the page-specific composer button");
   assert.match(headerJsx, /<StudentHeaderActions \/>/, "the global icon cluster must remain there, same as every other page");
 
-  const listRowStart = source.indexOf("Tu lista");
-  const listRowEnd = source.indexOf("</div>\r\n\r\n        {store.loadIssues");
-  const listRow = source.slice(listRowStart, listRowEnd === -1 ? listRowStart + 1200 : listRowEnd);
-  assert.match(listRow, /FilterButton active=\{filter === "pending"\}/);
-  assert.match(listRow, /setComposerOpen\(\(open\) => !open\)/, "the exact same composer toggle handler must be reused, not reimplemented");
-  const filterIdx = listRow.indexOf("Pendientes");
-  const buttonIdx = listRow.indexOf("Nueva tarea");
-  assert.ok(filterIdx > -1 && buttonIdx > filterIdx, "Pendientes/Hechas/Todas must come before Nueva tarea in reading order (filters left, action right)");
+  // List card header: the composer button shares one row with the "Tu lista"
+  // <h2> (top-right), and the Pendientes/Hechas/Todas filter is a separate row
+  // below it - so the button stays visible next to the title instead of
+  // wrapping under the filter on a narrow screen.
+  const cardHeaderStart = source.indexOf(">Tu lista</h2>");
+  const cardHeaderEnd = source.indexOf("{store.loadIssues", cardHeaderStart);
+  const cardHeader = source.slice(cardHeaderStart, cardHeaderEnd);
+
+  assert.match(cardHeader, /setComposerOpen\(\(open\) => !open\)/, "the exact same composer toggle handler must be reused, not reimplemented");
+  assert.match(cardHeader, /FilterButton active=\{filter === "pending"\}/);
+  assert.match(cardHeader, /FilterButton active=\{filter === "completed"\}/);
+  assert.match(cardHeader, /FilterButton active=\{filter === "all"\}/);
+
+  const buttonIdx = cardHeader.indexOf("Nueva tarea");
+  const filterIdx = cardHeader.indexOf('FilterButton active={filter === "pending"}');
+  assert.ok(buttonIdx > -1 && filterIdx > -1, "both the composer button and the filter live in the list card header");
+  assert.ok(buttonIdx < filterIdx, "Nueva tarea is on the heading row, before the Pendientes/Hechas/Todas filter row");
+  assert.match(
+    cardHeader,
+    /Tu lista<\/h2>[\s\S]*?<\/div>\s*<button type="button" onClick=\{\(\) => setComposerOpen/,
+    "the composer button is a direct sibling of the heading block inside one row",
+  );
+
+  // Issue #153: the summary tiles (Pendientes/Completadas/Totales) show their
+  // full label on mobile - no ellipsis.
+  const summaryCard = source.slice(source.indexOf("function SummaryCard"), source.indexOf("function FilterButton"));
+  assert.doesNotMatch(summaryCard, /truncate/, "summary tile labels must not be clipped with truncate");
 });
 
 test("Nuevo evento and the Google Calendar status move into the calendar's own month-navigation toolbar, next to Hoy - the top header keeps only the global icon cluster (owner-reported follow-up)", async () => {
