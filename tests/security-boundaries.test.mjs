@@ -636,38 +636,41 @@ test("fp course completion is per-user isolated and never mutates the shared cou
   assert.match(coursePresentationSource, /fpUserStatusToCourseStatus\(item\.user_status\)/, "fpItemToCourse must read the per-user completion state, not just the catalogue's own display status");
 });
 
-test("Course cards clamp title and provider, keep the full text reachable, and stay inside a grid capped at 3 columns (issue #94, issue #130, issue #160)", async () => {
-  const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  const cardStart = guestAppSource.indexOf('key={item.id} className="al-course-card"');
-  const cardEnd = guestAppSource.indexOf("al-course-card-actions", cardStart);
-  assert.ok(cardStart > -1 && cardEnd > cardStart, "could not locate the course card JSX");
-  const cardSource = guestAppSource.slice(cardStart, cardEnd);
+test("Course cards reuse the shared catalogue anatomy, keep full labels reachable, and stay inside a grid capped at 3 columns (issue #94, issue #130, issue #160, issue #164)", async () => {
+  const [guestAppSource, cardSource, globalStyles] = await Promise.all([
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/catalog/catalog-card.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/globals.css", import.meta.url), "utf8"),
+  ]);
 
-  assert.match(cardSource, /al-course-card-title line-clamp-2/);
-  assert.match(cardSource, /al-course-card-org line-clamp-1/);
+  assert.match(cardSource, /al-catalog-card-title line-clamp-2/);
+  assert.match(cardSource, /al-catalog-card-org line-clamp-1/);
   // Clamping must not hide content with no fallback - the clamped elements
   // keep the full text reachable via a native accessible title attribute,
   // sourced from the one shared presentation model (issue #130).
-  assert.match(cardSource, /title=\{presentation\.title\}/);
-  assert.match(cardSource, /title=\{presentation\.provider\}/);
+  assert.match(cardSource, /title=\{title\}/);
+  assert.match(cardSource, /title=\{subtitle\}/);
   // issue #130: the header row wraps a min-w-0 title block and a shrink-0
   // badge cluster - the same shape Trabajo/Eventos y retos use.
-  assert.match(cardSource, /al-course-card-title-wrap/);
-  assert.match(cardSource, /al-course-card-badges/);
+  assert.match(cardSource, /al-catalog-card-title-wrap/);
+  assert.match(cardSource, /al-catalog-card-badges/);
   // issue #160: the redesigned card carries only the three identifying
   // facts and a single Ver detalles action - no Abrir/Terminado, no
   // description, no location/priority chips competing for attention.
-  assert.doesNotMatch(cardSource, /al-course-card-desc/, "the card must not render a description block anymore");
+  assert.doesNotMatch(cardSource, /card-desc/, "the card must not render a description block anymore");
   assert.doesNotMatch(cardSource, />Terminado</, "Terminado moves to the detail view");
+  const coursesSource = guestAppSource.slice(guestAppSource.indexOf("function Courses("), guestAppSource.indexOf("function coursePriorityClass"));
+  assert.match(coursesSource, /<CatalogCard/);
+  assert.match(coursesSource, /<CatalogFeaturedCard/);
 
-  const styleSource = guestAppSource.slice(guestAppSource.indexOf(".al-course-card {"), guestAppSource.indexOf(".al-course-card-actions {"));
+  const styleSource = globalStyles.slice(globalStyles.indexOf(".al-catalog-card {"), globalStyles.indexOf(".al-catalog-card-actions {"));
   assert.match(styleSource, /min-width:\s*0/, "the grid cell itself must be allowed to shrink below its content's intrinsic width");
   assert.match(styleSource, /overflow-wrap:\s*anywhere/, "title/org must break long unbroken strings instead of overflowing the card");
 
   // issue #160: at most 3 cards per row so the screen never feels saturated.
-  const gridStyle = guestAppSource.slice(guestAppSource.indexOf(".al-course-grid-2 {"), guestAppSource.indexOf(".al-course-featured {"));
+  const gridStyle = globalStyles.slice(globalStyles.indexOf(".al-catalog-grid-cards {"), globalStyles.indexOf(".al-catalog-featured {"));
   assert.doesNotMatch(gridStyle, /auto-fill/, "the grid must not auto-fill an unbounded number of columns");
-  assert.match(gridStyle, /grid-template-columns:\s*repeat\(3,\s*1fr\)/, "the widest breakpoint caps the grid at 3 columns");
+  assert.match(gridStyle, /grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/, "the widest breakpoint caps the grid at 3 columns");
 });
 
 test("The course source URL is only linked from the detail view, and gated by isSafeHttpUrl (issue #130, issue #160)", async () => {
@@ -685,12 +688,14 @@ test("The course source URL is only linked from the detail view, and gated by is
 });
 
 test("Every course card offers Ver detalles, linking to the real internal /courses/[id] page - the old CourseDetailModal was retired outright, mirroring the hackathons detail route (owner-reported follow-up to #135/#120)", async () => {
-  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  // issue #160: Ver detalles is the primary, prominent action on both the
-  // grid card and the featured card - a full-width solid button, the same
-  // weight the companies list gives its primary action.
-  assert.match(source, /<Link href=\{`\/courses\/\$\{encodeURIComponent\(item\.id\)\}`\}\s*className="al-course-btn-detail">/, "the grid card's Ver detalles must be an unconditional Link to the course's own detail page");
-  assert.match(source, /<Link href=\{`\/courses\/\$\{encodeURIComponent\(featuredCourse\.id\)\}`\}\s*className="al-course-btn-detail">/, "the featured card's Ver detalles must link to the same detail page with the same prominent styling");
+  const [source, cardSource] = await Promise.all([
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/catalog/catalog-card.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(source, /detailHref=\{`\/courses\/\$\{encodeURIComponent\(item\.id\)\}`\}/, "the grid card must pass its real internal detail URL unconditionally");
+  assert.match(source, /detailHref=\{`\/courses\/\$\{encodeURIComponent\(featuredCourse\.id\)\}`\}/, "the featured card must pass the same internal detail URL");
+  assert.match(cardSource, /<Link href=\{href\} className=\{cn\("al-catalog-detail-link"/);
+  assert.match(cardSource, /Ver detalles\s*<\/Link>/, "the shared action must keep one explicit Spanish expansion label");
   assert.doesNotMatch(source, /function CourseDetailModal/, "the modal must be removed entirely, not just left unreachable");
   assert.doesNotMatch(source, /setDetailItemId|detailItemId/, "no state should remain for opening a modal that no longer exists");
 
@@ -699,6 +704,45 @@ test("Every course card offers Ver detalles, linking to the real internal /cours
   const viewFnEnd = source.indexOf("function Hackathons(");
   const viewFnSource = source.slice(viewFnStart, viewFnEnd);
   assert.match(viewFnSource, /const presentation = getCoursePresentation\(item\);/, "the detail view must reuse the shared presentation model, not re-derive its own field mapping");
+});
+
+test("Courses and Events share the same quiet catalogue detail action instead of duplicating the solid orange CTA (issue #164)", async () => {
+  const [guestAppSource, cardSource, globalStyles] = await Promise.all([
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/catalog/catalog-card.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  const coursesSource = guestAppSource.slice(guestAppSource.indexOf("function Courses("), guestAppSource.indexOf("function coursePriorityClass"));
+  const eventsSource = guestAppSource.slice(guestAppSource.indexOf("function Hackathons("), guestAppSource.indexOf("function HackathonsEmptyState"));
+  for (const moduleSource of [coursesSource, eventsSource]) {
+    assert.match(moduleSource, /<CatalogFeaturedCard/);
+    assert.match(moduleSource, /<CatalogCard/);
+  }
+  assert.match(cardSource, /className=\{cn\("al-catalog-detail-link"/);
+
+  const quietButtonStyles = globalStyles.slice(globalStyles.indexOf(".al-catalog-detail-link {"), globalStyles.indexOf(".al-catalog-detail-link:hover"));
+  assert.match(quietButtonStyles, /background:\s*#fff8f4/);
+  assert.match(quietButtonStyles, /border:\s*1px solid rgba\(225, 93, 45, 0\.24\)/);
+  assert.match(quietButtonStyles, /color:\s*#b94720/);
+  assert.doesNotMatch(quietButtonStyles, /linear-gradient|color:\s*white|border:\s*none/, "the internal detail action must remain visually quiet");
+});
+
+test("Course and event details use the same hero, information, three-column section, panel and next-item primitives (issue #164)", async () => {
+  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const courseDetail = source.slice(source.indexOf("export function CourseDetailView"), source.indexOf("function Hackathons("));
+  const eventDetail = source.slice(source.indexOf("export function HackathonDetailView"), source.indexOf("function LinksView"));
+
+  for (const detailSource of [courseDetail, eventDetail]) {
+    assert.match(detailSource, /lg:grid-cols-\[1fr_320px\]/);
+    assert.match(detailSource, /className="al-catalog-hero-media"/);
+    assert.match(detailSource, /<CatalogInfoGrid items=/);
+    assert.match(detailSource, /className="al-catalog-detail-cols"/);
+    assert.match(detailSource, /<CatalogPanel/);
+    assert.match(detailSource, /<CatalogNextLink/);
+  }
+  assert.match(eventDetail, /<CatalogPanel title="Recursos para prepararte">/);
+  assert.match(eventDetail, /<RequirementRow key=\{competency\.id\}/, "reviewed linked courses and videos must remain reachable from each event requirement");
 });
 
 test("Course descriptions never fall back to raw import/moderation notes for any origin - the same regression class fixed for Hackathons in issue #118 (issue #130)", async () => {
@@ -965,19 +1009,24 @@ test("completeHackathon preserves favourites and is scoped to the caller's own s
 
 test("Realizado is not offered for tech_opportunities and is guarded against double submission (issue #95)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const detailStart = guestAppSource.indexOf("export function HackathonDetailView");
+  const detailSource = guestAppSource.slice(detailStart, guestAppSource.indexOf("function LinksView", detailStart));
   assert.match(
-    guestAppSource,
-    /!isHackathonArchived\(item\) && item\.sourceTable !== "tech_opportunities" && \(/,
+    detailSource,
+    /!archived && item\.sourceTable !== "tech_opportunities" && \(/,
     "Realizado must be hidden for tech_opportunities-sourced items, which have no safe per-user completion table",
   );
-  assert.match(guestAppSource, /if \(pendingCompleteId\) return;/, "must ignore a second click while one completion is already in flight");
-  assert.match(guestAppSource, /disabled=\{pendingCompleteId === item\.id\}/);
+  assert.match(detailSource, /if \(pendingComplete\) return;/, "must ignore a second click while completion is already in flight");
+  assert.match(detailSource, /disabled=\{pendingComplete\}/);
 });
 
-test("The featured event hero and its empty state read the pure selection helper, not an inline sort (issue #95)", async () => {
+test("The featured event card reads the pure selection helper and follows the same filtered/list gating as Courses (issue #95, issue #164)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  assert.match(guestAppSource, /return selectFeaturedHackathon\(activos\);/);
-  assert.match(guestAppSource, /Sin próximo evento o reto pendiente/, "must show a useful empty state instead of just rendering nothing");
+  const start = guestAppSource.indexOf("function Hackathons(");
+  const source = guestAppSource.slice(start, guestAppSource.indexOf("function HackathonsEmptyState", start));
+  assert.match(source, /showFeatured \? selectFeaturedHackathon\(activos\) : null/);
+  assert.match(source, /viewMode === "grid"/, "featured content must disappear in list mode, matching Courses");
+  assert.match(source, /filtered\.filter\(\(item\) => item\.id !== featuredHackathon\.id\)/, "the featured item must not be repeated in the grid");
 });
 
 // --- issue #93: deduplicated Dashboard feed ---
@@ -1338,22 +1387,22 @@ test("/roadmap/[modulo] never depended on, and still does not depend on, the ret
   }
 });
 
-test("the featured hackathon hero and hackathon list cards always open a validated official event URL externally, never the retired /ruta screen (issue #112)", async () => {
+test("event catalogue cards keep the official URL in the validated detail action and never restore the retired /ruta screen (issue #112, issue #164)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
 
   assert.doesNotMatch(source, /\/ruta\//, "no CTA anywhere in this file may construct a /ruta/ URL any more");
+  const hackathonsStart = source.indexOf("function Hackathons(");
+  const listSource = source.slice(hackathonsStart, source.indexOf("function HackathonsEmptyState", hackathonsStart));
+  assert.doesNotMatch(listSource, /href=\{item\.url\}|href=\{featuredHackathon\.url\}/, "catalogue cards must keep one internal action; the official URL belongs in detail");
+
+  const detailStart = source.indexOf("export function HackathonDetailView");
+  const detailSource = source.slice(detailStart, source.indexOf("function LinksView", detailStart));
   assert.match(
-    source,
-    /\{isSafeHttpUrl\(featuredHackathon\.url\) \? \(\s*<a href=\{featuredHackathon\.url\} target="_blank" rel="noopener noreferrer" className="al-hack-hero-btn-ghost">/,
-    "Abrir convocatoria is now the secondary action next to Ver detalles (issue #135), but must still be URL-validated the same way",
+    detailSource,
+    /\{isSafeHttpUrl\(item\.url\) && \(\s*<a href=\{item\.url\} target="_blank" rel="noopener noreferrer" className="al-catalog-action al-catalog-action-solid">/,
+    "the official event URL must remain guarded by the shared HTTP(S) validator",
   );
-  assert.match(
-    source,
-    /\{isSafeHttpUrl\(item\.url\) && \(\s*<a href=\{item\.url\} target="_blank" rel="noopener noreferrer" className="al-hack-btn">/,
-    "Abrir web is now the secondary action next to Ver detalles (issue #135), but must still be URL-validated the same way",
-  );
-  assert.match(source, /Abrir convocatoria/);
-  assert.match(source, /Abrir web/);
+  assert.match(detailSource, /Abrir convocatoria oficial/);
   // The old video-gated internal/external dichotomy, and the first
   // iteration's ad-hoc "Entrar al hackatón" label, are both gone.
   assert.doesNotMatch(source, /featuredHasRuta/);
@@ -2191,9 +2240,13 @@ test("The heart control appears in the card, the featured hero and the detail vi
 });
 
 test("Saving copy is consistent everywhere - Guardar / Quitar de guardados - and the old ambiguous \"Guardar para despues\" wording from the retired requirements modal is gone (issue #131)", async () => {
-  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const [source, cardSource] = await Promise.all([
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/catalog/catalog-card.tsx", import.meta.url), "utf8"),
+  ]);
   assert.doesNotMatch(source, /Guardar para despu[eé]s/, "the retired requirements modal's old inconsistent copy must not survive anywhere in the file");
-  assert.match(source, /"Quitar de guardados" : "Guardar"/, "the aria-label pattern shared by card/hero/detail view (unsaved -> Guardar, saved -> Quitar de guardados)");
+  assert.match(cardSource, /active \? "Quitar de guardados" : "Guardar"/, "the shared card/featured heart keeps the canonical accessible labels");
+  assert.match(source, /item\.is_favorite \? "Guardado en favoritos" : "Guardar en favoritos"/, "the detail action uses the same saved/unsaved meaning");
 });
 
 test("tech_opportunities-sourced events are excluded from saving with a documented reason, not silently broken or given a non-functional heart (issue #131, relocated to hackathon-presentation.ts by issue #135)", async () => {
@@ -2666,23 +2719,26 @@ test("hackathonPublicDescription prefers item.description, and only falls back t
 });
 
 test("Every hackathon card and the featured hero link unconditionally to the internal /hackathons/[id] detail route - not gated by requiredCompetencies like the old 'Ver detalles' button was (issue #135)", async () => {
-  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const [source, cardSource] = await Promise.all([
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/catalog/catalog-card.tsx", import.meta.url), "utf8"),
+  ]);
   const hackathonsFnStart = source.indexOf("function Hackathons(");
   const hackathonsFnEnd = source.indexOf("function HackathonsEmptyState");
   const fnSource = source.slice(hackathonsFnStart, hackathonsFnEnd);
 
-  const cardLinkIdx = fnSource.indexOf('<Link href={`/hackathons/${encodeURIComponent(item.id)}`}');
-  const heroLinkIdx = fnSource.indexOf('<Link href={`/hackathons/${encodeURIComponent(featuredHackathon.id)}`}');
-  assert.ok(cardLinkIdx > -1, "the card must always render a Link to its own detail page");
-  assert.ok(heroLinkIdx > -1, "the featured hero must always render a Link to its own detail page");
-
-  const cardActionsStart = fnSource.indexOf('<div className="al-hack-card-actions">');
-  const cardConditionalWrap = fnSource.slice(cardActionsStart, cardLinkIdx);
-  assert.doesNotMatch(cardConditionalWrap, /requiredCompetencies/, "the detail Link must render unconditionally, unlike the old gated button");
+  assert.match(fnSource, /detailHref=\{`\/hackathons\/\$\{encodeURIComponent\(item\.id\)\}`\}/, "the card must always pass its own internal detail URL");
+  assert.match(fnSource, /detailHref=\{`\/hackathons\/\$\{encodeURIComponent\(featuredHackathon\.id\)\}`\}/, "the featured card must always pass the same internal detail URL");
+  assert.match(cardSource, /<Link href=\{href\}/, "the shared component must render the passed URL as a real Link");
+  const detailHrefStart = fnSource.indexOf('detailHref={`/hackathons/${encodeURIComponent(item.id)}`}');
+  assert.doesNotMatch(fnSource.slice(Math.max(0, detailHrefStart - 180), detailHrefStart), /requiredCompetencies/, "the detail URL must not be gated by requirements");
 });
 
-test("The card and hero have exactly one expansion affordance each - Ver detalles - not a second competing button for requirements/aptitudes (owner-reported follow-up to #135)", async () => {
-  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+test("The shared card and featured surfaces expose one expansion affordance each, without a second requirements action (owner-reported follow-up to #135, issue #164)", async () => {
+  const [source, cardSource] = await Promise.all([
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/catalog/catalog-card.tsx", import.meta.url), "utf8"),
+  ]);
   const hackathonsFnStart = source.indexOf("function Hackathons(");
   const hackathonsFnEnd = source.indexOf("function HackathonsEmptyState");
   const fnSource = source.slice(hackathonsFnStart, hackathonsFnEnd);
@@ -2691,8 +2747,8 @@ test("The card and hero have exactly one expansion affordance each - Ver detalle
   assert.doesNotMatch(fnSource, /Aptitudes mínimas/, "the hero's old separate requirements-modal button must be gone for the same reason");
   assert.doesNotMatch(fnSource, /setRequirementsItemId/, "no state should exist to open a requirements modal that no longer exists");
 
-  const verDetallesSites = fnSource.match(/>Ver detalles/g) ?? [];
-  assert.equal(verDetallesSites.length, 2, "exactly one Ver detalles per surface: the card and the hero");
+  assert.equal((cardSource.match(/<CatalogDetailLink href=\{detailHref\}/g) ?? []).length, 2, "CatalogCard and CatalogFeaturedCard each render exactly one shared detail action");
+  assert.equal((cardSource.match(/Ver detalles\s*<\/Link>/g) ?? []).length, 1, "the shared action owns one canonical label");
 });
 
 test("HackathonDetailPage resolves the item via the already user/cycle-scoped global store and calls notFound() instead of querying by a client-supplied id (issue #135)", async () => {
@@ -2723,7 +2779,7 @@ test("The requirements step-by-step modal was retired (owner-reported follow-up 
   const viewFnEnd = source.indexOf("function LinksView");
   const viewFnSource = source.slice(viewFnStart, viewFnEnd);
   assert.match(viewFnSource, /\{requirements\.map\(\(competency\) => \(\s*<RequirementRow key=\{competency\.id\} competency=\{competency\} actions=\{actions\} \/>/, "every requirement must render inline on the page");
-  assert.match(viewFnSource, /const cardClass = "space-y-3 rounded-\[18px\]/, "the detail page's own cards must still exist to hold the inline requirements");
+  assert.match(viewFnSource, /<CatalogPanel title="Recursos para prepararte">/, "the shared detail panel must hold the inline requirements");
 });
 
 test("The inline requirements section never constructs a /ruta/ URL - replaces the equivalent guard that used to cover the retired modal (issue #112, owner-reported follow-up to #135)", async () => {
@@ -3309,6 +3365,31 @@ test("Runtime env validation enforces RESEND_API_KEY/RESEND_FROM_EMAIL together 
   assert.match(source, /const resendValues = \[process\.env\.RESEND_API_KEY, process\.env\.RESEND_FROM_EMAIL\];/);
   assert.match(source, /if \(production && configuredResendValues !== resendValues\.length\) \{/);
   assert.match(source, /googleIdentityRedirect\.pathname\.endsWith\("\/api\/auth\/google\/callback"\)/);
+});
+
+test("Development startup loads Next.js env files and validates auth secrets before starting the server", async () => {
+  const validatorSource = await readFile(new URL("../scripts/validate-runtime-env.mjs", import.meta.url), "utf8");
+  const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+
+  assert.match(validatorSource, /import nextEnv from "@next\/env";/);
+  assert.match(validatorSource, /const \{ loadEnvConfig \} = nextEnv;/);
+  assert.match(validatorSource, /loadEnvConfig\(process\.cwd\(\), process\.env\.NODE_ENV !== "production"\);/);
+  assert.match(validatorSource, /const baseUrl = parseUrl\("BASE_URL", production\);/);
+  assert.match(validatorSource, /requiredSecret\("AL_LIO_RADAR_WEBHOOK_SECRET", 32, production\);/);
+  assert.match(packageJson.scripts["verify:startup"], /^npm run validate:runtime && /);
+  assert.equal(packageJson.devDependencies["@next/env"], "15.5.23");
+});
+
+test("The review event seed is explicit, idempotent and restricted to local demo profiles", async () => {
+  const source = await readFile(new URL("../scripts/seed-local-review-event.mjs", import.meta.url), "utf8");
+
+  assert.match(source, /AL_LIO_SEED_LOCAL_REVIEW_EVENT/);
+  assert.match(source, /\["localhost", "127\.0\.0\.1", "::1"\]\.includes\(hostname\)/);
+  assert.match(source, /WHERE id = ANY\(\$1::uuid\[\]\) AND role = 'user'/);
+  assert.match(source, /ON CONFLICT \(user_id, id_slug\) DO UPDATE SET/);
+  assert.match(source, /await client\.query\("BEGIN"\);/);
+  assert.match(source, /await client\.query\("COMMIT"\);/);
+  assert.doesNotMatch(source, /DELETE FROM public\.hackathons/);
 });
 
 test(".env.example documents every new production-authentication variable (issue #132)", async () => {

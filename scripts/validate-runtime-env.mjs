@@ -1,10 +1,19 @@
 /** Validates runtime configuration without printing secrets. */
 
+import nextEnv from "@next/env";
+
+const { loadEnvConfig } = nextEnv;
+
+// Match Next.js environment loading before validating. This is especially
+// important in Git worktrees, where ignored .env files are not copied and a
+// direct process.env-only check would not see a correctly prepared local file.
+loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
+
 const errors = [];
 const production = process.env.NODE_ENV === "production";
 
 const databaseUrl = parseUrl("DATABASE_URL", true);
-const baseUrl = parseUrl("BASE_URL", true);
+const baseUrl = parseUrl("BASE_URL", production);
 const googleRedirect = parseUrl("GOOGLE_REDIRECT_URI", production);
 
 if (databaseUrl && production && decodeURIComponent(databaseUrl.username) !== "al_lio_app") {
@@ -21,7 +30,7 @@ if (googleRedirect && !googleRedirect.pathname.endsWith("/api/google/calendar/ca
 }
 
 requiredSecret("SESSION_SECRET", production ? 32 : 16);
-requiredSecret("AL_LIO_RADAR_WEBHOOK_SECRET", 32);
+requiredSecret("AL_LIO_RADAR_WEBHOOK_SECRET", 32, production);
 
 const googleValues = [
   process.env.GOOGLE_CLIENT_ID,
@@ -70,6 +79,7 @@ integer("PG_STATEMENT_TIMEOUT_MS", 1_000, 120_000);
 if (errors.length > 0) {
   console.error("Configuración de runtime inválida:");
   for (const error of errors) console.error(`  - ${error}`);
+  console.error("Copia .env.example a .env.local y configura los valores antes de iniciar la aplicación.");
   process.exit(1);
 }
 
@@ -97,9 +107,13 @@ function parseUrl(name, required) {
   }
 }
 
-function requiredSecret(name, minimumLength) {
+function requiredSecret(name, minimumLength, required = true) {
   const value = process.env[name];
-  if (!value || value.includes("REPLACE_ME") || value.length < minimumLength) {
+  if (!value) {
+    if (required) errors.push(`${name} debe tener al menos ${minimumLength} caracteres y no usar placeholders`);
+    return;
+  }
+  if (value.includes("REPLACE_ME") || value.length < minimumLength) {
     errors.push(`${name} debe tener al menos ${minimumLength} caracteres y no usar placeholders`);
   }
 }
