@@ -2435,10 +2435,10 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-featured-desc { font-size: 12.5px; line-height: 1.5; color: #4b4740; }
         .al-course-featured-heart { position: absolute; right: 14px; top: 14px; z-index: 2; box-shadow: 0 2px 8px rgba(17,17,17,0.12); }
         .al-course-facts { display: flex; flex-wrap: wrap; gap: 8px; }
-        .al-course-fact { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 9px; background: #f7f3ec; border: 1px solid #ece7dc; font-size: 11px; font-weight: 600; color: #4b4740; white-space: nowrap; }
-        .al-course-fact svg { width: 13px; height: 13px; color: #9a958a; }
+        .al-course-fact { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; height: 26px; padding: 0 10px; border-radius: 9px; background: #f7f3ec; border: 1px solid #ece7dc; font-size: 11px; font-weight: 600; color: #4b4740; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .al-course-fact svg { width: 13px; height: 13px; color: #9a958a; flex-shrink: 0; }
         .al-course-featured-actions { margin-top: auto; display: flex; align-items: center; gap: 8px; padding-top: 4px; }
-        .al-course-status { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px 0 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+        .al-course-status { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px 0 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0; background: #f2ece1; color: #6b6f72; }
         .al-course-status::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; flex-shrink: 0; }
         .al-course-status-pendiente { background: #fdf1dd; color: #97620f; }
         .al-course-status-empezado { background: #e6eefc; color: #2f5fac; }
