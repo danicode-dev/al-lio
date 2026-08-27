@@ -721,11 +721,54 @@ test("Courses and Events share the same quiet catalogue detail action instead of
   }
   assert.match(cardSource, /className=\{cn\("al-catalog-detail-link"/);
 
-  const quietButtonStyles = globalStyles.slice(globalStyles.indexOf(".al-catalog-detail-link {"), globalStyles.indexOf(".al-catalog-detail-link:hover"));
-  assert.match(quietButtonStyles, /background:\s*#fff8f4/);
-  assert.match(quietButtonStyles, /border:\s*1px solid rgba\(225, 93, 45, 0\.24\)/);
-  assert.match(quietButtonStyles, /color:\s*#b94720/);
+  const quietButtonStyles = globalStyles.slice(globalStyles.indexOf(".al-catalog-detail-link {"), globalStyles.indexOf(".al-action-soft:hover"));
+  assert.match(quietButtonStyles, /background:\s*var\(--al-action-soft-bg\)/);
+  assert.match(quietButtonStyles, /border:\s*1px solid var\(--al-action-soft-border\)/);
+  assert.match(quietButtonStyles, /color:\s*var\(--al-action-soft-text\)/);
   assert.doesNotMatch(quietButtonStyles, /linear-gradient|color:\s*white|border:\s*none/, "the internal detail action must remain visually quiet");
+});
+
+test("Routine actions share the quiet terracotta treatment while semantic states keep their own colors (issue #166)", async () => {
+  const [globalStyles, button, guestApp, dailyAlerts, login, bloc, roadmap] = await Promise.all([
+    readFile(new URL("../src/app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/ui/button.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/daily-alerts.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/auth/login-form.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/roadmap/roadmap-view.tsx", import.meta.url), "utf8"),
+  ]);
+
+  for (const token of [
+    "--al-action-soft-bg: #fff8f4",
+    "--al-action-soft-bg-hover: #fbe7dd",
+    "--al-action-soft-border: rgba(225, 93, 45, 0.24)",
+    "--al-action-soft-text: #b94720",
+    "--al-action-soft-text-hover: #a63f1a",
+  ]) {
+    assert.ok(globalStyles.includes(token), `missing shared action token: ${token}`);
+  }
+  assert.match(globalStyles, /\.al-action-soft:hover:not\(:disabled\)/);
+  assert.match(globalStyles, /\.al-action-soft:focus-visible/);
+  assert.match(globalStyles, /\.al-action-soft:active:not\(:disabled\)/);
+  assert.match(button, /variant === "default" && "al-action-soft"/);
+
+  const catalogueAction = globalStyles.slice(globalStyles.indexOf(".al-catalog-action-solid {"), globalStyles.indexOf(".al-catalog-action-soft {"));
+  assert.match(catalogueAction, /background:\s*var\(--al-action-soft-bg\)/);
+  assert.doesNotMatch(catalogueAction, /linear-gradient|color:\s*white|border-color:\s*transparent/);
+
+  const workStyles = guestApp.slice(guestApp.indexOf("const workBrandCss"), guestApp.indexOf("const WORK_DIACRITICS_PATTERN"));
+  assert.doesNotMatch(workStyles, /linear-gradient|#FFCD00/i, "Work tabs, search and company actions must not restore the loud orange/yellow treatments");
+  for (const selector of ["al-work-tab-active", "al-work-portal-search-btn", "al-work-company-btn-solid"]) {
+    assert.match(workStyles, new RegExp(`\\.${selector}[^}]+var\\(--al-action-soft-`));
+  }
+  assert.match(guestApp, /"Welcome to the Jungle": "border border-\[#e9d6cb\] bg-\[#fff8f4\] text-\[#a63f1a\]"/);
+
+  for (const source of [dailyAlerts, login, bloc, roadmap]) {
+    assert.match(source, /al-action-soft|var\(--al-action-soft-/, "each major routine-action surface must consume the shared treatment");
+  }
+  assert.match(dailyAlerts, /bg-rose-500 text-white/, "urgent alerts must remain semantically red");
+  assert.match(button, /bg-destructive text-destructive-foreground/, "destructive actions must remain visually distinct");
 });
 
 test("Course and event details use the same hero, information, three-column section, panel and next-item primitives (issue #164)", async () => {
@@ -1839,7 +1882,8 @@ test("the #80/#81/daily-alerts hardcoded terracotta overrides now read the fixed
 
   assert.doesNotMatch(dailyAlerts, /#E15D2D|#e15d2d|#c94f21/, "no hardcoded terracotta hex should remain once the token itself carries the brand color");
   assert.match(dailyAlerts, /text-primary"/);
-  assert.match(dailyAlerts, /bg-primary text-primary-foreground/);
+  assert.match(dailyAlerts, /al-action-soft-selected/);
+  assert.match(dailyAlerts, /al-action-soft/);
   assert.match(dailyAlerts, /accent-primary/);
 
   // Light terracotta-tint icon badges (bg-[#FBE7DD]) are a deliberate
@@ -1859,7 +1903,7 @@ test("the Mas page's intentional multi-color per-section grid is untouched by th
   }
 });
 
-test("UI primitives (Button/Input/Select/Textarea) and GuestApp already reference the primary/ring tokens by name, so no component code needed to change (issue #82)", async () => {
+test("UI primitives keep the brand focus token while the default Button consumes the shared quiet action treatment (issues #82 and #166)", async () => {
   const [button, input, select, textarea, guestApp] = await Promise.all([
     readFile(new URL("../src/components/ui/button.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/ui/input.tsx", import.meta.url), "utf8"),
@@ -1868,12 +1912,12 @@ test("UI primitives (Button/Input/Select/Textarea) and GuestApp already referenc
     readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
   ]);
 
-  assert.match(button, /bg-primary text-primary-foreground hover:bg-primary\/90/);
+  assert.match(button, /variant === "default" && "al-action-soft"/);
   assert.match(input, /focus-visible:ring-ring/);
   assert.match(select, /focus-visible:ring-ring/);
   assert.match(textarea, /focus-visible:ring-ring/);
   assert.match(guestApp, /ring-primary\/40/);
-  assert.match(guestApp, /bg-primary text-primary-foreground/);
+  assert.match(guestApp, /al-action-soft-selected/);
 });
 
 test("toIsoTimestamp normalizes a PostgreSQL Date instance to a stable ISO string (issue #128)", () => {

@@ -9,7 +9,7 @@ export function DashboardNextStep({ roadmap, loadFailed = false }: { roadmap: Ro
         <Route className="h-5 w-5 text-[#ffb08d]" />
         <h2 className="mt-7 text-xl font-extrabold tracking-[-0.025em]">{loadFailed ? "No pudimos cargar tu ruta" : "Prepara tu ruta"}</h2>
         <p className="mt-2 max-w-sm text-sm leading-6 text-white/75">{loadFailed ? "Tus avances siguen guardados. Reintenta la carga para continuar donde lo dejaste." : "Completa tu perfil formativo para recibir un siguiente paso adaptado a ti."}</p>
-        <Link href={loadFailed ? "/roadmap" : "/profile"} className="mt-6 inline-flex h-10 items-center gap-2 rounded-xl bg-[#f06a37] px-4 text-sm font-bold text-white transition hover:bg-[#e15d2d]">
+        <Link href={loadFailed ? "/roadmap" : "/profile"} className="al-action-soft mt-6 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold transition">
           {loadFailed ? "Abrir ruta" : "Completar perfil"} <ArrowRight className="h-4 w-4" />
         </Link>
       </section>
@@ -50,7 +50,7 @@ export function DashboardNextStep({ roadmap, loadFailed = false }: { roadmap: Ro
               <p className="mt-1 text-sm font-bold leading-5">{nextStep.skillTitle}</p>
               <p className="mt-1 text-xs text-white/65">{nextStep.hasContent ? nextStep.moduleName : `${nextStep.moduleName} · Recursos próximamente`}</p>
             </div>
-            <Link href={nextStep.href} className="mt-5 inline-flex h-11 items-center gap-2 rounded-xl bg-[#f06a37] px-4 text-sm font-bold text-white shadow-[0_10px_22px_rgba(240,106,55,0.25)] transition hover:bg-[#e15d2d]">
+            <Link href={nextStep.href} className="al-action-soft mt-5 inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-bold transition">
               {nextStep.hasContent ? "Continuar" : "Ver roadmap"} <ArrowRight className="h-4 w-4" />
             </Link>
           </>

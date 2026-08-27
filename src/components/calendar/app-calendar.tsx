@@ -330,7 +330,7 @@ function CalendarHeader({ month, compact = false, controlsRef, onPrevious, onTod
         <Button type="button" size="sm" variant="outline" className="h-9 rounded-xl border-[#e6dfd4] !bg-white px-3 !text-[#4e4941] hover:border-[#e5bba8] hover:!bg-[#fff4ee] hover:!text-[#e15d2d]" onClick={onToday}>Hoy</Button>
         {statusSlot}
         {onCreate && (
-          <Button type="button" size="sm" className="h-9 rounded-xl bg-[#e15d2d] px-3 text-white hover:bg-[#c94f21]" onClick={onCreate}>
+          <Button type="button" size="sm" className="h-9 rounded-xl px-3" onClick={onCreate}>
             <Plus className="h-4 w-4" /> Nuevo evento
           </Button>
         )}
@@ -358,7 +358,7 @@ function CalendarMonthGrid({ month, eventsByDay, variant, selectedDay, onSelectD
           const hasEvents = eventsByDay.has(day.key);
           const selected = selectedDay === day.key;
           return (
-            <button key={day.key} type="button" className={cn("relative flex h-8 items-center justify-center rounded-lg text-sm font-medium transition-colors", day.inMonth ? "text-[#39352e] hover:bg-[#fff0e9]" : "text-[#cbc5ba]", selected && "bg-[#f06a37] text-white shadow-[0_4px_10px_rgba(240,106,55,0.22)] hover:bg-[#e15d2d]", hasEvents && !selected && "bg-[#eef6f0] text-[#1f7a4d] ring-1 ring-[#1f7a4d]/15")} onClick={() => onSelectDay?.(day.key)}>
+            <button key={day.key} type="button" className={cn("relative flex h-8 items-center justify-center rounded-lg text-sm font-medium transition-colors", day.inMonth ? "text-[#39352e] hover:bg-[#fff0e9]" : "text-[#cbc5ba]", selected && "al-action-soft-selected shadow-[0_4px_10px_rgba(80,43,27,0.06)]", hasEvents && !selected && "bg-[#eef6f0] text-[#1f7a4d] ring-1 ring-[#1f7a4d]/15")} onClick={() => onSelectDay?.(day.key)}>
               {day.date.getDate()}
               {hasEvents && <span className={cn("absolute bottom-1 h-1 w-1 rounded-full", selected ? "bg-white" : "bg-[#1f7a4d]")} />}
             </button>
@@ -379,7 +379,7 @@ function CalendarMonthGrid({ month, eventsByDay, variant, selectedDay, onSelectD
             <button
               type="button"
               onClick={() => onSelectDay?.(cell.key)}
-              className={cn("mb-2 flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium transition-colors hover:bg-[#fff0e9] hover:text-[#e15d2d]", cell.key === todayKey() && "bg-[#e15d2d] text-white shadow-[0_4px_10px_rgba(225,93,45,0.22)] hover:bg-[#c94f21] hover:text-white", selected && cell.key !== todayKey() && "bg-[#fff0e9] font-bold text-[#c6491d]")}
+              className={cn("mb-2 flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium transition-colors hover:bg-[#fff0e9] hover:text-[#e15d2d]", cell.key === todayKey() && "al-action-soft-selected shadow-[0_4px_10px_rgba(80,43,27,0.06)]", selected && cell.key !== todayKey() && "bg-[#fff0e9] font-bold text-[#c6491d]")}
               aria-label={`Ver agenda del ${cell.date.getDate()}`}
             >
               {cell.date.getDate()}
@@ -462,7 +462,7 @@ function NewEventDialog({ defaultDate, onClose, onCreated }: { defaultDate: Date
         </div>
         <div className="flex justify-end gap-2 border-t border-[#f0ece2] px-4 py-3">
           <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
-          <Button size="sm" className="bg-[#e15d2d] text-white hover:bg-[#c94f21]" onClick={submit} disabled={saving || !title.trim()}>{saving ? "Guardando..." : "Guardar"}</Button>
+          <Button size="sm" onClick={submit} disabled={saving || !title.trim()}>{saving ? "Guardando..." : "Guardar"}</Button>
         </div>
       </div>
     </>

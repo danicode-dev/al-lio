@@ -150,17 +150,18 @@ export function ProfileForm({
         .al-profile-submit {
           height: 46px;
           border-radius: 12px;
-          border: none;
+          border: 1px solid var(--al-action-soft-border);
           cursor: pointer;
           padding: 0 22px;
           font-size: 14.5px;
           font-weight: 700;
-          color: white;
-          background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%);
-          box-shadow: 0 10px 24px rgba(225, 93, 45, 0.22);
-          transition: filter 0.15s;
+          color: var(--al-action-soft-text);
+          background: var(--al-action-soft-bg);
+          box-shadow: 0 4px 12px rgba(80, 43, 27, 0.05);
+          transition: background 0.15s, border-color 0.15s, color 0.15s;
         }
-        .al-profile-submit:hover:not(:disabled) { filter: brightness(1.08); }
+        .al-profile-submit:hover:not(:disabled) { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); }
+        .al-profile-submit:focus-visible { outline: 3px solid var(--al-action-soft-focus); outline-offset: 2px; }
         .al-profile-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .al-profile-saved {

@@ -132,22 +132,23 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           width: 100%;
           height: 52px;
           border-radius: 14px;
-          border: none;
+          border: 1px solid var(--al-action-soft-border);
           cursor: pointer;
           font-size: 15px;
           font-weight: 600;
-          color: white;
-          background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%);
-          box-shadow: 0 16px 32px rgba(225, 93, 45, 0.24);
+          color: var(--al-action-soft-text);
+          background: var(--al-action-soft-bg);
+          box-shadow: 0 6px 18px rgba(80, 43, 27, 0.07);
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
-          transition: filter 0.15s;
+          transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
         }
-        .al-btn-submit:hover:not(:disabled) { filter: brightness(1.08); }
-        .al-btn-submit:active:not(:disabled) { filter: brightness(0.93); }
-        .al-btn-submit:disabled { opacity: 0.6; cursor: not-allowed; background: #7a7570; box-shadow: none; }
+        .al-btn-submit:hover:not(:disabled) { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); transform: translateY(-1px); }
+        .al-btn-submit:active:not(:disabled) { transform: translateY(0); }
+        .al-btn-submit:focus-visible { outline: 3px solid var(--al-action-soft-focus); outline-offset: 2px; }
+        .al-btn-submit:disabled { opacity: 0.6; cursor: not-allowed; border-color: #e1dbd2; background: #f1ede8; color: #7a7570; box-shadow: none; }
 
         .al-google-btn {
           width: 100%;
