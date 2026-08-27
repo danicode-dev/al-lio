@@ -158,6 +158,7 @@ export function BlocNotepad() {
   const editorSelectionRef = useRef<Range | null>(null);
   const inlineFontSizeRef = useRef(defaultEditorFontSize);
   const editorFormatSyncBlockedUntilRef = useRef(0);
+  const emptyEditorFormatPendingRef = useRef(false);
 
   useEffect(() => {
     notesRef.current = notes;
@@ -218,9 +219,17 @@ export function BlocNotepad() {
     if (!editor || !selection) return;
     editor.focus();
     const savedRange = editorSelectionRef.current;
-    if (!savedRange || !editor.contains(savedRange.commonAncestorContainer)) return;
     selection.removeAllRanges();
-    selection.addRange(savedRange);
+    if (savedRange && editor.contains(savedRange.commonAncestorContainer)) {
+      selection.addRange(savedRange);
+      return;
+    }
+
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+    selection.addRange(range);
+    editorSelectionRef.current = range.cloneRange();
   }, []);
 
   const updateEditorFormatFromSelection = useCallback(() => {
@@ -349,6 +358,8 @@ export function BlocNotepad() {
     if (!loaded) return;
     const active = notesRef.current.find((note) => note.id === activeId);
     if (editorRef.current) editorRef.current.innerHTML = active?.contentHtml ?? "";
+    editorSelectionRef.current = null;
+    emptyEditorFormatPendingRef.current = false;
   }, [activeId, loaded]);
 
   useEffect(() => {
@@ -434,15 +445,21 @@ export function BlocNotepad() {
     if (!promoted && dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { is_favorite: nextFavorite }, []);
   }
 
-  function recordEditorContent() {
+  function recordEditorContent(preserveEmptyFormatting = false) {
     if (!activeNote || !editorRef.current) return;
     normalizeFontSizeMarkers(editorRef.current, inlineFontSizeRef.current);
     const rawText = getEditorText(editorRef.current);
-    if (rawText.trim().length === 0) editorRef.current.innerHTML = "";
+    const isEmpty = rawText.trim().length === 0;
+    if (isEmpty && (preserveEmptyFormatting || emptyEditorFormatPendingRef.current)) {
+      emptyEditorFormatPendingRef.current = true;
+      return;
+    }
+    emptyEditorFormatPendingRef.current = false;
+    if (isEmpty) editorRef.current.innerHTML = "";
 
     const updatedAt = nowIso();
-    const contentHtml = sanitizeEditorHtml(editorRef.current.innerHTML);
-    const contentText = rawText.trim().length === 0 ? "" : rawText;
+    const contentHtml = isEmpty ? "" : sanitizeEditorHtml(editorRef.current.innerHTML);
+    const contentText = isEmpty ? "" : rawText;
 
     promotePhantomIfNeeded(activeNote.id, { contentHtml, contentText });
 
@@ -456,9 +473,10 @@ export function BlocNotepad() {
   }
 
   function runEditorCommand(command: string, value?: string) {
+    const preserveEmptyFormatting = !editorRef.current || getEditorText(editorRef.current).trim().length === 0;
     restoreEditorSelection();
     document.execCommand(command, false, value);
-    recordEditorContent();
+    recordEditorContent(preserveEmptyFormatting);
     rememberEditorSelection();
     updateEditorFormatFromSelection();
   }
@@ -471,12 +489,13 @@ export function BlocNotepad() {
 
   function setEditorFontSize(value: number) {
     const fontSize = clampEditorFontSize(value);
+    const preserveEmptyFormatting = !editorRef.current || getEditorText(editorRef.current).trim().length === 0;
     editorFormatSyncBlockedUntilRef.current = Date.now() + 250;
     inlineFontSizeRef.current = fontSize;
     restoreEditorSelection();
     document.execCommand("fontSize", false, "7");
     if (editorRef.current) normalizeFontSizeMarkers(editorRef.current, fontSize);
-    recordEditorContent();
+    recordEditorContent(preserveEmptyFormatting);
     rememberEditorSelection();
     setEditorFormat((current) => ({ ...current, fontSize }));
   }
@@ -599,9 +618,10 @@ export function BlocNotepad() {
 
   function setParagraphBlock(value: string) {
     if (!value) return;
+    const preserveEmptyFormatting = !editorRef.current || getEditorText(editorRef.current).trim().length === 0;
     restoreEditorSelection();
     document.execCommand("formatBlock", false, value);
-    recordEditorContent();
+    recordEditorContent(preserveEmptyFormatting);
     rememberEditorSelection();
     updateEditorFormatFromSelection();
   }
@@ -802,7 +822,7 @@ export function BlocNotepad() {
               spellCheck
               data-placeholder="Empieza a escribir..."
               onInput={() => { recordEditorContent(); rememberEditorSelection(); updateEditorFormatFromSelection(); }}
-              onBlur={recordEditorContent}
+              onBlur={() => recordEditorContent()}
               onPaste={handlePaste}
               onKeyDown={handleEditorKeyDown}
               onKeyUp={() => { rememberEditorSelection(); updateEditorFormatFromSelection(); }}
@@ -959,7 +979,7 @@ export function BlocNotepad() {
               spellCheck
               data-placeholder="Empieza a escribir, presiona '/' para comandos..."
               onInput={() => { recordEditorContent(); rememberEditorSelection(); updateEditorFormatFromSelection(); }}
-              onBlur={recordEditorContent}
+              onBlur={() => recordEditorContent()}
               onPaste={handlePaste}
               onKeyDown={handleEditorKeyDown}
               onKeyUp={() => { rememberEditorSelection(); updateEditorFormatFromSelection(); }}
@@ -1884,8 +1904,8 @@ const blocBrandCss = `
   .al-bloc-title-input::placeholder { color: #9a958a; }
   .al-bloc-toolbar { border-bottom: 1px solid #f0ece2; background: #faf8f4; }
   .al-bloc-toolbar-row { min-width: 0; flex-wrap: nowrap; }
-  .al-bloc-toolbar-desktop .al-bloc-toolbar-row { gap: 2px; padding: 8px 6px; }
-  .al-bloc-toolbar-desktop .al-bloc-tool-btn { min-width: 30px; padding-right: 6px; padding-left: 6px; }
+  .al-bloc-toolbar-desktop .al-bloc-toolbar-row { gap: 1px; padding: 8px 6px; }
+  .al-bloc-toolbar-desktop .al-bloc-tool-btn { min-width: 28px; padding-right: 5px; padding-left: 5px; }
   .al-bloc-toolbar-desktop .al-bloc-toolbar-divider { margin-right: 1px; margin-left: 1px; }
   .al-bloc-toolbar-divider { width: 1px; height: 20px; background: #ece7dc; margin: 0 2px; flex-shrink: 0; }
   .al-bloc-tool-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; min-width: 32px; padding: 0 7px; border-radius: 8px; border: none; background: transparent; color: #6b6f72; cursor: pointer; }
@@ -1900,9 +1920,9 @@ const blocBrandCss = `
   .al-bloc-font-size-field input::-webkit-inner-spin-button, .al-bloc-font-size-field input::-webkit-outer-spin-button { appearance: none; margin: 0; }
   .al-bloc-font-size-field span { padding: 0 5px 0 1px; font-size: 9px; font-weight: 700; line-height: 30px; text-transform: uppercase; }
   .al-bloc-toolbar-select { box-sizing: border-box; height: 32px; flex-shrink: 0; border: 1px solid #ece7dc; border-radius: 8px; background: white; padding: 0 26px 0 8px; color: #333029; font-size: 12px; line-height: normal; }
-  .al-bloc-paragraph-select { width: 112px; }
+  .al-bloc-paragraph-select { width: 122px; }
   .al-bloc-font-select { width: 114px; }
-  .al-bloc-list-select { width: 96px; }
+  .al-bloc-list-select { width: 116px; }
   .al-bloc-toolbar-select-active { border-color: rgba(225, 93, 45, 0.35); background: #fff7f2; color: #b9471f; }
   .al-bloc-color-tool { position: relative; flex-shrink: 0; }
   .al-bloc-color-input { position: absolute; inset: 0; height: 100%; width: 100%; cursor: pointer; opacity: 0; }

@@ -1989,6 +1989,16 @@ test("Bloc uses a numeric px font-size control and visibly pressed Word-style B/
   assert.match(source, /font\.replaceWith\(span\)/, "browser font-size markers must be normalized to inline px styles before persistence");
 });
 
+test("Bloc formatting works before the first character is typed and keeps that pending format until input (issue #151 follow-up)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /range\.selectNodeContents\(editor\)[\s\S]*?range\.collapse\(false\)[\s\S]*?selection\.addRange\(range\)/, "an empty editor must receive a real caret before a formatting command runs");
+  assert.match(source, /function recordEditorContent\(preserveEmptyFormatting = false\)[\s\S]*?isEmpty && \(preserveEmptyFormatting \|\| emptyEditorFormatPendingRef\.current\)[\s\S]*?emptyEditorFormatPendingRef\.current = true[\s\S]*?return/, "temporary formatting nodes must survive toolbar focus changes until the user types");
+  assert.match(source, /function runEditorCommand[\s\S]*?preserveEmptyFormatting[\s\S]*?document\.execCommand\(command[\s\S]*?recordEditorContent\(preserveEmptyFormatting\)/, "inline styles, alignment and lists must preserve empty-editor formatting");
+  assert.match(source, /function setParagraphBlock[\s\S]*?recordEditorContent\(preserveEmptyFormatting\)/, "paragraph/title choice must also work before typing");
+  assert.match(source, /function setEditorFontSize[\s\S]*?recordEditorContent\(preserveEmptyFormatting\)/, "font size must also work before typing");
+});
+
 test("Bloc combines bullets and numbering and keeps text/highlight colors in the main toolbar (issue #151)", async () => {
   const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
   const toolbar = source.slice(source.indexOf("function BlocEditorToolbar"), source.indexOf("function MobileNoteCard"));
