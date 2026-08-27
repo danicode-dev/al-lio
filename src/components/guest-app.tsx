@@ -2684,16 +2684,15 @@ function capitalizeFirst(value: string): string {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
 }
 
-// Course hero image keyed by professional family. Files under
-// /assets/cursos/ are placeholders until the final art lands.
+// Course hero image keyed by professional family.
 function courseHeroImage(course: Course): string {
   const hay = `${course.area ?? ""} ${course.category ?? ""} ${course.title ?? ""} ${Array.isArray(course.tags) ? course.tags.join(" ") : course.tags ?? ""}`
     .toLowerCase().normalize("NFD").replace(new RegExp(`[${String.fromCharCode(0x0300)}-${String.fromCharCode(0x036f)}]`, "g"), "");
-  if (/desarroll|program|web|software|java|kotlin|frontend|backend|\bapp\b|\bdev\b|\bdam\b|\bdaw\b/.test(hay)) return "/assets/cursos/curso-hero-desarrollo.png";
-  if (/administr|finan|contab|excel|gestion|factur|\baf\b/.test(hay)) return "/assets/cursos/curso-hero-administracion.png";
-  if (/marketing|publicidad|redes sociales|campan|\bmp\b/.test(hay)) return "/assets/cursos/curso-hero-marketing.png";
-  if (/deport|fitness|entrenam|fisic|gimnas|salud|tsaf/.test(hay)) return "/assets/cursos/curso-hero-deporte.png";
-  return "/assets/cursos/curso-hero-generico.png";
+  if (/desarroll|program|web|software|java|kotlin|frontend|backend|\bapp\b|\bdev\b|\bdam\b|\bdaw\b/.test(hay)) return "/assets/cursos/curso-hero-desarrollo.jpg";
+  if (/administr|finan|contab|excel|gestion|factur|\baf\b/.test(hay)) return "/assets/cursos/curso-hero-administracion.jpg";
+  if (/marketing|publicidad|redes sociales|campan|\bmp\b/.test(hay)) return "/assets/cursos/curso-hero-marketing.jpg";
+  if (/deport|fitness|entrenam|fisic|gimnas|salud|tsaf/.test(hay)) return "/assets/cursos/curso-hero-deporte.jpg";
+  return "/assets/cursos/curso-hero-generico.jpg";
 }
 
 // Mirrors canToggleHackathonFavorite/toggleHackathonFavoriteFor exactly -
