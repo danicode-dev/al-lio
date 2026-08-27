@@ -1971,7 +1971,10 @@ test("Bloc exposes one Word-like formatting surface per viewport and removes the
   assert.match(toolbar, /aria-label="Tipo de letra"/);
   assert.match(source, /Aptos[\s\S]*?Calibri[\s\S]*?Verdana[\s\S]*?Georgia[\s\S]*?Courier New/);
   assert.doesNotMatch(toolbar, /Insertar|Hipervínculo|Enlace|Imagen|onInsert|onLink|onImageClick/);
-  assert.doesNotMatch(source, /mobileSheet === "(?:format|insert|export|more)"/);
+  assert.match(source, /mobileSheet === "format"/);
+  assert.doesNotMatch(source, /mobileSheet === "(?:insert|export|more)"/);
+  assert.match(source, /\.al-bloc-toolbar-row \{[^}]*flex-wrap: nowrap/);
+  assert.doesNotMatch(source, /\.al-bloc-toolbar-mobile \.al-bloc-toolbar-row \{[^}]*overflow-x: auto/);
 });
 
 test("Bloc uses a numeric px font-size control and visibly pressed Word-style B/I/U buttons (issue #151)", async () => {
@@ -2010,6 +2013,9 @@ test("Bloc keeps delete controls visible without hover and compacts the mobile n
   assert.match(source, /className="al-bloc-mobile-card-delete[^\"]*"/);
   assert.match(mobile, /al-bloc-mobile-create[\s\S]*?<Plus/);
   assert.ok(mobile.indexOf("<BlocEditorToolbar") < mobile.indexOf("ref={attachEditor}"), "mobile formatting controls must be above the writing surface");
+  assert.match(mobile, /al-bloc-mobile-actions[\s\S]*?Formato[\s\S]*?<ExportMenu[\s\S]*?<NoteOverflowMenu/);
+  assert.match(source, /aria-label="Formato esencial del documento"[\s\S]*?<BlocListSelect compact/);
+  assert.match(source, /function MobileEditorFormatPanel[\s\S]*?Párrafo o título[\s\S]*?Tamaño de letra[\s\S]*?Alineación[\s\S]*?Listas[\s\S]*?Resaltado/);
   assert.match(mobile, /min-h-\[clamp\(220px,38dvh,420px\)\]/);
   assert.match(mobile, /al-bloc-mobile-status/);
   assert.match(guestApp, /view === "bloc" \? "space-y-3 md:space-y-6"/);

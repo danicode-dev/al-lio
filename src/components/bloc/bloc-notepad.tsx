@@ -104,7 +104,7 @@ function findCanvasPageBreak(
 }
 
 type ListTab = "todas" | "recientes" | "favoritas";
-type MobileSheetId = "settings" | null;
+type MobileSheetId = "settings" | "format" | null;
 
 type EditorFormatState = {
   bold: boolean;
@@ -157,6 +157,7 @@ export function BlocNotepad() {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const editorSelectionRef = useRef<Range | null>(null);
   const inlineFontSizeRef = useRef(defaultEditorFontSize);
+  const editorFormatSyncBlockedUntilRef = useRef(0);
 
   useEffect(() => {
     notesRef.current = notes;
@@ -223,6 +224,7 @@ export function BlocNotepad() {
   }, []);
 
   const updateEditorFormatFromSelection = useCallback(() => {
+    if (Date.now() < editorFormatSyncBlockedUntilRef.current) return;
     const editor = editorRef.current;
     const selection = window.getSelection();
     if (!editor || !selection || selection.rangeCount === 0 || !selection.anchorNode || !editor.contains(selection.anchorNode)) return;
@@ -469,6 +471,7 @@ export function BlocNotepad() {
 
   function setEditorFontSize(value: number) {
     const fontSize = clampEditorFontSize(value);
+    editorFormatSyncBlockedUntilRef.current = Date.now() + 250;
     inlineFontSizeRef.current = fontSize;
     restoreEditorSelection();
     document.execCommand("fontSize", false, "7");
@@ -774,24 +777,6 @@ export function BlocNotepad() {
               >
                 <Star className={cn("h-4 w-4", activeNote?.favorite && "al-bloc-star-active")} fill={activeNote?.favorite ? "currentColor" : "none"} />
               </button>
-              <ExportMenu
-                open={exportMenuOpen}
-                onOpenChange={setExportMenuOpen}
-                noteTitle={activeNote?.title || defaultTitle}
-                disabled={!activeNote}
-                exporting={exportingPdf}
-                onExportPdf={exportActivePdf}
-                onExportWord={exportActiveWord}
-                onExportTxt={downloadActiveNote}
-              />
-              <NoteOverflowMenu
-                open={noteMenuOpen}
-                onOpenChange={setNoteMenuOpen}
-                disabled={!activeNote}
-                onDuplicate={() => duplicateNote()}
-                onCopyText={copyActiveNote}
-                onDelete={() => activeNote && deleteNote(activeNote.id)}
-              />
             </div>
           </div>
 
@@ -831,6 +816,33 @@ export function BlocNotepad() {
             />
           </div>
 
+          <div className="al-bloc-mobile-actions flex items-center px-2 py-1.5">
+            <button type="button" className="al-bloc-mobile-action" onClick={() => setMobileSheet("format")} aria-label="Abrir formato del documento">
+              <span className="text-base font-medium" aria-hidden="true">T</span>
+              <span>Formato</span>
+            </button>
+            <ExportMenu
+              mobileAction
+              open={exportMenuOpen}
+              onOpenChange={setExportMenuOpen}
+              noteTitle={activeNote?.title || defaultTitle}
+              disabled={!activeNote}
+              exporting={exportingPdf}
+              onExportPdf={exportActivePdf}
+              onExportWord={exportActiveWord}
+              onExportTxt={downloadActiveNote}
+            />
+            <NoteOverflowMenu
+              mobileAction
+              open={noteMenuOpen}
+              onOpenChange={setNoteMenuOpen}
+              disabled={!activeNote}
+              onDuplicate={() => duplicateNote()}
+              onCopyText={copyActiveNote}
+              onDelete={() => activeNote && deleteNote(activeNote.id)}
+            />
+          </div>
+
           <div className="al-bloc-mobile-status flex min-h-8 items-center justify-between gap-2 px-3 py-1.5 text-[11px] text-[#6b6f72]">
             <span className="min-w-0 truncate">
               <span className="al-bloc-save-dot mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" />
@@ -853,6 +865,20 @@ export function BlocNotepad() {
             <MobileSheetRow label="Ver papelera" onClick={() => { setMobileSheet(null); setShowTrash(true); }}>
               <Trash2 className="h-4 w-4" />
             </MobileSheetRow>
+          </MobileSheet>
+        )}
+
+        {mobileSheet === "format" && (
+          <MobileSheet title="Formato del documento" onClose={() => setMobileSheet(null)}>
+            <MobileEditorFormatPanel
+              formatState={editorFormat}
+              onCommand={runEditorCommand}
+              onBlockChange={setParagraphBlock}
+              onFontFamily={setEditorFontFamily}
+              onFontSize={setEditorFontSize}
+              onColor={(color) => runEditorCommand("foreColor", color)}
+              onHighlight={(color) => runEditorCommand("backColor", color)}
+            />
           </MobileSheet>
         )}
 
@@ -1068,6 +1094,7 @@ function useDismissableMenu(open: boolean, onClose: () => void) {
 }
 
 function ExportMenu({
+  mobileAction = false,
   open,
   onOpenChange,
   noteTitle,
@@ -1077,6 +1104,7 @@ function ExportMenu({
   onExportWord,
   onExportTxt,
 }: {
+  mobileAction?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   noteTitle: string;
@@ -1095,12 +1123,12 @@ function ExportMenu({
   }
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className={cn("relative", mobileAction && "flex flex-1")}>
       <button
         ref={triggerRef}
         type="button"
         disabled={disabled}
-        className="al-bloc-header-btn flex h-9 items-center gap-1.5 px-3"
+        className={cn(mobileAction ? "al-bloc-mobile-action w-full" : "al-bloc-header-btn flex h-9 items-center gap-1.5 px-3")}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={exporting ? "Exportando nota" : "Exportar nota"}
@@ -1108,10 +1136,10 @@ function ExportMenu({
         onClick={() => onOpenChange(!open)}
       >
         <Download className="h-4 w-4" />
-        <span className="hidden sm:inline">{exporting ? "Exportando…" : "Exportar"}</span>
+        <span className={cn(!mobileAction && "hidden sm:inline")}>{exporting ? "Exportando…" : "Exportar"}</span>
       </button>
       {open && (
-        <div role="menu" aria-label={`Exportar "${noteTitle}"`} className="al-bloc-menu absolute right-0 top-full z-40 mt-2 w-48 rounded-xl p-1">
+        <div role="menu" aria-label={`Exportar "${noteTitle}"`} className={cn("al-bloc-menu absolute right-0 z-40 w-48 rounded-xl p-1", mobileAction ? "bottom-full mb-2" : "top-full mt-2")}>
           <button role="menuitem" type="button" className="al-bloc-menu-item" aria-label={`Exportar "${noteTitle}" a PDF`} title="PDF" onClick={() => pick(onExportPdf)}>
             <FileText className="h-4 w-4" />PDF
           </button>
@@ -1128,6 +1156,7 @@ function ExportMenu({
 }
 
 function NoteOverflowMenu({
+  mobileAction = false,
   open,
   onOpenChange,
   disabled,
@@ -1135,6 +1164,7 @@ function NoteOverflowMenu({
   onCopyText,
   onDelete,
 }: {
+  mobileAction?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   disabled: boolean;
@@ -1151,21 +1181,22 @@ function NoteOverflowMenu({
   }
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className={cn("relative", mobileAction && "flex flex-1")}>
       <button
         ref={triggerRef}
         type="button"
         disabled={disabled}
-        className="al-bloc-header-btn flex h-9 w-9 items-center justify-center"
+        className={cn(mobileAction ? "al-bloc-mobile-action w-full" : "al-bloc-header-btn flex h-9 w-9 items-center justify-center")}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Más opciones de la nota"
         onClick={() => onOpenChange(!open)}
       >
         <MoreVertical className="h-4 w-4" />
+        {mobileAction ? <span>Más</span> : null}
       </button>
       {open && (
-        <div role="menu" aria-label="Más opciones de la nota" className="al-bloc-menu absolute right-0 top-full z-40 mt-2 w-52 rounded-xl p-1">
+        <div role="menu" aria-label="Más opciones de la nota" className={cn("al-bloc-menu absolute right-0 z-40 w-52 rounded-xl p-1", mobileAction ? "bottom-full mb-2" : "top-full mt-2")}>
           <button role="menuitem" type="button" className="al-bloc-menu-item" onClick={() => pick(onDuplicate)}>
             <Files className="h-4 w-4" />Duplicar nota
           </button>
@@ -1217,8 +1248,27 @@ function BlocEditorToolbar({
   onColor: (value: string) => void;
   onHighlight: (value: string) => void;
 }) {
+  if (mobile) {
+    return (
+      <div className="al-bloc-toolbar al-bloc-toolbar-mobile" role="toolbar" aria-label="Formato esencial del documento">
+        <div className="al-bloc-toolbar-row flex items-center">
+          <BlocToolButton label="Deshacer" onClick={() => onCommand("undo")}><Undo2 className="h-4 w-4" /></BlocToolButton>
+          <BlocToolButton label="Rehacer" onClick={() => onCommand("redo")}><Redo2 className="h-4 w-4" /></BlocToolButton>
+          <span className="al-bloc-toolbar-divider" />
+          <div className="al-bloc-tool-group">
+            <BlocToolButton label="Negrita" active={formatState.bold} onClick={() => onCommand("bold")}><span className="text-sm font-black">B</span></BlocToolButton>
+            <BlocToolButton label="Cursiva" active={formatState.italic} onClick={() => onCommand("italic")}><span className="text-sm font-serif font-bold italic">I</span></BlocToolButton>
+            <BlocToolButton label="Subrayado" active={formatState.underline} onClick={() => onCommand("underline")}><span className="text-sm font-bold underline decoration-2 underline-offset-2">U</span></BlocToolButton>
+          </div>
+          <span className="al-bloc-toolbar-divider" />
+          <BlocListSelect compact list={formatState.list} onCommand={onCommand} />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn("al-bloc-toolbar", mobile && "al-bloc-toolbar-mobile")} role="toolbar" aria-label="Formato del documento">
+    <div className="al-bloc-toolbar al-bloc-toolbar-desktop" role="toolbar" aria-label="Formato del documento">
       <div className="al-bloc-toolbar-row flex items-center gap-1 px-2 py-2">
         <BlocToolButton label="Deshacer" onClick={() => onCommand("undo")}><Undo2 className="h-4 w-4" /></BlocToolButton>
         <BlocToolButton label="Rehacer" onClick={() => onCommand("redo")}><Redo2 className="h-4 w-4" /></BlocToolButton>
@@ -1226,7 +1276,7 @@ function BlocEditorToolbar({
 
         <Select
           value={formatState.block}
-          className="al-bloc-toolbar-select al-bloc-paragraph-select h-8 w-[116px] shrink-0 text-xs"
+          className="al-bloc-toolbar-select al-bloc-paragraph-select"
           onChange={(event) => onBlockChange(event.target.value)}
           aria-label="Estilo de párrafo o título"
           title="Estilo de párrafo o título"
@@ -1244,7 +1294,7 @@ function BlocEditorToolbar({
 
         <Select
           value={formatState.fontFamily}
-          className="al-bloc-toolbar-select al-bloc-font-select h-8 w-[124px] shrink-0 text-xs"
+          className="al-bloc-toolbar-select al-bloc-font-select"
           onChange={(event) => onFontFamily(event.target.value)}
           aria-label="Tipo de letra"
           title="Tipo de letra"
@@ -1257,23 +1307,7 @@ function BlocEditorToolbar({
           </optgroup>
         </Select>
 
-        <div className="al-bloc-size-group" aria-label="Tamaño de letra en píxeles">
-          <BlocToolButton label="Reducir 1 px" onClick={() => onFontSize(formatState.fontSize - 1)}><span className="text-base leading-none">−</span></BlocToolButton>
-          <div className="al-bloc-font-size-field">
-            <input
-              type="number"
-              min="8"
-              max="96"
-              step="1"
-              value={formatState.fontSize}
-              onChange={(event) => { if (event.target.value) onFontSize(Number(event.target.value)); }}
-              aria-label="Tamaño de letra en píxeles"
-              title="Tamaño de letra en píxeles"
-            />
-            <span aria-hidden="true">px</span>
-          </div>
-          <BlocToolButton label="Aumentar 1 px" onClick={() => onFontSize(formatState.fontSize + 1)}><Plus className="h-3.5 w-3.5" /></BlocToolButton>
-        </div>
+        <BlocFontSizeControl value={formatState.fontSize} onChange={onFontSize} />
 
         <span className="al-bloc-toolbar-divider" />
         <div className="al-bloc-tool-group">
@@ -1313,11 +1347,138 @@ function BlocEditorToolbar({
   );
 }
 
-function BlocListSelect({ list, onCommand }: { list: EditorFormatState["list"]; onCommand: (command: string) => void }) {
+function BlocFontSizeControl({ value, onChange, panel = false }: { value: number; onChange: (value: number) => void; panel?: boolean }) {
+  const [draft, setDraft] = useState(String(value));
+
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  function commit(nextValue: string) {
+    const parsed = Number.parseInt(nextValue, 10);
+    const next = clampEditorFontSize(Number.isFinite(parsed) ? parsed : value);
+    setDraft(String(next));
+    onChange(next);
+  }
+
+  function nudge(delta: number) {
+    const parsed = Number.parseInt(draft, 10);
+    const base = Number.isFinite(parsed) ? parsed : value;
+    commit(String(base + delta));
+  }
+
+  return (
+    <div className={cn("al-bloc-size-group", panel && "al-bloc-size-group-panel")} aria-label="Tamaño de letra en píxeles">
+      <BlocToolButton label="Reducir 1 px" onClick={() => nudge(-1)}><span className="text-base leading-none">−</span></BlocToolButton>
+      <div className="al-bloc-font-size-field">
+        <input
+          type="number"
+          min="8"
+          max="96"
+          step="1"
+          inputMode="numeric"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={() => commit(draft)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+            if (event.key === "Escape") setDraft(String(value));
+          }}
+          aria-label="Tamaño de letra en píxeles"
+          title="Tamaño de letra en píxeles"
+        />
+        <span aria-hidden="true">px</span>
+      </div>
+      <BlocToolButton label="Aumentar 1 px" onClick={() => nudge(1)}><Plus className="h-3.5 w-3.5" /></BlocToolButton>
+    </div>
+  );
+}
+
+function MobileEditorFormatPanel({
+  formatState,
+  onCommand,
+  onBlockChange,
+  onFontFamily,
+  onFontSize,
+  onColor,
+  onHighlight,
+}: {
+  formatState: EditorFormatState;
+  onCommand: (command: string, value?: string) => void;
+  onBlockChange: (value: string) => void;
+  onFontFamily: (value: string) => void;
+  onFontSize: (value: number) => void;
+  onColor: (value: string) => void;
+  onHighlight: (value: string) => void;
+}) {
+  return (
+    <div className="al-bloc-mobile-format-panel space-y-4">
+      <label className="block">
+        <span className="al-bloc-panel-label">Párrafo o título</span>
+        <Select value={formatState.block} className="al-bloc-toolbar-select al-bloc-panel-select" onChange={(event) => onBlockChange(event.target.value)}>
+          <optgroup label="Párrafo">
+            <option value="P">Texto normal</option>
+            <option value="BLOCKQUOTE">Cita</option>
+          </optgroup>
+          <optgroup label="Títulos">
+            <option value="H1">Título 1</option>
+            <option value="H2">Título 2</option>
+            <option value="H3">Título 3</option>
+          </optgroup>
+        </Select>
+      </label>
+
+      <label className="block">
+        <span className="al-bloc-panel-label">Tipo de letra</span>
+        <Select value={formatState.fontFamily} className="al-bloc-toolbar-select al-bloc-panel-select" onChange={(event) => onFontFamily(event.target.value)}>
+          <optgroup label="Texto sans serif">
+            {editorFonts.slice(0, 7).map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}
+          </optgroup>
+          <optgroup label="Serif y monoespaciadas">
+            {editorFonts.slice(7).map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}
+          </optgroup>
+        </Select>
+      </label>
+
+      <div>
+        <span className="al-bloc-panel-label">Tamaño de letra</span>
+        <BlocFontSizeControl panel value={formatState.fontSize} onChange={onFontSize} />
+      </div>
+
+      <div>
+        <span className="al-bloc-panel-label">Alineación</span>
+        <div className="al-bloc-panel-alignment grid grid-cols-4 gap-2">
+          <BlocToolButton label="Alinear a la izquierda" active={formatState.alignment === "left"} onClick={() => onCommand("justifyLeft")}><AlignLeft className="h-4 w-4" /></BlocToolButton>
+          <BlocToolButton label="Centrar" active={formatState.alignment === "center"} onClick={() => onCommand("justifyCenter")}><AlignCenter className="h-4 w-4" /></BlocToolButton>
+          <BlocToolButton label="Alinear a la derecha" active={formatState.alignment === "right"} onClick={() => onCommand("justifyRight")}><AlignRight className="h-4 w-4" /></BlocToolButton>
+          <BlocToolButton label="Justificar" active={formatState.alignment === "justify"} onClick={() => onCommand("justifyFull")}><AlignJustify className="h-4 w-4" /></BlocToolButton>
+        </div>
+      </div>
+
+      <label className="block">
+        <span className="al-bloc-panel-label">Listas</span>
+        <BlocListSelect panel list={formatState.list} onCommand={onCommand} />
+      </label>
+
+      <div className="grid grid-cols-2 gap-2">
+        <label className="al-bloc-panel-color">
+          <span><Palette className="h-4 w-4" />Color de texto</span>
+          <input type="color" defaultValue="#333029" onChange={(event) => onColor(event.target.value)} aria-label="Elegir color de texto" />
+        </label>
+        <label className="al-bloc-panel-color">
+          <span><Highlighter className="h-4 w-4" />Resaltado</span>
+          <input type="color" defaultValue="#fff3a3" onChange={(event) => onHighlight(event.target.value)} aria-label="Elegir color de resaltado" />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function BlocListSelect({ compact = false, panel = false, list, onCommand }: { compact?: boolean; panel?: boolean; list: EditorFormatState["list"]; onCommand: (command: string) => void }) {
   return (
     <Select
       value={list ?? ""}
-      className={cn("al-bloc-toolbar-select al-bloc-list-select h-8 w-[104px] shrink-0 text-xs", list && "al-bloc-toolbar-select-active")}
+      className={cn("al-bloc-toolbar-select al-bloc-list-select", compact && "al-bloc-list-select-compact", panel && "al-bloc-panel-select", list && "al-bloc-toolbar-select-active")}
       onChange={(event) => {
         const value = event.target.value;
         if (value === "unordered") onCommand("insertUnorderedList");
@@ -1722,24 +1883,33 @@ const blocBrandCss = `
   .al-bloc-title-input { color: #111111; }
   .al-bloc-title-input::placeholder { color: #9a958a; }
   .al-bloc-toolbar { border-bottom: 1px solid #f0ece2; background: #faf8f4; }
-  .al-bloc-toolbar-row { flex-wrap: wrap; }
+  .al-bloc-toolbar-row { min-width: 0; flex-wrap: nowrap; }
+  .al-bloc-toolbar-desktop .al-bloc-toolbar-row { gap: 2px; padding: 8px 6px; }
+  .al-bloc-toolbar-desktop .al-bloc-tool-btn { min-width: 30px; padding-right: 6px; padding-left: 6px; }
+  .al-bloc-toolbar-desktop .al-bloc-toolbar-divider { margin-right: 1px; margin-left: 1px; }
   .al-bloc-toolbar-divider { width: 1px; height: 20px; background: #ece7dc; margin: 0 2px; flex-shrink: 0; }
   .al-bloc-tool-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; min-width: 32px; padding: 0 7px; border-radius: 8px; border: none; background: transparent; color: #6b6f72; cursor: pointer; }
   .al-bloc-tool-btn:hover { background: white; color: #c94f21; }
   .al-bloc-tool-btn-active { background: #f7ded2; color: #b9471f; box-shadow: inset 0 0 0 1px rgba(225, 93, 45, 0.18); }
   .al-bloc-tool-btn-active:hover { background: #f7ded2; color: #a73d18; }
   .al-bloc-tool-group { display: inline-flex; align-items: center; gap: 1px; flex-shrink: 0; }
-  .al-bloc-size-group { display: inline-flex; align-items: center; gap: 1px; flex-shrink: 0; border: 1px solid #ece7dc; border-radius: 8px; background: white; }
+  .al-bloc-size-group { display: inline-flex; align-items: center; gap: 1px; flex-shrink: 0; overflow: hidden; border: 1px solid #ece7dc; border-radius: 8px; background: white; }
   .al-bloc-size-group .al-bloc-tool-btn { height: 30px; min-width: 28px; padding: 0 6px; border-radius: 7px; }
-  .al-bloc-font-size-field { display: flex; height: 30px; align-items: center; border-left: 1px solid #f0ece2; border-right: 1px solid #f0ece2; color: #9a958a; }
-  .al-bloc-font-size-field input { width: 34px; appearance: textfield; border: 0; background: transparent; padding: 0 0 0 5px; color: #333029; font-size: 12px; font-weight: 700; outline: none; text-align: right; }
+  .al-bloc-font-size-field { display: flex; height: 30px; align-items: center; justify-content: center; border-left: 1px solid #f0ece2; border-right: 1px solid #f0ece2; color: #9a958a; }
+  .al-bloc-font-size-field input { box-sizing: border-box; width: 32px; height: 28px; appearance: textfield; border: 0; background: transparent; padding: 0 2px; color: #333029; font-size: 12px; font-weight: 700; line-height: 28px; outline: none; text-align: right; }
   .al-bloc-font-size-field input::-webkit-inner-spin-button, .al-bloc-font-size-field input::-webkit-outer-spin-button { appearance: none; margin: 0; }
-  .al-bloc-font-size-field span { padding: 0 5px 0 2px; font-size: 9px; font-weight: 700; text-transform: uppercase; }
-  .al-bloc-toolbar-select { border: 1px solid #ece7dc; border-radius: 8px; background: white; color: #333029; }
+  .al-bloc-font-size-field span { padding: 0 5px 0 1px; font-size: 9px; font-weight: 700; line-height: 30px; text-transform: uppercase; }
+  .al-bloc-toolbar-select { box-sizing: border-box; height: 32px; flex-shrink: 0; border: 1px solid #ece7dc; border-radius: 8px; background: white; padding: 0 26px 0 8px; color: #333029; font-size: 12px; line-height: normal; }
+  .al-bloc-paragraph-select { width: 112px; }
+  .al-bloc-font-select { width: 114px; }
+  .al-bloc-list-select { width: 96px; }
   .al-bloc-toolbar-select-active { border-color: rgba(225, 93, 45, 0.35); background: #fff7f2; color: #b9471f; }
   .al-bloc-color-tool { position: relative; flex-shrink: 0; }
   .al-bloc-color-input { position: absolute; inset: 0; height: 100%; width: 100%; cursor: pointer; opacity: 0; }
-  .al-bloc-toolbar-mobile .al-bloc-toolbar-row { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; padding-top: 6px; padding-bottom: 6px; }
+  .al-bloc-toolbar-mobile .al-bloc-toolbar-row { width: 100%; gap: 2px; overflow: hidden; padding: 6px; }
+  .al-bloc-toolbar-mobile .al-bloc-tool-btn { width: 30px; min-width: 30px; padding: 0; }
+  .al-bloc-toolbar-mobile .al-bloc-toolbar-divider { margin: 0; }
+  .al-bloc-list-select-compact { width: 80px; padding-right: 20px; padding-left: 7px; }
   .al-bloc-toolbar-mobile .al-bloc-toolbar-divider { height: 18px; }
   .al-bloc-content-wrap { position: relative; display: flex; min-height: 0; flex: 1; overflow: hidden; background: white; }
   .al-bloc-content-watermark { position: absolute; z-index: 0; right: 24px; bottom: 12px; width: 220px; height: auto; opacity: 0.55; pointer-events: none; user-select: none; }
@@ -1822,6 +1992,9 @@ const blocBrandCss = `
   .al-bloc-mobile-notes { min-height: 50px; }
   .al-bloc-mobile-title-row { border-bottom: 1px solid #f0ece2; }
   .al-bloc-mobile-title-button { border: 0; background: transparent; }
+  .al-bloc-mobile-actions { gap: 2px; border-top: 1px solid #f0ece2; background: white; }
+  .al-bloc-mobile-action { display: flex; min-width: 0; flex: 1; align-items: center; justify-content: center; gap: 7px; height: 38px; border: 0; border-radius: 8px; background: transparent; color: #6b6f72; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .al-bloc-mobile-action:hover, .al-bloc-mobile-action[aria-expanded="true"] { background: #fff3ed; color: #b9471f; }
   .al-bloc-mobile-status { border-top: 1px solid #f0ece2; background: #faf8f4; }
   .al-bloc-mobile-card { min-height: 48px; border: 1px solid #ece7dc; background: white; color: #333029; }
   .al-bloc-mobile-card-active { border-color: transparent; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; box-shadow: 0 10px 22px rgba(225,93,45,0.25); }
@@ -1830,6 +2003,18 @@ const blocBrandCss = `
   .al-bloc-mobile-card-delete { border: 0; background: #fff3ed; color: #b9471f; }
   .al-bloc-mobile-card-delete:hover { background: #fbe2df; color: #c23a2e; }
   .al-bloc-mobile-card-active .al-bloc-mobile-card-delete { background: rgba(255,255,255,0.16); color: white; }
+  .al-bloc-panel-label { display: block; margin: 0 0 6px; color: #6b6f72; font-size: 11px; font-weight: 700; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.04em; }
+  .al-bloc-panel-select { width: 100%; height: 42px; padding-right: 34px; padding-left: 12px; font-size: 14px; }
+  .al-bloc-size-group-panel { width: 100%; justify-content: space-between; }
+  .al-bloc-size-group-panel .al-bloc-tool-btn { width: 42px; height: 40px; }
+  .al-bloc-size-group-panel .al-bloc-font-size-field { height: 40px; flex: 1; }
+  .al-bloc-size-group-panel .al-bloc-font-size-field input { width: 46px; height: 38px; font-size: 14px; line-height: 38px; }
+  .al-bloc-size-group-panel .al-bloc-font-size-field span { font-size: 10px; line-height: 40px; }
+  .al-bloc-panel-alignment .al-bloc-tool-btn { width: 100%; height: 40px; border: 1px solid #ece7dc; background: white; }
+  .al-bloc-panel-alignment .al-bloc-tool-btn-active { border-color: rgba(225, 93, 45, 0.28); background: #f7ded2; }
+  .al-bloc-panel-color { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; border: 1px solid #ece7dc; border-radius: 9px; padding: 7px 8px 7px 10px; color: #333029; font-size: 12px; font-weight: 600; }
+  .al-bloc-panel-color > span { display: flex; min-width: 0; align-items: center; gap: 6px; }
+  .al-bloc-panel-color input { width: 30px; height: 28px; flex-shrink: 0; cursor: pointer; border: 0; border-radius: 6px; padding: 0; background: transparent; }
   .al-bloc-sheet { background: white; border-top: 1px solid #ece7dc; box-shadow: 0 -12px 32px rgba(17,17,17,0.12); }
   .al-bloc-sheet-handle { background: #ece7dc; }
   .al-bloc-sheet-row { color: #333029; background: none; border: none; }
