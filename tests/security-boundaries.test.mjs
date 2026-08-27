@@ -2000,11 +2000,14 @@ test("Bloc combines bullets and numbering and keeps text/highlight colors in the
 test("Bloc keeps delete controls visible without hover and compacts the mobile notes/editor workflow (issue #151)", async () => {
   const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
   const guestApp = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  const mobile = source.slice(source.indexOf("if (isMobile)"), source.indexOf("return (\n    <div className=\"relative\">"));
+  const mobileStart = source.indexOf("if (isMobile)");
+  const desktopStart = source.indexOf('<div className="relative">', mobileStart);
+  const mobile = source.slice(mobileStart, desktopStart);
 
   assert.match(source, /\.al-bloc-note-row-delete \{[^}]*opacity: 1/);
   assert.doesNotMatch(source, /\.group:hover \.al-bloc-note-row-delete/);
-  assert.match(mobile, /al-bloc-mobile-card-delete/);
+  assert.match(mobile, /<MobileNoteCard/);
+  assert.match(source, /className="al-bloc-mobile-card-delete[^\"]*"/);
   assert.match(mobile, /al-bloc-mobile-create[\s\S]*?<Plus/);
   assert.ok(mobile.indexOf("<BlocEditorToolbar") < mobile.indexOf("ref={attachEditor}"), "mobile formatting controls must be above the writing surface");
   assert.match(mobile, /min-h-\[clamp\(220px,38dvh,420px\)\]/);
