@@ -1,13 +1,16 @@
-const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#2563eb"/>
-  <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="white">A</text>
-</svg>`;
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
-export function GET() {
-  return new Response(favicon, {
+// Serve the AL-LIO app mark (mark on a black rounded square) as the browser
+// tab icon. Evaluated once at build time and cached as a static asset.
+export const dynamic = "force-static";
+
+export async function GET() {
+  const icon = await readFile(join(process.cwd(), "public", "assets", "al_lio_icon_black.png"));
+  return new Response(new Uint8Array(icon), {
     headers: {
-      "Content-Type": "image/svg+xml",
-      "Cache-Control": "public, max-age=86400",
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=31536000, immutable",
     },
   });
 }

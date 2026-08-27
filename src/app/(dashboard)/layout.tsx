@@ -24,13 +24,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <AppSidebar isAdmin={isAdmin} />
         <main className="min-w-0 flex-1 relative pb-20 md:pb-0">
           <div className="flex h-14 items-center justify-between border-b bg-background/90 backdrop-blur-xl px-4 md:hidden sticky top-0 z-40">
-            <div className="relative h-8 w-28">
+            <div className="relative h-8">
               <Image
-                src="/assets/al_lio_logo_horizontal_transparent.png"
+                src="/assets/al_lio_logo_horizontal.png"
                 alt="AL-LIO"
-                width={615}
-                height={214}
-                className="block h-auto w-28 object-contain object-left"
+                width={2172}
+                height={724}
+                className="block h-8 w-auto object-contain object-left"
                 priority
               />
             </div>

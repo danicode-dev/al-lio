@@ -66,11 +66,11 @@ export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
             title="Expandir menú"
           >
             <Image
-              src="/assets/al_lio_symbol_transparent.png"
+              src="/assets/al_lio_symbol.png"
               alt="AL-LIO"
-              width={26}
-              height={26}
-              className="block"
+              width={1254}
+              height={1254}
+              className="block h-7 w-7"
               priority
             />
           </button>
@@ -78,12 +78,12 @@ export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
           <>
             <div className="min-w-0 flex-1 pl-1">
               <Image
-                src="/assets/al_lio_logo_horizontal_transparent.png"
+                src="/assets/al_lio_logo_horizontal.png"
                 alt="AL-LIO"
-                width={615}
-                height={214}
+                width={2172}
+                height={724}
                 className="block object-contain object-left"
-                style={{ width: 128, height: "auto" }}
+                style={{ width: 132, height: "auto" }}
                 priority
               />
             </div>

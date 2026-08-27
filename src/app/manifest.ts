@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: 'portrait',
     icons: [
       {
-        src: '/assets/al_lio_favicon_dark_circle_512.png',
+        src: '/assets/al_lio_icon_black.png',
         sizes: '512x512',
         type: 'image/png',
       },

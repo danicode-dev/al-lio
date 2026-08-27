@@ -26,9 +26,9 @@ export const metadata: Metadata = {
   description: "Panel privado para tareas, calendario, cursos, eventos, retos, oportunidades y noticias.",
   icons: {
     icon: [
-      { url: "/assets/al_lio_favicon_dark_circle_512.png", type: "image/png" },
+      { url: "/assets/al_lio_icon_black.png", type: "image/png" },
     ],
-    apple: "/assets/al_lio_favicon_dark_circle_512.png",
+    apple: "/assets/al_lio_icon_black.png",
   },
 };
 
