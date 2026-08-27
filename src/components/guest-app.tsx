@@ -2367,6 +2367,31 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
 
   const activeFilterCount = [monthFilter, dayFilter, estadoFilter, modalidadFilter, prioridadFilter, soloGratuitos].filter(Boolean).length;
 
+  // One featured course above the grid: the next one due to start, breaking
+  // ties by priority. Only on the untouched Activos/Todos views - once the
+  // student searches or filters, every result is shown flat in the grid.
+  const showFeatured = (viewTab === "activos" || viewTab === "todos") && !search && activeFilterCount === 0 && viewMode === "grid";
+  const featuredCourse = useMemo(() => {
+    if (!showFeatured) return null;
+    const pool = filtered.filter((c) => !isCourseArchived(c) && c.status !== "terminado");
+    if (!pool.length) return null;
+    const rank = (c: Course) => {
+      const p = normalizePriorityText(c.prioridad);
+      return p.includes("alta") ? 0 : p.includes("baja") ? 2 : 1;
+    };
+    return [...pool].sort((a, b) => {
+      const r = rank(a) - rank(b);
+      if (r) return r;
+      const da = (a.fecha_inicio || a.start_at || "9999-12-31").slice(0, 10);
+      const db = (b.fecha_inicio || b.start_at || "9999-12-31").slice(0, 10);
+      return da.localeCompare(db);
+    })[0] ?? null;
+  }, [showFeatured, filtered]);
+  const gridCourses = useMemo(
+    () => (featuredCourse ? filtered.filter((c) => c.id !== featuredCourse.id) : filtered),
+    [filtered, featuredCourse]
+  );
+
   function clearAll() {
     setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setModalidadFilter(""); setPrioridadFilter(""); setSoloGratuitos(false); setSearchInput(""); setSearch("");
   }
@@ -2394,19 +2419,47 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-chip-green { border-color: rgba(31, 122, 77, 0.3) !important; background: #e7f5ee !important; color: #1f7a4d !important; }
         .al-course-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .al-course-count-text { font-size: 12px; color: #6b6f72; }
-        .al-course-grid { display: grid; gap: 12px; }
-        .al-course-grid-2 { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-        .al-course-card { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 13px; }
-        .al-course-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+        .al-course-grid { display: grid; gap: 14px; }
+        .al-course-grid-2 { grid-template-columns: 1fr; }
+        @media (min-width: 640px) { .al-course-grid-2 { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { .al-course-grid-2 { grid-template-columns: repeat(3, 1fr); } }
+        .al-course-featured { position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr; background: white; border: 1px solid #ece7dc; border-radius: 22px; box-shadow: 0 14px 36px rgba(17, 17, 17, 0.06); }
+        @media (min-width: 860px) { .al-course-featured { grid-template-columns: minmax(0, 300px) 1fr; } }
+        .al-course-featured-media { position: relative; min-height: 168px; background: #12100c; }
+        .al-course-featured-media img { width: 100%; height: 100%; object-fit: cover; }
+        .al-course-featured-tag { position: absolute; left: 14px; top: 14px; display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-radius: 999px; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+        .al-course-featured-body { display: flex; flex-direction: column; gap: 10px; padding: 18px 18px 16px; min-width: 0; }
+        .al-course-featured-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .al-course-featured-title { font-size: 17px; font-weight: 800; line-height: 1.22; color: #111111; overflow-wrap: anywhere; }
+        .al-course-featured-org { font-size: 12px; color: #6b6f72; margin-top: 2px; }
+        .al-course-featured-desc { font-size: 12.5px; line-height: 1.5; color: #4b4740; }
+        .al-course-featured-heart { position: absolute; right: 14px; top: 14px; z-index: 2; box-shadow: 0 2px 8px rgba(17,17,17,0.12); }
+        .al-course-facts { display: flex; flex-wrap: wrap; gap: 8px; }
+        .al-course-fact { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; height: 26px; padding: 0 10px; border-radius: 9px; background: #f7f3ec; border: 1px solid #ece7dc; font-size: 11px; font-weight: 600; color: #4b4740; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .al-course-fact svg { width: 13px; height: 13px; color: #9a958a; flex-shrink: 0; }
+        .al-course-featured-actions { margin-top: auto; display: flex; align-items: center; gap: 8px; padding-top: 4px; }
+        .al-course-status { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px 0 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0; background: #f2ece1; color: #6b6f72; }
+        .al-course-status::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; flex-shrink: 0; }
+        .al-course-status-pendiente { background: #fdf1dd; color: #97620f; }
+        .al-course-status-empezado { background: #e6eefc; color: #2f5fac; }
+        .al-course-status-terminado { background: #e7f5ee; color: #1f7a4d; }
+        .al-course-status-pausado { background: #f2ece1; color: #6b6f72; }
+        .al-course-status-descartado { background: #f6e4e0; color: #b23b2e; }
+        .al-course-btn-detail { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; height: 38px; border-radius: 11px; border: none; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; font-size: 12.5px; font-weight: 700; text-decoration: none; cursor: pointer; box-shadow: 0 8px 18px rgba(225, 93, 45, 0.22); transition: filter 0.15s; }
+        .al-course-btn-detail:hover { filter: brightness(1.05); }
+        .al-course-featured-actions .al-course-btn-detail { width: auto; padding: 0 22px; }
+        .al-course-card { position: relative; display: flex; flex-direction: column; gap: 10px; min-width: 0; background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 16px; transition: border-color 0.15s, box-shadow 0.15s; }
+        .al-course-card:hover { border-color: rgba(225, 93, 45, 0.28); box-shadow: 0 16px 34px rgba(17, 17, 17, 0.08); }
+        .al-course-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
         .al-course-card-title-wrap { min-width: 0; flex: 1 1 auto; }
-        .al-course-card-badges { display: flex; flex-shrink: 0; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+        .al-course-card-badges { display: flex; flex-shrink: 0; align-items: center; gap: 6px; }
         .al-course-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
         .al-course-heart.al-course-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
         .al-course-card-title { font-size: 13.5px; font-weight: 700; color: #111111; line-height: 1.28; overflow-wrap: anywhere; word-break: break-word; }
         .al-course-card-org { font-size: 11px; color: #6b6f72; margin-top: 1px; overflow-wrap: anywhere; word-break: break-word; }
         .al-course-card-meta { font-size: 11px; color: #6b6f72; }
         .al-course-card-desc { font-size: 11.5px; color: #4b4740; line-height: 1.4; overflow-wrap: anywhere; word-break: break-word; }
-        .al-course-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
+        .al-course-card-actions { margin-top: auto; display: flex; gap: 6px; padding-top: 12px; border-top: 1px solid #f2ece1; }
         .al-course-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
         .al-course-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
         .al-course-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
@@ -2468,9 +2521,53 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
               <ViewToggle value={viewMode} onChange={setViewMode} />
             </div>
 
-            {filtered.length ? (
+            {featuredCourse && (() => {
+              const fp = getCoursePresentation(featuredCourse);
+              return (
+                <article className="al-course-featured">
+                  {canToggleCourseFavorite(featuredCourse) && (
+                    <button
+                      type="button"
+                      className={cn("al-course-heart al-course-featured-heart", featuredCourse.is_favorite && "al-course-heart-active")}
+                      aria-label={featuredCourse.is_favorite ? "Quitar de guardados" : "Guardar"}
+                      aria-pressed={!!featuredCourse.is_favorite}
+                      onClick={() => toggleCourseFavoriteFor(featuredCourse, actions)}
+                    >
+                      <Heart className="h-3.5 w-3.5" fill={featuredCourse.is_favorite ? "currentColor" : "none"} />
+                    </button>
+                  )}
+                  <div className="al-course-featured-media">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={courseHeroImage(featuredCourse)} alt="" />
+                    <span className="al-course-featured-tag"><Flame className="h-3 w-3" />Destacado</span>
+                  </div>
+                  <div className="al-course-featured-body">
+                    <div className="al-course-featured-head">
+                      <div className="min-w-0">
+                        <p className="al-course-featured-title">{fp.title}</p>
+                        {fp.provider && <p className="al-course-featured-org">{fp.provider}</p>}
+                      </div>
+                      <span className={cn("al-course-status", courseStatusPillClass(featuredCourse.status))}>{capitalizeFirst(featuredCourse.status)}</span>
+                    </div>
+                    {fp.description && <p className="al-course-featured-desc line-clamp-3">{fp.description}</p>}
+                    <div className="al-course-facts">
+                      {fp.startDate && <span className="al-course-fact"><CalendarDays />{formatDateLabel(fp.startDate)}</span>}
+                      {fp.modality && <span className="al-course-fact"><Building2 />{fp.modality}</span>}
+                      {fp.level && <span className="al-course-fact"><Target />{fp.level}</span>}
+                    </div>
+                    <div className="al-course-featured-actions">
+                      <Link href={`/courses/${encodeURIComponent(featuredCourse.id)}`} className="al-course-btn-detail">
+                        <Eye className="h-4 w-4" />Ver detalles
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              );
+            })()}
+
+            {(featuredCourse || gridCourses.length) ? (
               <div className={cn("al-course-grid", viewMode === "grid" ? "al-course-grid-2" : "")}>
-                {filtered.map((item) => {
+                {gridCourses.map((item) => {
                   const presentation = getCoursePresentation(item);
                   return (
                     <div key={item.id} className="al-course-card">
@@ -2480,7 +2577,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                           {presentation.provider && <p className="al-course-card-org line-clamp-1" title={presentation.provider}>{presentation.provider}</p>}
                         </div>
                         <div className="al-course-card-badges">
-                          <Badge className={cn("shrink-0", courseStatusClass(item.status))}>{item.status}</Badge>
+                          <span className={cn("al-course-status", courseStatusPillClass(item.status))}>{capitalizeFirst(item.status)}</span>
                           {canToggleCourseFavorite(item) && (
                             <button
                               type="button"
@@ -2494,28 +2591,15 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                           )}
                         </div>
                       </div>
-                      {(presentation.startDate || presentation.endDate) && (
-                        <p className="al-course-card-meta">
-                          {presentation.startDate ? formatDateLabel(presentation.startDate) : "—"}{presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}
-                        </p>
-                      )}
-                      <div className="flex flex-wrap gap-1.5">
-                        {presentation.location && <ChipTag icon="pin" className="max-w-full break-words">{presentation.location}</ChipTag>}
-                        {presentation.modality && <ChipTag className="max-w-full break-words">{presentation.modality}</ChipTag>}
-                        {presentation.priority && <ChipTag className={cn("max-w-full break-words", coursePriorityClass(presentation.priority))}>{priorityText(presentation.priority)}</ChipTag>}
+                      <div className="al-course-facts">
+                        {presentation.startDate && <span className="al-course-fact"><CalendarDays />{formatDateLabel(presentation.startDate)}</span>}
+                        {presentation.modality && <span className="al-course-fact"><Building2 />{presentation.modality}</span>}
+                        {presentation.level && <span className="al-course-fact"><Target />{presentation.level}</span>}
                       </div>
-                      {presentation.description && <p className="al-course-card-desc line-clamp-2" title={presentation.description}>{presentation.description}</p>}
                       <div className="al-course-card-actions">
-                        <Link href={`/courses/${encodeURIComponent(item.id)}`} className="al-course-btn al-course-btn-primary">
-                          <Eye className="h-3.5 w-3.5" />Ver detalles
+                        <Link href={`/courses/${encodeURIComponent(item.id)}`} className="al-course-btn-detail">
+                          <Eye className="h-4 w-4" />Ver detalles
                         </Link>
-                        {isSafeHttpUrl(presentation.sourceUrl) && <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-course-btn"><ExternalLink className="h-3.5 w-3.5" />Abrir</a>}
-                        {!isCourseArchived(item) && (
-                          <button type="button" className="al-course-btn" onClick={() => actions.completeCourse(item).catch(() => {})}>
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            Terminado
-                          </button>
-                        )}
                       </div>
                     </div>
                   );
@@ -2592,6 +2676,26 @@ function coursePriorityClass(value?: string): string {
   return "al-course-chip-amber";
 }
 
+function courseStatusPillClass(status: Course["status"]): string {
+  return `al-course-status-${status}`;
+}
+
+function capitalizeFirst(value: string): string {
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+}
+
+// Course hero image keyed by professional family. Files under
+// /assets/cursos/ are placeholders until the final art lands.
+function courseHeroImage(course: Course): string {
+  const hay = `${course.area ?? ""} ${course.category ?? ""} ${course.title ?? ""} ${Array.isArray(course.tags) ? course.tags.join(" ") : course.tags ?? ""}`
+    .toLowerCase().normalize("NFD").replace(new RegExp(`[${String.fromCharCode(0x0300)}-${String.fromCharCode(0x036f)}]`, "g"), "");
+  if (/desarroll|program|web|software|java|kotlin|frontend|backend|\bapp\b|\bdev\b|\bdam\b|\bdaw\b/.test(hay)) return "/assets/cursos/curso-hero-desarrollo.png";
+  if (/administr|finan|contab|excel|gestion|factur|\baf\b/.test(hay)) return "/assets/cursos/curso-hero-administracion.png";
+  if (/marketing|publicidad|redes sociales|campan|\bmp\b/.test(hay)) return "/assets/cursos/curso-hero-marketing.png";
+  if (/deport|fitness|entrenam|fisic|gimnas|salud|tsaf/.test(hay)) return "/assets/cursos/curso-hero-deporte.png";
+  return "/assets/cursos/curso-hero-generico.png";
+}
+
 // Mirrors canToggleHackathonFavorite/toggleHackathonFavoriteFor exactly -
 // tech_opportunities-sourced courses are deliberately excluded for the same
 // documented reason (issue #120, see 0008_course_favorites.sql); everything
@@ -2654,122 +2758,192 @@ export function CourseDetailView({ id }: { id: string }) {
   const aptitudes = item.aptitudes ?? [];
   const cardClass = "space-y-3 rounded-[18px] border border-[#ece7dc] bg-white p-4 shadow-[0_10px_26px_rgba(17,17,17,0.045)] sm:p-5";
 
+  const learnings = aptitudes.filter((a) => a.relation === "ensena").map((a) => a.titulo).filter(Boolean);
+  // requisitos_resumen is a single free-text field; only treat it as a
+  // requirements checklist when it is actually delimited into 2+ items,
+  // otherwise it is prose already shown under "Sobre el curso".
+  const requirements = (presentation.requirements ?? "")
+    .split(/\r?\n|·|•|;/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const hasRequirementList = requirements.length >= 2;
+  const startKey = (presentation.startDate ?? "").slice(0, 10);
+  const daysUntil = startKey ? Math.ceil((new Date(`${startKey}T00:00:00`).getTime() - Date.now()) / 86_400_000) : null;
+  const nextCourse = (() => {
+    const pool = allCourses
+      .filter((c) => c.id !== item.id && !isCourseArchived(c) && c.status !== "terminado")
+      .map((c) => ({ c, k: (c.fecha_inicio || c.start_at || "").slice(0, 10) }))
+      .filter((x) => x.k)
+      .sort((a, b) => a.k.localeCompare(b.k));
+    return (pool.find((x) => x.k >= startKey) ?? pool[0])?.c ?? null;
+  })();
+  const infoRows: Array<[string, string | undefined]> = [
+    ["Certificación", presentation.certification],
+    ["Modalidad", presentation.modality],
+    ["Entidad", presentation.provider],
+    ["Duración", presentation.duration],
+  ];
+
   return (
     <div className="space-y-5">
       <style>{`
-        .al-course-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
+        .al-course-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 9px; font-size: 11.5px; font-weight: 600; border: 1px solid #ece7dc; background: white; color: #333029; cursor: pointer; white-space: nowrap; text-decoration: none; }
         .al-course-btn:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
         .al-course-btn-primary { border-color: rgba(225, 93, 45, 0.3); background: #fbe7dd; color: #c94f21; }
+        .al-course-btn-solid { border: none; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; height: 38px; font-size: 12.5px; font-weight: 700; }
         .al-course-heart { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #9a958a; cursor: pointer; flex-shrink: 0; transition: color 0.15s, border-color 0.15s, background 0.15s; }
         .al-course-heart.al-course-heart-active { color: #E15D2D; border-color: rgba(225, 93, 45, 0.35); background: #fbe7dd; }
+        .al-course-hero-media { position: relative; height: 176px; border-radius: 14px; overflow: hidden; background: #12100c; }
+        .al-course-hero-media img { width: 100%; height: 100%; object-fit: cover; }
+        .al-course-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 16px; }
+        @media (min-width: 640px) { .al-course-info-grid { grid-template-columns: repeat(3, 1fr); } }
+        .al-course-info-k { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: #9a958a; }
+        .al-course-info-v { font-size: 12.5px; font-weight: 600; color: #333029; margin-top: 2px; }
+        .al-course-cols { display: grid; gap: 14px; }
+        @media (min-width: 900px) { .al-course-cols { grid-template-columns: repeat(3, 1fr); } }
+        .al-course-side-panel { border: 1px solid #ece7dc; border-radius: 18px; background: white; box-shadow: 0 10px 26px rgba(17,17,17,0.045); padding: 16px; }
+        .al-course-side-title { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #9a958a; }
+        .al-course-next { display: flex; flex-direction: column; gap: 6px; border: 1px solid #ece7dc; border-radius: 14px; padding: 12px; text-decoration: none; transition: border-color 0.15s, box-shadow 0.15s; }
+        .al-course-next:hover { border-color: rgba(225, 93, 45, 0.35); box-shadow: 0 8px 18px rgba(17,17,17,0.05); }
       `}</style>
       <Link href="/courses" className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b6f72] transition hover:text-[#c94f21]">
         <ChevronLeft className="h-3.5 w-3.5" />Cursos
       </Link>
       <PageHeader eyebrow="Curso" title={presentation.title} subtitle={presentation.provider} actions={<StudentHeaderActions />} />
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+      <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-4">
           <div className={cardClass}>
+            <div className="al-course-hero-media">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={courseHeroImage(item)} alt="" />
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge className={cn(courseStatusClass(item.status))}>{item.status}</Badge>
               {presentation.priority && <ChipTag className={coursePriorityClass(presentation.priority)}>{priorityText(presentation.priority)}</ChipTag>}
+            </div>
+            <div className="al-course-info-grid">
+              <div><p className="al-course-info-k">Fechas</p><p className="al-course-info-v">{presentation.startDate ? formatDateLabel(presentation.startDate) : "Sin fecha"}{presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}</p></div>
+              <div><p className="al-course-info-k">Ubicación</p><p className="al-course-info-v">{presentation.location || "No especificada"}</p></div>
+              <div><p className="al-course-info-k">Modalidad</p><p className="al-course-info-v">{presentation.modality || "No especificada"}</p></div>
+              {presentation.level && <div><p className="al-course-info-k">Nivel</p><p className="al-course-info-v">{presentation.level}</p></div>}
+              {presentation.duration && <div><p className="al-course-info-k">Duración</p><p className="al-course-info-v">{presentation.duration}</p></div>}
+              <div><p className="al-course-info-k">Estado</p><p className="al-course-info-v capitalize">{presentation.status}</p></div>
+            </div>
+          </div>
+
+          <div className="al-course-cols">
+            <section className={cardClass}>
+              <h2 className="text-sm font-bold text-[#111111]">Sobre el curso</h2>
+              <p className="whitespace-pre-wrap text-[12.5px] leading-6 text-[#4b4740]">{presentation.description || "Este curso todavía no tiene una descripción disponible."}</p>
+            </section>
+            <section className={cardClass}>
+              <h2 className="text-sm font-bold text-[#111111]">Qué aprenderás</h2>
+              {learnings.length ? (
+                <ul className="space-y-2">
+                  {learnings.map((t, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[12.5px] leading-5 text-[#4b4740]"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1f7a4d]" />{t}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[12.5px] leading-6 text-[#6b6f72]">Los objetivos concretos se publicarán antes del inicio.</p>
+              )}
+            </section>
+            <section className={cardClass}>
+              <h2 className="text-sm font-bold text-[#111111]">Requisitos de acceso</h2>
+              {hasRequirementList ? (
+                <ul className="space-y-2">
+                  {requirements.map((t, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[12.5px] leading-5 text-[#4b4740]"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#9a958a]" />{t}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[12.5px] leading-6 text-[#6b6f72]">Consulta los requisitos en la convocatoria oficial.</p>
+              )}
+            </section>
+          </div>
+
+          {aptitudes.length > 0 && (
+            <section className={cardClass}>
+              <h2 className="text-sm font-bold text-[#111111]">Estructura del curso</h2>
+              <ol className="space-y-2.5">
+                {aptitudes.map((a, i) => (
+                  <li key={`${a.id}-${a.relation}`} className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#fbe7dd] text-[11px] font-bold text-[#c94f21]">{i + 1}</span>
+                    <div className="min-w-0">
+                      <p className="text-[12.5px] font-bold text-[#111111]">{a.titulo}</p>
+                      {a.descripcion && <p className="mt-0.5 text-[11.5px] leading-5 text-[#6b6f72]">{a.descripcion}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
+          <section className={cardClass}>
+            <h2 className="text-sm font-bold text-[#111111]">Información adicional</h2>
+            <div className="al-course-info-grid">
+              {infoRows.filter(([, v]) => v).map(([k, v]) => (
+                <div key={k}><p className="al-course-info-k">{k}</p><p className="al-course-info-v">{v}</p></div>
+              ))}
+            </div>
+            {presentation.requirements && <p className="text-[11.5px] leading-5 text-[#777269]"><span className="al-course-info-k">Observaciones</span><br />{presentation.requirements}</p>}
+          </section>
+
+        </div>
+
+        <div className="space-y-4">
+          <div className="al-course-side-panel space-y-3">
+            <p className="al-course-side-title">Estado del curso</p>
+            <Badge className={cn(courseStatusClass(item.status))}>{item.status}</Badge>
+            <div>
+              <p className="al-course-info-k">Próximo hito</p>
+              <p className="al-course-info-v">{presentation.startDate ? `Inicio · ${formatDateLabel(presentation.startDate)}` : "Fecha por confirmar"}</p>
+            </div>
+            {typeof daysUntil === "number" && daysUntil >= 0 && (
+              <div className="rounded-xl bg-[#e7f5ee] px-3 py-2 text-[12px] font-semibold text-[#1f7a4d]">
+                {daysUntil === 0 ? "Empieza hoy" : `Faltan ${daysUntil} ${daysUntil === 1 ? "día" : "días"}`}
+              </div>
+            )}
+            <div className="flex flex-col gap-2 pt-1">
+              {isSafeHttpUrl(presentation.sourceUrl) && (
+                <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-course-btn al-course-btn-solid">
+                  <ExternalLink className="h-3.5 w-3.5" />Abrir curso
+                </a>
+              )}
               {canFavorite && (
                 <button
                   type="button"
-                  className={cn("al-course-heart", item.is_favorite && "al-course-heart-active")}
-                  aria-label={item.is_favorite ? "Quitar de guardados" : "Guardar"}
+                  className={cn("al-course-btn", item.is_favorite ? "al-course-btn-primary" : "")}
                   aria-pressed={!!item.is_favorite}
                   onClick={() => toggleCourseFavoriteFor(item, actions)}
                 >
                   <Heart className="h-3.5 w-3.5" fill={item.is_favorite ? "currentColor" : "none"} />
+                  {item.is_favorite ? "Guardado en favoritos" : "Guardar en favoritos"}
                 </button>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <div>
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Fechas</p>
-                <p className="text-[13px] font-semibold text-[#333029]">
-                  {presentation.startDate ? formatDateLabel(presentation.startDate) : "Sin fecha indicada"}
-                  {presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Ubicación</p>
-                <p className="text-[13px] font-semibold text-[#333029]">{presentation.location || "No especificada"}</p>
-              </div>
-              <div>
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Modalidad</p>
-                <p className="text-[13px] font-semibold text-[#333029]">{presentation.modality || "No especificada"}</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-[#9a958a]">Descripción</p>
-              <p className="mt-1 whitespace-pre-wrap text-[13px] leading-6 text-[#4b4740]">{presentation.description || "Este curso todavía no tiene una descripción disponible."}</p>
-            </div>
-          </div>
-
-          <section className={cardClass} aria-labelledby="course-aptitudes-title">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 id="course-aptitudes-title" className="text-sm font-bold text-[#111111]">Aptitudes del curso</h2>
-                <p className="mt-1 text-xs leading-5 text-[#6b6f72]">Competencias que este contenido enseña o te ayuda a demostrar.</p>
-              </div>
-              {aptitudes.length > 0 && <span className="text-xs font-semibold text-[#9a958a]">{aptitudes.length}</span>}
-            </div>
-            {aptitudes.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-[#ded8cc] bg-[#faf8f3] p-4 text-xs leading-5 text-[#6b6f72]">
-                Este curso todavía no tiene aptitudes verificadas vinculadas en el catálogo.
-              </p>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {aptitudes.map((aptitude) => (
-                  <div key={`${aptitude.id}-${aptitude.relation}`} className="rounded-2xl border border-[#ece7dc] p-3.5">
-                    <div className="flex items-start gap-2.5">
-                      <span className={cn("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl", aptitude.completed ? "bg-[#e7f5ee] text-[#1f7a4d]" : "bg-[#fbe7dd] text-[#c94f21]")}>
-                        {aptitude.completed ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Target className="h-3.5 w-3.5" />}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-[13px] font-bold leading-5 text-[#111111]">{aptitude.titulo}</p>
-                          <span className={cn("rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.03em]", aptitude.relation === "ensena" ? "bg-[#fbe7dd] text-[#c94f21]" : "bg-[#edf3fb] text-[#2f5fac]")}>
-                            {aptitude.relation === "ensena" ? "Aprenderás" : "Demostrarás"}
-                          </span>
-                          {aptitude.completed && <span className="rounded-full bg-[#e7f5ee] px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.03em] text-[#1f7a4d]">Completada</span>}
-                        </div>
-                        {aptitude.descripcion && <p className="mt-1.5 text-xs leading-5 text-[#4b4740]">{aptitude.descripcion}</p>}
-                        {(aptitude.horas_estimadas || aptitude.evidencia_minima) && (
-                          <p className="mt-2 text-[11px] leading-4 text-[#777269]">
-                            {aptitude.horas_estimadas ? `${aptitude.horas_estimadas} h estimadas` : ""}
-                            {aptitude.horas_estimadas && aptitude.evidencia_minima ? " · " : ""}
-                            {aptitude.evidencia_minima ? `Evidencia: ${aptitude.evidencia_minima}` : ""}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-
-        <div className="space-y-4">
-          <div className={cardClass}>
-            <p className="text-sm font-bold text-[#111111]">Acciones</p>
-            <div className="flex flex-col gap-2">
-              {isSafeHttpUrl(presentation.sourceUrl) && (
-                <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-course-btn al-course-btn-primary justify-center">
-                  <ExternalLink className="h-3.5 w-3.5" />Abrir
-                </a>
               )}
               {!archived && (
-                <button type="button" className="al-course-btn justify-center" onClick={() => actions.completeCourse(item).catch(() => {})}>
-                  <CheckCircle2 className="h-3.5 w-3.5" />Terminado
+                <button type="button" className="al-course-btn" onClick={() => actions.completeCourse(item).catch(() => {})}>
+                  <CheckCircle2 className="h-3.5 w-3.5" />Marcar como terminado
                 </button>
               )}
             </div>
           </div>
+
+          {nextCourse && (
+            <div className="al-course-side-panel space-y-3">
+              <p className="al-course-side-title">Siguiente curso</p>
+              <Link href={`/courses/${encodeURIComponent(nextCourse.id)}`} className="al-course-next">
+                <p className="text-[12.5px] font-bold leading-5 text-[#111111] line-clamp-2">{nextCourse.title}</p>
+                <p className="text-[11px] text-[#6b6f72]">
+                  {(nextCourse.fecha_inicio || nextCourse.start_at)
+                    ? `Inicio · ${formatDateLabel((nextCourse.fecha_inicio || nextCourse.start_at)!)}`
+                    : nextCourse.entidad || "Ver curso"}
+                </p>
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#c94f21]">Ver curso <ChevronRight className="h-3 w-3" /></span>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

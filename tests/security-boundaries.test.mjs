@@ -636,7 +636,7 @@ test("fp course completion is per-user isolated and never mutates the shared cou
   assert.match(coursePresentationSource, /fpUserStatusToCourseStatus\(item\.user_status\)/, "fpItemToCourse must read the per-user completion state, not just the catalogue's own display status");
 });
 
-test("Course cards clamp title, provider and description consistently and stay inside the grid (issue #94, issue #130)", async () => {
+test("Course cards clamp title and provider, keep the full text reachable, and stay inside a grid capped at 3 columns (issue #94, issue #130, issue #160)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const cardStart = guestAppSource.indexOf('key={item.id} className="al-course-card"');
   const cardEnd = guestAppSource.indexOf("al-course-card-actions", cardStart);
@@ -645,38 +645,52 @@ test("Course cards clamp title, provider and description consistently and stay i
 
   assert.match(cardSource, /al-course-card-title line-clamp-2/);
   assert.match(cardSource, /al-course-card-org line-clamp-1/);
-  assert.match(cardSource, /al-course-card-desc line-clamp-2/);
-  // Clamping must not hide content with no fallback - each clamped element
-  // keeps the full text reachable via a native accessible title attribute,
+  // Clamping must not hide content with no fallback - the clamped elements
+  // keep the full text reachable via a native accessible title attribute,
   // sourced from the one shared presentation model (issue #130).
   assert.match(cardSource, /title=\{presentation\.title\}/);
   assert.match(cardSource, /title=\{presentation\.provider\}/);
-  assert.match(cardSource, /title=\{presentation\.description\}/);
-  // Long, unbroken tag/location text wraps instead of overflowing the card.
-  assert.match(cardSource, /className="max-w-full break-words"/);
   // issue #130: the header row wraps a min-w-0 title block and a shrink-0
-  // badge cluster - the same shape Trabajo/Eventos y retos use, ready for
-  // the #120 heart to slot in without another layout rework.
+  // badge cluster - the same shape Trabajo/Eventos y retos use.
   assert.match(cardSource, /al-course-card-title-wrap/);
   assert.match(cardSource, /al-course-card-badges/);
+  // issue #160: the redesigned card carries only the three identifying
+  // facts and a single Ver detalles action - no Abrir/Terminado, no
+  // description, no location/priority chips competing for attention.
+  assert.doesNotMatch(cardSource, /al-course-card-desc/, "the card must not render a description block anymore");
+  assert.doesNotMatch(cardSource, />Terminado</, "Terminado moves to the detail view");
 
   const styleSource = guestAppSource.slice(guestAppSource.indexOf(".al-course-card {"), guestAppSource.indexOf(".al-course-card-actions {"));
   assert.match(styleSource, /min-width:\s*0/, "the grid cell itself must be allowed to shrink below its content's intrinsic width");
-  assert.match(styleSource, /overflow-wrap:\s*anywhere/, "title/org/description must break long unbroken strings instead of overflowing the card");
+  assert.match(styleSource, /overflow-wrap:\s*anywhere/, "title/org must break long unbroken strings instead of overflowing the card");
+
+  // issue #160: at most 3 cards per row so the screen never feels saturated.
+  const gridStyle = guestAppSource.slice(guestAppSource.indexOf(".al-course-grid-2 {"), guestAppSource.indexOf(".al-course-featured {"));
+  assert.doesNotMatch(gridStyle, /auto-fill/, "the grid must not auto-fill an unbounded number of columns");
+  assert.match(gridStyle, /grid-template-columns:\s*repeat\(3,\s*1fr\)/, "the widest breakpoint caps the grid at 3 columns");
 });
 
-test("Course cards validate the source URL before linking out, matching the isSafeHttpUrl hardening Hackathons already has (issue #130)", async () => {
+test("The course source URL is only linked from the detail view, and gated by isSafeHttpUrl (issue #130, issue #160)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  // issue #160: the grid card no longer links out - Abrir moved to the detail panel.
   const cardStart = guestAppSource.indexOf('key={item.id} className="al-course-card"');
-  assert.ok(cardStart > -1, "could not locate the course card JSX");
-  const cardSource = guestAppSource.slice(cardStart, cardStart + 3200);
-  assert.match(cardSource, /isSafeHttpUrl\(presentation\.sourceUrl\)/, "Abrir must not link to an unvalidated URL (javascript:/data: guard)");
-  assert.match(cardSource, /rel="noopener noreferrer"/);
+  const cardEnd = guestAppSource.indexOf("al-course-card-actions", cardStart);
+  assert.doesNotMatch(guestAppSource.slice(cardStart, cardEnd), /href=\{presentation\.sourceUrl\}|sourceUrl/, "the card must not open the external URL directly");
+
+  const viewFnStart = guestAppSource.indexOf("export function CourseDetailView");
+  const viewFnEnd = guestAppSource.indexOf("function Hackathons(");
+  const viewFnSource = guestAppSource.slice(viewFnStart, viewFnEnd);
+  assert.match(viewFnSource, /isSafeHttpUrl\(presentation\.sourceUrl\)/, "Abrir curso must not link to an unvalidated URL (javascript:/data: guard)");
+  assert.match(viewFnSource, /rel="noopener noreferrer"/);
 });
 
 test("Every course card offers Ver detalles, linking to the real internal /courses/[id] page - the old CourseDetailModal was retired outright, mirroring the hackathons detail route (owner-reported follow-up to #135/#120)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
-  assert.match(source, /<Link href=\{`\/courses\/\$\{encodeURIComponent\(item\.id\)\}`\}\s*className="al-course-btn al-course-btn-primary">/, "the card's Ver detalles action must be an unconditional Link to the course's own detail page");
+  // issue #160: Ver detalles is the primary, prominent action on both the
+  // grid card and the featured card - a full-width solid button, the same
+  // weight the companies list gives its primary action.
+  assert.match(source, /<Link href=\{`\/courses\/\$\{encodeURIComponent\(item\.id\)\}`\}\s*className="al-course-btn-detail">/, "the grid card's Ver detalles must be an unconditional Link to the course's own detail page");
+  assert.match(source, /<Link href=\{`\/courses\/\$\{encodeURIComponent\(featuredCourse\.id\)\}`\}\s*className="al-course-btn-detail">/, "the featured card's Ver detalles must link to the same detail page with the same prominent styling");
   assert.doesNotMatch(source, /function CourseDetailModal/, "the modal must be removed entirely, not just left unreachable");
   assert.doesNotMatch(source, /setDetailItemId|detailItemId/, "no state should remain for opening a modal that no longer exists");
 
@@ -2385,8 +2399,8 @@ test("The heart control appears in the course card and the detail page, both dri
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   assert.match(source, /export function canToggleCourseFavorite\(item: Course\): boolean/);
   assert.match(source, /export function toggleCourseFavoriteFor\(item: Course, actions: ReturnTypeActions\)/);
-  const heartSites = source.match(/onClick=\{\(\) => toggleCourseFavoriteFor\(/g) ?? [];
-  assert.equal(heartSites.length, 2, "the card and the detail page must both call the same dispatcher - expected exactly 2 call sites (courses have no featured hero)");
+  const heartSites = source.match(/toggleCourseFavoriteFor\((featuredCourse|item), actions\)/g) ?? [];
+  assert.equal(heartSites.length, 3, "the grid card, the featured card and the detail panel all call the same dispatcher - issue #160 adds the featured hero; the detail favourite renders once, in the side panel");
 });
 
 test("tech_opportunities-sourced courses are excluded from favoriting, mirroring the identical hackathon decision (issue #120)", async () => {
@@ -2564,15 +2578,21 @@ test("the global store loads course aptitudes and shares live completion state w
   assert.match(storeSource, /aptitude\.id === skillId \? \{ \.\.\.aptitude, completed \} : aptitude/);
 });
 
-test("CourseDetailView renders the mapped aptitudes and an honest fallback without fabricating relationships", async () => {
+test("CourseDetailView feeds the mapped aptitudes into Qué aprenderás and Estructura del curso, with an honest fallback and no fabricated relationships (issue #160)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const fnStart = source.indexOf("export function CourseDetailView");
   const fnEnd = source.indexOf("function Hackathons(");
   const fnSource = source.slice(fnStart, fnEnd);
   assert.match(fnSource, /const aptitudes = item\.aptitudes \?\? \[\];/);
-  assert.match(fnSource, /Aptitudes del curso/);
-  assert.match(fnSource, /aptitudes\.map\(\(aptitude\) =>/);
-  assert.match(fnSource, /Este curso todavía no tiene aptitudes verificadas vinculadas en el catálogo\./);
+  // "Qué aprenderás" is derived only from the reviewed taught aptitudes,
+  // never invented copy.
+  assert.match(fnSource, /aptitudes\.filter\(\(a\) => a\.relation === "ensena"\)/);
+  assert.match(fnSource, /Qué aprenderás/);
+  // "Estructura del curso" lists the same aptitudes as ordered steps.
+  assert.match(fnSource, /Estructura del curso/);
+  assert.match(fnSource, /aptitudes\.map\(\(a, i\) =>/);
+  // Honest fallback when a course has no reviewed aptitudes yet.
+  assert.match(fnSource, /Los objetivos concretos se publicarán antes del inicio\./);
   assert.doesNotMatch(fnSource, /requiredCompetencies/, "course outcomes must use their own relation-aware contract");
 });
 
