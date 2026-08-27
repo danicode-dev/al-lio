@@ -1986,7 +1986,16 @@ test("Bloc uses a numeric px font-size control and visibly pressed Word-style B/
   assert.match(toolbar, /formatState\.italic[\s\S]*?>I</);
   assert.match(toolbar, /formatState\.underline[\s\S]*?>U</);
   assert.match(toolbar, /aria-pressed=\{active\}/);
-  assert.match(source, /font\.replaceWith\(span\)/, "browser font-size markers must be normalized to inline px styles before persistence");
+  assert.match(source, /font\.style\.fontSize = `\$\{clampEditorFontSize\(fontSize\)\}px`[\s\S]*?font\.removeAttribute\("size"\)/, "browser font-size markers must become inline px styles without replacing the selected DOM node");
+});
+
+test("Bloc formatting state is deterministic while browser selection events settle (issue #151 final review)", async () => {
+  const source = await readFile(new URL("../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function editorFormatAfterCommand[\s\S]*?case "justifyLeft"[\s\S]*?alignment: "left"[\s\S]*?case "justifyCenter"[\s\S]*?alignment: "center"[\s\S]*?case "justifyRight"[\s\S]*?alignment: "right"[\s\S]*?case "justifyFull"[\s\S]*?alignment: "justify"/);
+  assert.match(source, /editorFormatSyncBlockedUntilRef\.current = Date\.now\(\) \+ 150[\s\S]*?document\.execCommand\(command[\s\S]*?setEditorFormat\(\(current\) => editorFormatAfterCommand\(current, command\)\)/, "toolbar state must update from the requested command instead of a racing selectionchange event");
+  assert.match(source, /const computedAlignment = window\.getComputedStyle\(blockElement \?\? anchor\)\.textAlign/, "selection refresh must read the active block's real alignment");
+  assert.doesNotMatch(source, /font\.replaceWith\(/, "font-size normalization must not invalidate the live selection");
 });
 
 test("Bloc formatting works before the first character is typed and keeps that pending format until input (issue #151 follow-up)", async () => {

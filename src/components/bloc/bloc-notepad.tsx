@@ -128,6 +128,36 @@ const initialEditorFormat: EditorFormatState = {
   fontSize: defaultEditorFontSize,
 };
 
+function editorFormatAfterCommand(current: EditorFormatState, command: string): EditorFormatState {
+  switch (command) {
+    case "bold":
+      return { ...current, bold: !current.bold };
+    case "italic":
+      return { ...current, italic: !current.italic };
+    case "underline":
+      return { ...current, underline: !current.underline };
+    case "justifyLeft":
+      return { ...current, alignment: "left" };
+    case "justifyCenter":
+      return { ...current, alignment: "center" };
+    case "justifyRight":
+      return { ...current, alignment: "right" };
+    case "justifyFull":
+      return { ...current, alignment: "justify" };
+    case "insertUnorderedList":
+      return { ...current, list: current.list === "unordered" ? null : "unordered" };
+    case "insertOrderedList":
+      return { ...current, list: current.list === "ordered" ? null : "ordered" };
+    default:
+      return current;
+  }
+}
+
+function normalizeEditorBlock(value: string): EditorFormatState["block"] {
+  const block = value.toUpperCase();
+  return block === "H1" || block === "H2" || block === "H3" || block === "BLOCKQUOTE" ? block : "P";
+}
+
 export function BlocNotepad() {
   const [notes, setNotes] = useState<BlocNote[]>([]);
   const [trashedNotes, setTrashedNotes] = useState<BlocTrashedNote[]>([]);
@@ -159,6 +189,7 @@ export function BlocNotepad() {
   const inlineFontSizeRef = useRef(defaultEditorFontSize);
   const editorFormatSyncBlockedUntilRef = useRef(0);
   const emptyEditorFormatPendingRef = useRef(false);
+  const editorFormatRefreshTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     notesRef.current = notes;
@@ -250,11 +281,12 @@ export function BlocNotepad() {
     const computed = window.getComputedStyle(anchor);
     const fontFamily = editorFonts.find(({ value }) => computed.fontFamily.toLowerCase().includes(value.toLowerCase()))?.value ?? "Inter";
     const fontSize = clampEditorFontSize(Number.parseFloat(computed.fontSize) || defaultEditorFontSize);
-    const alignment = queryCommandStateSafe("justifyCenter")
+    const computedAlignment = window.getComputedStyle(blockElement ?? anchor).textAlign;
+    const alignment = computedAlignment === "center"
       ? "center"
-      : queryCommandStateSafe("justifyRight")
+      : computedAlignment === "right" || computedAlignment === "end"
         ? "right"
-        : queryCommandStateSafe("justifyFull")
+        : computedAlignment === "justify"
           ? "justify"
           : "left";
 
@@ -279,6 +311,10 @@ export function BlocNotepad() {
     document.addEventListener("selectionchange", onSelectionChange);
     return () => document.removeEventListener("selectionchange", onSelectionChange);
   }, [rememberEditorSelection, updateEditorFormatFromSelection]);
+
+  useEffect(() => () => {
+    if (editorFormatRefreshTimeoutRef.current !== null) window.clearTimeout(editorFormatRefreshTimeoutRef.current);
+  }, []);
 
   useEffect(() => {
     const raw = localStorage.getItem(blocKey) ?? localStorage.getItem(legacyBlocKey);
@@ -474,11 +510,22 @@ export function BlocNotepad() {
 
   function runEditorCommand(command: string, value?: string) {
     const preserveEmptyFormatting = !editorRef.current || getEditorText(editorRef.current).trim().length === 0;
+    editorFormatSyncBlockedUntilRef.current = Date.now() + 150;
     restoreEditorSelection();
     document.execCommand(command, false, value);
     recordEditorContent(preserveEmptyFormatting);
     rememberEditorSelection();
-    updateEditorFormatFromSelection();
+    setEditorFormat((current) => editorFormatAfterCommand(current, command));
+    if (command === "undo" || command === "redo") scheduleEditorFormatRefresh();
+  }
+
+  function scheduleEditorFormatRefresh() {
+    if (editorFormatRefreshTimeoutRef.current !== null) window.clearTimeout(editorFormatRefreshTimeoutRef.current);
+    editorFormatRefreshTimeoutRef.current = window.setTimeout(() => {
+      editorFormatSyncBlockedUntilRef.current = 0;
+      editorFormatRefreshTimeoutRef.current = null;
+      updateEditorFormatFromSelection();
+    }, 160);
   }
 
   function setEditorFontFamily(value: string) {
@@ -619,11 +666,12 @@ export function BlocNotepad() {
   function setParagraphBlock(value: string) {
     if (!value) return;
     const preserveEmptyFormatting = !editorRef.current || getEditorText(editorRef.current).trim().length === 0;
+    editorFormatSyncBlockedUntilRef.current = Date.now() + 150;
     restoreEditorSelection();
     document.execCommand("formatBlock", false, value);
     recordEditorContent(preserveEmptyFormatting);
     rememberEditorSelection();
-    updateEditorFormatFromSelection();
+    setEditorFormat((current) => ({ ...current, block: normalizeEditorBlock(value) }));
   }
 
   async function copyActiveNote() {
@@ -1775,14 +1823,14 @@ function queryCommandStateSafe(command: string) {
 
 function normalizeFontSizeMarkers(editor: HTMLElement, fontSize: number) {
   editor.querySelectorAll<HTMLFontElement>('font[size="7"]').forEach((font) => {
-    const span = document.createElement("span");
     const face = font.getAttribute("face");
     const color = font.getAttribute("color");
-    if (face) span.style.fontFamily = face;
-    if (color) span.style.color = color;
-    span.style.fontSize = `${clampEditorFontSize(fontSize)}px`;
-    while (font.firstChild) span.appendChild(font.firstChild);
-    font.replaceWith(span);
+    if (face) font.style.fontFamily = face;
+    if (color) font.style.color = color;
+    font.style.fontSize = `${clampEditorFontSize(fontSize)}px`;
+    font.removeAttribute("size");
+    font.removeAttribute("face");
+    font.removeAttribute("color");
   });
 }
 
@@ -1907,6 +1955,7 @@ const blocBrandCss = `
   .al-bloc-toolbar-desktop .al-bloc-toolbar-row { gap: 1px; padding: 8px 6px; }
   .al-bloc-toolbar-desktop .al-bloc-tool-btn { min-width: 28px; padding-right: 5px; padding-left: 5px; }
   .al-bloc-toolbar-desktop .al-bloc-toolbar-divider { margin-right: 1px; margin-left: 1px; }
+  .al-bloc-toolbar-desktop .al-bloc-toolbar-select { padding-right: 21px; padding-left: 7px; font-size: 11px; }
   .al-bloc-toolbar-divider { width: 1px; height: 20px; background: #ece7dc; margin: 0 2px; flex-shrink: 0; }
   .al-bloc-tool-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; min-width: 32px; padding: 0 7px; border-radius: 8px; border: none; background: transparent; color: #6b6f72; cursor: pointer; }
   .al-bloc-tool-btn:hover { background: white; color: #c94f21; }
@@ -1920,9 +1969,9 @@ const blocBrandCss = `
   .al-bloc-font-size-field input::-webkit-inner-spin-button, .al-bloc-font-size-field input::-webkit-outer-spin-button { appearance: none; margin: 0; }
   .al-bloc-font-size-field span { padding: 0 5px 0 1px; font-size: 9px; font-weight: 700; line-height: 30px; text-transform: uppercase; }
   .al-bloc-toolbar-select { box-sizing: border-box; height: 32px; flex-shrink: 0; border: 1px solid #ece7dc; border-radius: 8px; background: white; padding: 0 26px 0 8px; color: #333029; font-size: 12px; line-height: normal; }
-  .al-bloc-paragraph-select { width: 122px; }
+  .al-bloc-paragraph-select { width: 126px; }
   .al-bloc-font-select { width: 114px; }
-  .al-bloc-list-select { width: 116px; }
+  .al-bloc-list-select { width: 120px; }
   .al-bloc-toolbar-select-active { border-color: rgba(225, 93, 45, 0.35); background: #fff7f2; color: #b9471f; }
   .al-bloc-color-tool { position: relative; flex-shrink: 0; }
   .al-bloc-color-input { position: absolute; inset: 0; height: 100%; width: 100%; cursor: pointer; opacity: 0; }
@@ -1987,8 +2036,6 @@ const blocBrandCss = `
   .al-bloc-tab { flex: 1; height: 28px; border-radius: 8px; font-size: 11px; font-weight: 600; color: #6b6f72; background: transparent; border: none; cursor: pointer; }
   .al-bloc-tab-active { background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; box-shadow: 0 4px 10px rgba(225, 93, 45, 0.25); }
   .al-bloc-settings-panel { border: 1px solid #ece7dc; border-radius: 12px; background: #faf8f4; padding: 10px; }
-  .al-bloc-size-btn { border: 1px solid #ece7dc; border-radius: 7px; background: white; color: #333029; font-weight: 600; cursor: pointer; }
-  .al-bloc-size-btn-active { border-color: transparent; background: linear-gradient(180deg, #F06A37 0%, #E15D2D 100%); color: white; }
   .al-bloc-note-row { display: flex; align-items: stretch; gap: 2px; }
   .al-bloc-note-card { min-width: 0; flex: 1; border-radius: 10px; padding: 8px 10px; text-align: left; background: transparent; border: none; cursor: pointer; color: #333029; }
   .al-bloc-note-card:hover { background: #faf8f4; }
