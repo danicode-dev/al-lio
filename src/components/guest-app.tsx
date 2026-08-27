@@ -2386,13 +2386,19 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
       const p = normalizePriorityText(c.prioridad);
       return p.includes("alta") ? 0 : p.includes("baja") ? 2 : 1;
     };
-    return [...pool].sort((a, b) => {
-      const r = rank(a) - rank(b);
-      if (r) return r;
-      const da = (a.fecha_inicio || a.start_at || "9999-12-31").slice(0, 10);
-      const db = (b.fecha_inicio || b.start_at || "9999-12-31").slice(0, 10);
-      return da.localeCompare(db);
-    })[0] ?? null;
+    const startKey = (c: Course) => (c.fecha_inicio || c.start_at || "").slice(0, 10);
+    const today = todayKey();
+    // The course that is actually about to happen: the soonest one that has
+    // not started yet, ties broken by priority. This is cycle-specific, so
+    // every grade features its own next course instead of a shared, already
+    // running one winning on an old start date.
+    const upcoming = pool
+      .filter((c) => startKey(c) >= today)
+      .sort((a, b) => (startKey(a) || "9999-12-31").localeCompare(startKey(b) || "9999-12-31") || rank(a) - rank(b));
+    if (upcoming.length) return upcoming[0];
+    // Nothing on the horizon: the highest-priority active course, most
+    // recently started first - still specific to this cycle.
+    return [...pool].sort((a, b) => rank(a) - rank(b) || startKey(b).localeCompare(startKey(a)))[0] ?? null;
   }, [showFeatured, filtered]);
   const gridCourses = useMemo(
     () => (featuredCourse ? filtered.filter((c) => c.id !== featuredCourse.id) : filtered),
