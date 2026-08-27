@@ -18,6 +18,10 @@ export type CoursePresentation = {
   endDate?: string;
   location?: string;
   modality?: string;
+  level?: string;
+  duration?: string;
+  certification?: string;
+  requirements?: string;
   priority?: string;
   status: Course["status"];
   description?: string;
@@ -30,6 +34,7 @@ function nonEmpty(value: string | undefined | null): string | undefined {
 }
 
 export function getCoursePresentation(course: Course): CoursePresentation {
+  const hours = typeof course.horas_totales === "number" && course.horas_totales > 0 ? course.horas_totales : undefined;
   return {
     id: course.id,
     title: nonEmpty(course.title) ?? "Curso sin titulo",
@@ -38,6 +43,10 @@ export function getCoursePresentation(course: Course): CoursePresentation {
     endDate: nonEmpty(course.fecha_fin) ?? nonEmpty(course.deadline_at),
     location: [nonEmpty(course.localidad), nonEmpty(course.provincia)].filter(Boolean).join(" / ") || undefined,
     modality: nonEmpty(course.modalidad),
+    level: nonEmpty(course.formato),
+    duration: hours ? `aprox. ${hours} h` : undefined,
+    certification: nonEmpty(course.certificacion_tipo),
+    requirements: nonEmpty(course.requisitos_resumen),
     priority: nonEmpty(course.prioridad),
     status: course.status,
     description: nonEmpty(course.requisitos_resumen),
