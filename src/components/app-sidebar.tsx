@@ -102,14 +102,15 @@ export function AppSidebar({ userName, defaultCollapsed = false, hasPersistedPre
           collapsed ? "gap-0.5 px-1" : "gap-3 px-5",
         )}
       >
-        {/* Both marks are stacked in one grid cell and cross-faded so the
-            header never reflows while the rail width animates. The wrapper
-            width tweens in step with the <aside>, clipping the horizontal
-            lockup from the right as it collapses instead of hard-swapping it
-            for the symbol. */}
+        {/* Both marks are left-anchored in the same box and cross-faded, so the
+            header never reflows while the rail width animates. The box width
+            tweens in step with the <aside>, clipping the horizontal lockup from
+            the right as it collapses instead of hard-swapping it for the
+            symbol. The fixed height matches the lockup at w-[154px]
+            (2172x724). */}
         <span
           className={cn(
-            "grid shrink-0 items-center overflow-hidden transition-[width] duration-200 ease-out motion-reduce:transition-none",
+            "relative block h-[52px] shrink-0 overflow-hidden transition-[width] duration-200 ease-out motion-reduce:transition-none",
             collapsed ? "w-8" : "w-[154px]",
           )}
         >
@@ -119,7 +120,7 @@ export function AppSidebar({ userName, defaultCollapsed = false, hasPersistedPre
             width={2172}
             height={724}
             className={cn(
-              "col-start-1 row-start-1 h-auto w-[154px] max-w-none justify-self-start object-contain transition-opacity duration-200 ease-out motion-reduce:transition-none",
+              "absolute left-0 top-1/2 h-auto w-[154px] max-w-none -translate-y-1/2 object-contain transition-opacity duration-200 ease-out motion-reduce:transition-none",
               collapsed ? "opacity-0" : "opacity-100",
             )}
             priority
@@ -131,7 +132,7 @@ export function AppSidebar({ userName, defaultCollapsed = false, hasPersistedPre
             width={1254}
             height={1254}
             className={cn(
-              "col-start-1 row-start-1 h-8 w-8 self-center justify-self-center object-contain transition-opacity duration-200 ease-out motion-reduce:transition-none",
+              "absolute left-0 top-1/2 h-8 w-8 -translate-y-1/2 object-contain transition-opacity duration-200 ease-out motion-reduce:transition-none",
               collapsed ? "opacity-100" : "opacity-0",
             )}
             priority
