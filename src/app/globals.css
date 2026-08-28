@@ -440,10 +440,19 @@
 .al-catalog-featured-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 8px;
   margin-top: auto;
   padding-top: 4px;
+}
+
+/* Wide (two-column) featured card: the CTA moves to the bottom-right,
+   where there is a real right edge to sit against. On the stacked mobile
+   card it stays centred. */
+@media (min-width: 860px) {
+  .al-catalog-featured-actions {
+    justify-content: flex-end;
+  }
 }
 
 .al-catalog-card {
