@@ -2129,128 +2129,255 @@ function FilterCalendar({
   );
 }
 
-function MonthChips({
-  monthGroups,
-  monthFilter,
-  totalCount,
-  onSelect,
+type CollectionTab = { id: string; label: string; count: number };
+
+// The one control strip above the Cursos and Eventos y retos lists: a
+// single line where the KPI counts and the status filter are the same
+// thing - flat clickable stats with a hairline under the row, the active
+// one underlined (menu-style, not a chunky button) - plus a search that is
+// just its icon until used and the Filtros button pinned right. On phones
+// the stats take the top as a 2x2 grid and the actions sit below.
+function CollectionControls({
+  searchValue,
+  onSearchChange,
+  searchPlaceholder,
+  tabs,
+  activeTab,
+  onTabChange,
+  filterCount,
+  filtersOpen,
+  onToggleFilters,
 }: {
-  monthGroups: Map<string, number>;
-  monthFilter: string;
-  totalCount: number;
-  onSelect: (month: string) => void;
+  searchValue: string;
+  onSearchChange: (value: string) => void;
+  searchPlaceholder: string;
+  tabs: CollectionTab[];
+  activeTab: string;
+  onTabChange: (id: string) => void;
+  filterCount: number;
+  filtersOpen: boolean;
+  onToggleFilters: () => void;
 }) {
-  if (monthGroups.size === 0) return null;
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const searchExpanded = searchOpen || searchValue.length > 0;
+  useEffect(() => {
+    if (searchOpen) searchRef.current?.focus();
+  }, [searchOpen]);
+
   return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
-      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">MES</span>
-      <button
-        type="button"
-        onClick={() => onSelect("")}
-        className={cn(
-          "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors hover:bg-muted",
-          !monthFilter && "al-action-soft-selected"
-        )}
-      >
-        TODOS <span className={cn("font-normal", !monthFilter && "text-[#a63f1a]/70")}>{totalCount}</span>
-      </button>
-      {Array.from(monthGroups.entries()).map(([month, count]) => {
-        const [y, m] = month.split("-");
-        const label = new Date(Number(y), Number(m) - 1)
-          .toLocaleDateString("es-ES", { month: "short", year: "2-digit" })
-          .toUpperCase();
-        const isSelected = monthFilter === month;
-        return (
-          <button
-            key={month}
-            type="button"
-            onClick={() => onSelect(isSelected ? "" : month)}
-            className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors hover:bg-muted",
-              isSelected && "al-action-soft-selected"
+    <section className="al-cc">
+      <style>{`
+        .al-cc-strip { display: flex; align-items: flex-end; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid #ece7dc; }
+        .al-cc-strip-tabs { display: flex; align-items: stretch; gap: 2px; flex: 1 1 auto; min-width: 0; }
+        .al-cc-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; flex: 1 1 0; min-width: 0; padding: 4px 10px 6px; border: none; border-bottom: 2px solid transparent; border-radius: 8px 8px 0 0; background: transparent; text-align: left; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+        .al-cc-stat:hover:not(.al-cc-stat-active) { background: #faf7f1; }
+        .al-cc-stat-value { font-size: 19px; font-weight: 800; line-height: 1.05; color: #6b6f72; font-variant-numeric: tabular-nums; transition: color .15s; }
+        .al-cc-stat-label { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; font-weight: 600; letter-spacing: .02em; color: #9a958a; white-space: nowrap; transition: color .15s; }
+        .al-cc-stat-active { border-bottom-color: var(--al-action-soft-text); }
+        .al-cc-stat-active .al-cc-stat-value { color: var(--al-action-soft-text-hover); }
+        .al-cc-stat-active .al-cc-stat-label { color: var(--al-action-soft-text); }
+        .al-cc-strip-actions { display: flex; gap: 8px; flex: 0 0 auto; align-items: center; padding-bottom: 2px; }
+        .al-cc-search { position: relative; flex: 0 0 auto; width: 42px; transition: width .18s ease; }
+        .al-cc-search.is-open { width: 240px; }
+        .al-cc-search input { width: 100%; height: 42px; padding: 0 34px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 13.5px; color: #333029; outline: none; transition: border-color .15s, box-shadow .15s; }
+        .al-cc-search input::placeholder { color: #a59f94; }
+        .al-cc-search input:focus { border-color: var(--al-action-soft-border-hover); box-shadow: 0 0 0 3px var(--al-action-soft-focus); }
+        .al-cc-search:not(.is-open) input { opacity: 0; pointer-events: none; }
+        .al-cc-search-toggle { position: absolute; left: 0; top: 0; z-index: 1; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border-radius: 12px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; transition: border-color .15s, color .15s; }
+        .al-cc-search-toggle:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
+        .al-cc-search-toggle svg { width: 16px; height: 16px; }
+        .al-cc-search.is-open .al-cc-search-toggle { pointer-events: none; border-color: transparent; background: transparent; color: #9a958a; }
+        .al-cc-search-clear { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 22px; height: 22px; border-radius: 999px; border: none; background: transparent; color: #9a958a; cursor: pointer; z-index: 2; }
+        .al-cc-search-clear:hover { background: #f3ece1; color: #333029; }
+        .al-cc-search-clear svg { width: 13px; height: 13px; }
+        .al-cc-filters { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid #ece7dc; background: white; color: #333029; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: border-color .15s, background .15s, color .15s; }
+        .al-cc-filters:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
+        .al-cc-filters svg { width: 15px; height: 15px; }
+        .al-cc-filters-badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--al-action-soft-text); color: white; font-size: 10.5px; font-weight: 700; }
+        @media (max-width: 640px) {
+          .al-cc-strip { flex-wrap: wrap; align-items: stretch; gap: 12px 0; }
+          /* phones: search + Filtros ride up under the header, the stat
+             grid sits below them. */
+          .al-cc-strip-actions { order: 1; width: 100%; justify-content: flex-end; }
+          .al-cc-strip-tabs { order: 2; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+          .al-cc-stat { border: 1px solid #ece7dc; border-radius: 10px; padding: 8px 10px; }
+          .al-cc-stat-active { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg); }
+          .al-cc-search.is-open { width: auto; flex: 1 1 auto; }
+        }
+        @media (max-width: 420px) { .al-cc-filters-label { display: none; } .al-cc-filters { padding: 0 11px; } }
+      `}</style>
+
+      <div className="al-cc-strip">
+        <div className="al-cc-strip-tabs" role="tablist">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={cn("al-cc-stat", isActive && "al-cc-stat-active")}
+                onClick={() => onTabChange(tab.id)}
+              >
+                <span className="al-cc-stat-value">{tab.count}</span>
+                <span className="al-cc-stat-label">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="al-cc-strip-actions">
+          <div className={cn("al-cc-search", searchExpanded && "is-open")}>
+            <button
+              type="button"
+              className="al-cc-search-toggle"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Buscar"
+              aria-expanded={searchExpanded}
+              tabIndex={searchExpanded ? -1 : 0}
+            >
+              <Search />
+            </button>
+            <input
+              ref={searchRef}
+              value={searchValue}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
+              tabIndex={searchExpanded ? 0 : -1}
+              onBlur={() => { if (!searchValue) setSearchOpen(false); }}
+            />
+            {searchValue && (
+              <button type="button" className="al-cc-search-clear" onClick={() => onSearchChange("")} aria-label="Limpiar búsqueda">
+                <X />
+              </button>
             )}
+          </div>
+          <button
+            type="button"
+            className={cn("al-cc-filters", filtersOpen && "al-action-soft-selected")}
+            onClick={onToggleFilters}
+            aria-pressed={filtersOpen}
+            aria-label={filterCount > 0 ? `Filtros, ${filterCount} activos` : "Filtros"}
           >
-            {label} <span className={cn("font-normal", isSelected && "text-[#a63f1a]/70")}>{count}</span>
+            <SlidersHorizontal />
+            <span className="al-cc-filters-label">Filtros</span>
+            {filterCount > 0 && <span className="al-cc-filters-badge">{filterCount}</span>}
           </button>
-        );
-      })}
-    </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
-function ViewToggle({ value, onChange }: { value: "grid" | "lista"; onChange: (v: "grid" | "lista") => void }) {
-  return (
-    <div className="flex shrink-0 items-center rounded-md border bg-card p-0.5 gap-0.5">
-      {(["grid", "lista"] as const).map((v) => (
-        <Button
-          key={v}
-          type="button"
-          size="sm"
-          variant="ghost"
-          className={cn(
-            "h-6 px-2 text-[11px]",
-            value === v
-              ? "al-action-soft-selected hover:bg-[#fbe7dd] hover:text-[#a63f1a]"
-              : "text-[#333029]"
-          )}
-          onClick={() => onChange(v)}
-        >
-          {v === "grid" ? "Grid" : "Lista"}
-        </Button>
-      ))}
-    </div>
-  );
-}
-
-function FilterPanel({
+// The filters surface: a small dropdown that hangs off the Filtros button
+// instead of a full-width block that pushes the whole list down. Its
+// parent must carry `.al-cc-shell` so the panel can anchor to it; closes
+// on Escape or a click outside that shell.
+function FilterPanelCompact({
   title = "Filtros",
   activeCount,
   onClear,
+  onClose,
   children,
 }: {
   title?: string;
   activeCount: number;
   onClear: () => void;
+  onClose: () => void;
   children: React.ReactNode;
 }) {
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    function onDown(event: PointerEvent) {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest?.(".al-cc-shell")) onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [onClose]);
+
   return (
-    <div className="w-full shrink-0 lg:w-64">
+    <div className="al-fp" role="dialog" aria-label={title}>
       <style>{`
-        .al-filter-panel { background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 16px; display: flex; flex-direction: column; gap: 16px; }
-        .al-filter-head { display: flex; align-items: center; justify-content: space-between; }
-        .al-filter-title { font-size: 13px; font-weight: 700; color: #111111; }
-        .al-filter-clear { font-size: 11.5px; font-weight: 600; color: #9a958a; }
-        .al-filter-clear:hover { color: #c94f21; }
-        .al-filter-section { padding-top: 14px; border-top: 1px solid #f0ece2; }
-        .al-filter-section:first-child { padding-top: 0; border-top: none; }
-        .al-filter-section-label { margin-bottom: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9a958a; }
-        .al-filter-chip { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 999px; border: 1px solid #ece7dc; background: white; color: #333029; padding: 3px 10px; font-size: 11.5px; font-weight: 600; transition: border-color 0.15s, color 0.15s; }
+        .al-cc-shell { position: relative; }
+        .al-fp { position: absolute; z-index: 30; top: calc(100% + 8px); right: 0; width: 340px; max-width: calc(100vw - 32px); max-height: min(70vh, 520px); overflow-y: auto; background: white; border: 1px solid #e7e2d6; border-radius: 14px; box-shadow: 0 16px 40px rgba(17, 17, 17, 0.13), 0 2px 8px rgba(17, 17, 17, 0.05); padding: 14px 14px 16px; }
+        @media (max-width: 560px) { .al-fp { left: 0; right: 0; width: auto; } }
+        .al-fp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .al-fp-title { flex: 1; font-size: 12.5px; font-weight: 800; color: #111111; }
+        .al-fp-clear { border: none; background: none; padding: 0; font-size: 11.5px; font-weight: 700; color: var(--al-action-soft-text); cursor: pointer; }
+        .al-fp-clear:hover { color: var(--al-action-soft-text-hover); }
+        .al-fp-close { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; transition: border-color .15s, color .15s; }
+        .al-fp-close:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
+        .al-fp-close svg { width: 13px; height: 13px; }
+        .al-fp-body { display: flex; flex-direction: column; gap: 13px; }
+        .al-fp-row-label { margin-bottom: 6px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: #9a958a; }
+        .al-fp-date-toggle { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #333029; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: border-color .15s, color .15s; }
+        .al-fp-date-toggle:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
+        .al-fp-date-toggle svg { width: 13px; height: 13px; }
+        .al-fp-date-clear { border: none; background: none; padding: 0 0 0 8px; font-size: 11px; font-weight: 700; color: var(--al-action-soft-text); cursor: pointer; }
+        .al-fp-date-cal { margin-top: 10px; }
+        .al-filter-chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 999px; border: 1px solid #ece7dc; background: white; color: #333029; padding: 4px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
         .al-filter-chip:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
         .al-filter-chip-active, .al-filter-chip-active:hover { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); }
         .al-filter-day-selected, .al-filter-day-selected:hover { background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); }
         .al-filter-day-today { color: #c94f21; }
         .al-filter-dot { background: #E15D2D; }
       `}</style>
-      <div className="al-filter-panel">
-        <div className="al-filter-head">
-          <span className="al-filter-title">{title}</span>
-          {activeCount > 0 && (
-            <button type="button" onClick={onClear} className="al-filter-clear">
-              Limpiar
-            </button>
-          )}
-        </div>
-        {children}
+      <div className="al-fp-head">
+        <span className="al-fp-title">{title}</span>
+        {activeCount > 0 && (
+          <button type="button" onClick={onClear} className="al-fp-clear">
+            Limpiar ({activeCount})
+          </button>
+        )}
+        <button type="button" onClick={onClose} className="al-fp-close" aria-label="Cerrar filtros">
+          <X />
+        </button>
       </div>
+      <div className="al-fp-body">{children}</div>
     </div>
   );
 }
 
-function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
+// A single collapsed row inside FilterPanelCompact: the month grid stays
+// hidden until the student opens it, so the panel is short by default.
+function FilterDateRow({
+  dayFilter,
+  datesWithItems,
+  onDaySelect,
+}: {
+  dayFilter: string;
+  datesWithItems: Set<string>;
+  onDaySelect: (day: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="al-filter-section">
-      <p className="al-filter-section-label">{label}</p>
-      {children}
+    <div>
+      <div className="flex items-center">
+        <button type="button" className="al-fp-date-toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+          <CalendarDays />
+          {dayFilter ? formatDateLabel(dayFilter) : "Cualquier fecha"}
+          <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
+        </button>
+        {dayFilter && (
+          <button type="button" className="al-fp-date-clear" onClick={() => onDaySelect("")}>
+            Quitar
+          </button>
+        )}
+      </div>
+      {open && (
+        <div className="al-fp-date-cal">
+          <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={onDaySelect} />
+        </div>
+      )}
     </div>
   );
 }
@@ -2287,7 +2414,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
     [store.courses, store.techOpportunities, store.fpContent]
   );
 
-  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "guardados" | "todos">("activos");
+  const [viewTab, setViewTab] = useState<"total" | "empezados" | "proximos" | "guardados">("total");
   const [showFilters, setShowFilters] = useState(false);
   const [monthFilter, setMonthFilter] = useState("");
   const [dayFilter, setDayFilter] = useState("");
@@ -2297,7 +2424,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   const [soloGratuitos, setSoloGratuitos] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
@@ -2313,23 +2439,26 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
     return da.localeCompare(db);
   }), [allCourses]);
 
-  const archivados = useMemo(() => sorted.filter(isCourseArchived), [sorted]);
-  const activos = useMemo(() => sorted.filter((c) => !isCourseArchived(c) && !isCoursePast(c)), [sorted]);
+  // The four control-row entries double as the KPI counts and the filter
+  // tabs: Total (current courses - not finished, not past), Empezados and
+  // Próx. inicio (starts within 30 days) as subsets of it, plus the
+  // heart-driven Guardados. "Terminado" is no longer its own tab - it
+  // stays reachable through the Estado filter.
+  const total = useMemo(() => sorted.filter((c) => !isCourseArchived(c) && !isCoursePast(c)), [sorted]);
   const guardados = useMemo(() => sorted.filter((c) => c.is_favorite), [sorted]);
+  const empezados = useMemo(() => total.filter((c) => c.status === "empezado"), [total]);
+  const proximos = useMemo(() => {
+    const t = todayKey();
+    const i30 = dateKey(addDays(new Date(), 30).toISOString());
+    return total.filter((c) => {
+      const d = (c.fecha_inicio || c.start_at || "").slice(0, 10);
+      return d >= t && d <= i30;
+    });
+  }, [total]);
   const tabBase = useMemo(
-    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : viewTab === "guardados" ? guardados : sorted,
-    [viewTab, activos, archivados, guardados, sorted]
+    () => viewTab === "empezados" ? empezados : viewTab === "proximos" ? proximos : viewTab === "guardados" ? guardados : total,
+    [viewTab, empezados, proximos, guardados, total]
   );
-
-  const monthGroups = useMemo(() => {
-    const groups = new Map<string, number>();
-    for (const c of tabBase) {
-      const d = (c.fecha_inicio || c.start_at || "").slice(0, 7);
-      if (!d) continue;
-      groups.set(d, (groups.get(d) ?? 0) + 1);
-    }
-    return groups;
-  }, [tabBase]);
 
   const datesWithItems = useMemo(() => {
     const set = new Set<string>();
@@ -2362,23 +2491,12 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
     });
   }, [tabBase, search, monthFilter, dayFilter, estadoFilter, modalidadFilter, prioridadFilter, soloGratuitos]);
 
-  const { today, kpiEmpezados, kpiPendientes, kpiProx } = useMemo(() => {
-    const t = todayKey();
-    const i30 = dateKey(addDays(new Date(), 30).toISOString());
-    return {
-      today: t,
-      kpiEmpezados: tabBase.filter((c) => c.status === "empezado").length,
-      kpiPendientes: tabBase.filter((c) => c.status === "pendiente").length,
-      kpiProx: tabBase.filter((c) => { const d = (c.fecha_inicio || c.start_at || "").slice(0, 10); return d >= t && d <= i30; }).length,
-    };
-  }, [tabBase]);
-
   const activeFilterCount = [monthFilter, dayFilter, estadoFilter, modalidadFilter, prioridadFilter, soloGratuitos].filter(Boolean).length;
 
   // One featured course above the grid: the next one due to start, breaking
-  // ties by priority. Only on the untouched Activos/Todos views - once the
-  // student searches or filters, every result is shown flat in the grid.
-  const showFeatured = (viewTab === "activos" || viewTab === "todos") && !search && activeFilterCount === 0 && viewMode === "grid";
+  // ties by priority. Only on the untouched Total view - once the student
+  // picks another tab, searches or filters, every result is shown flat.
+  const showFeatured = viewTab === "total" && !search && activeFilterCount === 0;
   const featuredCourse = useMemo(() => {
     if (!showFeatured) return null;
     const pool = filtered.filter((c) => !isCourseArchived(c) && c.status !== "terminado");
@@ -2413,23 +2531,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   return (
     <>
       <style>{`
-        .al-course-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-        .al-course-search { position: relative; flex: 1; min-width: 220px; }
-        .al-course-search input { padding-left: 36px; height: 40px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 13px; }
-        .al-course-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #9a958a; }
-        .al-course-tabs { display: flex; align-items: center; gap: 2px; border-radius: 12px; border: 1px solid #ece7dc; background: white; padding: 3px; }
-        .al-course-tab { height: 32px; padding: 0 12px; border-radius: 9px; font-size: 12.5px; font-weight: 600; color: #6b6f72; background: transparent; border: none; cursor: pointer; transition: background 0.15s, color 0.15s; }
-        .al-course-tab.al-course-tab-active { background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); box-shadow: inset 0 0 0 1px var(--al-action-soft-border), 0 4px 12px rgba(80, 43, 27, 0.05); }
-        .al-course-filter-btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 12.5px; font-weight: 600; color: #333029; cursor: pointer; }
-        .al-course-filter-btn.al-course-filter-btn-active { background: #fbe7dd; border-color: rgba(225, 93, 45, 0.3); color: #c94f21; }
-        .al-course-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        @media (min-width: 640px) { .al-course-stats { grid-template-columns: repeat(4, 1fr); } }
-        .al-course-stat-card { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid #ece7dc; border-radius: 18px; padding: 14px 16px; box-shadow: 0 8px 20px rgba(17, 17, 17, 0.04); }
-        .al-course-stat-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
-        .al-course-stat-value { font-size: 22px; font-weight: 800; line-height: 1; color: #111111; }
-        .al-course-stat-label { font-size: 11px; font-weight: 600; color: #6b6f72; margin-top: 3px; }
-        .al-course-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .al-course-count-text { font-size: 12px; color: #6b6f72; }
         .al-course-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
         .al-course-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
         .al-course-empty-illustration { width: 100%; max-width: 280px; height: auto; }
@@ -2438,56 +2539,72 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: var(--al-action-soft-bg); color: var(--al-action-soft-text); font-size: 12.5px; font-weight: 700; border: 1px solid var(--al-action-soft-border); cursor: pointer; }
       `}</style>
       <div className="space-y-4">
-        <div className="al-course-toolbar">
-          <div className="al-course-search">
-            <Search />
-            <Input placeholder="Buscar título, entidad, tag..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
-          </div>
-          <div className="al-course-tabs">
-            {([["activos", `Activos ${activos.length}`], ["archivados", `Terminado ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
-              <button key={id} type="button" className={cn("al-course-tab", viewTab === id && "al-course-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
-                {id === "guardados" && <Heart className="mr-1 inline h-3 w-3 align-[-1px]" fill={viewTab === "guardados" ? "currentColor" : "none"} />}
-                {label}
-              </button>
-            ))}
-          </div>
-          <button type="button" className={cn("al-course-filter-btn", showFilters && "al-course-filter-btn-active")} onClick={() => setShowFilters((v) => !v)} aria-label={activeFilterCount > 0 ? `Filtros, ${activeFilterCount} activos` : "Filtros"}>
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filtros
-            <span aria-hidden="true" className={cn("inline-block w-3 text-center tabular-nums", activeFilterCount === 0 && "invisible")}>{activeFilterCount || 0}</span>
-          </button>
+        <div className="al-cc-shell">
+          <CollectionControls
+            searchValue={searchInput}
+            onSearchChange={setSearchInput}
+            searchPlaceholder="Buscar título, entidad, tag..."
+            tabs={[
+              { id: "total", label: "Total", count: total.length },
+              { id: "empezados", label: "Empezados", count: empezados.length },
+              { id: "proximos", label: "Próx. inicio", count: proximos.length },
+              { id: "guardados", label: "Guardados", count: guardados.length },
+            ]}
+            activeTab={viewTab}
+            onTabChange={(id) => { setViewTab(id as typeof viewTab); clearAll(); }}
+            filterCount={activeFilterCount}
+            filtersOpen={showFilters}
+            onToggleFilters={() => setShowFilters((v) => !v)}
+          />
+
+          {showFilters && (
+            <FilterPanelCompact activeCount={activeFilterCount} onClear={clearAll} onClose={() => setShowFilters(false)}>
+              <div>
+                <p className="al-fp-row-label">Estado</p>
+                <FilterChips
+                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["empezado", "Activo"], ["terminado", "Terminado"], ["pausado", "Pausado"]]}
+                  value={estadoFilter}
+                  onChange={setEstadoFilter}
+                />
+              </div>
+              {modalidades.length > 0 && (
+                <div>
+                  <p className="al-fp-row-label">Modalidad</p>
+                  <FilterChips
+                    options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
+                    value={modalidadFilter}
+                    onChange={setModalidadFilter}
+                  />
+                </div>
+              )}
+              <div>
+                <p className="al-fp-row-label">Prioridad</p>
+                <FilterChips
+                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
+                  value={prioridadFilter}
+                  onChange={setPrioridadFilter}
+                />
+              </div>
+              <div>
+                <p className="al-fp-row-label">Fecha de inicio</p>
+                <FilterDateRow
+                  dayFilter={dayFilter}
+                  datesWithItems={datesWithItems}
+                  onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }}
+                />
+              </div>
+              <div>
+                <p className="al-fp-row-label">Solo</p>
+                <label className="flex cursor-pointer items-center gap-2 text-xs">
+                  <input type="checkbox" checked={soloGratuitos} onChange={(e) => setSoloGratuitos(e.target.checked)} className="rounded" />
+                  Gratuitos
+                </label>
+              </div>
+            </FilterPanelCompact>
+          )}
         </div>
 
-        <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
-
-        <div className="flex flex-col gap-5 lg:flex-row">
-          <div className="min-w-0 flex-1 space-y-4">
-            <div className="al-course-stats">
-              <div className="al-course-stat-card">
-                <span className="al-course-stat-icon" style={{ background: "#fbe7dd", color: "#E15D2D" }}><BookOpen className="h-4.5 w-4.5" /></span>
-                <div><p className="al-course-stat-value">{tabBase.length}</p><p className="al-course-stat-label">Total</p></div>
-              </div>
-              <div className="al-course-stat-card">
-                <span className="al-course-stat-icon" style={{ background: "#e7f5ee", color: "#1f7a4d" }}><CheckCircle2 className="h-4.5 w-4.5" /></span>
-                <div><p className="al-course-stat-value">{kpiEmpezados}</p><p className="al-course-stat-label">Empezados</p></div>
-              </div>
-              <div className="al-course-stat-card">
-                <span className="al-course-stat-icon" style={{ background: "#fdf1dd", color: "#b4791f" }}><Clock className="h-4.5 w-4.5" /></span>
-                <div><p className="al-course-stat-value">{kpiPendientes}</p><p className="al-course-stat-label">Pendientes</p></div>
-              </div>
-              <div className="al-course-stat-card">
-                <span className="al-course-stat-icon" style={{ background: "#f3ece1", color: "#6b6f72" }}><AlarmClock className="h-4.5 w-4.5" /></span>
-                <div><p className="al-course-stat-value">{kpiProx}</p><p className="al-course-stat-label">Próx. inicio</p></div>
-              </div>
-            </div>
-
-            <div className="al-course-count-row">
-              <p className="al-course-count-text">
-                Mostrando {filtered.length} {filtered.length === 1 ? "curso" : "cursos"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
-              </p>
-              <ViewToggle value={viewMode} onChange={setViewMode} />
-            </div>
-
+        <div className="min-w-0 space-y-4">
             {featuredCourse && (() => {
               const fp = getCoursePresentation(featuredCourse);
               return (
@@ -2518,7 +2635,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
             })()}
 
             {(featuredCourse || gridCourses.length) ? (
-              <div className={cn("al-catalog-grid", viewMode === "grid" && "al-catalog-grid-cards")}>
+              <div className="al-catalog-grid al-catalog-grid-cards">
                 {gridCourses.map((item) => {
                   const presentation = getCoursePresentation(item);
                   return (
@@ -2549,12 +2666,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                   );
                 })}
               </div>
-            ) : viewTab === "archivados" && !search && activeFilterCount === 0 ? (
-              <div className="al-course-empty">
-                <Image src="/assets/cursos/cursos-empty-archivados.png" alt="" width={480} height={294} className="al-course-empty-illustration" />
-                <p className="al-course-empty-title">No tienes cursos terminados</p>
-                <p className="al-course-empty-desc">Cuando marques un curso como Terminado, aparecerá aquí.</p>
-              </div>
             ) : viewTab === "guardados" && !search && activeFilterCount === 0 ? (
               <div className="al-course-empty">
                 <span className="al-course-empty-icon"><Heart className="h-6 w-6" /></span>
@@ -2569,44 +2680,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                 {(search || activeFilterCount > 0) && <button type="button" className="al-course-empty-btn" onClick={clearAll}>Quitar filtros</button>}
               </div>
             )}
-          </div>
-
-          {showFilters && (
-            <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
-              <FilterSection label="Calendario">
-                <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
-              </FilterSection>
-              <FilterSection label="Estado">
-                <FilterChips
-                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["empezado", "Activo"], ["pausado", "Pausado"]]}
-                  value={estadoFilter}
-                  onChange={setEstadoFilter}
-                />
-              </FilterSection>
-              {modalidades.length > 0 && (
-                <FilterSection label="Modalidad">
-                  <FilterChips
-                    options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
-                    value={modalidadFilter}
-                    onChange={setModalidadFilter}
-                  />
-                </FilterSection>
-              )}
-              <FilterSection label="Prioridad">
-                <FilterChips
-                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
-                  value={prioridadFilter}
-                  onChange={setPrioridadFilter}
-                />
-              </FilterSection>
-              <FilterSection label="Solo">
-                <label className="flex cursor-pointer items-center gap-2 text-xs">
-                  <input type="checkbox" checked={soloGratuitos} onChange={(e) => setSoloGratuitos(e.target.checked)} className="rounded" />
-                  Gratuitos
-                </label>
-              </FilterSection>
-            </FilterPanel>
-          )}
         </div>
       </div>
     </>
@@ -2903,7 +2976,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     [store.hackathons, store.techOpportunities, store.fpContent]
   );
 
-  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "guardados" | "todos">("activos");
+  const [viewTab, setViewTab] = useState<"total" | "abiertos" | "proximos" | "guardados">("total");
   const [showFilters, setShowFilters] = useState(false);
   const [monthFilter, setMonthFilter] = useState("");
   const [dayFilter, setDayFilter] = useState("");
@@ -2914,7 +2987,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   const [soloInscripcionAbierta, setSoloInscripcionAbierta] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
@@ -2930,27 +3002,29 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     return da.localeCompare(db);
   }), [allHackathons]);
 
-  const archivados = useMemo(() => sorted.filter(isHackathonArchived), [sorted]);
-  const activos = useMemo(() => sorted.filter((h) => !isHackathonArchived(h) && !isHackathonPast(h)), [sorted]);
+  // Mirrors Cursos: the four control-row entries are both the KPI counts
+  // and the filter tabs. Total is the current events (not finished, not
+  // past); Inscripción abierta and Próx. inicio are subsets of it.
+  // "Realizado" is no longer its own tab - it moves to the Estado filter.
+  const total = useMemo(() => sorted.filter((h) => !isHackathonArchived(h) && !isHackathonPast(h)), [sorted]);
   // Guardados (issue #131): a heart-driven filter, independent of the
-  // Activos/Realizado lifecycle split above - saving an event never moves
-  // it between those tabs, so the same event can appear in both Guardados
-  // and whichever lifecycle tab it already belongs to.
+  // lifecycle split above - saving an event never moves it between tabs,
+  // so the same event can appear in both Guardados and Total.
   const guardados = useMemo(() => sorted.filter((h) => h.is_favorite), [sorted]);
+  const abiertos = useMemo(() => total.filter((h) => h.status === "inscripcion_abierta"), [total]);
+  const proximos = useMemo(() => {
+    const t = todayKey();
+    const i30 = dateKey(addDays(new Date(), 30).toISOString());
+    return total.filter((h) => {
+      const d = (h.start_at || "").slice(0, 10);
+      return d >= t && d <= i30;
+    });
+  }, [total]);
   const tabBase = useMemo(
-    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : viewTab === "guardados" ? guardados : sorted,
-    [viewTab, activos, archivados, guardados, sorted]
+    () => viewTab === "abiertos" ? abiertos : viewTab === "proximos" ? proximos : viewTab === "guardados" ? guardados : total,
+    [viewTab, abiertos, proximos, guardados, total]
   );
 
-  const monthGroups = useMemo(() => {
-    const groups = new Map<string, number>();
-    for (const h of tabBase) {
-      const d = (h.start_at || "").slice(0, 7);
-      if (!d) continue;
-      groups.set(d, (groups.get(d) ?? 0) + 1);
-    }
-    return groups;
-  }, [tabBase]);
 
   const datesWithItems = useMemo(() => {
     const set = new Set<string>();
@@ -2985,27 +3059,16 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     });
   }, [tabBase, search, monthFilter, dayFilter, estadoFilter, provinciaFilter, modalidadFilter, prioridadFilter, soloInscripcionAbierta]);
 
-  const { today, kpiAbiertos, kpiPendientes, kpiProx } = useMemo(() => {
-    const t = todayKey();
-    const i30 = dateKey(addDays(new Date(), 30).toISOString());
-    return {
-      today: t,
-      kpiAbiertos: tabBase.filter((h) => h.status === "inscripcion_abierta").length,
-      kpiPendientes: tabBase.filter((h) => h.status === "pendiente").length,
-      kpiProx: tabBase.filter((h) => { const d = (h.start_at || "").slice(0, 10); return d >= t && d <= i30; }).length,
-    };
-  }, [tabBase]);
-
   const activeFilterCount = [monthFilter, dayFilter, estadoFilter, provinciaFilter, modalidadFilter, prioridadFilter, soloInscripcionAbierta].filter(Boolean).length;
 
   function clearAll() {
     setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setProvinciaFilter(""); setModalidadFilter(""); setPrioridadFilter(""); setSoloInscripcionAbierta(false); setSearchInput(""); setSearch("");
   }
 
-  const showFeatured = (viewTab === "activos" || viewTab === "todos") && !search && activeFilterCount === 0 && viewMode === "grid";
+  const showFeatured = viewTab === "total" && !search && activeFilterCount === 0;
   const featuredHackathon = useMemo(
-    () => showFeatured ? selectFeaturedHackathon(activos) : null,
-    [activos, showFeatured],
+    () => showFeatured ? selectFeaturedHackathon(total) : null,
+    [total, showFeatured],
   );
   const gridHackathons = useMemo(
     () => featuredHackathon ? filtered.filter((item) => item.id !== featuredHackathon.id) : filtered,
@@ -3016,23 +3079,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   return (
     <>
       <style>{`
-        .al-hack-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-        .al-hack-search { position: relative; flex: 1; min-width: 220px; }
-        .al-hack-search input { padding-left: 36px; height: 40px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 13px; }
-        .al-hack-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #9a958a; }
-        .al-hack-tabs { display: flex; align-items: center; gap: 2px; border-radius: 12px; border: 1px solid #ece7dc; background: white; padding: 3px; }
-        .al-hack-tab { height: 32px; padding: 0 12px; border-radius: 9px; font-size: 12.5px; font-weight: 600; color: #6b6f72; background: transparent; border: none; cursor: pointer; transition: background 0.15s, color 0.15s; }
-        .al-hack-tab.al-hack-tab-active { background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); box-shadow: inset 0 0 0 1px var(--al-action-soft-border), 0 4px 12px rgba(80, 43, 27, 0.05); }
-        .al-hack-filter-btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 12.5px; font-weight: 600; color: #333029; cursor: pointer; }
-        .al-hack-filter-btn.al-hack-filter-btn-active { background: #fbe7dd; border-color: rgba(225, 93, 45, 0.3); color: #c94f21; }
-        .al-hack-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        @media (min-width: 640px) { .al-hack-stats { grid-template-columns: repeat(4, 1fr); } }
-        .al-hack-stat-card { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid #ece7dc; border-radius: 18px; padding: 14px 16px; box-shadow: 0 8px 20px rgba(17, 17, 17, 0.04); }
-        .al-hack-stat-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
-        .al-hack-stat-value { font-size: 22px; font-weight: 800; line-height: 1; color: #111111; }
-        .al-hack-stat-label { font-size: 11px; font-weight: 600; color: #6b6f72; margin-top: 3px; }
-        .al-hack-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .al-hack-count-text { font-size: 12px; color: #6b6f72; }
         .al-hack-empty-wrap { display: grid; gap: 14px; grid-template-columns: 1fr; }
         @media (min-width: 640px) { .al-hack-empty-wrap.al-hack-empty-two { grid-template-columns: 1fr 1fr; } }
         .al-hack-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
@@ -3043,56 +3089,82 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: var(--al-action-soft-bg); color: var(--al-action-soft-text); font-size: 12.5px; font-weight: 700; border: 1px solid var(--al-action-soft-border); cursor: pointer; }
       `}</style>
       <div className="space-y-4">
-        <div className="al-hack-toolbar">
-          <div className="al-hack-search">
-            <Search />
-            <Input placeholder="Buscar nombre, organizador, tema, aptitud..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
-          </div>
-          <div className="al-hack-tabs">
-            {([["activos", `Activos ${activos.length}`], ["archivados", `Realizado ${archivados.length}`], ["guardados", `Guardados ${guardados.length}`], ["todos", `Todos ${sorted.length}`]] as const).map(([id, label]) => (
-              <button key={id} type="button" className={cn("al-hack-tab", viewTab === id && "al-hack-tab-active")} onClick={() => { setViewTab(id); clearAll(); }}>
-                {id === "guardados" && <Heart className="mr-1 inline h-3 w-3 align-[-1px]" fill={viewTab === "guardados" ? "currentColor" : "none"} />}
-                {label}
-              </button>
-            ))}
-          </div>
-          <button type="button" className={cn("al-hack-filter-btn", showFilters && "al-hack-filter-btn-active")} onClick={() => setShowFilters((v) => !v)} aria-label={activeFilterCount > 0 ? `Filtros, ${activeFilterCount} activos` : "Filtros"}>
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filtros
-            <span aria-hidden="true" className={cn("inline-block w-3 text-center tabular-nums", activeFilterCount === 0 && "invisible")}>{activeFilterCount || 0}</span>
-          </button>
+        <div className="al-cc-shell">
+          <CollectionControls
+            searchValue={searchInput}
+            onSearchChange={setSearchInput}
+            searchPlaceholder="Buscar nombre, organizador, tema, aptitud..."
+            tabs={[
+              { id: "total", label: "Total", count: total.length },
+              { id: "abiertos", label: "Inscripción abierta", count: abiertos.length },
+              { id: "proximos", label: "Próx. inicio", count: proximos.length },
+              { id: "guardados", label: "Guardados", count: guardados.length },
+            ]}
+            activeTab={viewTab}
+            onTabChange={(id) => { setViewTab(id as typeof viewTab); clearAll(); }}
+            filterCount={activeFilterCount}
+            filtersOpen={showFilters}
+            onToggleFilters={() => setShowFilters((v) => !v)}
+          />
+
+          {showFilters && (
+            <FilterPanelCompact activeCount={activeFilterCount} onClear={clearAll} onClose={() => setShowFilters(false)}>
+              <div>
+                <p className="al-fp-row-label">Estado</p>
+                <FilterChips
+                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["inscripcion_abierta", "Activo"], ["realizado", "Realizado"]]}
+                  value={estadoFilter}
+                  onChange={setEstadoFilter}
+                />
+              </div>
+              {modalidades.length > 0 && (
+                <div>
+                  <p className="al-fp-row-label">Modalidad</p>
+                  <FilterChips
+                    options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
+                    value={modalidadFilter}
+                    onChange={setModalidadFilter}
+                  />
+                </div>
+              )}
+              {provincias.length > 0 && (
+                <div>
+                  <p className="al-fp-row-label">Provincia</p>
+                  <FilterChips
+                    options={[["", "Todas"], ...provincias.map((p): [string, string] => [p, p])]}
+                    value={provinciaFilter}
+                    onChange={setProvinciaFilter}
+                  />
+                </div>
+              )}
+              <div>
+                <p className="al-fp-row-label">Prioridad</p>
+                <FilterChips
+                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
+                  value={prioridadFilter}
+                  onChange={setPrioridadFilter}
+                />
+              </div>
+              <div>
+                <p className="al-fp-row-label">Fecha de inicio</p>
+                <FilterDateRow
+                  dayFilter={dayFilter}
+                  datesWithItems={datesWithItems}
+                  onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }}
+                />
+              </div>
+              <div>
+                <p className="al-fp-row-label">Solo</p>
+                <label className="flex cursor-pointer items-center gap-2 text-xs">
+                  <input type="checkbox" checked={soloInscripcionAbierta} onChange={(e) => setSoloInscripcionAbierta(e.target.checked)} className="rounded" />
+                  Inscripción abierta
+                </label>
+              </div>
+            </FilterPanelCompact>
+          )}
         </div>
 
-        <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={tabBase.length} onSelect={(m) => { setMonthFilter(m); setDayFilter(""); }} />
-
-        <div className="flex flex-col gap-5 lg:flex-row">
-          <div className="min-w-0 flex-1 space-y-4">
-            <div className="al-hack-stats">
-              <div className="al-hack-stat-card">
-                <span className="al-hack-stat-icon" style={{ background: "#fbe7dd", color: "#E15D2D" }}><Trophy className="h-4.5 w-4.5" /></span>
-                <div><p className="al-hack-stat-value">{tabBase.length}</p><p className="al-hack-stat-label">Total</p></div>
-              </div>
-              <div className="al-hack-stat-card">
-                <span className="al-hack-stat-icon" style={{ background: "#e7f5ee", color: "#1f7a4d" }}><CheckCircle2 className="h-4.5 w-4.5" /></span>
-                <div><p className="al-hack-stat-value">{kpiAbiertos}</p><p className="al-hack-stat-label">Inscripción abierta</p></div>
-              </div>
-              <div className="al-hack-stat-card">
-                <span className="al-hack-stat-icon" style={{ background: "#fdf1dd", color: "#b4791f" }}><Clock className="h-4.5 w-4.5" /></span>
-                <div><p className="al-hack-stat-value">{kpiPendientes}</p><p className="al-hack-stat-label">Pendientes</p></div>
-              </div>
-              <div className="al-hack-stat-card">
-                <span className="al-hack-stat-icon" style={{ background: "#f3ece1", color: "#6b6f72" }}><AlarmClock className="h-4.5 w-4.5" /></span>
-                <div><p className="al-hack-stat-value">{kpiProx}</p><p className="al-hack-stat-label">Próx. inicio</p></div>
-              </div>
-            </div>
-
-            <div className="al-hack-count-row">
-              <p className="al-hack-count-text">
-                Mostrando {filtered.length} {filtered.length === 1 ? "evento o reto" : "eventos y retos"} · desde {formatDateLabel(today)} · ordenado por fecha de inicio
-              </p>
-              <ViewToggle value={viewMode} onChange={setViewMode} />
-            </div>
-
+        <div className="min-w-0 space-y-4">
             {featuredHackathon && (() => {
               const presentation = getHackathonPresentation(featuredHackathon);
               return (
@@ -3133,7 +3205,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             })()}
 
             {(featuredHackathon || gridHackathons.length) ? (
-              <div className={cn("al-catalog-grid", viewMode === "grid" && "al-catalog-grid-cards")}>
+              <div className="al-catalog-grid al-catalog-grid-cards">
                 {gridHackathons.map((item) => {
                   const presentation = getHackathonPresentation(item);
                   const canFavorite = canToggleHackathonFavorite(item);
@@ -3170,55 +3242,8 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                 })}
               </div>
             ) : (
-              <HackathonsEmptyState variant={search || activeFilterCount > 0 ? "sin_resultados" : viewTab === "activos" ? "sin_activos" : "sin_datos"} onClearFilters={clearAll} />
+              <HackathonsEmptyState variant={search || activeFilterCount > 0 ? "sin_resultados" : viewTab === "total" ? "sin_activos" : "sin_datos"} onClearFilters={clearAll} />
             )}
-          </div>
-
-          {showFilters && (
-            <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
-              <FilterSection label="Calendario">
-                <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
-              </FilterSection>
-              <FilterSection label="Estado">
-                <FilterChips
-                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["inscripcion_abierta", "Activo"]]}
-                  value={estadoFilter}
-                  onChange={setEstadoFilter}
-                />
-              </FilterSection>
-              {modalidades.length > 0 && (
-                <FilterSection label="Modalidad">
-                  <FilterChips
-                    options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
-                    value={modalidadFilter}
-                    onChange={setModalidadFilter}
-                  />
-                </FilterSection>
-              )}
-              {provincias.length > 0 && (
-                <FilterSection label="Provincia">
-                  <FilterChips
-                    options={[["", "Todas"], ...provincias.map((p): [string, string] => [p, p])]}
-                    value={provinciaFilter}
-                    onChange={setProvinciaFilter}
-                  />
-                </FilterSection>
-              )}
-              <FilterSection label="Prioridad">
-                <FilterChips
-                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
-                  value={prioridadFilter}
-                  onChange={setPrioridadFilter}
-                />
-              </FilterSection>
-              <FilterSection label="Solo">
-                <label className="flex cursor-pointer items-center gap-2 text-xs">
-                  <input type="checkbox" checked={soloInscripcionAbierta} onChange={(e) => setSoloInscripcionAbierta(e.target.checked)} className="rounded" />
-                  Inscripción abierta
-                </label>
-              </FilterSection>
-            </FilterPanel>
-          )}
         </div>
       </div>
     </>
