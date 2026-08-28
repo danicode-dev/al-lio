@@ -3267,6 +3267,23 @@ test("Owner-reported follow-up: the gap between the Trabajo header and the Porta
   );
 });
 
+test("Phones: Cursos / Eventos y retos pull the control strip up under the header so the featured card is not fully below the fold - a specificity-matched globals rule, not a plain class (owner-reported follow-up, issue #189)", async () => {
+  const [guestApp, globalStyles] = await Promise.all([
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  const courses = guestApp.slice(guestApp.indexOf("function Courses("), guestApp.indexOf("function coursePriorityClass"));
+  const hackathons = guestApp.slice(guestApp.indexOf("function Hackathons("), guestApp.indexOf("function HackathonsEmptyState"));
+  assert.match(courses, /<div className="al-catalog-view space-y-4">/);
+  assert.match(hackathons, /<div className="al-catalog-view space-y-4">/);
+
+  // The override must tie Tailwind's `.space-y-6 > :not([hidden]) ~ :not([hidden])`
+  // (0,0,3,0) and win on source order - a bare `.al-catalog-view` rule would lose.
+  const mobileBlock = globalStyles.slice(globalStyles.indexOf("@media (max-width: 640px) {", globalStyles.indexOf(".al-page-header-subtitle")));
+  assert.match(mobileBlock, /\.space-y-6 > \.al-page-header ~ \.al-catalog-view \{\s*margin-top: -\d+px;/);
+});
+
 // ---------------------------------------------------------------------------
 // Issue #132: production authentication - email-confirmed registration,
 // password recovery with real session revocation, and Google sign-in split
