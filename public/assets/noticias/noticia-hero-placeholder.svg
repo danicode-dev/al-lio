@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 800" width="1400" height="800" role="img" aria-label="">
+  <defs>
+    <radialGradient id="halo" cx="62%" cy="40%" r="52%">
+      <stop offset="0%" stop-color="#E15D2D" stop-opacity="0.42"/>
+      <stop offset="55%" stop-color="#E15D2D" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#E15D2D" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="clay" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FBF6EE"/>
+      <stop offset="100%" stop-color="#E8DCC9"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1400" height="800" fill="#F7F3EC"/>
+  <rect width="1400" height="800" fill="url(#halo)"/>
+
+  <g fill="none" stroke="#E15D2D" stroke-linecap="round" opacity="0.5">
+    <path d="M860 560a250 250 0 0 0-250-250" stroke-width="14" opacity="0.30"/>
+    <path d="M950 560a340 340 0 0 0-340-340" stroke-width="14" opacity="0.20"/>
+    <path d="M1040 560a430 430 0 0 0-430-430" stroke-width="14" opacity="0.12"/>
+  </g>
+
+  <g>
+    <ellipse cx="590" cy="606" rx="250" ry="26" fill="#D8C9B2" opacity="0.45"/>
+    <rect x="400" y="250" width="380" height="330" rx="34" fill="url(#clay)"/>
+    <rect x="400" y="250" width="380" height="26" rx="13" fill="#E15D2D" opacity="0.85"/>
+    <rect x="446" y="326" width="288" height="20" rx="10" fill="#C9BCA6" opacity="0.65"/>
+    <rect x="446" y="374" width="230" height="20" rx="10" fill="#C9BCA6" opacity="0.45"/>
+    <rect x="446" y="422" width="262" height="20" rx="10" fill="#C9BCA6" opacity="0.45"/>
+    <rect x="446" y="470" width="180" height="20" rx="10" fill="#C9BCA6" opacity="0.35"/>
+  </g>
+
+  <g>
+    <ellipse cx="880" cy="600" rx="120" ry="18" fill="#D8C9B2" opacity="0.4"/>
+    <rect x="800" y="430" width="160" height="150" rx="30" fill="url(#clay)"/>
+    <rect x="800" y="560" width="160" height="20" rx="10" fill="#E15D2D" opacity="0.8"/>
+    <circle cx="880" cy="492" r="34" fill="#C9BCA6" opacity="0.55"/>
+  </g>
+
+  <circle cx="985" cy="300" r="26" fill="#E8DCC9"/>
+  <circle cx="1052" cy="372" r="15" fill="#E15D2D" opacity="0.9"/>
+  <circle cx="352" cy="330" r="18" fill="#E8DCC9"/>
+</svg>

@@ -276,11 +276,17 @@ test("Radar detail query mirrors the list boundary (cycle, destination, kind, fr
   assert.doesNotMatch(relatedFunctionSource, /FROM public\.radar_items/);
 });
 
-test("News cards link to the internal detail page and keep the existing external source link", async () => {
+test("News cards route into the internal detail page, never straight to the source, and never inject raw HTML", async () => {
   const source = await readFile(new URL("../src/components/noticias/noticias-view.tsx", import.meta.url), "utf8");
-  assert.match(source, /from "next\/link"/);
-  assert.match(source, /href=\{`\/noticias\/\$\{item\.id\}`\}/);
-  assert.match(source, /href=\{item\.url\}/);
+
+  // Both the featured item and every grid card carry the catalogue detail
+  // action, the single way into an item.
+  assert.match(source, /detailHref=\{`\/noticias\/\$\{encodeURIComponent\(item\.id\)\}`\}/);
+  assert.match(source, /detailHref=\{`\/noticias\/\$\{encodeURIComponent\(featuredItem\.id\)\}`\}/);
+
+  // The source URL is attacker-influenced content: the list never renders it
+  // as a link, so it can only be reached from the detail route, which vets it.
+  assert.doesNotMatch(source, /href=\{item\.url\}/);
   assert.doesNotMatch(source, /dangerouslySetInnerHTML/);
 });
 
@@ -342,18 +348,19 @@ test("News detail view separates unavailable content from a temporary failure, w
   assert.doesNotMatch(source, /item\.kind === "event"/);
 });
 
-test("The card's internal link no longer duplicates the read mutation; the external source link still marks read", async () => {
-  const source = await readFile(new URL("../src/components/noticias/noticias-view.tsx", import.meta.url), "utf8");
+test("The read mutation is owned by the detail route alone, never fired from the list", async () => {
+  const listSource = await readFile(new URL("../src/components/noticias/noticias-view.tsx", import.meta.url), "utf8");
+  const detailSource = await readFile(new URL("../src/components/noticias/news-detail-view.tsx", import.meta.url), "utf8");
 
-  const internalLinkStart = source.indexOf("href={`/noticias/${item.id}`}");
-  assert.ok(internalLinkStart > -1, "internal detail link not found");
-  const internalLinkTag = source.slice(Math.max(0, internalLinkStart - 20), internalLinkStart + 180);
-  assert.doesNotMatch(internalLinkTag, /onClick/);
+  // The detail route is the only way into an item, so it is the only place
+  // that marks one read - the list cannot double-fire the mutation.
+  assert.match(detailSource, /\/read`, \{ method: "PATCH" \}/);
+  assert.doesNotMatch(listSource, /\/read`/);
 
-  const externalLinkStart = source.indexOf("href={item.url}");
-  assert.ok(externalLinkStart > -1, "external source link not found");
-  const externalLinkTag = source.slice(externalLinkStart, externalLinkStart + 200);
-  assert.match(externalLinkTag, /onClick=\{onRead\}/);
+  // Saving stays available from the list, and stays monotonic there: an item
+  // already saved never issues a second mutation.
+  assert.match(listSource, /\/save`, \{ method: "PATCH" \}/);
+  assert.match(listSource, /if \(item\.status === "saved"\) return;/);
 });
 
 test("Task editing preserves critical priority and optional due time", async () => {
