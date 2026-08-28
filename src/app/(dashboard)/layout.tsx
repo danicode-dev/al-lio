@@ -1,11 +1,9 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import { BottomNav } from "@/components/bottom-nav";
 import { getGlobalStore } from "@/lib/data";
 import { StoreProvider } from "@/components/guest-store";
-import { StudentHeaderActions } from "@/components/student-header-actions";
 import { DailyAlerts } from "@/components/daily-alerts";
+import { MobileHeaderNavigation } from "@/components/mobile-header-navigation";
 import type { Store } from "@/components/store/types";
-import Image from "next/image";
 import { cookies } from "next/headers";
 import { Toaster } from "sonner";
 
@@ -27,25 +25,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
           defaultCollapsed={sidebarPreference?.value === "true"}
           hasPersistedPreference={Boolean(sidebarPreference)}
         />
-        <main className="min-w-0 flex-1 relative pb-20 md:pb-0">
-          <div className="flex h-14 items-center justify-between border-b bg-background/90 backdrop-blur-xl px-4 md:hidden sticky top-0 z-40">
-            <div className="relative h-8">
-              <Image
-                src="/assets/al_lio_logo_horizontal.png"
-                alt="AL-LIO"
-                width={2172}
-                height={724}
-                className="block h-8 w-auto object-contain object-left"
-                priority
-              />
-            </div>
-            <StudentHeaderActions />
-          </div>
+        <main className="relative min-w-0 flex-1">
+          <MobileHeaderNavigation />
           <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8">
             {children}
           </div>
         </main>
-        <BottomNav />
         <DailyAlerts />
       </div>
       <Toaster position="bottom-right" richColors duration={3500} closeButton />
