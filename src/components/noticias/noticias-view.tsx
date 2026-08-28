@@ -2,19 +2,24 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  BookmarkCheck,
-  CheckCircle2,
-  ExternalLink,
+  CalendarDays,
+  Flame,
+  Newspaper,
   RefreshCw,
   Search,
   ShieldCheck,
 } from "lucide-react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { NewsItem, NewsSyncStatus, NewsTrustTier } from "@/lib/news/types";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
+import {
+  CatalogCard,
+  CatalogFact,
+  CatalogFavoriteButton,
+  CatalogFeaturedCard,
+} from "@/components/catalog/catalog-card";
 import {
   CollectionAction,
   CollectionControls,
@@ -104,20 +109,9 @@ export function NewsView() {
     }
   }, []);
 
-  async function markRead(item: NewsItem) {
-    if (item.status !== "new") return;
-    const previousItems = items;
-    setItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, status: "read" } : candidate));
-    try {
-      const response = await fetch(`/api/news/${encodeURIComponent(item.id)}/read`, { method: "PATCH" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      setStatus((current) => current ? { ...current, newItems: Math.max(0, current.newItems - 1) } : current);
-    } catch {
-      setItems(previousItems);
-      toast.error("No se pudo marcar como leída");
-    }
-  }
-
+  // Reading is marked by the detail route itself (the only way into an
+  // item now that the cards carry a "Ver detalles" action), so the list no
+  // longer needs its own read call.
   async function saveItem(item: NewsItem) {
     if (item.status === "saved") return;
     const previousItems = items;
@@ -291,11 +285,22 @@ export function NewsView() {
         ) : (
           <div className="space-y-4">
             {featuredItem && (
-              <NewsCard
-                item={featuredItem}
-                featured
-                onRead={() => void markRead(featuredItem)}
-                onSave={() => void saveItem(featuredItem)}
+              <CatalogFeaturedCard
+                imageSrc={newsHeroImage(featuredItem)}
+                tag={<><Flame className="h-3 w-3" />Destacada</>}
+                title={featuredItem.title}
+                subtitle={featuredItem.sourceName}
+                status={<NewsStatusPill item={featuredItem} />}
+                favorite={(
+                  <CatalogFavoriteButton
+                    active={featuredItem.status === "saved"}
+                    featured
+                    onClick={() => void saveItem(featuredItem)}
+                  />
+                )}
+                description={featuredItem.description}
+                facts={<NewsFacts item={featuredItem} />}
+                detailHref={`/noticias/${encodeURIComponent(featuredItem.id)}`}
               />
             )}
             {regularItems.length > 0 && (
@@ -304,7 +309,22 @@ export function NewsView() {
               // three-column rhythm. There is no list/grid switch any more.
               <div className="al-catalog-grid al-catalog-grid-cards">
                 {regularItems.map((item) => (
-                  <NewsCard key={item.id} item={item} onRead={() => void markRead(item)} onSave={() => void saveItem(item)} />
+                  <CatalogCard
+                    key={item.id}
+                    title={item.title}
+                    subtitle={item.sourceName}
+                    badges={(
+                      <>
+                        <NewsStatusPill item={item} />
+                        <CatalogFavoriteButton
+                          active={item.status === "saved"}
+                          onClick={() => void saveItem(item)}
+                        />
+                      </>
+                    )}
+                    facts={<NewsFacts item={item} />}
+                    detailHref={`/noticias/${encodeURIComponent(item.id)}`}
+                  />
                 ))}
               </div>
             )}
@@ -315,83 +335,48 @@ export function NewsView() {
   );
 }
 
-function NewsCard({ item, featured = false, onRead, onSave }: {
-  item: NewsItem;
-  featured?: boolean;
-  onRead: () => void;
-  onSave: () => void;
-}) {
+// The reading state as a catalogue status pill, the same shape Courses and
+// Events use for theirs: unread reads as the one that still wants
+// attention, saved as settled, already-read as muted.
+function NewsStatusPill({ item }: { item: NewsItem }) {
+  const { label, tone } = item.status === "saved"
+    ? { label: "Guardada", tone: "al-catalog-status-open" }
+    : item.status === "read"
+      ? { label: "Leída", tone: "al-catalog-status-muted" }
+      : { label: "Sin leer", tone: "al-catalog-status-review" };
+  return <span className={cn("al-catalog-status", tone)}>{label}</span>;
+}
+
+// Three facts per card, mirroring the date/modality/level row of a course:
+// when it was published, what kind of item it is and how trustworthy its
+// source is. Topics and modules stay on the detail route.
+function NewsFacts({ item }: { item: NewsItem }) {
   return (
-    <article className={cn(
-      "flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-[0_8px_20px_rgba(17,17,17,0.04)]",
-      item.status === "read" ? "border-[#ece7dc] opacity-70" : "border-[#e6e1d8]",
-      item.status === "saved" && "border-[#efb79f] opacity-100",
-      featured && "border-[#e98b67] bg-[#fffaf7] shadow-[0_12px_30px_rgba(225,93,45,0.10)]",
-    )}>
-      <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold">
-        {featured && <span className="al-action-soft-selected rounded-full px-2 py-0.5">Destacada</span>}
-        <span className="text-[#6b6f72]">{item.sourceName}</span>
-        <span className={cn(
-          "rounded-full px-2 py-0.5",
-          item.trustTier === "official" || item.trustTier === "institutional"
-            ? "bg-[#e7f5ee] text-[#1f7a4d]"
-            : "bg-[#f3ece1] text-[#6b6f72]",
-        )}>
-          {TRUST_LABELS[item.trustTier]}
-        </span>
-        <span className="rounded-full bg-[#fbe7dd] px-2 py-0.5 text-[#c94f21]">{KIND_LABELS[item.kind]}</span>
-        {item.status === "saved" && <span className="rounded-full bg-[#fdf1dd] px-2 py-0.5 text-[#9a6418]">Guardada</span>}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <Link
-          href={`/noticias/${item.id}`}
-          className="line-clamp-3 text-sm font-semibold leading-5 text-[#111111] hover:text-[#c94f21] hover:underline hover:underline-offset-2"
-        >
-          {item.title}
-        </Link>
-        {item.description && <p className="mt-1.5 line-clamp-3 text-xs leading-5 text-[#6b6f72]">{item.description}</p>}
-      </div>
-
-      {item.kind === "event" && (item.eventStartsAt || item.registrationDeadline) && (
-        <div className="rounded-xl border border-[#e5eee9] bg-[#f4f8f6] px-3 py-2 text-[11px] leading-5 text-[#315f4b]">
-          {item.eventStartsAt && <p><span className="font-bold">Comienza:</span> {formatDateTime(item.eventStartsAt)}</p>}
-          {item.eventEndsAt && <p><span className="font-bold">Finaliza:</span> {formatDateTime(item.eventEndsAt)}</p>}
-          {item.registrationDeadline && <p><span className="font-bold">Inscripción hasta:</span> {formatDateTime(item.registrationDeadline)}</p>}
-        </div>
-      )}
-
-      <div className="flex flex-wrap gap-1.5">
-        {item.topics.slice(0, 3).map((topic) => (
-          <span key={topic} className="rounded-md bg-[#f3ece1] px-2 py-1 text-[10px] text-[#6b6f72]">#{formatTopic(topic)}</span>
-        ))}
-        {item.moduleCodes.slice(0, 2).map((moduleCode) => (
-          <span key={moduleCode} className="rounded-md bg-[#eef4f1] px-2 py-1 text-[10px] text-[#1f6a4c]">{formatModule(moduleCode)}</span>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between gap-2 border-t border-[#f0ece2] pt-3">
-        <div className="text-[10px] text-[#9a958a]">
-          {item.publishedAt ? formatDate(item.publishedAt) : "Fecha no indicada"}
-          {item.province ? ` · ${item.province}` : ""}
-        </div>
-        <div className="flex items-center gap-1">
-          <a href={item.url} target="_blank" rel="noreferrer noopener" onClick={onRead} className="icon-button" title="Abrir fuente">
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-          {item.status === "saved" ? (
-            <span className="icon-button text-[#1f7a4d]" title="Guardada"><CheckCircle2 className="h-3.5 w-3.5" /></span>
-          ) : (
-            <button type="button" onClick={onSave} className="icon-button" title="Guardar"><BookmarkCheck className="h-3.5 w-3.5" /></button>
-          )}
-        </div>
-      </div>
-      <style jsx>{`
-        .icon-button { display:inline-flex; width:30px; height:30px; align-items:center; justify-content:center; border:1px solid #ece7dc; border-radius:9px; color:#6b6f72; background:white; }
-        .icon-button:hover { border-color:rgba(225,93,45,.4); color:#c94f21; }
-      `}</style>
-    </article>
+    <>
+      <CatalogFact icon={<CalendarDays />}>
+        {item.publishedAt ? formatDate(item.publishedAt) : "Fecha no indicada"}
+      </CatalogFact>
+      <CatalogFact icon={<Newspaper />}>{KIND_LABELS[item.kind]}</CatalogFact>
+      <CatalogFact icon={<ShieldCheck />}>{TRUST_LABELS[item.trustTier]}</CatalogFact>
+    </>
   );
+}
+
+// Banner variants available per cycle under /assets/noticias/
+// (noticia-hero-<cycle>-<1..N>.jpg). While a cycle has none, the branded
+// placeholder stands in - raise its number as artwork lands.
+const NEWS_HERO_POOL: Record<string, number> = { daw: 0, dam: 0, af: 0, tsaf: 0, mp: 0 };
+
+// An item keeps one stable banner (hashed from its id), so a re-featured
+// item always carries the same image and two items of one cycle rarely
+// share it.
+function newsHeroImage(item: NewsItem): string {
+  const cycle = (item.targetCycleCodes[0] ?? "").toLowerCase();
+  const count = NEWS_HERO_POOL[cycle] ?? 0;
+  if (!count) return "/assets/noticias/noticia-hero-placeholder.svg";
+  let hash = 0;
+  for (let index = 0; index < item.id.length; index += 1) hash = (hash * 31 + item.id.charCodeAt(index)) | 0;
+  return `/assets/noticias/noticia-hero-${cycle}-${(Math.abs(hash) % count) + 1}.jpg`;
 }
 
 export function EmptyState({ icon: Icon, title, description }: { icon: typeof Search; title: string; description?: string }) {
