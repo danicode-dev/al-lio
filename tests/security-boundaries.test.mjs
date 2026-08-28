@@ -2301,6 +2301,25 @@ test("Perfil's title switches from the Barlow display font to the shared Inter p
   assert.match(source, /eyebrow="Tu cuenta"/);
 });
 
+test("Profile and Saved size themselves from the available dashboard width and remain operable on phones (issue #188)", async () => {
+  const [profile, saved] = await Promise.all([
+    readFile(new URL("../src/components/profile/profile-form.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/profile/saved-hub.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(profile, /\.al-profile-shell \{[\s\S]*min-width: 0;[\s\S]*container-type: inline-size;/);
+  assert.match(profile, /\.al-profile-grid \{[\s\S]*grid-template-columns: minmax\(0, 1fr\);/);
+  assert.match(profile, /@container \(min-width: 700px\)[\s\S]*grid-template-columns: minmax\(0, 1\.4fr\) minmax\(240px, 1fr\)/);
+  assert.match(profile, /@media \(max-width: 480px\)[\s\S]*\.al-profile-chip \{ min-height: 44px; width: 100%; \}/);
+  assert.match(profile, /\.al-profile-actions \{ align-items: stretch; flex-direction: column; \}/);
+  assert.match(profile, /\.al-profile-submit \{ width: 100%; \}/);
+
+  assert.match(saved, /grid min-w-0 gap-4 \[grid-template-columns:repeat\(auto-fit,minmax\(min\(100%,18rem\),1fr\)\)\]/);
+  assert.doesNotMatch(saved, /md:grid-cols-3/, "Saved columns must respond to their container instead of the viewport/sidebar breakpoint");
+  assert.match(saved, /flex min-w-0 flex-col/);
+  assert.match(saved, /h-11 w-11[\s\S]*sm:h-8 sm:w-8/, "Saved row actions need phone-sized touch targets while remaining compact on desktop");
+});
+
 test("Calendario, Noticias and Competencias each compose StudentHeaderActions into their own header instead of relying on a removed shared layout row (issue #129)", async () => {
   const [calendar, noticias, competencies] = await Promise.all([
     readFile(new URL("../src/components/calendar/app-calendar.tsx", import.meta.url), "utf8"),
@@ -2447,7 +2466,7 @@ test("Nuevo evento and the Google Calendar status live in the calendar's own mon
   assert.doesNotMatch(headerFn, />Hoy<\/Button>/, "no calendar-navigation Hoy button in either header variant");
   assert.doesNotMatch(headerFn, /onToday/, "the onToday prop and handler are gone with the button");
 
-  const nonCompactActionsRow = headerFn.slice(headerFn.indexOf('<div className="flex flex-wrap items-center gap-2">'));
+  const nonCompactActionsRow = headerFn.slice(headerFn.indexOf('<div className="grid min-w-0 gap-2 sm:flex sm:flex-wrap sm:items-center">'));
   assert.match(nonCompactActionsRow, /\{statusSlot\}[\s\S]*Nuevo evento/, "the status slot and the create button share the toolbar row");
 
   const calendarViewCall = source.slice(source.indexOf("<CalendarHeader", source.indexOf("export function CalendarView")), source.indexOf("<CalendarHeader", source.indexOf("export function CalendarView")) + 300);
@@ -2483,6 +2502,29 @@ test("GoogleCalendarStatusControl's connected/disconnected/loading states are vi
   assert.match(fn, /<GoogleGlyph \/>/);
   assert.doesNotMatch(fn, /grid-cols-2 overflow-hidden rounded-\[3px\]/, "the old four-colour square is gone");
   assert.doesNotMatch(fn, /\btruncate\b/, "the connection label must not be clipped");
+});
+
+test("Calendar navigation, integration status and month cells fit mobile widths without changing the desktop month grid (issue #188)", async () => {
+  const [calendar, guestApp] = await Promise.all([
+    readFile(new URL("../src/components/calendar/app-calendar.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(calendar, /<div className="min-w-0 space-y-5 text-\[#111111\]">/);
+  assert.match(calendar, /grid min-w-0 grid-cols-\[44px_44px_minmax\(0,1fr\)\] items-center gap-2 sm:flex/);
+  assert.match(calendar, /h-11 w-11[\s\S]*sm:h-9 sm:w-9/);
+  assert.match(calendar, /min-w-0 truncate text-base font-semibold sm:ml-1 sm:text-lg/);
+  assert.match(calendar, /grid min-w-0 gap-2 sm:flex sm:flex-wrap sm:items-center/);
+  assert.match(calendar, /h-11 w-full justify-center rounded-xl px-3 sm:h-9 sm:w-auto/);
+  assert.match(calendar, /relative flex h-10 min-w-0 items-center justify-center/);
+  assert.match(calendar, /hidden overflow-x-auto border-t border-\[#eee8de\] md:block[\s\S]*variant="full"/);
+  assert.match(calendar, /border-t border-\[#eee8de\] p-3 md:hidden[\s\S]*variant="compact"/);
+
+  const statusStart = guestApp.indexOf("function GoogleCalendarStatusControl");
+  const statusEnd = guestApp.indexOf("function TaskBoard", statusStart);
+  const status = guestApp.slice(statusStart, statusEnd);
+  assert.match(status, /h-11 w-full min-w-0[\s\S]*sm:h-9 sm:w-auto/);
+  assert.doesNotMatch(status, /whitespace-nowrap rounded-xl/, "Google Calendar labels must be allowed to fit before the desktop breakpoint");
 });
 
 test("Calendar events open a detail dialog on click and its action deep-links to the exact item, never a bare list page (issue #179)", async () => {

@@ -74,11 +74,18 @@ export function ProfileForm({
     <>
       <style>{`
 
+        .al-profile-shell {
+          min-width: 0;
+          container-type: inline-size;
+        }
+
         .al-profile-grid {
           display: grid;
-          grid-template-columns: minmax(0, 1.4fr) minmax(240px, 1fr);
+          min-width: 0;
+          grid-template-columns: minmax(0, 1fr);
           gap: 20px;
         }
+        .al-profile-grid > * { min-width: 0; }
 
         .al-profile-identity {
           display: flex;
@@ -106,6 +113,7 @@ export function ProfileForm({
         .al-profile-badge { border-radius: 999px; background: #f7f4ee; padding: 4px 8px; color: #5f5a52; font-size: 10px; font-weight: 800; }
 
         .al-profile-card {
+          min-width: 0;
           background: white;
           border: 1px solid #ece7dc;
           border-radius: 20px;
@@ -175,6 +183,7 @@ export function ProfileForm({
         .al-profile-saved-icon { width: 16px; height: 16px; }
 
         .al-profile-stats-card {
+          min-width: 0;
           background: white;
           border: 1px solid #ece7dc;
           border-radius: 20px;
@@ -238,21 +247,41 @@ export function ProfileForm({
         .al-profile-stat-row:first-of-type { border-top: none; }
         .al-profile-stat-row strong { color: #111111; font-size: 14px; }
 
-        @media (max-width: 800px) {
-          .al-profile-grid { grid-template-columns: 1fr; }
+        @container (min-width: 700px) {
+          .al-profile-grid { grid-template-columns: minmax(0, 1.4fr) minmax(240px, 1fr); }
+        }
+
+        @media (max-width: 480px) {
+          .al-profile-card,
+          .al-profile-stats-card {
+            border-radius: 16px;
+            padding: 16px;
+          }
+          .al-profile-identity { align-items: flex-start; gap: 12px; margin-bottom: 16px; padding-bottom: 16px; }
+          .al-profile-avatar { width: 48px; height: 48px; border-radius: 15px; }
+          .al-profile-chip-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
+          .al-profile-chip { min-height: 44px; width: 100%; }
+          .al-profile-actions { align-items: stretch; flex-direction: column; }
+          .al-profile-submit { width: 100%; }
+          .al-profile-saved { justify-content: center; }
+          .al-profile-progress-head { align-items: flex-start; }
+          .al-profile-progress-ring { width: 60px; height: 60px; }
+          .al-profile-stat-row { align-items: flex-start; gap: 16px; }
+          .al-profile-stat-row strong { flex: 0 0 auto; }
         }
       `}</style>
 
-      <PageHeader
-        eyebrow="Tu cuenta"
-        title="Tu perfil"
-        subtitle="Cambia tu ciclo, curso o intereses cuando quieras. Se aplica en tus recomendaciones al instante."
-        actions={
-          <div className="hidden md:flex md:items-center md:gap-2">
-            <StudentHeaderActions />
-          </div>
-        }
-      />
+      <div className="al-profile-shell">
+        <PageHeader
+          eyebrow="Tu cuenta"
+          title="Tu perfil"
+          subtitle="Cambia tu ciclo, curso o intereses cuando quieras. Se aplica en tus recomendaciones al instante."
+          actions={
+            <div className="hidden md:flex md:items-center md:gap-2">
+              <StudentHeaderActions />
+            </div>
+          }
+        />
 
       <div className="al-profile-grid">
         <div className="al-profile-card">
@@ -367,7 +396,8 @@ export function ProfileForm({
         </div>
       </div>
 
-      <SavedHub />
+        <SavedHub />
+      </div>
     </>
   );
 }

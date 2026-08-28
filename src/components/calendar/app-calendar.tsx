@@ -193,7 +193,7 @@ export function CalendarView({
   }
 
   return (
-    <div className="space-y-5 text-[#111111]">
+    <div className="min-w-0 space-y-5 text-[#111111]">
       <PageHeader
         eyebrow="Tu agenda"
         title="Calendario"
@@ -203,9 +203,9 @@ export function CalendarView({
         }
       />
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(270px,320px)]">
-        <section className="overflow-hidden rounded-[20px] border border-[#e8e2d8] bg-white text-[#111111] shadow-[0_12px_30px_rgba(17,17,17,0.045)]">
-          <div className="p-4">
+      <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(270px,320px)]">
+        <section className="min-w-0 overflow-hidden rounded-[20px] border border-[#e8e2d8] bg-white text-[#111111] shadow-[0_12px_30px_rgba(17,17,17,0.045)]">
+          <div className="p-3 sm:p-4">
             <CalendarHeader
               month={month}
               onPrevious={() => moveMonth(-1)}
@@ -222,7 +222,7 @@ export function CalendarView({
           </div>
         </section>
 
-        <aside className="space-y-4">
+        <aside className="min-w-0 space-y-4">
           <section className="rounded-[20px] border border-[#e8e2d8] bg-white p-4 text-[#111111] shadow-[0_10px_26px_rgba(17,17,17,0.04)]">
             <div className="flex items-start justify-between gap-3 border-b border-[#f0ece4] pb-3">
               <div>
@@ -311,16 +311,16 @@ function CalendarHeader({ month, compact = false, controlsRef, onPrevious, onNex
   }
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-2">
-        <Button type="button" size="icon" variant="outline" className="h-9 w-9 rounded-xl border-[#e6dfd4] !bg-white !text-[#4e4941] hover:border-[#e5bba8] hover:!bg-[#fff4ee] hover:!text-[#e15d2d]" aria-label="Mes anterior" onClick={onPrevious}><ChevronLeft className="h-4 w-4" /></Button>
-        <Button type="button" size="icon" variant="outline" className="h-9 w-9 rounded-xl border-[#e6dfd4] !bg-white !text-[#4e4941] hover:border-[#e5bba8] hover:!bg-[#fff4ee] hover:!text-[#e15d2d]" aria-label="Mes siguiente" onClick={onNext}><ChevronRight className="h-4 w-4" /></Button>
-        <h2 className="ml-1 text-base font-semibold sm:text-lg">{monthTitle(month)}</h2>
+    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="grid min-w-0 grid-cols-[44px_44px_minmax(0,1fr)] items-center gap-2 sm:flex">
+        <Button type="button" size="icon" variant="outline" className="h-11 w-11 rounded-xl border-[#e6dfd4] !bg-white !text-[#4e4941] hover:border-[#e5bba8] hover:!bg-[#fff4ee] hover:!text-[#e15d2d] sm:h-9 sm:w-9" aria-label="Mes anterior" onClick={onPrevious}><ChevronLeft className="h-4 w-4" /></Button>
+        <Button type="button" size="icon" variant="outline" className="h-11 w-11 rounded-xl border-[#e6dfd4] !bg-white !text-[#4e4941] hover:border-[#e5bba8] hover:!bg-[#fff4ee] hover:!text-[#e15d2d] sm:h-9 sm:w-9" aria-label="Mes siguiente" onClick={onNext}><ChevronRight className="h-4 w-4" /></Button>
+        <h2 className="min-w-0 truncate text-base font-semibold sm:ml-1 sm:text-lg">{monthTitle(month)}</h2>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="grid min-w-0 gap-2 sm:flex sm:flex-wrap sm:items-center">
         {statusSlot}
         {onCreate && (
-          <Button type="button" size="sm" className="h-9 rounded-xl px-3" onClick={onCreate}>
+          <Button type="button" size="sm" className="h-11 w-full justify-center rounded-xl px-3 sm:h-9 sm:w-auto" onClick={onCreate}>
             <Plus className="h-4 w-4" /> Nuevo evento
           </Button>
         )}
@@ -342,13 +342,13 @@ function CalendarMonthGrid({ month, eventsByDay, variant, selectedDay, onSelectD
 
   if (variant === "compact") {
     return (
-      <div className="grid grid-cols-7 gap-1 text-center text-xs text-[#8e887e]">
-        {WEEKDAYS_COMPACT.map((day) => <span key={day} className="pb-0.5 font-semibold">{day}</span>)}
+      <div className="grid min-w-0 grid-cols-7 gap-1 text-center text-xs text-[#8e887e]">
+        {WEEKDAYS_COMPACT.map((day) => <span key={day} className="min-w-0 pb-0.5 font-semibold">{day}</span>)}
         {cells.map((day) => {
           const hasEvents = eventsByDay.has(day.key);
           const selected = selectedDay === day.key;
           return (
-            <button key={day.key} type="button" className={cn("relative flex h-8 items-center justify-center rounded-lg text-sm font-medium transition-colors", day.inMonth ? "text-[#39352e] hover:bg-[#fff0e9]" : "text-[#cbc5ba]", selected && "al-action-soft-selected shadow-[0_4px_10px_rgba(80,43,27,0.06)]", hasEvents && !selected && "bg-[#eef6f0] text-[#1f7a4d] ring-1 ring-[#1f7a4d]/15")} onClick={() => onSelectDay?.(day.key)}>
+            <button key={day.key} type="button" className={cn("relative flex h-10 min-w-0 items-center justify-center rounded-lg text-sm font-medium transition-colors", day.inMonth ? "text-[#39352e] hover:bg-[#fff0e9]" : "text-[#cbc5ba]", selected && "al-action-soft-selected shadow-[0_4px_10px_rgba(80,43,27,0.06)]", hasEvents && !selected && "bg-[#eef6f0] text-[#1f7a4d] ring-1 ring-[#1f7a4d]/15")} onClick={() => onSelectDay?.(day.key)}>
               {day.date.getDate()}
               {hasEvents && <span className={cn("absolute bottom-1 h-1 w-1 rounded-full", selected ? "bg-white" : "bg-[#1f7a4d]")} />}
             </button>
