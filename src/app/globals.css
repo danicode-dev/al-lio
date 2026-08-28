@@ -334,12 +334,19 @@
   line-height: 1.5;
 }
 
-.al-catalog-featured-heart {
-  position: absolute;
-  right: 14px;
-  top: 14px;
-  z-index: 2;
-  box-shadow: 0 2px 8px rgba(17, 17, 17, 0.12);
+/* The favourite control sits in the title row's right-hand cluster next
+   to the status pill - not floated over the corner where it used to
+   overlap and clip the pill. */
+.al-catalog-featured-head-meta {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.al-catalog-featured .al-catalog-featured-heart {
+  width: 30px;
+  height: 30px;
 }
 
 .al-catalog-facts {
@@ -433,6 +440,7 @@
 .al-catalog-featured-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   margin-top: auto;
   padding-top: 4px;
