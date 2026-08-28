@@ -362,9 +362,9 @@ function NewsFacts({ item }: { item: NewsItem }) {
   );
 }
 
-// Banner variants available per cycle under /assets/noticias/
-// (noticia-hero-<cycle>-<1..N>.jpg). While a cycle has none, the branded
-// placeholder stands in - raise its number as artwork lands.
+// Banner variants available per cycle in the news assets folder, named by
+// cycle and index. While a cycle has none, the branded placeholder stands
+// in - raise its number here as the artwork lands.
 const NEWS_HERO_POOL: Record<string, number> = { daw: 0, dam: 0, af: 0, tsaf: 0, mp: 0 };
 
 // An item keeps one stable banner (hashed from its id), so a re-featured
