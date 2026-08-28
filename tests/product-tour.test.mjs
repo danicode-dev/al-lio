@@ -68,30 +68,35 @@ test("unknown or corrupt persisted values fall back to a safe default instead of
 // structural, so they are pinned against the source.
 // ---------------------------------------------------------------------------
 
-test("the tour drives the real UI through the command bus - no synthesised clicks or fake cursor", async () => {
-  const [provider, steps, bus, header, mobileNav] = await Promise.all([
+// Owner-reported: driving the app's own dialogs and menus broke them. The
+// tour now explains the interface instead of operating it - it points, and the
+// student clicks. The pointer is decoration and must stay that way.
+test("the tour points at the interface and never operates it", async () => {
+  const [provider, steps, overlay, header, mobileNav] = await Promise.all([
     read("../src/components/onboarding/tour/tour-provider.tsx"),
     read("../src/lib/onboarding/tour-steps.ts"),
-    read("../src/components/onboarding/tour/tour-ui-bus.ts"),
+    read("../src/components/onboarding/tour/tour-overlay.tsx"),
     read("../src/components/student-header-actions.tsx"),
     read("../src/components/mobile-header-navigation.tsx"),
   ]);
 
-  for (const [label, source] of [["provider", provider], ["steps", steps], ["bus", bus]]) {
+  // The pointer is a visual affordance: no synthetic events anywhere, so it
+  // cannot break whatever it lands on.
+  for (const [label, source] of [["provider", provider], ["steps", steps], ["overlay", overlay]]) {
     assert.doesNotMatch(source, /dispatchEvent|new MouseEvent|\.click\(\)/, `${label} must not synthesise input events`);
-    assert.doesNotMatch(source, /elementFromPoint|clientX/, `${label} must not do cursor coordinate maths`);
+    assert.doesNotMatch(source, /elementFromPoint/, `${label} must not resolve elements from coordinates`);
   }
+  assert.match(overlay, /className=\{cn\("al-tour-pointer"/);
+  assert.match(overlay, /pointer-events: none/, "the pointer must never intercept a real click");
 
-  // The + dialog and the mobile menu keep owning their state; the tour only
-  // publishes intent and they perform it with their own setter.
-  assert.match(header, /useTourUiCommand\("quick-add:open"/);
-  assert.match(header, /setQuickAddOpen\(true\)/);
-  assert.match(mobileNav, /useTourUiCommand\("mobile-menu:open", useCallback\(\(\) => setOpen\(true\)/);
-  assert.match(mobileNav, /useTourUiCommand\("mobile-menu:close", useCallback\(\(\) => setOpen\(false\)/);
-
-  // Both header copies are mounted at once; only the displayed one may react,
-  // or the tour would open two stacked dialogs.
-  assert.match(header, /offsetParent !== null/);
+  // Nothing in the app is opened or closed by the tour any more, so those
+  // components are back to owning their state with no tour coupling at all.
+  for (const [label, source] of [["header", header], ["mobile nav", mobileNav]]) {
+    assert.doesNotMatch(source, /useTourUiCommand|tour-ui-bus/, `${label} must not be driven by the tour`);
+  }
+  // They only expose stable anchors for the pointer to aim at.
+  assert.match(header, /data-tour=\{size === "touch" \? "quick-add-mobile" : "quick-add"\}/);
+  assert.match(mobileNav, /data-tour="mobile-menu-trigger"/);
 });
 
 test("steps synchronise on real conditions, with timeouts only as a recovery ceiling", async () => {
@@ -146,20 +151,21 @@ test("Escape leaves the tour and the overlay never blocks the app permanently", 
   const provider = await read("../src/components/onboarding/tour/tour-provider.tsx");
   assert.match(provider, /event\.key === "Escape"/);
   assert.match(provider, /document\.addEventListener\("keydown", onKeyDown\)/);
-  // Leaving always clears whatever a step opened.
-  assert.match(provider, /publishTourUiCommand\(\{ type: "quick-add:close" \}\)/);
-  assert.match(provider, /publishTourUiCommand\(\{ type: "mobile-menu:close" \}\)/);
+  // Leaving is just tearing down the overlay: because the tour never opened a
+  // dialog or a menu, there is no half-open app state it could leave behind.
+  const stopFn = provider.slice(provider.indexOf("const stop = useCallback"), provider.indexOf("const buildContext"));
+  assert.match(stopFn, /setPhase\("idle"\)/);
+  assert.match(stopFn, /setBusy\(false\)/);
 });
 
 // ---------------------------------------------------------------------------
 // Demo data. The whole point of the marking is that cleanup never has to guess.
 // ---------------------------------------------------------------------------
 
-test("everything the tour creates is marked by origin, through the existing create paths", async () => {
-  const [provider, store, bloc, migration] = await Promise.all([
+test("the one row the tour creates is marked by origin, through the existing create path", async () => {
+  const [provider, store, migration] = await Promise.all([
     read("../src/components/onboarding/tour/tour-provider.tsx"),
     read("../src/components/guest-store.tsx"),
-    read("../src/components/bloc/bloc-notepad.tsx"),
     read("../infra/postgres/migrations/0010_product_tour.sql"),
   ]);
 
@@ -169,11 +175,9 @@ test("everything the tour creates is marked by origin, through the existing crea
   assert.match(provider, /demo_dataset_id: datasetIdRef\.current/);
   assert.match(store, /demo_source: data\.demo_source \?\? null/, "a student's own task stays unmarked");
 
-  // The note goes through Bloc's own createNote.
-  assert.match(bloc, /useTourUiCommand\("bloc:create-note"/);
-  assert.match(bloc, /createNoteRef\.current\?\.\(\{ title: command\.title/);
-
   // Both tables carry the same two columns, so cleanup is one predicate.
+  // bloc_notes is groundwork for the Product Lab (#195); the tour itself only
+  // creates the task.
   for (const table of ["public.tasks", "public.bloc_notes"]) {
     assert.match(
       migration,
@@ -209,14 +213,24 @@ test("tour server actions resolve the user from the session and accept no user i
   }
 });
 
-test("the step list is data, and every navigation step has a mobile path through the menu", async () => {
+test("the step list is data, stays on the dashboard, and picks a reachable target per viewport", async () => {
   const steps = await read("../src/lib/onboarding/tour-steps.ts");
   assert.doesNotMatch(steps, /document\.|window\./, "steps must not reach for the DOM themselves");
   assert.doesNotMatch(steps, /from "react"|\/>/, "the step list is data, not a component");
-  // The same goal needs a different sequence on a phone: open the menu, point
-  // inside it, navigate, close it.
-  assert.match(steps, /if \(context\.viewport === "mobile"\) \{\s*await context\.ui\(\{ type: "mobile-menu:open" \}\);/);
-  assert.match(steps, /await context\.ui\(\{ type: "mobile-menu:close" \}\);/);
+
+  // Nothing is navigated to and nothing is opened: /dashboard is the only
+  // route mentioned, and no step asks the app to change state.
+  const routes = [...steps.matchAll(/route: "([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual([...new Set(routes)], ["/dashboard"], "the tour must not leave the dashboard");
+  assert.doesNotMatch(steps, /context\.navigate\(/, "no step may navigate");
+
+  // On a phone the destinations live behind the menu button, so that is what
+  // the pointer aims at instead of a sidebar entry that is not rendered.
+  assert.match(steps, /viewport === "mobile" \? "\[data-tour='mobile-menu-trigger'\]" : "\[data-tour='nav-roadmap'\]"/);
+  assert.match(steps, /viewport === "mobile" \? "\[data-tour='quick-add-mobile'\]" : "\[data-tour='quick-add'\]"/);
+
+  // The example task is generic and usable, not filler text.
+  assert.match(steps, /const DEMO_TASK_TITLE = "Preparar la entrega de esta semana";/);
 });
 
 test("the overlay measures its target live so a resize or rotation cannot strand the spotlight", async () => {

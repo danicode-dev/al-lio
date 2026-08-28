@@ -31,8 +31,6 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { insertDb, updateDb, deleteDb } from "@/lib/db";
-import { useTourUiCommand, type TourUiCommand } from "@/components/onboarding/tour/tour-ui-bus";
-import { ONBOARDING_DEMO_SOURCE } from "@/lib/onboarding/tour-state";
 import { fetchBlocNotes, migrateLocalBlocNotes } from "@/lib/bloc/notes-actions";
 import { sortByRecentFirst } from "@/lib/bloc/notes-sort";
 import { buildNoteExportHtml } from "@/lib/bloc/note-export";
@@ -553,47 +551,17 @@ export function BlocNotepad() {
     setEditorFormat((current) => ({ ...current, fontSize }));
   }
 
-  // The product tour asks for its example note here rather than writing one
-  // itself, so the note goes through the same creation path as any other.
-  useTourUiCommand("bloc:create-note", useCallback((command: TourUiCommand) => {
-    if (command.type !== "bloc:create-note") return;
-    createNoteRef.current?.({ title: command.title, contentText: command.body, demoDatasetId: command.demoDatasetId });
-  }, []));
-
-  // `seed` is how the product tour creates its example note: same function,
-  // same local state, same persistence - it only supplies the content and the
-  // demo origin instead of starting from an empty note.
-  function createNote(seed?: { title?: string; contentText?: string; demoDatasetId?: string }) {
-    const contentText = seed?.contentText ?? "";
-    const note = createBlocNote({
-      title: seed?.title ?? (settings.defaultTitle.trim() || defaultTitle),
-      contentHtml: contentText ? `<p>${escapeHtml(contentText)}</p>` : "",
-      contentText,
-    });
+  function createNote() {
+    const note = createBlocNote({ title: settings.defaultTitle.trim() || defaultTitle });
     setNotes((current) => [note, ...current]);
     setActiveId(note.id);
     setSearchTerm("");
     setListTab("todas");
     showNotice("Nota creada");
     if (dbSyncEnabledRef.current) {
-      void insertDb("bloc_notes", {
-        id: note.id,
-        title: note.title,
-        content_html: note.contentHtml,
-        content_text: note.contentText,
-        is_favorite: false,
-        deleted_at: null,
-        demo_source: seed?.demoDatasetId ? ONBOARDING_DEMO_SOURCE : null,
-        demo_dataset_id: seed?.demoDatasetId ?? null,
-      }, []);
+      void insertDb("bloc_notes", { id: note.id, title: note.title, content_html: note.contentHtml, content_text: note.contentText, is_favorite: false, deleted_at: null }, []);
     }
   }
-
-  // createNote is a plain function declaration re-created every render; the
-  // ref keeps the bus subscription above (registered before it exists) always
-  // pointing at the current one.
-  const createNoteRef = useRef<typeof createNote | null>(null);
-  createNoteRef.current = createNote;
 
   function duplicateNote(note = activeNote) {
     if (!note) return;
@@ -813,7 +781,7 @@ export function BlocNotepad() {
 
   if (isMobile) {
     return (
-      <div className="al-bloc-mobile-layout relative" data-tour="bloc-main">
+      <div className="al-bloc-mobile-layout relative">
         <style>{blocBrandCss}</style>
         <div className="flex items-center gap-2">
           <div className="al-bloc-search relative flex-1">
@@ -828,7 +796,7 @@ export function BlocNotepad() {
           <button type="button" className="al-bloc-icon-btn h-10 w-10 rounded-xl" onClick={() => setMobileSheet("settings")} aria-label="Ajustes y papelera">
             <SlidersIcon />
           </button>
-          <button type="button" className="al-bloc-primary-btn al-bloc-mobile-create h-10 w-10 rounded-xl p-0" onClick={() => createNote()} aria-label="Nueva nota">
+          <button type="button" className="al-bloc-primary-btn al-bloc-mobile-create h-10 w-10 rounded-xl p-0" onClick={createNote} aria-label="Nueva nota">
             <Plus className="h-5 w-5" />
           </button>
         </div>
@@ -993,7 +961,7 @@ export function BlocNotepad() {
   }
 
   return (
-    <div className="relative" data-tour="bloc-main">
+    <div className="relative">
       <style>{blocBrandCss}</style>
       <div className="al-bloc-desktop-grid grid gap-4 md:grid-cols-[minmax(0,1fr)_300px]">
         <div className="al-bloc-editor-shell min-w-0 overflow-hidden rounded-2xl">
@@ -1088,7 +1056,7 @@ export function BlocNotepad() {
         </div>
 
         <aside className="al-bloc-sidebar flex min-h-[520px] flex-col rounded-2xl">
-          <button type="button" className="al-bloc-primary-btn al-bloc-primary-btn-compact flex w-full items-center justify-center gap-1.5" onClick={() => createNote()}>
+          <button type="button" className="al-bloc-primary-btn al-bloc-primary-btn-compact flex w-full items-center justify-center gap-1.5" onClick={createNote}>
             <Plus className="h-3.5 w-3.5" />
             Nueva nota
           </button>

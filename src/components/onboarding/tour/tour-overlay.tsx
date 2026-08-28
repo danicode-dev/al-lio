@@ -129,16 +129,19 @@ export function TourOverlay({
           without freezing the page: Escape and every control stay live. */}
       <div className="al-tour-scrim" aria-hidden="true" />
       {hasSpotlight && rect && (
-        <div
-          className="al-tour-spotlight"
-          aria-hidden="true"
-          style={{
-            top: rect.top - SPOTLIGHT_PADDING,
-            left: rect.left - SPOTLIGHT_PADDING,
-            width: rect.width + SPOTLIGHT_PADDING * 2,
-            height: rect.height + SPOTLIGHT_PADDING * 2,
-          }}
-        />
+        <>
+          <div
+            className="al-tour-spotlight"
+            aria-hidden="true"
+            style={{
+              top: rect.top - SPOTLIGHT_PADDING,
+              left: rect.left - SPOTLIGHT_PADDING,
+              width: rect.width + SPOTLIGHT_PADDING * 2,
+              height: rect.height + SPOTLIGHT_PADDING * 2,
+            }}
+          />
+          <TourPointer rect={rect} pressing={Boolean(step.pointerClick)} />
+        </>
       )}
       <div
         className={cn("al-tour-callout", isMobileSheet && "al-tour-sheet")}
@@ -168,6 +171,37 @@ export function TourOverlay({
         </div>
       </div>
     </>
+  );
+}
+
+// An oversized pointer that glides between the elements being explained. It is
+// decoration only: it never dispatches an event, so it cannot break whatever it
+// lands on, and if it ends up somewhere odd the tour is still fully usable
+// through its own buttons. Position comes from the live rect, so it follows a
+// resize like the spotlight does.
+function TourPointer({ rect, pressing }: { rect: Rect; pressing: boolean }) {
+  // Sits just inside the element's top-left quadrant rather than dead centre,
+  // where it would cover the very thing being pointed at.
+  const x = rect.left + Math.min(rect.width * 0.5, 44);
+  const y = rect.top + Math.min(rect.height * 0.5, 26);
+
+  return (
+    <div
+      className={cn("al-tour-pointer", pressing && "is-pressing")}
+      aria-hidden="true"
+      style={{ transform: `translate3d(${x}px, ${y}px, 0)` }}
+    >
+      <span className="al-tour-pointer-ring" />
+      <svg viewBox="0 0 24 24" width="30" height="30" focusable="false">
+        <path
+          d="M5.5 3.2 19 12.2l-5.7.9 3 6.1-2.6 1.3-3-6.2-4.2 3.9z"
+          fill="#111111"
+          stroke="#ffffff"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
   );
 }
 
@@ -203,9 +237,18 @@ function TourStyles() {
         font-size: 12.5px; font-weight: 800; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
       .al-tour-primary:hover:not(:disabled) { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); }
       .al-tour-primary:disabled { opacity: .6; cursor: default; }
+      .al-tour-pointer { position: fixed; top: 0; left: 0; z-index: 83; pointer-events: none; filter: drop-shadow(0 3px 6px rgba(17,17,17,.35));
+        transition: transform .55s cubic-bezier(.33,.9,.34,1); }
+      .al-tour-pointer svg { display: block; }
+      .al-tour-pointer-ring { position: absolute; top: 2px; left: 2px; width: 26px; height: 26px; border-radius: 999px;
+        border: 2px solid var(--al-action-soft-text); opacity: 0; transform: scale(.4); }
+      .al-tour-pointer.is-pressing .al-tour-pointer-ring { animation: al-tour-press 1.5s ease-out .45s infinite; }
+      @keyframes al-tour-press { 0% { opacity: .85; transform: scale(.4); } 70% { opacity: 0; transform: scale(1.9); } 100% { opacity: 0; transform: scale(1.9); } }
       @media (prefers-reduced-motion: reduce) {
         .al-tour-spotlight { transition: none; }
         .al-tour-callout { animation: none; }
+        .al-tour-pointer { transition: none; }
+        .al-tour-pointer.is-pressing .al-tour-pointer-ring { animation: none; }
       }
     `}</style>
   );

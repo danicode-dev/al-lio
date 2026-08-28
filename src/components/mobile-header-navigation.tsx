@@ -19,10 +19,9 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { forwardRef, useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { forwardRef, useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { StudentHeaderActions } from "@/components/student-header-actions";
-import { useTourUiCommand } from "@/components/onboarding/tour/tour-ui-bus";
 import { cn } from "@/lib/utils";
 
 const NAVIGATION_ITEMS = [
@@ -50,12 +49,6 @@ export function MobileHeaderNavigation() {
   const menuRootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
-
-  // The product tour opens and closes this menu through the same setter the
-  // trigger button uses, so the sheet, the focus handling and the scroll lock
-  // all behave exactly as they do for a real tap.
-  useTourUiCommand("mobile-menu:open", useCallback(() => setOpen(true), []));
-  useTourUiCommand("mobile-menu:close", useCallback(() => setOpen(false), []));
 
   useEffect(() => {
     setOpen(false);
@@ -106,6 +99,9 @@ export function MobileHeaderNavigation() {
             <button
               ref={triggerRef}
               type="button"
+              // On a phone the destinations live behind this button, so the
+              // tour points here instead of opening the sheet.
+              data-tour="mobile-menu-trigger"
               onClick={() => setOpen((current) => !current)}
               aria-label={open ? "Cerrar navegación" : "Abrir navegación"}
               aria-expanded={open}

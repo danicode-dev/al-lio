@@ -38,7 +38,7 @@ export function DashboardTodo({ store, actions }: { store: Store; actions: Retur
   }
 
   return (
-    <section style={dashboardLightSurface} className="rounded-[20px] border border-[#ece7dc] bg-white p-5 text-[#111111] shadow-[0_10px_26px_rgba(17,17,17,0.045)]">
+    <section data-tour="dashboard-todo" style={dashboardLightSurface} className="rounded-[20px] border border-[#ece7dc] bg-white p-5 text-[#111111] shadow-[0_10px_26px_rgba(17,17,17,0.045)]">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#edf5ff] text-[#2572b9]">

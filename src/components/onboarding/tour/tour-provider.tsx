@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { useStore } from "@/components/guest-store";
-import { publishTourUiCommand, type TourUiCommand } from "@/components/onboarding/tour/tour-ui-bus";
 import { TourOverlay } from "@/components/onboarding/tour/tour-overlay";
 import { pause, prefersReducedMotion, TourAbortError, waitForCondition, waitForElement } from "@/components/onboarding/tour/wait";
 import {
@@ -68,14 +67,14 @@ export function ProductTourProvider({ initialState }: { initialState: ProductTou
     setPhase("invite");
   }, [initialState, pathname, phase]);
 
+  // Nothing to tear down beyond the tour's own overlay: the tour never opened
+  // a dialog or a menu, so leaving cannot leave the app in a half-open state.
   const stop = useCallback(() => {
     runRef.current?.abort();
     runRef.current = null;
     setPhase("idle");
     setTarget(null);
     setBusy(false);
-    publishTourUiCommand({ type: "quick-add:close" });
-    publishTourUiCommand({ type: "mobile-menu:close" });
   }, []);
 
   // Stable for the lifetime of the provider: everything it needs comes from
@@ -88,12 +87,6 @@ export function ProductTourProvider({ initialState }: { initialState: ProductTou
         if (pathnameRef.current === href) return;
         liveRef.current.router.push(href);
         await waitForCondition(() => pathnameRef.current === href, { signal, timeoutMs: 10_000 });
-      },
-      ui: async (command: TourUiCommand) => {
-        publishTourUiCommand(command);
-        // Give React the frame it needs to apply the subscriber's setState
-        // before the step looks for whatever that state renders.
-        await pause(prefersReducedMotion() ? 0 : 90, signal);
       },
       waitForElement: (selector, timeoutMs) => waitForElement(selector, { signal, timeoutMs }),
       beat: (ms = 700) => pause(prefersReducedMotion() ? 0 : ms, signal),
@@ -115,13 +108,6 @@ export function ProductTourProvider({ initialState }: { initialState: ProductTou
         } catch {
           return null;
         }
-      },
-      createDemoNote: async ({ title, body }) => {
-        // The Bloc editor owns its note list and its own persistence; it
-        // performs this with the same createNote() a click performs.
-        publishTourUiCommand({ type: "bloc:create-note", title, body, demoDatasetId: datasetIdRef.current });
-        await pause(prefersReducedMotion() ? 0 : 250, signal);
-        return null;
       },
     }),
     [],
@@ -205,14 +191,6 @@ export function ProductTourProvider({ initialState }: { initialState: ProductTou
     },
     [leaveStep, stop, total],
   );
-
-  // A step that is pure demonstration moves on by itself once its effects have
-  // settled - `busy` going false is the real signal, not a fixed delay.
-  useEffect(() => {
-    if (phase !== "running" || busy || !step?.autoAdvanceMs) return;
-    const timer = window.setTimeout(() => void goTo(index + 1), step.autoAdvanceMs);
-    return () => window.clearTimeout(timer);
-  }, [phase, busy, step, index, goTo]);
 
   // Last-resort watchdog. Every wait inside a step already has its own ceiling,
   // so this should never fire; if some future step ever leaves the runner

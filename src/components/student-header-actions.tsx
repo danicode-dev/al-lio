@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { AlarmClock, Bell, Plus, X } from "lucide-react";
 
 import { useStore } from "@/components/guest-store";
 import { QuickAdd } from "@/components/quick-add";
-import { useTourUiCommand, type TourUiCommand } from "@/components/onboarding/tour/tour-ui-bus";
 import type { Store } from "@/components/store/types";
 import {
   isCalendarEventDone,
@@ -46,43 +45,25 @@ export function StudentHeaderActions({ size = "compact" }: StudentHeaderActionsP
   const pathname = usePathname();
   const { store, actions } = useStore();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [tourPrefill, setTourPrefill] = useState<{ title?: string; notes?: string } | undefined>();
-  const rootRef = useRef<HTMLDivElement>(null);
   const iconButtonClass = `${iconButtonBaseClass} ${size === "touch" ? "h-11 w-11" : "h-9 w-9"}`;
-
-  // The desktop and mobile headers both render this component; only one of
-  // them is ever displayed. offsetParent is null under `display: none`, so
-  // the hidden copy ignores tour commands and the dialog opens exactly once.
-  const isDisplayed = useCallback(() => rootRef.current?.offsetParent !== null, []);
-
-  // The product tour opens the real dialog by setting the same state this
-  // component's own button sets - it never synthesises a click.
-  useTourUiCommand("quick-add:open", useCallback((command: TourUiCommand) => {
-    if (command.type !== "quick-add:open" || !isDisplayed()) return;
-    setTourPrefill(command.prefill);
-    setQuickAddOpen(true);
-  }, [isDisplayed]));
-
-  useTourUiCommand("quick-add:close", useCallback(() => {
-    setQuickAddOpen(false);
-    setTourPrefill(undefined);
-  }, []));
 
   if (!isVisibleRoute(pathname)) return null;
 
   return (
-    <div ref={rootRef} className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1.5">
       <button
         type="button"
+        // Anchor the product tour points at. The tour only highlights and
+        // explains this button - it never opens the dialog itself.
         data-tour={size === "touch" ? "quick-add-mobile" : "quick-add"}
-        onClick={() => { setTourPrefill(undefined); setQuickAddOpen(true); }}
+        onClick={() => setQuickAddOpen(true)}
         aria-label="Añadir rápido"
         className={iconButtonClass}
       >
         <Plus className="h-4 w-4" />
       </button>
       <NotificationsPopover store={store} buttonClassName={iconButtonClass} />
-      <QuickAdd open={quickAddOpen} setOpen={setQuickAddOpen} actions={actions} prefill={tourPrefill} />
+      <QuickAdd open={quickAddOpen} setOpen={setQuickAddOpen} actions={actions} />
     </div>
   );
 }
