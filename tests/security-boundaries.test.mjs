@@ -490,9 +490,8 @@ test("The mobile header menu replaces the bottom navigation without changing the
   assert.match(mobileSource, /src="\/assets\/al_lio_logo_horizontal\.png"/);
   assert.match(mobileSource, /<Menu className=/, "the closed navigation trigger must be icon-only");
   assert.doesNotMatch(mobileSource, />Secciones</, "the icon-only menu trigger must not add a visible text label");
-  assert.match(mobileSource, /<StudentHeaderActions showCalendar=\{false\} size="touch" \/>/, "mobile keeps touch-sized Quick Add and notifications but removes Calendar from the action cluster");
-  assert.match(headerSource, /showCalendar = true/, "desktop page headers must continue showing Calendar by default");
-  assert.match(headerSource, /\{showCalendar && \(/);
+  assert.match(mobileSource, /<StudentHeaderActions size="touch" \/>/, "mobile keeps touch-sized Quick Add and notifications");
+  assert.doesNotMatch(headerSource, /Abrir calendario|CalendarDays/, "Calendar belongs in navigation and must not be duplicated in any page-header action cluster");
   assert.match(mobileSource, /h-11 w-11/, "the mobile menu trigger must meet the 44px touch-target minimum");
   assert.match(headerSource, /size === "touch" \? "h-11 w-11" : "h-9 w-9"/, "mobile actions must use 44px touch targets without enlarging desktop controls");
   assert.match(mobileSource, /className="mr-2\.5"/, "navigation must be visibly separated from the action cluster");
@@ -516,7 +515,7 @@ test("The mobile header menu replaces the bottom navigation without changing the
   assert.match(mobileSource, /pathname === href \|\| \(href !== "\/dashboard" && pathname\.startsWith\(`\$\{href\}\/`\)\)/);
 });
 
-test("Quick Add, Calendar and Notifications form one shared header action group, with a calendar-free mobile instance and complete desktop instances (issue #91, issue #129, issue #182)", async () => {
+test("Quick Add and Notifications form one shared header action group on mobile and desktop, while Calendar lives only in navigation (issue #91, issue #129, issue #182)", async () => {
   const [headerSource, layoutSource, mobileSource, guestAppSource, quickAddSource, dashboardClientSource, dashboardGreetingSource] = await Promise.all([
     readFile(new URL("../src/components/student-header-actions.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
@@ -527,11 +526,12 @@ test("Quick Add, Calendar and Notifications form one shared header action group,
     readFile(new URL("../src/components/dashboard/dashboard-greeting.tsx", import.meta.url), "utf8"),
   ]);
 
-  // Desktop order: Quick Add, then Calendar, then Notifications.
+  // Shared order: Quick Add, then Notifications. Calendar is reachable from
+  // the mobile menu and desktop sidebar instead of being duplicated here.
   const quickAddIdx = headerSource.indexOf('aria-label="Añadir rápido"');
-  const calendarIdx = headerSource.indexOf('aria-label="Abrir calendario"');
   const notifIdx = headerSource.search(/aria-label=\{alerts\.length/);
-  assert.ok(quickAddIdx > -1 && calendarIdx > quickAddIdx && notifIdx > calendarIdx, "expected Quick Add, Calendar, Notifications in that order");
+  assert.ok(quickAddIdx > -1 && notifIdx > quickAddIdx, "expected Quick Add followed by Notifications");
+  assert.doesNotMatch(headerSource, /aria-label="Abrir calendario"|CalendarDays/);
 
   // Every required student page is covered by the route allowlist.
   for (const route of ["/dashboard", "/roadmap", "/tasks", "/bloc", "/noticias", "/work", "/courses", "/hackathons", "/calendar", "/profile"]) {
@@ -542,11 +542,11 @@ test("Quick Add, Calendar and Notifications form one shared header action group,
 
   // issue #129 and #182: the layout owns neither a detached desktop action row
   // nor a second mobile copy. The mobile shell composes the shared action group
-  // once and opts out of Calendar; desktop page headers keep the default group.
+  // once at touch size; desktop page headers keep the compact default group.
   const layoutMounts = (layoutSource.match(/<StudentHeaderActions\b/g) ?? []).length;
-  const mobileMounts = (mobileSource.match(/<StudentHeaderActions showCalendar=\{false\} size="touch" \/>/g) ?? []).length;
+  const mobileMounts = (mobileSource.match(/<StudentHeaderActions size="touch" \/>/g) ?? []).length;
   assert.equal(layoutMounts, 0, "the layout must delegate the complete mobile header to MobileHeaderNavigation");
-  assert.equal(mobileMounts, 1, "expected exactly one calendar-free action group in the mobile header");
+  assert.equal(mobileMounts, 1, "expected exactly one touch-sized action group in the mobile header");
 
   // The old per-view/per-route duplicates are gone: no more BrandHeaderActions row,
   // no more floating QuickAdd mount, no more local NotificationBell in guest-app.tsx.

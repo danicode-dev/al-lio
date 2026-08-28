@@ -167,7 +167,7 @@ export function MobileHeaderNavigation() {
             )}
           </div>
 
-          <StudentHeaderActions showCalendar={false} size="touch" />
+          <StudentHeaderActions size="touch" />
         </div>
       </div>
     </header>

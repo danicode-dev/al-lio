@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { AlarmClock, Bell, CalendarDays, Plus, X } from "lucide-react";
+import { AlarmClock, Bell, Plus, X } from "lucide-react";
 
 import { useStore } from "@/components/guest-store";
 import { QuickAdd } from "@/components/quick-add";
@@ -38,11 +38,10 @@ function isVisibleRoute(pathname: string) {
 }
 
 type StudentHeaderActionsProps = {
-  showCalendar?: boolean;
   size?: "compact" | "touch";
 };
 
-export function StudentHeaderActions({ showCalendar = true, size = "compact" }: StudentHeaderActionsProps = {}) {
+export function StudentHeaderActions({ size = "compact" }: StudentHeaderActionsProps = {}) {
   const pathname = usePathname();
   const { store, actions } = useStore();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -55,11 +54,6 @@ export function StudentHeaderActions({ showCalendar = true, size = "compact" }: 
       <button type="button" onClick={() => setQuickAddOpen(true)} aria-label="Añadir rápido" className={iconButtonClass}>
         <Plus className="h-4 w-4" />
       </button>
-      {showCalendar && (
-        <Link href="/calendar" aria-label="Abrir calendario" className={iconButtonClass}>
-          <CalendarDays className="h-4 w-4" />
-        </Link>
-      )}
       <NotificationsPopover store={store} buttonClassName={iconButtonClass} />
       <QuickAdd open={quickAddOpen} setOpen={setQuickAddOpen} actions={actions} />
     </div>
