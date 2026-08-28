@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { tryGetCurrentUserId } from "@/lib/auth/current-user";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
-import { getRadarItemDetailForUser, getRelatedNewsItems } from "@/lib/db/repositories/radar";
+import { getNextRadarNewsItem, getRadarItemDetailForUser } from "@/lib/db/repositories/radar";
 import { isValidRadarItemId } from "@/lib/radar/item-id";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +22,6 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   const item = await getRadarItemDetailForUser(userId, profile.cycle_code, id);
   if (!item) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const related = await getRelatedNewsItems(userId, profile.cycle_code, item);
-  return NextResponse.json({ item, related }, { headers: { "Cache-Control": "private, no-store" } });
+  const nextItem = await getNextRadarNewsItem(userId, profile.cycle_code, item.id);
+  return NextResponse.json({ item, nextItem }, { headers: { "Cache-Control": "private, no-store" } });
 }

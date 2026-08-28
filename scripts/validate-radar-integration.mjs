@@ -24,6 +24,8 @@ const contract = read("src/lib/radar/contract.ts");
 const authentication = read("src/lib/radar/webhook-auth.ts");
 const signature = read("src/lib/radar/signature.ts");
 const repository = read("src/lib/db/repositories/radar.ts");
+const v4Repository = read("src/lib/db/repositories/radar-v4.ts");
+const v4Projection = read("src/lib/radar/v4-projection.ts");
 const newsRoute = read("src/app/api/news/route.ts");
 const compose = read("infra/docker-compose.prod.yml");
 const radarService = compose.split("  al_lio_radar:")[1]?.split("  al_lio_migrator:")[0] ?? "";
@@ -37,6 +39,9 @@ check("receiver persists through a transactional operation", ingestRoute.include
 
 check("contract emits schemaVersion 3", contract.includes("RADAR_SCHEMA_VERSION = 3") && contract.includes("schemaVersion: z.literal(RADAR_SCHEMA_VERSION)"));
 check("receiver keeps schemaVersion 2 rollout compatibility", contract.includes("RADAR_LEGACY_SCHEMA_VERSION = 2") && authentication.includes("RADAR_SUPPORTED_SCHEMA_VERSIONS"));
+check("receiver adds strict schemaVersion 4 compatibility", contract.includes("RADAR_V4_SCHEMA_VERSION = 4") && contract.includes("radarDeliveryV4Schema"));
+check("v4 requires field evidence whose hash matches the fact value", contract.includes("Verified fact ${fieldPath} requires matching field-level evidence") && contract.includes("radarV4ValueHash"));
+check("v4 derived copy requires explicit provenance", contract.includes("requires explicit provenance") && contract.includes("sourceFields"));
 check("contract requires explicit destinations and semantic keys", contract.includes("RADAR_DESTINATIONS") && contract.includes("semanticKey"));
 check("contract accepts approved items only", contract.includes('reviewStatus: z.literal("approved")'));
 check("contract requires a complete publication audit", contract.includes("reviewedBy: z.string().trim().min(1)") && contract.includes("reviewReason: z.string().trim().min(1)"));
@@ -55,6 +60,11 @@ check("queries exclude expired content", repository.includes("item.expires_at IS
 check("News receives only current news and legal content", repository.includes("item.destination = 'news'") && repository.includes("interval '7 days'") && repository.includes("interval '30 days'") && repository.includes("state.status = 'saved'"));
 check("course and event destinations materialize in the global FP catalogue", repository.includes("upsertRadarCatalogItem") && repository.includes("fp_content_cycle_fit"));
 check("student state is isolated by user", repository.includes("radar_item_user_states") && repository.includes("user_id"));
+check("v4 persists canonical entities, occurrences and revisions", v4Repository.includes("radar_content_entities") && v4Repository.includes("radar_content_occurrences") && v4Repository.includes("radar_content_revisions"));
+check("v4 preserves last-known-good facts on missing extraction", v4Projection.includes("source_unavailable") && v4Projection.includes("kept_last_known_good"));
+check("v4 projection is destination-flagged and disabled by default", v4Projection.includes("AL_LIO_RADAR_V4_PROJECT_DESTINATIONS") && v4Projection.includes('raw = process.env.AL_LIO_RADAR_V4_PROJECT_DESTINATIONS ?? ""'));
+check("v4 identity aliases reuse canonical occurrences", v4Repository.includes("radar_content_identity_aliases") && v4Repository.includes("canonical-occurrence-key-transition"));
+check("v4 legacy catalogue projection reuses existing rows", v4Repository.includes("legacy_fp_content_item_id") && v4Repository.includes("radar_semantic_key = $1"));
 
 check("News obtains the authenticated profile cycle", newsRoute.includes("getProfileByUser") && newsRoute.includes("profile.cycle_code"));
 check("News queries only the Radar repository", newsRoute.includes("listRadarItemsForCycle"));

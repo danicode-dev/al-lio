@@ -14,7 +14,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createRequire } from "node:module";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { loadMigrationFiles } from "./postgres/migration-files.mjs";
 
 const require = createRequire(import.meta.url);
@@ -88,6 +88,10 @@ const EXPECTED_TABLES = [
   "fp_cycles", "fp_content_items", "fp_content_cycle_fit", "fp_user_content_state",
   "fp_skills", "fp_user_competency_state",
   "radar_deliveries", "radar_items", "radar_delivery_items", "radar_item_user_states",
+  "radar_content_entities", "radar_content_occurrences", "radar_content_revisions",
+  "radar_content_current_facts", "radar_content_field_evidence", "radar_content_targets",
+  "radar_content_identity_aliases", "radar_delivery_revisions", "radar_content_conflicts",
+  "radar_projector_events", "radar_ingest_events",
   "fp_learning_competencies", "fp_learning_resources", "fp_learning_competency_resources",
   "fp_user_learning_state", "fp_learning_notes",
 ];
@@ -103,6 +107,10 @@ const EXPECTED_INDEXES = [
   "radar_items_cycles_idx",
   "radar_items_active_date_idx",
   "radar_item_user_states_user_idx",
+  "radar_content_occurrences_destination_lifecycle_idx",
+  "radar_content_revisions_occurrence_idx",
+  "radar_content_field_evidence_field_idx",
+  "radar_content_targets_lookup_idx",
   "fp_learning_competencies_cycle_idx",
   "fp_user_learning_state_user_idx",
   "fp_learning_notes_user_resource_idx",
@@ -332,12 +340,113 @@ try {
   );
   ok("INSERT radar delivery/item/user state (constraints y FK OK)");
 
+  console.log("\n── Radar v4 canonical model ──");
+  const v4DeliveryId = randomUUID();
+  const v4EntityKey = randomBytes(32).toString("hex");
+  const v4OccurrenceKey = randomBytes(32).toString("hex");
+  const v4Fingerprint = randomBytes(32).toString("hex");
+  await client.query(
+    `INSERT INTO public.radar_deliveries (delivery_id, schema_version, payload_hash, item_count)
+     VALUES ($1, 4, $2, 1)`,
+    [v4DeliveryId, randomBytes(32).toString("hex")],
+  );
+  const entityResult = await client.query(
+    `INSERT INTO public.radar_content_entities (
+       entity_key, destination, opportunity_type, title, provider, first_seen_at, last_verified_at
+     ) VALUES ($1, 'course', 'course', 'Curso v4 sandbox', 'Proveedor oficial', now(), now())
+     RETURNING id`,
+    [v4EntityKey],
+  );
+  const entityId = entityResult.rows[0].id;
+  const occurrenceResult = await client.query(
+    `INSERT INTO public.radar_content_occurrences (
+       entity_id, source_id, source_name, external_id, occurrence_key, canonical_url,
+       primary_evidence_url, trust_tier, source_verified_at, current_revision,
+       material_fingerprint, publication_decision, source_lifecycle_status,
+       ranking_priority, title, summary_short, provider
+     ) VALUES (
+       $1, 'sandbox-v4', 'Sandbox v4', 'course-1', $2,
+       'https://example.test/v4/course', 'https://example.test/v4/course', 'official',
+       now(), 1, $3, 'accepted', 'registration_open', 80,
+       'Curso v4 sandbox', 'Resumen verificado', 'Proveedor oficial'
+     ) RETURNING id`,
+    [entityId, v4OccurrenceKey, v4Fingerprint],
+  );
+  const occurrenceId = occurrenceResult.rows[0].id;
+  const revisionResult = await client.query(
+    `INSERT INTO public.radar_content_revisions (
+       occurrence_id, revision, material_fingerprint, publication_decision,
+       ranking_priority, payload_snapshot
+     ) VALUES ($1, 1, $2, 'accepted', 80, '{"schemaVersion":4}'::jsonb)
+     RETURNING id`,
+    [occurrenceId, v4Fingerprint],
+  );
+  const revisionId = revisionResult.rows[0].id;
+  await client.query(
+    `INSERT INTO public.radar_content_field_evidence (
+       revision_id, field_path, origin, evidence_kind, evidence_url,
+       observed_at, value_hash, authority_rank
+     ) VALUES ($1, 'facts.title', 'authoritative_source', 'source_page',
+       'https://example.test/v4/course', now(), $2, 100)`,
+    [revisionId, randomBytes(32).toString("hex")],
+  );
+  await client.query(
+    `INSERT INTO public.radar_content_targets (revision_id, target_type, target_value)
+     VALUES ($1, 'cycle', 'DAW')`,
+    [revisionId],
+  );
+  await client.query(
+    `INSERT INTO public.radar_delivery_revisions (delivery_id, revision_id) VALUES ($1, $2)`,
+    [v4DeliveryId, revisionId],
+  );
+  ok("INSERT Radar v4 entity/occurrence/revision/evidence/target (constraints and FK OK)");
+
+  let publicationStateRejected = false;
+  try {
+    await client.query(
+      `UPDATE public.radar_content_occurrences SET publication_decision = 'started' WHERE id = $1`,
+      [occurrenceId],
+    );
+  } catch (err) {
+    publicationStateRejected = err.code === "23514";
+  }
+  publicationStateRejected
+    ? ok("publicationDecision rejects an AL-LIO user-state value")
+    : fail("publicationDecision accepted an AL-LIO user-state value");
+
+  let userLifecycleRejected = false;
+  const v4StateContentResult = await client.query(
+    `INSERT INTO public.fp_content_items (
+       id_slug, type, title, description, source_url, source_year
+     ) VALUES ($1, 'curso_complementario', 'Curso estado sandbox',
+       'Fila temporal para comprobar dominios', 'https://example.test/v4/state', '2026')
+     RETURNING id`,
+    [`sandbox-v4-state-${Date.now()}`],
+  );
+  const v4StateContentId = v4StateContentResult.rows[0].id;
+  try {
+    await client.query(
+      `INSERT INTO public.fp_user_content_state (user_id, content_item_id, status)
+       VALUES ($1, $2, 'registration_open')`,
+      [userId, v4StateContentId],
+    );
+  } catch (err) {
+    userLifecycleRejected = err.code === "23514";
+  }
+  userLifecycleRejected
+    ? ok("userState rejects a source-lifecycle value")
+    : fail("userState accepted a source-lifecycle value");
+
   // ── Limpiar datos de prueba ────────────────────────────────────────────────
   console.log("\n── Limpieza ──");
   await client.query(`DELETE FROM public.users WHERE id = $1`, [userId]);
   await client.query(`DELETE FROM public.fp_learning_resources WHERE id = $1`, [learningResourceId]);
   await client.query(`DELETE FROM public.radar_items WHERE id = $1`, [radarItemId]);
   await client.query(`DELETE FROM public.radar_deliveries WHERE delivery_id = $1`, [deliveryId]);
+  await client.query(`DELETE FROM public.radar_deliveries WHERE delivery_id = $1`, [v4DeliveryId]);
+  await client.query(`DELETE FROM public.radar_content_occurrences WHERE id = $1`, [occurrenceId]);
+  await client.query(`DELETE FROM public.radar_content_entities WHERE id = $1`, [entityId]);
+  await client.query(`DELETE FROM public.fp_content_items WHERE id = $1`, [v4StateContentId]);
   ok("datos de prueba eliminados (CASCADE en tablas dependientes)");
 
 } catch (err) {
