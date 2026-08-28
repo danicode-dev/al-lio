@@ -2,26 +2,32 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Bell,
   BookmarkCheck,
   CheckCircle2,
   ExternalLink,
-  Newspaper,
   RefreshCw,
   Search,
   ShieldCheck,
-  SlidersHorizontal,
 } from "lucide-react";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { NewsItem, NewsStatus, NewsSyncStatus, NewsTrustTier } from "@/lib/news/types";
+import type { NewsItem, NewsSyncStatus, NewsTrustTier } from "@/lib/news/types";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
+import {
+  CollectionAction,
+  CollectionControls,
+  FilterChips,
+  FilterPanelCompact,
+} from "@/components/catalog/collection-controls";
 
 type ApiResponse = { items: NewsItem[]; status: NewsSyncStatus };
 type SortMode = "date" | "trust";
+// The four control-strip entries double as the KPI counts and the status
+// filter, exactly like Cursos and Eventos: "recientes" is the whole current
+// feed and the other three are subsets of the loaded items.
+type ViewTab = "hoy" | "recientes" | "sinleer" | "guardadas";
 
 export const TRUST_LABELS: Record<NewsTrustTier, string> = {
   official: "Oficial",
@@ -53,7 +59,7 @@ export function NewsView() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<NewsStatus | "all">("all");
+  const [viewTab, setViewTab] = useState<ViewTab>("recientes");
   const [sourceFilter, setSourceFilter] = useState("");
   const [sort, setSort] = useState<SortMode>("date");
   const [showFilters, setShowFilters] = useState(false);
@@ -147,10 +153,23 @@ export function NewsView() {
     [items],
   );
 
+  // Counts and tab contents come from the same loaded items, so the number
+  // on a tab always matches the list it opens.
+  const recientes = useMemo(
+    () => items.filter((item) => item.status !== "saved" || isCurrentItem(item)),
+    [items],
+  );
+  const hoy = useMemo(() => recientes.filter(isPublishedToday), [recientes]);
+  const sinLeer = useMemo(() => items.filter((item) => item.status === "new"), [items]);
+  const guardadas = useMemo(() => items.filter((item) => item.status === "saved"), [items]);
+
+  const tabBase = useMemo(
+    () => viewTab === "hoy" ? hoy : viewTab === "sinleer" ? sinLeer : viewTab === "guardadas" ? guardadas : recientes,
+    [viewTab, hoy, sinLeer, guardadas, recientes],
+  );
+
   const filteredItems = useMemo(() => {
-    const filtered = items.filter((item) => {
-      if (statusFilter === "all" && item.status === "saved" && !isCurrentItem(item)) return false;
-      if (statusFilter !== "all" && item.status !== statusFilter) return false;
+    const filtered = tabBase.filter((item) => {
       if (sourceFilter && item.sourceId !== sourceFilter) return false;
       if (!search) return true;
       return [item.title, item.description ?? "", item.sourceName, ...item.topics, ...item.moduleCodes]
@@ -163,15 +182,14 @@ export function NewsView() {
       }
       return itemDate(second).localeCompare(itemDate(first));
     });
-  }, [items, search, sourceFilter, sort, statusFilter]);
+  }, [tabBase, search, sourceFilter, sort]);
 
-  const featuredItem = statusFilter === "saved" ? null : filteredItems.find((item) => item.isFeatured) ?? null;
+  const featuredItem = viewTab === "guardadas" ? null : filteredItems.find((item) => item.isFeatured) ?? null;
   const regularItems = featuredItem ? filteredItems.filter((item) => item.id !== featuredItem.id) : filteredItems;
 
-  const activeFilterCount = [statusFilter !== "all", Boolean(sourceFilter), sort !== "date"].filter(Boolean).length;
+  const activeFilterCount = [Boolean(sourceFilter), sort !== "date"].filter(Boolean).length;
 
   function clearFilters() {
-    setStatusFilter("all");
     setSourceFilter("");
     setSort("date");
     setSearchInput("");
@@ -179,7 +197,10 @@ export function NewsView() {
   }
 
   return (
-    <div className="space-y-5">
+    // Same shell as Courses and Events: a space-y-6 wrapper around the page
+    // header plus an .al-catalog-view block, so the vertical rhythm and the
+    // phone-only pull-up above the control strip match those routes.
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Radar de noticias"
         title={
@@ -206,117 +227,98 @@ export function NewsView() {
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[230px] flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a958a]" />
-          <Input
-            className="h-10 rounded-xl border-[#ece7dc] bg-white pl-9 text-sm"
-            placeholder="Buscar por título, tema o módulo..."
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-          />
-        </div>
-        <button
-          type="button"
-          onClick={() => void load({ quiet: true })}
-          disabled={refreshing}
-          className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#ece7dc] bg-white px-3 text-xs font-semibold text-[#333029] disabled:opacity-60"
-        >
-          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-          Recargar lista
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowFilters((current) => !current)}
-          className={cn(
-            "inline-flex h-10 items-center gap-2 rounded-xl border border-[#ece7dc] bg-white px-3 text-xs font-semibold text-[#333029]",
-            showFilters && "border-[#efb79f] bg-[#fbe7dd] text-[#c94f21]",
-          )}
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          Filtros{activeFilterCount ? ` ${activeFilterCount}` : ""}
-        </button>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard icon={Newspaper} value={status?.todayItems ?? 0} label="Publicadas hoy" color="#E15D2D" background="#fbe7dd" />
-        <StatCard icon={Bell} value={status?.totalItems ?? 0} label="Últimos 7 días" color="#1f7a4d" background="#e7f5ee" />
-        <StatCard icon={CheckCircle2} value={status?.newItems ?? 0} label="Sin leer" color="#475569" background="#eef2f6" />
-        <StatCard icon={BookmarkCheck} value={status?.savedItems ?? 0} label="Guardadas" color="#b4791f" background="#fdf1dd" />
-      </div>
-
-      <div className="flex flex-col gap-1 rounded-xl border border-[#ece7dc] bg-[#faf8f3] px-4 py-3 text-xs text-[#6b6f72] sm:flex-row sm:items-center sm:justify-between">
-        <span>La actualidad caduca a los 7 días; tus noticias guardadas permanecen en su archivo.</span>
-        <span className="font-semibold text-[#333029]">
-          Última actualización: {status?.lastReceivedAt ? formatDateTime(status.lastReceivedAt) : "todavía no disponible"}
-        </span>
-      </div>
-
-      {showFilters && (
-        <div className="grid gap-4 rounded-2xl border border-[#ece7dc] bg-white p-4 shadow-sm sm:grid-cols-3">
-          <FilterGroup label="Orden">
-            <FilterButton active={sort === "date"} onClick={() => setSort("date")}>Reciente</FilterButton>
-            <FilterButton active={sort === "trust"} onClick={() => setSort("trust")}>Confianza</FilterButton>
-          </FilterGroup>
-          <FilterGroup label="Estado">
-            {(["all", "new", "read", "saved"] as const).map((value) => (
-              <FilterButton key={value} active={statusFilter === value} onClick={() => setStatusFilter(value)}>
-                {{ all: "Todas", new: "Nueva", read: "Leída", saved: "Guardada" }[value]}
-              </FilterButton>
-            ))}
-          </FilterGroup>
-          <div>
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#9a958a]">Fuente</p>
-            <select
-              value={sourceFilter}
-              onChange={(event) => setSourceFilter(event.target.value)}
-              className="h-9 w-full rounded-lg border border-[#ece7dc] bg-white px-2 text-xs text-[#333029]"
-            >
-              <option value="">Todas las fuentes</option>
-              {sources.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-            </select>
-            {activeFilterCount > 0 && (
-              <button type="button" onClick={clearFilters} className="mt-2 text-xs font-semibold text-[#c94f21]">Limpiar filtros</button>
+      <div className="al-catalog-view space-y-4">
+        <div className="al-cc-shell">
+          <CollectionControls
+            searchValue={searchInput}
+            onSearchChange={setSearchInput}
+            searchPlaceholder="Buscar por título, tema o módulo..."
+            tabs={[
+              { id: "hoy", label: "Publicadas hoy", count: hoy.length },
+              { id: "recientes", label: "Últimos 7 días", count: recientes.length },
+              { id: "sinleer", label: "Sin leer", count: sinLeer.length },
+              { id: "guardadas", label: "Guardadas", count: guardadas.length },
+            ]}
+            activeTab={viewTab}
+            onTabChange={(id) => { setViewTab(id as ViewTab); clearFilters(); }}
+            filterCount={activeFilterCount}
+            filtersOpen={showFilters}
+            onToggleFilters={() => setShowFilters((current) => !current)}
+            extraActions={(
+              <CollectionAction
+                icon={<RefreshCw className={cn(refreshing && "animate-spin")} />}
+                label="Recargar"
+                onClick={() => void load({ quiet: true })}
+                disabled={refreshing}
+              />
             )}
+          />
+
+          {showFilters && (
+            <FilterPanelCompact activeCount={activeFilterCount} onClear={clearFilters} onClose={() => setShowFilters(false)}>
+              <div>
+                <p className="al-fp-row-label">Orden</p>
+                <FilterChips
+                  options={[["date", "Reciente"], ["trust", "Confianza"]]}
+                  value={sort}
+                  onChange={(value) => setSort((value || "date") as SortMode)}
+                />
+              </div>
+              <div>
+                <p className="al-fp-row-label">Fuente</p>
+                <FilterChips
+                  options={[["", "Todas"], ...sources.map(([id, name]): [string, string] => [id, name])]}
+                  value={sourceFilter}
+                  onChange={setSourceFilter}
+                />
+              </div>
+            </FilterPanelCompact>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1 rounded-xl border border-[#ece7dc] bg-[#faf8f3] px-4 py-3 text-xs text-[#6b6f72] sm:flex-row sm:items-center sm:justify-between">
+          <span>La actualidad caduca a los 7 días; tus noticias guardadas permanecen en su archivo.</span>
+          <span className="font-semibold text-[#333029]">
+            Última actualización: {status?.lastReceivedAt ? formatDateTime(status.lastReceivedAt) : "todavía no disponible"}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-[#6b6f72]">Mostrando {filteredItems.length} contenidos de {sources.length} fuentes verificadas</p>
+          <div className="flex rounded-xl border border-[#ece7dc] bg-white p-1">
+            <FilterButton active={viewMode === "list"} onClick={() => setViewMode("list")}>Lista</FilterButton>
+            <FilterButton active={viewMode === "grid"} onClick={() => setViewMode("grid")}>Grid</FilterButton>
           </div>
         </div>
-      )}
 
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-[#6b6f72]">Mostrando {filteredItems.length} contenidos de {sources.length} fuentes verificadas</p>
-        <div className="flex rounded-xl border border-[#ece7dc] bg-white p-1">
-          <FilterButton active={viewMode === "list"} onClick={() => setViewMode("list")}>Lista</FilterButton>
-          <FilterButton active={viewMode === "grid"} onClick={() => setViewMode("grid")}>Grid</FilterButton>
-        </div>
+        {loading && items.length === 0 ? (
+          <EmptyState icon={RefreshCw} title="Cargando noticias verificadas..." />
+        ) : filteredItems.length === 0 ? (
+          <EmptyState
+            icon={Search}
+            title="Todavía no hay contenido aprobado"
+            description="Radar solo mostrará información reciente que supere los controles de relevancia de tu ciclo."
+          />
+        ) : (
+          <div className="space-y-4">
+            {featuredItem && (
+              <NewsCard
+                item={featuredItem}
+                featured
+                onRead={() => void markRead(featuredItem)}
+                onSave={() => void saveItem(featuredItem)}
+              />
+            )}
+            {regularItems.length > 0 && (
+              <div className={cn("grid gap-3", viewMode === "grid" && "sm:grid-cols-2 xl:grid-cols-3")}>
+                {regularItems.map((item) => (
+                  <NewsCard key={item.id} item={item} onRead={() => void markRead(item)} onSave={() => void saveItem(item)} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {loading && items.length === 0 ? (
-        <EmptyState icon={RefreshCw} title="Cargando noticias verificadas..." />
-      ) : filteredItems.length === 0 ? (
-        <EmptyState
-          icon={Search}
-          title="Todavía no hay contenido aprobado"
-          description="Radar solo mostrará información reciente que supere los controles de relevancia de tu ciclo."
-        />
-      ) : (
-        <div className="space-y-4">
-          {featuredItem && (
-            <NewsCard
-              item={featuredItem}
-              featured
-              onRead={() => void markRead(featuredItem)}
-              onSave={() => void saveItem(featuredItem)}
-            />
-          )}
-          {regularItems.length > 0 && (
-            <div className={cn("grid gap-3", viewMode === "grid" && "sm:grid-cols-2 xl:grid-cols-3")}>
-              {regularItems.map((item) => (
-                <NewsCard key={item.id} item={item} onRead={() => void markRead(item)} onSave={() => void saveItem(item)} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
@@ -400,25 +402,6 @@ function NewsCard({ item, featured = false, onRead, onSave }: {
   );
 }
 
-function StatCard({ icon: Icon, value, label, color, background }: {
-  icon: typeof Newspaper;
-  value: number;
-  label: string;
-  color: string;
-  background: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-[#ece7dc] bg-white p-4 shadow-[0_8px_20px_rgba(17,17,17,0.04)]">
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ color, background }}><Icon className="h-4 w-4" /></span>
-      <div><p className="text-xl font-extrabold leading-none text-[#111111]">{value}</p><p className="mt-1 text-[11px] font-semibold text-[#6b6f72]">{label}</p></div>
-    </div>
-  );
-}
-
-function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div><p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#9a958a]">{label}</p><div className="flex flex-wrap gap-1.5">{children}</div></div>;
-}
-
 function FilterButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
@@ -446,6 +429,15 @@ export function EmptyState({ icon: Icon, title, description }: { icon: typeof Se
 
 function itemDate(item: NewsItem): string {
   return item.publishedAt ?? item.fetchedAt;
+}
+
+function isPublishedToday(item: NewsItem): boolean {
+  const date = new Date(itemDate(item));
+  if (Number.isNaN(date.getTime())) return false;
+  const today = new Date();
+  return date.getFullYear() === today.getFullYear()
+    && date.getMonth() === today.getMonth()
+    && date.getDate() === today.getDate();
 }
 
 function isCurrentItem(item: NewsItem): boolean {
