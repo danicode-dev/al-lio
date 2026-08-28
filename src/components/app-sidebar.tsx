@@ -129,6 +129,10 @@ export function AppSidebar({ userName, defaultCollapsed = false, hasPersistedPre
                   <Link
                     key={item.href}
                     href={item.href}
+                    // Stable hook for the product tour's spotlight. Derived
+                    // from the route so adding a nav entry needs no extra
+                    // bookkeeping here.
+                    data-tour={`nav-${item.href.replace(/^\//, "")}`}
                     aria-current={active ? "page" : undefined}
                     aria-label={collapsed ? item.label : undefined}
                     className={cn(

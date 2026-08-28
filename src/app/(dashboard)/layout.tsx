@@ -3,6 +3,10 @@ import { getGlobalStore } from "@/lib/data";
 import { StoreProvider } from "@/components/guest-store";
 import { DailyAlerts } from "@/components/daily-alerts";
 import { MobileHeaderNavigation } from "@/components/mobile-header-navigation";
+import { ProductTourProvider } from "@/components/onboarding/tour/tour-provider";
+import { getValidatedSession } from "@/lib/auth/session";
+import { getProductTourState } from "@/lib/db/repositories/product_tour";
+import { shouldOfferProductTour, type ProductTourState } from "@/lib/onboarding/tour-state";
 import type { Store } from "@/components/store/types";
 import { cookies } from "next/headers";
 import { Toaster } from "sonner";
@@ -10,12 +14,22 @@ import { Toaster } from "sonner";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [globalStore, cookieStore] = await Promise.all([
+  const [globalStore, cookieStore, session] = await Promise.all([
     getGlobalStore(),
     cookies(),
+    getValidatedSession(),
   ]);
   const store = globalStore as unknown as Store;
   const sidebarPreference = cookieStore.get("al-lio-sidebar-collapsed");
+
+  // Resolved on the server so a student who has already finished or dismissed
+  // the tour never downloads its state, and the overlay cannot flash before a
+  // client-side check settles.
+  let tourState: ProductTourState | null = null;
+  if (session) {
+    const state = await getProductTourState(session.uid);
+    if (shouldOfferProductTour(state)) tourState = state;
+  }
 
   return (
     <StoreProvider initialStore={store}>
@@ -32,6 +46,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
         </main>
         <DailyAlerts />
+        <ProductTourProvider initialState={tourState} />
       </div>
       <Toaster position="bottom-right" richColors duration={3500} closeButton />
     </StoreProvider>

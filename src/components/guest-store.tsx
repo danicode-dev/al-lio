@@ -115,9 +115,15 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
           priority: toDbTaskPriority(priority),
           status: data.status,
           category,
+          // Null for everything a student creates; set only by the product
+          // tour and the internal testing tools, so demo rows stay
+          // identifiable without inspecting their content.
+          demo_source: data.demo_source ?? null,
+          demo_dataset_id: data.demo_dataset_id ?? null,
         }, ["/tasks", "/calendar", "/dashboard"]);
         if (!response?.result) throw new Error("Task was not persisted");
         toast.success("Tarea creada");
+        return id;
       } catch (error) {
         setStore((current) => ({ ...current, tasks: current.tasks.filter((task) => task.id !== id) }));
         toast.error("Error al crear la tarea");

@@ -19,9 +19,10 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { forwardRef, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { forwardRef, useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { StudentHeaderActions } from "@/components/student-header-actions";
+import { useTourUiCommand } from "@/components/onboarding/tour/tour-ui-bus";
 import { cn } from "@/lib/utils";
 
 const NAVIGATION_ITEMS = [
@@ -49,6 +50,12 @@ export function MobileHeaderNavigation() {
   const menuRootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
+
+  // The product tour opens and closes this menu through the same setter the
+  // trigger button uses, so the sheet, the focus handling and the scroll lock
+  // all behave exactly as they do for a real tap.
+  useTourUiCommand("mobile-menu:open", useCallback(() => setOpen(true), []));
+  useTourUiCommand("mobile-menu:close", useCallback(() => setOpen(false), []));
 
   useEffect(() => {
     setOpen(false);
@@ -199,6 +206,9 @@ const MobileMenuLink = forwardRef<HTMLAnchorElement, MobileMenuLinkProps>(functi
     <Link
       ref={ref}
       href={href}
+      // Same stable hook the sidebar exposes, so a tour step can point at the
+      // same destination on either viewport.
+      data-tour={`nav-${href.replace(/^\//, "")}`}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(

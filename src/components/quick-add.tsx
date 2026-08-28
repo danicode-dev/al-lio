@@ -16,9 +16,15 @@ type QuickAddProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
   actions: ReturnTypeActions;
+  /**
+   * Values the product tour asks the dialog to show while it demonstrates the
+   * flow. The inputs stay uncontrolled - this only seeds their defaultValue,
+   * and the `key` below remounts the form so a new prefill actually lands.
+   */
+  prefill?: { title?: string; notes?: string };
 };
 
-export function QuickAdd({ open, setOpen, actions }: QuickAddProps) {
+export function QuickAdd({ open, setOpen, actions, prefill }: QuickAddProps) {
   const [type, setType] = useState<QuickAddType>("task");
   const [showDates, setShowDates] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -86,7 +92,7 @@ export function QuickAdd({ open, setOpen, actions }: QuickAddProps) {
   return (
     <>
       {open && (
-        <Card className="fixed left-1/2 top-[calc(env(safe-area-inset-top)+4.75rem)] z-[60] max-h-[calc(100svh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-10rem)] w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 overflow-y-auto rounded-[20px] border-[#e4dfd5] bg-white p-4 shadow-[0_22px_50px_rgba(37,30,20,0.18)] md:bottom-20 md:left-auto md:right-5 md:top-auto md:max-h-[calc(100vh-6rem)] md:translate-x-0">
+        <Card data-tour="quick-add-dialog" className="fixed left-1/2 top-[calc(env(safe-area-inset-top)+4.75rem)] z-[60] max-h-[calc(100svh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-10rem)] w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 overflow-y-auto rounded-[20px] border-[#e4dfd5] bg-white p-4 shadow-[0_22px_50px_rgba(37,30,20,0.18)] md:bottom-20 md:left-auto md:right-5 md:top-auto md:max-h-[calc(100vh-6rem)] md:translate-x-0">
           <div className="mb-3 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#e15d2d]">Alta rápida</p>
@@ -94,18 +100,18 @@ export function QuickAdd({ open, setOpen, actions }: QuickAddProps) {
             </div>
             <Button type="button" size="icon" variant="ghost" onClick={() => setOpen(false)} aria-label="Cerrar alta rápida"><X className="h-4 w-4" /></Button>
           </div>
-          <QuickAddForm action={submit}>
+          <QuickAddForm key={prefill?.title ?? "blank"} action={submit}>
             <div className="grid grid-cols-3 gap-1 rounded-xl bg-[#f8f6f1] p-1" role="tablist" aria-label="Tipo de alta">
               <QuickAddTab active={type === "task"} onClick={() => changeType("task")} icon={<ListTodo className="h-3.5 w-3.5" />}>Tarea</QuickAddTab>
               <QuickAddTab active={type === "course"} onClick={() => changeType("course")} icon={<BookOpen className="h-3.5 w-3.5" />}>Curso</QuickAddTab>
               <QuickAddTab active={type === "hackathon"} onClick={() => changeType("hackathon")} icon={<Trophy className="h-3.5 w-3.5" />}>Reto</QuickAddTab>
             </div>
 
-            <Input name="title" placeholder={type === "task" ? "¿Qué quieres hacer?" : type === "course" ? "Nombre del curso" : "Nombre del evento o reto"} autoFocus required />
+            <Input name="title" defaultValue={prefill?.title} placeholder={type === "task" ? "¿Qué quieres hacer?" : type === "course" ? "Nombre del curso" : "Nombre del evento o reto"} autoFocus required />
 
             {type === "task" && (
               <>
-                <Textarea name="notes" placeholder="Añade una nota si la necesitas (opcional)" rows={3} />
+                <Textarea name="notes" defaultValue={prefill?.notes} placeholder="Añade una nota si la necesitas (opcional)" rows={3} />
                 <p className="text-xs leading-5 text-[#777269]">Podrás planificarla con fecha desde Tareas o Calendario.</p>
               </>
             )}

@@ -58,7 +58,7 @@
     "verify:startup": "npm run validate:runtime && npm run check:project && npm run validate:engineering-language && npm run audit:schema && npm run typecheck",
     "verify:cheap": "npm run verify:startup && npm run lint",
     "verify:prod": "npm run stop:app && npm run build:clean && node scripts/smoke-production.mjs",
-    "test:unit": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/security-boundaries.test.mjs tests/catalog-navigation.test.mjs tests/deploy-production-script.test.mjs tests/deploy-production-workflow.test.mjs",
+    "test:unit": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/security-boundaries.test.mjs tests/catalog-navigation.test.mjs tests/product-tour.test.mjs tests/deploy-production-script.test.mjs tests/deploy-production-workflow.test.mjs",
     "test": "npm run check:project && npm run validate:fp-content && npm run validate:learning-competencies && npm run test:unit && npm run typecheck",
     "ci": "npm run lint && npm run test && npm run validate:radar && npm run validate:production-deploy && npm run validate:postgres-app-integration && npm run validate:migrations && npm run build",
     "validate:deploy": "npm run validate:production-deploy",

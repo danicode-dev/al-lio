@@ -151,7 +151,7 @@ export function TasksView() {
         ) : visibleTasks.length === 0 ? (
           <EmptyState title={emptyStateCopy.title} description={emptyStateCopy.description} />
         ) : (
-          <div className="divide-y divide-[#f0ece2]">
+          <div className="divide-y divide-[#f0ece2]" data-tour="tasks-list">
             {visibleTasks.map((task) => <TaskRow key={task.id} task={task} onToggle={() => actions.updateTask(task.id, isCompleted(task) ? { status: "pendiente", completed_at: "" } : { status: "completada", completed_at: new Date().toISOString() })} onOpen={() => setTaskDialog({ taskId: task.id, mode: "view" })} onEdit={() => setTaskDialog({ taskId: task.id, mode: "edit" })} onDelete={() => actions.deleteTask(task.id)} />)}
           </div>
         )}

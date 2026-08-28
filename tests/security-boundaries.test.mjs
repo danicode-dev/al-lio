@@ -558,7 +558,10 @@ test("Quick Add and Notifications form one shared header action group on mobile 
 
   // QuickAdd itself no longer renders its own always-on floating trigger.
   assert.doesNotMatch(quickAddSource, /aria-label="Añadir rápido"/);
-  assert.match(quickAddSource, /export function QuickAdd\(\{ open, setOpen, actions \}: QuickAddProps\)/);
+  // `prefill` (issue #194) only seeds the uncontrolled inputs' defaultValue so
+  // the product tour can show the real dialog already filled in; open/setOpen/
+  // actions stay the contract every other caller uses.
+  assert.match(quickAddSource, /export function QuickAdd\(\{ open, setOpen, actions, prefill \}: QuickAddProps\)/);
 });
 
 test("Each page's own header mounts StudentHeaderActions exactly once for its desktop actions slot - relocated, not lost or duplicated (issue #129)", async () => {
