@@ -25,7 +25,7 @@ class SavedHubBoundary extends Component<{ children: ReactNode }, { hasError: bo
   render() {
     if (this.state.hasError) {
       return (
-        <section className="mt-6 rounded-[20px] border border-[#ece7dc] bg-white p-6 text-sm text-[#6b6f72] shadow-[0_12px_32px_rgba(17,17,17,0.06)]">
+        <section className="mt-6 min-w-0 rounded-[20px] border border-[#ece7dc] bg-white p-4 text-sm text-[#6b6f72] shadow-[0_12px_32px_rgba(17,17,17,0.06)] sm:p-6">
           No se pudieron cargar tus guardados ahora mismo. El resto de tu perfil sigue disponible.
         </section>
       );
@@ -64,15 +64,15 @@ function SavedHubContent() {
   const totalSaved = savedCompanies.length + savedCourses.length + savedHackathons.length;
 
   return (
-    <section className="mt-6 space-y-4">
-      <div>
+    <section className="mt-6 min-w-0 space-y-4">
+      <div className="min-w-0">
         <p className="al-page-header-eyebrow">Tu actividad</p>
         <h2 className="al-page-header-title" style={{ fontSize: "clamp(20px, 2.4vw, 26px)" }}>Guardados</h2>
         <p className="al-page-header-subtitle">Empresas, cursos y eventos que has marcado con el corazón, todos en un solo sitio.</p>
       </div>
 
       {totalSaved === 0 ? (
-        <div className="rounded-[20px] border border-[#ece7dc] bg-white p-6 text-center shadow-[0_12px_32px_rgba(17,17,17,0.06)]">
+        <div className="rounded-[20px] border border-[#ece7dc] bg-white p-4 text-center shadow-[0_12px_32px_rgba(17,17,17,0.06)] sm:p-6">
           <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fbe7dd] text-[#E15D2D]"><Heart className="h-5 w-5" /></span>
           <p className="text-sm font-bold text-[#111111]">Todavía no has guardado nada</p>
           <p className="mx-auto mt-1 max-w-[40ch] text-xs leading-5 text-[#6b6f72]">
@@ -80,7 +80,7 @@ function SavedHubContent() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid min-w-0 gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr))]">
           <SavedSection
             icon={Building2}
             title="Empresas"
@@ -172,11 +172,11 @@ function SavedSection({
 }) {
   const hasMore = count > VISIBLE_PER_SECTION;
   return (
-    <div className="flex flex-col gap-2.5 rounded-[20px] border border-[#ece7dc] bg-white p-4 shadow-[0_12px_32px_rgba(17,17,17,0.06)]">
+    <div className="flex min-w-0 flex-col gap-2.5 rounded-[20px] border border-[#ece7dc] bg-white p-3.5 shadow-[0_12px_32px_rgba(17,17,17,0.06)] sm:p-4">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#fbe7dd] text-[#E15D2D]"><Icon className="h-4 w-4" /></span>
-          <p className="text-[13.5px] font-bold text-[#111111]">{title}</p>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#fbe7dd] text-[#E15D2D]"><Icon className="h-4 w-4" /></span>
+          <p className="min-w-0 text-[13.5px] font-bold leading-tight text-[#111111]">{title}</p>
         </div>
         <span className="rounded-full bg-[#f7f4ee] px-2 py-0.5 text-[11px] font-bold text-[#5f5a52]">{count}</span>
       </div>
@@ -208,18 +208,18 @@ function SavedRow({
   onUnsave?: () => void;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-[#f0ece2] px-2.5 py-2">
+    <div className="flex min-w-0 items-center gap-1 rounded-xl border border-[#f0ece2] py-1.5 pl-2.5 pr-1.5 sm:gap-2 sm:py-2 sm:pr-2.5">
       <Link href={primaryHref} className="min-w-0 flex-1">
         <p className="truncate text-[12.5px] font-semibold text-[#333029]">{title}</p>
         {subtitle && <p className="truncate text-[11px] text-[#9a958a]">{subtitle}</p>}
       </Link>
       {secondaryHref && (
-        <a href={secondaryHref} target="_blank" rel="noopener noreferrer" aria-label="Abrir enlace oficial" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[#9a958a] hover:text-[#c94f21]">
+        <a href={secondaryHref} target="_blank" rel="noopener noreferrer" aria-label="Abrir enlace oficial" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[#9a958a] hover:text-[#c94f21] sm:h-8 sm:w-8">
           <ExternalLink className="h-3.5 w-3.5" />
         </a>
       )}
       {onUnsave && (
-        <button type="button" onClick={onUnsave} aria-label="Quitar de guardados" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[#E15D2D] hover:bg-[#fbe7dd]">
+        <button type="button" onClick={onUnsave} aria-label="Quitar de guardados" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[#E15D2D] hover:bg-[#fbe7dd] sm:h-8 sm:w-8">
           <Heart className="h-3.5 w-3.5" fill="currentColor" />
         </button>
       )}

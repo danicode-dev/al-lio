@@ -252,9 +252,9 @@ function GoogleCalendarStatusControl() {
 
   if (loading) {
     return (
-      <span className="inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-xl border border-[#ece7dc] bg-white px-3 text-xs font-semibold text-[#9a958a]">
+      <span className="inline-flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-xl border border-[#ece7dc] bg-white px-3 text-xs font-semibold text-[#9a958a] sm:h-9 sm:w-auto sm:whitespace-nowrap">
         <GoogleGlyph />
-        Comprobando Google Calendar…
+        <span>Comprobando Google Calendar…</span>
       </span>
     );
   }
@@ -263,7 +263,7 @@ function GoogleCalendarStatusControl() {
     return (
       <button
         type="button"
-        className="inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-xl border border-emerald-300 bg-emerald-50 px-3 text-xs font-bold text-emerald-800 shadow-sm transition-colors hover:bg-emerald-100 disabled:opacity-60"
+        className="inline-flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3 text-xs font-bold text-emerald-800 shadow-sm transition-colors hover:bg-emerald-100 disabled:opacity-60 sm:h-9 sm:w-auto sm:whitespace-nowrap"
         onClick={disconnect}
         disabled={busy}
         title="Google Calendar conectado. Toca para desconectar."
@@ -277,7 +277,7 @@ function GoogleCalendarStatusControl() {
   return (
     <a
       href="/api/google/calendar/auth?next=/dashboard"
-      className="inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-xl border border-[#f4b398] bg-[#fff7f3] px-3 text-xs font-bold text-[#c94f21] shadow-sm transition-colors hover:bg-[#ffe9df]"
+      className="inline-flex h-11 w-full min-w-0 items-center justify-center gap-2 rounded-xl border border-[#f4b398] bg-[#fff7f3] px-3 text-xs font-bold text-[#c94f21] shadow-sm transition-colors hover:bg-[#ffe9df] sm:h-9 sm:w-auto sm:whitespace-nowrap"
       title="Conectar Google Calendar"
     >
       <GoogleGlyph />
