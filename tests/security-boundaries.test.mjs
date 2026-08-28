@@ -466,7 +466,13 @@ test("The desktop navigation provides the branded expanded sidebar and persisten
   }
 
   assert.match(sidebarSource, /collapsed \? "w-\[76px\]" : "w-\[272px\]"/);
-  assert.match(sidebarSource, /collapsed \? "\/assets\/al_lio_symbol\.png" : "\/assets\/al_lio_logo_horizontal\.png"/);
+  // The collapsed rail keeps the branded symbol and the expanded rail the
+  // full horizontal lockup. Both marks stay mounted and are cross-faded on
+  // `collapsed` so the header never reflows while the rail width animates.
+  assert.match(sidebarSource, /src="\/assets\/al_lio_logo_horizontal\.png"/);
+  assert.match(sidebarSource, /src="\/assets\/al_lio_symbol\.png"/);
+  assert.match(sidebarSource, /collapsed \? "opacity-0" : "opacity-100"/);
+  assert.match(sidebarSource, /collapsed \? "opacity-100" : "opacity-0"/);
   assert.match(sidebarSource, /aria-label=\{collapsed \? "Expandir navegación" : "Contraer navegación"\}/);
   assert.match(sidebarSource, /function SidebarTooltip/);
   assert.match(sidebarSource, /group-hover:visible[\s\S]*group-focus-visible:visible/);
