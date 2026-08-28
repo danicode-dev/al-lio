@@ -96,22 +96,54 @@ export function AppSidebar({ userName, defaultCollapsed = false, hasPersistedPre
         collapsed ? "w-[76px]" : "w-[272px]",
       )}
     >
-      <div className={cn("flex h-[88px] shrink-0 items-center justify-between", collapsed ? "gap-0.5 px-1" : "gap-3 px-5")}>
-        <Image
-          src={collapsed ? "/assets/al_lio_symbol.png" : "/assets/al_lio_logo_horizontal.png"}
-          alt="AL-LÍO"
-          width={collapsed ? 1254 : 2172}
-          height={collapsed ? 1254 : 724}
-          className={cn("block shrink-0 object-contain", collapsed ? "h-8 w-8" : "h-auto w-[154px] object-left")}
-          priority
-        />
+      <div
+        className={cn(
+          "flex h-[88px] shrink-0 items-center justify-between overflow-hidden transition-[gap,padding] duration-200 ease-out motion-reduce:transition-none",
+          collapsed ? "gap-0.5 px-1" : "gap-3 px-5",
+        )}
+      >
+        {/* Both marks are stacked in one grid cell and cross-faded so the
+            header never reflows while the rail width animates. The wrapper
+            width tweens in step with the <aside>, clipping the horizontal
+            lockup from the right as it collapses instead of hard-swapping it
+            for the symbol. */}
+        <span
+          className={cn(
+            "grid shrink-0 items-center overflow-hidden transition-[width] duration-200 ease-out motion-reduce:transition-none",
+            collapsed ? "w-8" : "w-[154px]",
+          )}
+        >
+          <Image
+            src="/assets/al_lio_logo_horizontal.png"
+            alt="AL-LÍO"
+            width={2172}
+            height={724}
+            className={cn(
+              "col-start-1 row-start-1 h-auto w-[154px] max-w-none justify-self-start object-contain transition-opacity duration-200 ease-out motion-reduce:transition-none",
+              collapsed ? "opacity-0" : "opacity-100",
+            )}
+            priority
+          />
+          <Image
+            src="/assets/al_lio_symbol.png"
+            alt=""
+            aria-hidden="true"
+            width={1254}
+            height={1254}
+            className={cn(
+              "col-start-1 row-start-1 h-8 w-8 self-center justify-self-center object-contain transition-opacity duration-200 ease-out motion-reduce:transition-none",
+              collapsed ? "opacity-100" : "opacity-0",
+            )}
+            priority
+          />
+        </span>
         <button
           type="button"
           onClick={toggleCollapsed}
           aria-label={collapsed ? "Expandir navegación" : "Contraer navegación"}
           aria-expanded={!collapsed}
           className={cn(
-            "grid shrink-0 place-items-center rounded-xl border border-[#e6e0d6] bg-white text-[#565b63] shadow-[0_3px_10px_rgba(17,17,17,0.035)] outline-none transition-[background-color,border-color,color,box-shadow] duration-200 hover:border-[#d9d1c5] hover:bg-[#f8f5ef] hover:text-[#202328] active:bg-[#f2eee7] focus-visible:ring-2 focus-visible:ring-[#e15d2d]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffefa] motion-reduce:transition-none",
+            "grid shrink-0 place-items-center rounded-xl border border-[#e6e0d6] bg-white text-[#565b63] shadow-[0_3px_10px_rgba(17,17,17,0.035)] outline-none transition-[background-color,border-color,color,box-shadow,width,height] duration-200 ease-out hover:border-[#d9d1c5] hover:bg-[#f8f5ef] hover:text-[#202328] active:bg-[#f2eee7] focus-visible:ring-2 focus-visible:ring-[#e15d2d]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffefa] motion-reduce:transition-none",
             collapsed ? "h-[30px] w-[30px]" : "h-9 w-9",
           )}
         >
