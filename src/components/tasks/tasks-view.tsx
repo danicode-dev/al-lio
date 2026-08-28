@@ -92,7 +92,7 @@ export function TasksView() {
   }
 
   return (
-    <div className="space-y-5 pb-20 md:pb-6">
+    <div className="space-y-5 pb-6">
       <PageHeader
         eyebrow="Tu organización"
         title="Tareas pendientes"
