@@ -445,6 +445,37 @@ test("The merged store fetch loads every section with fail-soft handling (issue 
   }
 });
 
+test("The desktop navigation provides the branded expanded sidebar and persistent collapsed rail (issue #178)", async () => {
+  const [sidebarSource, layoutSource, bottomNavSource] = await Promise.all([
+    readFile(new URL("../src/components/app-sidebar.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/bottom-nav.tsx", import.meta.url), "utf8"),
+  ]);
+
+  for (const group of ["Principal", "Comunicación", "Aprendizaje"]) {
+    assert.match(sidebarSource, new RegExp(`label: "${group}"`), `missing desktop navigation group: ${group}`);
+  }
+  for (const route of ["/dashboard", "/roadmap", "/tasks", "/bloc", "/noticias", "/work", "/courses", "/hackathons", "/calendar"]) {
+    assert.match(sidebarSource, new RegExp(`href: "${route}"`), `missing desktop navigation route: ${route}`);
+  }
+
+  assert.match(sidebarSource, /collapsed \? "w-\[76px\]" : "w-\[272px\]"/);
+  assert.match(sidebarSource, /collapsed \? "\/assets\/al_lio_symbol\.png" : "\/assets\/al_lio_logo_horizontal\.png"/);
+  assert.match(sidebarSource, /aria-label=\{collapsed \? "Expandir navegación" : "Contraer navegación"\}/);
+  assert.match(sidebarSource, /function SidebarTooltip/);
+  assert.match(sidebarSource, /group-hover:visible[\s\S]*group-focus-visible:visible/);
+  assert.match(sidebarSource, /pathname === href \|\| \(href !== "\/dashboard" && pathname\.startsWith\(`\$\{href\}\/`\)\)/);
+  assert.match(sidebarSource, /href="\/profile"[\s\S]*\{initials\}[\s\S]*Ver perfil/);
+  assert.match(sidebarSource, /className="mt-auto shrink-0 border-t/);
+
+  assert.doesNotMatch(sidebarSource, /signOut|LogOut|Settings|Administración|Cerrar sesión/, "logout and administration must not remain standalone desktop navigation items");
+  assert.match(layoutSource, /userName=\{store\.userName\}/);
+  assert.match(layoutSource, /cookieStore\.get\("al-lio-sidebar-collapsed"\)/);
+  assert.doesNotMatch(layoutSource, /isCurrentUserAdmin/, "the removed admin sidebar item must not keep an unnecessary authorization query in the shared layout");
+  assert.match(layoutSource, /<BottomNav \/>/, "the existing mobile navigation remains mounted and outside this desktop-only change");
+  assert.match(bottomNavSource, /md:hidden/, "the mobile navigation breakpoint remains unchanged");
+});
+
 test("Quick Add, Calendar and Notifications form one shared header action group, mounted once for mobile and once per page's own header on desktop (issue #91, issue #129)", async () => {
   const [headerSource, layoutSource, guestAppSource, quickAddSource, dashboardClientSource, dashboardGreetingSource] = await Promise.all([
     readFile(new URL("../src/components/student-header-actions.tsx", import.meta.url), "utf8"),
