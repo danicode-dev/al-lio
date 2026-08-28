@@ -231,6 +231,55 @@
   }
 }
 
+/* News, Courses and Events, phones only: each of these headers has a short
+   eyebrow + one-line title and leaves a wide empty band on the right. Lift
+   the search / (reload) / filters cluster out of its own full-width strip row
+   and into that band. With the cluster removed from the strip's flow, the 2x2
+   stat grid and the featured card both rise by about one row. Opt in with
+   .al-catalog-hoist on the view's space-y wrapper. Nothing from the featured
+   card down is affected - this only re-anchors the control cluster and its
+   panel. Below 360px the header band is too narrow for the cluster, so the
+   shared full-width strip row is kept there instead. */
+@media (min-width: 360px) and (max-width: 640px) {
+  .al-catalog-hoist {
+    position: relative;
+  }
+  /* Drop the shell's positioning context so the cluster anchors to the
+     header band instead of the strip; the filter panel is re-anchored just
+     below to compensate. */
+  .al-catalog-hoist .al-cc-shell {
+    position: static;
+  }
+  .al-catalog-hoist .al-cc-strip-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: auto;
+    z-index: 6;
+  }
+  /* An open search field needs the whole width to type in, so the cluster
+     drops back to its own row while the field is active and tucks back into
+     the header band once it is cleared. */
+  .al-catalog-hoist .al-cc-strip-actions:has(.al-cc-search.is-open) {
+    position: static;
+    width: 100%;
+  }
+  /* News carries a reload action too; it goes icon-only in the compact
+     cluster while the Filtros label stays until the shared 420px rule drops
+     it. Courses and Events have no reload button, so this simply no-ops. */
+  .al-catalog-hoist .al-cc-strip-actions button[aria-label="Recargar"] .al-cc-filters-label {
+    display: none;
+  }
+  .al-catalog-hoist .al-cc-strip-actions button[aria-label="Recargar"] {
+    padding: 0 11px;
+  }
+  /* The filters panel was anchored to .al-cc-shell; re-anchor it under the
+     hoisted cluster so it still drops from the Filtros button. */
+  .al-catalog-hoist .al-fp {
+    top: 48px;
+  }
+}
+
 /* Shared catalogue surface for Courses and Events & challenges. Both modules
    use the same card anatomy and detail hierarchy; only their data and state
    semantics differ. */
