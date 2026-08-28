@@ -5,34 +5,16 @@ import { useActionState, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
-  Calendar,
   CheckCircle2,
-  Folder,
   GraduationCap,
-  Trophy,
-  Wrench,
-  type LucideIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { updateProfileAction, type ProfileUpdateState } from "@/lib/profile/onboarding-actions";
-import { ONBOARDING_INTEREST_OPTIONS } from "@/lib/profile/onboarding-options";
 import type { DbFpCycle, DbProfile } from "@/lib/db/types";
 import type { RoadmapOverview } from "@/lib/fp/roadmap";
 import { FieldListbox, type FieldListboxOption } from "@/components/ui/field-listbox";
 import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import { SavedHub } from "@/components/profile/saved-hub";
-
-const INTEREST_META: Record<
-  (typeof ONBOARDING_INTEREST_OPTIONS)[number],
-  { label: string; icon: LucideIcon; accent: string }
-> = {
-  herramientas: { label: "Herramientas", icon: Wrench, accent: "#E15D2D" },
-  cursos: { label: "Cursos", icon: BookOpen, accent: "#2F6FED" },
-  portfolio: { label: "Portfolio y evidencias", icon: Folder, accent: "#E15D2D" },
-  hackathons: { label: "Eventos y retos", icon: Trophy, accent: "#D6A419" },
-  organizacion: { label: "Organización", icon: Calendar, accent: "#4C7A68" },
-};
 
 const errorCopy: Record<string, string> = {
   onboarding_invalid: "Revisa los datos e inténtalo de nuevo.",
@@ -55,14 +37,9 @@ export function ProfileForm({
   const [state, formAction, isPending] = useActionState(updateProfileAction, initialState);
   const [cycleCode, setCycleCode] = useState(profile.cycle_code ?? "");
   const [academicYear, setAcademicYear] = useState(profile.academic_year ? String(profile.academic_year) : "");
-  const [interests, setInterests] = useState<string[]>(profile.interests ?? []);
   const displayName = account.displayName?.trim() || account.email.split("@")[0] || "Estudiante";
   const initials = displayName.split(/\s+/).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("");
   const selectedCycle = cycles.find((cycle) => cycle.code === cycleCode);
-
-  function toggleInterest(id: string) {
-    setInterests((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
-  }
 
   const cycleOptions: FieldListboxOption[] = cycles.map((cycle) => ({ value: cycle.code, label: cycle.name }));
   const yearOptions: FieldListboxOption[] = [
@@ -132,26 +109,6 @@ export function ProfileForm({
         }
 
         .al-profile-form { display: flex; flex-direction: column; gap: 20px; }
-
-        .al-profile-chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-
-        .al-profile-chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          border: 1px solid #e4dfd5;
-          border-radius: 10px;
-          padding: 9px 12px;
-          font-size: 13.5px;
-          color: #111111;
-          cursor: pointer;
-          background: white;
-          transition: border-color 0.15s, background 0.15s;
-        }
-        .al-profile-chip:hover { border-color: #d8d1c2; }
-        .al-profile-chip-checked { border-color: rgba(225, 93, 45, 0.4); background: #fbe7dd; }
-        .al-profile-chip-checkbox { width: 14px; height: 14px; accent-color: #e15d2d; }
-        .al-profile-chip-icon { width: 15px; height: 15px; flex-shrink: 0; }
 
         .al-profile-actions { display: flex; align-items: center; gap: 12px; }
 
@@ -259,8 +216,6 @@ export function ProfileForm({
           }
           .al-profile-identity { align-items: flex-start; gap: 12px; margin-bottom: 16px; padding-bottom: 16px; }
           .al-profile-avatar { width: 48px; height: 48px; border-radius: 15px; }
-          .al-profile-chip-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
-          .al-profile-chip { min-height: 44px; width: 100%; }
           .al-profile-actions { align-items: stretch; flex-direction: column; }
           .al-profile-submit { width: 100%; }
           .al-profile-saved { justify-content: center; }
@@ -275,7 +230,7 @@ export function ProfileForm({
         <PageHeader
           eyebrow="Tu cuenta"
           title="Tu perfil"
-          subtitle="Cambia tu ciclo, curso o intereses cuando quieras. Se aplica en tus recomendaciones al instante."
+          subtitle="Actualiza tu ciclo y curso para mantener tus recomendaciones al día."
           actions={
             <div className="hidden md:flex md:items-center md:gap-2">
               <StudentHeaderActions />
@@ -322,31 +277,6 @@ export function ProfileForm({
               value={academicYear}
               onChange={setAcademicYear}
             />
-
-            <div className="al-field">
-              <span className="al-field-label">Te interesa</span>
-              <div className="al-profile-chip-grid">
-                {ONBOARDING_INTEREST_OPTIONS.map((id) => {
-                  const meta = INTEREST_META[id];
-                  const Icon = meta.icon;
-                  const checked = interests.includes(id);
-                  return (
-                    <label key={id} className={cn("al-profile-chip", checked && "al-profile-chip-checked")}>
-                      <input
-                        type="checkbox"
-                        name="interests"
-                        value={id}
-                        checked={checked}
-                        onChange={() => toggleInterest(id)}
-                        className="al-profile-chip-checkbox"
-                      />
-                      <Icon className="al-profile-chip-icon" style={{ color: meta.accent }} aria-hidden="true" />
-                      <span>{meta.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
 
             <div className="al-profile-actions">
               <button type="submit" disabled={isPending || !cycleCode || !academicYear} className="al-profile-submit">

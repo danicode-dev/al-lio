@@ -61,7 +61,7 @@ export async function getActiveFpCycles(): Promise<DbFpCycle[]> {
 
 export async function getFpContentForProfile(
   userId: string,
-  profile: Pick<DbProfile, "cycle_code" | "cycle_group" | "academic_year" | "interests">,
+  profile: Pick<DbProfile, "cycle_code" | "cycle_group" | "academic_year">,
   options: { includeVolatile?: boolean } = {}
 ): Promise<FpCatalogContentRow[]> {
   if (!profile.cycle_code || !profile.cycle_group) return [];

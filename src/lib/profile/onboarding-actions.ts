@@ -5,13 +5,12 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getValidatedSession } from "@/lib/auth/session";
 import { upsertProfile } from "@/lib/db/repositories/profiles";
-import { CYCLE_CODES, ONBOARDING_INTEREST_OPTIONS, cycleGroupForCode } from "@/lib/profile/onboarding-options";
+import { CYCLE_CODES, cycleGroupForCode } from "@/lib/profile/onboarding-options";
 import type { FpAcademicYear } from "@/lib/db/types";
 
-const onboardingSchema = z.object({
+const studentProfileSchema = z.object({
   cycleCode: z.enum(CYCLE_CODES),
   academicYear: z.enum(["1", "2"]).transform((value) => Number(value) as FpAcademicYear),
-  interests: z.array(z.enum(ONBOARDING_INTEREST_OPTIONS)).max(ONBOARDING_INTEREST_OPTIONS.length),
 });
 
 export type OnboardingState = {
@@ -25,24 +24,22 @@ export async function completeOnboardingAction(
   const session = await getValidatedSession();
   if (!session) redirect("/login");
 
-  const parsed = onboardingSchema.safeParse({
+  const parsed = studentProfileSchema.safeParse({
     cycleCode: formData.get("cycleCode"),
     academicYear: formData.get("academicYear"),
-    interests: formData.getAll("interests"),
   });
 
   if (!parsed.success) {
     return { error: "onboarding_invalid" };
   }
 
-  const { cycleCode, academicYear, interests } = parsed.data;
+  const { cycleCode, academicYear } = parsed.data;
 
   try {
     await upsertProfile(session.uid, {
       cycle_code: cycleCode,
       cycle_group: cycleGroupForCode(cycleCode),
       academic_year: academicYear,
-      interests,
       onboarding_completed_at: new Date().toISOString(),
       onboarding_version: 1,
     });
@@ -65,24 +62,22 @@ export async function updateProfileAction(
   const session = await getValidatedSession();
   if (!session) redirect("/login");
 
-  const parsed = onboardingSchema.safeParse({
+  const parsed = studentProfileSchema.safeParse({
     cycleCode: formData.get("cycleCode"),
     academicYear: formData.get("academicYear"),
-    interests: formData.getAll("interests"),
   });
 
   if (!parsed.success) {
     return { error: "onboarding_invalid", savedAt: previousState.savedAt };
   }
 
-  const { cycleCode, academicYear, interests } = parsed.data;
+  const { cycleCode, academicYear } = parsed.data;
 
   try {
     await upsertProfile(session.uid, {
       cycle_code: cycleCode,
       cycle_group: cycleGroupForCode(cycleCode),
       academic_year: academicYear,
-      interests,
     });
   } catch {
     return { error: "onboarding_save_failed", savedAt: previousState.savedAt };
