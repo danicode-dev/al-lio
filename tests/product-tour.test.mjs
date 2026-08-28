@@ -63,26 +63,48 @@ test("unknown or corrupt persisted values fall back to a safe default instead of
 // components happen to be written.
 // ---------------------------------------------------------------------------
 
-test("the tour is exactly four steps, in the agreed order", () => {
-  assert.equal(PRODUCT_TOUR_LENGTH, 4);
+test("the tour is four explained steps plus the closing one, in the agreed order", () => {
+  assert.equal(PRODUCT_TOUR_LENGTH, 5);
   assert.deepEqual(
     productTourSteps.map((step) => step.id),
-    ["quick-add", "nav-principal", "nav-communication", "nav-learning"],
+    ["quick-add", "nav-principal", "nav-communication", "nav-learning", "finale"],
   );
+
+  // Exactly one closing beat, and it is the last thing that happens.
+  const finales = productTourSteps.filter((step) => step.finale);
+  assert.equal(finales.length, 1);
+  assert.equal(finales[0], productTourSteps.at(-1));
 });
 
-test("every step points at a stable data-tour anchor on both viewports", () => {
+test("every step that points at something uses a stable data-tour anchor on both viewports", () => {
   for (const step of productTourSteps) {
+    if (step.finale) {
+      // The closing card talks about the app as a whole; it has nothing to
+      // spotlight and must not claim otherwise.
+      assert.equal(step.selector, undefined, "the finale must not anchor to an element");
+      continue;
+    }
     for (const viewport of ["desktop", "mobile"]) {
       const selector = step.selector[viewport];
       assert.match(selector, /^\[data-tour='[a-z-]+'\]$/, `${step.id}/${viewport}: ${selector}`);
     }
     assert.ok(step.side.desktop, `${step.id} has no desktop side`);
     assert.ok(step.side.mobile, `${step.id} has no mobile side`);
-    // The defaults (30/28) swallow a button whole; these anchors are real
+    // A loose padding swallows a button whole; these anchors are real
     // controls and the spotlight has to hug them.
     assert.ok(step.pointerPadding <= 16, `${step.id} pointerPadding too loose`);
   }
+});
+
+test("the first step names what the app can actually create", () => {
+  const [first] = productTourSteps;
+  assert.equal(first.id, "quick-add");
+  for (const feature of ["tareas", "cursos", "eventos", "retos"]) {
+    assert.ok(first.body.includes(feature), `the quick-add step never mentions ${feature}`);
+  }
+  // Hackathons are part of "eventos y retos" in the interface; naming them
+  // separately promised a section that does not exist by that name.
+  assert.ok(!/hackathon/i.test(first.body));
 });
 
 test("the tour never navigates, never creates content and never presses anything", () => {
@@ -116,7 +138,7 @@ test("walking the whole tour forward ends in completed, one persisted step at a 
   }
 
   assert.equal(outcome, "complete");
-  assert.deepEqual(persisted, ["nav-principal", "nav-communication", "nav-learning"]);
+  assert.deepEqual(persisted, ["nav-principal", "nav-communication", "nav-learning", "finale"]);
   assert.equal(index, PRODUCT_TOUR_LENGTH - 1);
   assert.equal(isLastStep(index), true);
 });
@@ -130,7 +152,7 @@ test("skipping marks it skipped from any step, and going back never closes the t
   // On the first step there is nowhere back to go: it must stay put rather
   // than fall off the start and end the run.
   assert.deepEqual(resolveTransition("previous", 0), { kind: "move", index: 0, stepId: "quick-add" });
-  assert.equal(stepIdAt(99), "nav-learning");
+  assert.equal(stepIdAt(99), "finale");
 });
 
 // ---------------------------------------------------------------------------
@@ -146,6 +168,7 @@ test("every anchor the steps ask for exists in the sidebar, the header or the mo
   ])).join("\n");
 
   for (const step of productTourSteps) {
+    if (!step.selector) continue;
     for (const viewport of ["desktop", "mobile"]) {
       const anchor = step.selector[viewport].replace("[data-tour='", "").replace("']", "");
       assert.ok(

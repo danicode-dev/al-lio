@@ -45,6 +45,21 @@ export type TourCardRenderProps = {
   total: number;
 };
 
+// Several anchors are rendered twice - the header actions exist once for the
+// phone layout and once for the desktop one, and CSS hides whichever does not
+// apply. Taking the first match would measure the hidden one, which reports
+// 0x0 at the top-left corner: that is what pinned the spotlight to the corner
+// and left the card stuck in the same place for every step. Take the first
+// one that actually occupies space.
+function findVisible(selector: string | null): HTMLElement | null {
+  if (!selector) return null;
+  for (const candidate of document.querySelectorAll<HTMLElement>(selector)) {
+    const box = candidate.getBoundingClientRect();
+    if (box.width > 0 && box.height > 0) return candidate;
+  }
+  return null;
+}
+
 export function TourSpotlight({
   step,
   index,
@@ -62,12 +77,13 @@ export function TourSpotlight({
   const [mounted, setMounted] = useState(false);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [rect, setRect] = useState<Rect | null>(null);
-  const selector = viewport.width && viewport.width < MOBILE_BREAKPOINT
-    ? step.selector.mobile
-    : step.selector.desktop;
-  const side = viewport.width && viewport.width < MOBILE_BREAKPOINT
-    ? step.side.mobile
-    : step.side.desktop;
+  const onPhone = viewport.width > 0 && viewport.width < MOBILE_BREAKPOINT;
+  const selector = step.selector
+    ? (onPhone ? step.selector.mobile : step.selector.desktop)
+    : null;
+  const side: TourStepSide = step.side
+    ? (onPhone ? step.side.mobile : step.side.desktop)
+    : "bottom";
 
   useEffect(() => setMounted(true), []);
 
@@ -75,7 +91,7 @@ export function TourSpotlight({
   // height all re-measure, so the hole can never drift off its element.
   const measure = useCallback(() => {
     setViewport({ width: window.innerWidth, height: window.innerHeight });
-    const element = document.querySelector<HTMLElement>(selector);
+    const element = findVisible(selector);
     if (!element) {
       setRect(null);
       return;
@@ -93,7 +109,7 @@ export function TourSpotlight({
       frame = window.requestAnimationFrame(measure);
     };
 
-    const element = document.querySelector<HTMLElement>(selector);
+    const element = findVisible(selector);
     // The anchor may not exist yet on the very first paint after a step
     // change; watching the tree picks it up on the frame it lands.
     const observer = new MutationObserver(schedule);
@@ -123,8 +139,7 @@ export function TourSpotlight({
 
   if (!mounted) return null;
 
-  const isMobile = viewport.width > 0 && viewport.width < MOBILE_BREAKPOINT;
-  const padding = step.pointerPadding;
+  const padding = step.pointerPadding ?? 12;
   const hole = rect
     ? {
         x: rect.left - padding / 2,
@@ -132,11 +147,15 @@ export function TourSpotlight({
         width: rect.width + padding,
         height: rect.height + padding,
       }
-    // No anchor resolved: dim the page and centre the card rather than
-    // pointing at nothing, so the recorrido always stays usable.
+    // No anchor - either a step that talks about the app as a whole, or one
+    // whose element is not on screen. The page is dimmed and the card is
+    // centred rather than pointing at nothing, so the recorrido stays usable.
     : { x: viewport.width / 2, y: viewport.height / 2, width: 0, height: 0 };
 
-  const card = cardPosition({ hole, side, viewport, isMobile });
+  const centred = !rect;
+  const card = centred
+    ? centredCard(viewport)
+    : cardPosition({ hole, side, viewport, isMobile: onPhone });
   const ease = "cubic-bezier(0.22, 1, 0.36, 1)";
   const glide = `transform ${motionMs}ms ${ease}, width ${motionMs}ms ${ease}, height ${motionMs}ms ${ease}, top ${motionMs}ms ${ease}, left ${motionMs}ms ${ease}`;
 
@@ -158,13 +177,15 @@ export function TourSpotlight({
         aria-hidden="true"
         style={{
           boxShadow: "0 0 200vw 200vh rgba(35, 29, 24, 0.55)",
-          borderRadius: step.pointerRadius,
+          borderRadius: step.pointerRadius ?? 18,
           transform: `translate3d(${hole.x}px, ${hole.y}px, 0)`,
           width: hole.width,
           height: hole.height,
           transition: glide,
         }}
       />
+
+      {step.finale && <TourFireworks muted={motionMs === 0} />}
 
       <div
         className="al-tour-anchor"
@@ -177,10 +198,84 @@ export function TourSpotlight({
   );
 }
 
+// Three bursts of sparks behind the closing card. Pure CSS, drawn on a layer
+// that ignores the pointer, and skipped entirely under reduced motion - a
+// celebration should never be the thing that makes the app unusable.
+function TourFireworks({ muted }: { muted: boolean }) {
+  if (muted) return null;
+
+  const bursts = [
+    { left: "26%", top: "34%", delay: 0, hue: "#E15D2D" },
+    { left: "72%", top: "28%", delay: 0.45, hue: "#1f7a4d" },
+    { left: "50%", top: "58%", delay: 0.9, hue: "#e8b04b" },
+  ];
+  const sparks = 12;
+
+  return (
+    <div className="al-tour-fireworks" aria-hidden="true">
+      <style>{`
+        .al-tour-fireworks { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+        .al-tour-burst { position: absolute; width: 0; height: 0; }
+        .al-tour-spark {
+          position: absolute;
+          width: 7px; height: 7px;
+          margin: -3.5px 0 0 -3.5px;
+          border-radius: 999px;
+          opacity: 0;
+          animation: al-tour-spark 1500ms cubic-bezier(0.15, 0.7, 0.3, 1) infinite;
+        }
+        @keyframes al-tour-spark {
+          0%   { transform: translate3d(0, 0, 0) scale(0.4); opacity: 0; }
+          12%  { opacity: 1; }
+          70%  { opacity: .85; }
+          100% { transform: translate3d(var(--dx), var(--dy), 0) scale(0.35); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) { .al-tour-fireworks { display: none; } }
+      `}</style>
+      {bursts.map((burst) => (
+        <div key={burst.left} className="al-tour-burst" style={{ left: burst.left, top: burst.top }}>
+          {Array.from({ length: sparks }, (_, index) => {
+            const angle = (index / sparks) * Math.PI * 2;
+            const distance = 92 + (index % 3) * 26;
+            return (
+              <span
+                key={index}
+                className="al-tour-spark"
+                style={{
+                  background: burst.hue,
+                  animationDelay: `${burst.delay + (index % 4) * 0.05}s`,
+                  ["--dx" as string]: `${Math.cos(angle) * distance}px`,
+                  ["--dy" as string]: `${Math.sin(angle) * distance}px`,
+                }}
+              />
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// A step with nothing to point at: the card sits in the middle of the screen,
+// which is also where the closing beat belongs.
+function centredCard(viewport: { width: number; height: number }): { top: number; left: number; width: number } {
+  const width = Math.min(380, Math.max(viewport.width - EDGE * 2, 240));
+  return {
+    left: Math.max((viewport.width - width) / 2, EDGE),
+    top: Math.max(viewport.height / 2 - 150, EDGE),
+    width,
+  };
+}
+
 // Where the card sits relative to the hole - Onborda's per-side anchoring,
 // clamped so it can never leave the viewport (the original does not clamp,
 // which is what pushed the card off-screen next to a control at the right
-// edge). On phones it is pinned to the bottom, where a sheet belongs.
+// edge).
+//
+// On a phone the card follows the hole too, instead of being parked at the
+// bottom of the screen for every step: it sits under the highlighted control
+// when there is room below it, and above it otherwise, so the student can see
+// what is being pointed at and the card never covers it.
 function cardPosition({
   hole,
   side,
@@ -193,7 +288,13 @@ function cardPosition({
   isMobile: boolean;
 }): { top: number; left: number; width: number } {
   if (isMobile) {
-    return { left: EDGE, top: viewport.height - 260, width: viewport.width - EDGE * 2 };
+    const width = viewport.width - EDGE * 2;
+    const below = hole.y + hole.height + CARD_GAP;
+    const roomBelow = viewport.height - below;
+    const top = roomBelow > 250
+      ? below
+      : Math.max(hole.y - 250 - CARD_GAP, EDGE);
+    return { left: EDGE, top, width };
   }
 
   const width = Math.min(CARD_WIDTH, viewport.width - EDGE * 2);

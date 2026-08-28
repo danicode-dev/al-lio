@@ -17,13 +17,18 @@ export type ProductTourStep = {
    * Anchors, per viewport. Both must resolve to something already on screen:
    * on a phone the destinations live behind the menu button, and the tour
    * points at that button rather than opening the sheet.
+   *
+   * Omitted on a step that talks about the app as a whole - it then shows a
+   * centred card over a plain dimmed page, with nothing spotlighted.
    */
-  selector: Record<TourViewport, string>;
+  selector?: Record<TourViewport, string>;
   /** Which side of the anchor the card sits on, per viewport. */
-  side: Record<TourViewport, TourStepSide>;
+  side?: Record<TourViewport, TourStepSide>;
   /** Spotlight geometry. Small values: these anchors are real controls. */
-  pointerPadding: number;
-  pointerRadius: number;
+  pointerPadding?: number;
+  pointerRadius?: number;
+  /** The closing beat: celebrated, and it ends the recorrido. */
+  finale?: boolean;
 };
 
 export type TourStepSide =
@@ -39,7 +44,7 @@ export const productTourSteps: ProductTourStep[] = [
   {
     id: "quick-add",
     title: "Añade lo que necesites",
-    body: "Desde aquí puedes crear rápidamente tareas, eventos, retos y hackathones sin salir de lo que estés haciendo.",
+    body: "Desde aquí puedes crear rápidamente tareas, cursos, eventos y retos sin salir de lo que estés haciendo.",
     selector: { desktop: "[data-tour='quick-add']", mobile: "[data-tour='quick-add-mobile']" },
     // The button lives at the top right corner, so the card hangs below it and
     // aligned to its right edge - centred underneath would overflow the page.
@@ -73,6 +78,12 @@ export const productTourSteps: ProductTourStep[] = [
     side: { desktop: "right", mobile: "bottom-left" },
     pointerPadding: 12,
     pointerRadius: 18,
+  },
+  {
+    id: "finale",
+    title: "¡Listo, ya lo tienes!",
+    body: "Has terminado el recorrido. AL-LÍO es tuyo: crea lo que necesites, revisa tu ruta y vuelve a Inicio siempre que quieras ver lo importante de un vistazo.",
+    finale: true,
   },
 ];
 

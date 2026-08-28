@@ -53,16 +53,18 @@ export function TourCard({
         .al-tour-card-close svg { width: 13px; height: 13px; }
         .al-tour-card-title { font-size: 15.5px; font-weight: 800; line-height: 1.25; }
         .al-tour-card-body { font-size: 12.5px; line-height: 1.5; color: #6b6f72; }
-        .al-tour-card-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 4px; }
-        .al-tour-card-actions-right { display: flex; align-items: center; gap: 8px; }
+        .al-tour-card-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding-top: 8px; }
+        .al-tour-card-actions:has(.al-tour-card-ghost:first-child) { justify-content: space-between; }
+        .al-tour-card-actions-right { display: flex; align-items: center; gap: 12px; }
         .al-tour-card-ghost {
-          border: none; background: none; padding: 6px 2px;
+          border: none; background: none; padding: 8px 2px; white-space: nowrap;
           font-size: 12px; font-weight: 700; color: #6b6f72; cursor: pointer; transition: color .15s;
         }
         .al-tour-card-ghost:hover { color: var(--al-action-soft-text, #c94f21); }
         .al-tour-card-primary {
-          display: inline-flex; align-items: center; height: 34px; padding: 0 16px;
-          border-radius: 11px; border: 1px solid var(--al-action-soft-border, #f2cdbc);
+          display: inline-flex; align-items: center; justify-content: center;
+          height: 38px; padding: 0 20px; white-space: nowrap;
+          border-radius: 12px; border: 1px solid var(--al-action-soft-border, #f2cdbc);
           background: var(--al-action-soft-bg, #fbe7dd); color: var(--al-action-soft-text, #c94f21);
           font-size: 12.5px; font-weight: 800; cursor: pointer;
           transition: background .15s, border-color .15s, color .15s;
@@ -85,13 +87,15 @@ export function TourCard({
       <p className="al-tour-card-body">{step.body}</p>
 
       <div className="al-tour-card-actions">
-        <button type="button" className="al-tour-card-ghost" onClick={onSkip}>Omitir</button>
+        {/* The closing beat has nothing left to skip: the only way out is
+            forward, into the app. */}
+        {!last && <button type="button" className="al-tour-card-ghost" onClick={onSkip}>Omitir</button>}
         <div className="al-tour-card-actions-right">
           {index > 0 && (
             <button type="button" className="al-tour-card-ghost" onClick={onBack}>Atrás</button>
           )}
           <button type="button" className="al-tour-card-primary" onClick={onNext}>
-            {last ? "Empezar" : "Siguiente"}
+            {last ? "Empezar a usar AL-LÍO" : "Siguiente"}
           </button>
         </div>
       </div>
