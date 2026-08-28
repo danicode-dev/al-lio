@@ -771,7 +771,7 @@ test("Course cards reuse the shared catalogue anatomy, keep full labels reachabl
   // description, no location/priority chips competing for attention.
   assert.doesNotMatch(cardSource, /card-desc/, "the card must not render a description block anymore");
   assert.doesNotMatch(cardSource, />Terminado</, "Terminado moves to the detail view");
-  const coursesSource = guestAppSource.slice(guestAppSource.indexOf("function Courses("), guestAppSource.indexOf("function coursePriorityClass"));
+  const coursesSource = guestAppSource.slice(guestAppSource.indexOf("function Courses("), guestAppSource.indexOf("function courseStatusPillClass"));
   assert.match(coursesSource, /<CatalogCard/);
   assert.match(coursesSource, /<CatalogFeaturedCard/);
 
@@ -825,7 +825,7 @@ test("Courses and Events share the same quiet catalogue detail action instead of
     readFile(new URL("../src/app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  const coursesSource = guestAppSource.slice(guestAppSource.indexOf("function Courses("), guestAppSource.indexOf("function coursePriorityClass"));
+  const coursesSource = guestAppSource.slice(guestAppSource.indexOf("function Courses("), guestAppSource.indexOf("function courseStatusPillClass"));
   const eventsSource = guestAppSource.slice(guestAppSource.indexOf("function Hackathons("), guestAppSource.indexOf("function HackathonsEmptyState"));
   for (const moduleSource of [coursesSource, eventsSource]) {
     assert.match(moduleSource, /<CatalogFeaturedCard/);
@@ -902,7 +902,7 @@ test("Course and event details use the same hero, information, three-column sect
 
 test("Course descriptions never fall back to raw import/moderation notes for any origin - the same regression class fixed for Hackathons in issue #118 (issue #130)", async () => {
   const source = await readFile(new URL("../src/lib/courses/course-presentation.ts", import.meta.url), "utf8");
-  assert.match(source, /description: nonEmpty\(course\.requisitos_resumen\)/);
+  assert.match(source, /description: canonical\?\.aboutSummary \?\? canonical\?\.summaryExpanded \?\? canonical\?\.summaryShort/);
   const presentationFnStart = source.indexOf("export function getCoursePresentation");
   const presentationFnEnd = source.indexOf("\n}", presentationFnStart);
   const presentationFnSource = source.slice(presentationFnStart, presentationFnEnd);
@@ -910,7 +910,7 @@ test("Course descriptions never fall back to raw import/moderation notes for any
 
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const courseFnStart = guestAppSource.indexOf("function Courses(");
-  const courseFnEnd = guestAppSource.indexOf("function coursePriorityClass");
+  const courseFnEnd = guestAppSource.indexOf("function courseStatusPillClass");
   const courseFnSource = guestAppSource.slice(courseFnStart, courseFnEnd);
   assert.doesNotMatch(courseFnSource, /item\.notes|\.notes\b/, "the Courses view must never render Course.notes as student-facing copy");
 });
@@ -1554,7 +1554,7 @@ test("event catalogue cards keep the official URL in the validated detail action
   const detailSource = source.slice(detailStart, source.indexOf("function LinksView", detailStart));
   assert.match(
     detailSource,
-    /\{isSafeHttpUrl\(item\.url\) && \(\s*<a href=\{item\.url\} target="_blank" rel="noopener noreferrer" className="al-catalog-action al-catalog-action-solid">/,
+    /\{isSafeHttpUrl\(presentation\.sourceUrl\) && \(\s*<a href=\{presentation\.sourceUrl\} target="_blank" rel="noopener noreferrer" className="al-catalog-action al-catalog-action-solid">/,
     "the official event URL must remain guarded by the shared HTTP(S) validator",
   );
   assert.match(detailSource, /Abrir convocatoria oficial/);
@@ -2684,7 +2684,7 @@ test("The toggleCourseFavorite store action applies an optimistic flip with roll
 test("ReturnTypeActions declares toggleCourseFavorite, so the store's action object type-checks against the shared interface (issue #120)", async () => {
   const source = await readFile(new URL("../src/components/store/types.ts", import.meta.url), "utf8");
   assert.match(source, /toggleCourseFavorite: \(id: string\) => void;/);
-  assert.match(source, /is_favorite\?: boolean;\r?\n\s*created_at: string;\r?\n\};/, "Course must declare is_favorite, matching Hackathon's shape");
+  assert.match(source, /is_favorite\?: boolean;[\s\S]*?canonical\?: CanonicalOpportunityFacts;[\s\S]*?created_at: string;\r?\n\};/, "Course must declare is_favorite and canonical facts, matching Hackathon's shape");
 });
 
 test("fpItemToCourse maps fp_user_content_state.is_favorite through to Course.is_favorite - the exact gap issue #120 identified (fpItemToHackathon already did this)", async () => {
@@ -2721,7 +2721,7 @@ test("Favoriting a course is wired through a distinct action from completion/arc
 test("Guardados is a real heart-driven filter tab in Courses, independent of and additional to Total/Empezados/Próx. inicio (issue #120)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const coursesFnStart = source.indexOf("function Courses(");
-  const coursesFnEnd = source.indexOf("function coursePriorityClass");
+  const coursesFnEnd = source.indexOf("function courseStatusPillClass");
   const fnSource = source.slice(coursesFnStart, coursesFnEnd);
 
   assert.match(fnSource, /useState<"total" \| "empezados" \| "proximos" \| "guardados">/);
@@ -2770,6 +2770,57 @@ const fixtureOwnCourse = {
   created_at: "2026-01-01T00:00:00.000Z",
 };
 
+const fixtureCanonicalCourse = {
+  occurrenceId: "canonical-course-1",
+  destination: "course",
+  opportunityType: "course",
+  title: "Java profesional",
+  summaryShort: "Aprende Java con ejercicios verificables.",
+  provider: "Official Academy",
+  canonicalUrl: "https://academy.example/java",
+  registrationUrl: "https://academy.example/java/enrol",
+  startsAt: "2026-10-01T08:00:00.000Z",
+  endsAt: "2026-12-01T17:00:00.000Z",
+  attendanceMode: "online",
+  durationHours: 40,
+  courseDifficulty: "introductory",
+  minimumEducation: "CFGS",
+  otherEligibility: ["Residents in Spain"],
+  credentialLevel: "Professional certificate level 3",
+  priceState: "free",
+  certification: "Official provider certificate",
+  requirements: ["Java development environment"],
+  audience: ["DAW", "DAM"],
+  learningOutcomes: ["Build a Java application"],
+  skillsTested: [],
+  preparationTips: [],
+  sourceLifecycleStatus: "registration_open",
+  sourceVerifiedAt: "2026-08-28T09:00:00.000Z",
+};
+
+const fixtureCanonicalEvent = {
+  ...fixtureCanonicalCourse,
+  occurrenceId: "canonical-event-1",
+  destination: "event",
+  opportunityType: "hackathon",
+  title: "Verified Hackathon 2026",
+  canonicalUrl: "https://event.example/2026",
+  registrationUrl: "https://event.example/2026/register",
+  provider: undefined,
+  organizer: "Verified Organizer",
+  registrationDeadline: "2026-09-20T21:59:00.000Z",
+  municipality: "Granada",
+  province: "Granada",
+  prize: "€1,000 jury prize",
+  certification: undefined,
+  otherEligibility: ["18 years or older"],
+  requirements: ["Teams of 2 to 4"],
+  audience: ["Students in Spain"],
+  learningOutcomes: [],
+  skillsTested: ["Java", "Teamwork"],
+  preparationTips: ["Review the official challenge brief"],
+};
+
 test("resolveCourseById resolves tech-/fp-/plain ids to the correct source and returns null for a wrong-category or nonexistent slug", () => {
   assert.equal(resolveCourseById("tech-curso-frontend", [], [fixtureTechCourseItem], [])?.title, "Curso Frontend");
   assert.equal(resolveCourseById("tech-reto-y", [], [fixtureTechEventItem], []), null, "a tech_opportunities row categorized as an event must not resolve on the courses route");
@@ -2792,6 +2843,80 @@ test("isTechCourse/isFpCourseLike agree with resolveCourseById on category, and 
 
   const techCourse = techOpportunityToCourse(fixtureTechCourseItem);
   assert.equal(techCourse.sourceTable, "tech_opportunities");
+});
+
+test("verified opportunities mode reads accepted canonical course/event facts and suppresses unclassified legacy rows (issue #200)", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
+  assert.match(source, /AL_LIO_VERIFIED_OPPORTUNITIES_ONLY/);
+  assert.match(source, /LEFT JOIN public\.radar_content_occurrences canonical/);
+  assert.match(source, /LEFT JOIN public\.radar_content_entities entity/);
+  assert.match(source, /canonical\.publication_decision = 'accepted'/);
+  assert.match(source, /entity\.destination in \('course', 'event'\)/);
+  assert.match(source, /canonical\.course_difficulty as canonical_course_difficulty/);
+  assert.match(source, /canonical\.minimum_education as canonical_minimum_education/);
+  assert.match(source, /canonical\.other_eligibility as canonical_other_eligibility/);
+  assert.match(source, /canonical\.credential_level as canonical_credential_level/);
+  assert.match(source, /canonical\.registration_url as canonical_registration_url/);
+  assert.match(source, /state\.status in \('saved', 'started', 'completed'\)/, "saved student state keeps an item reachable while preserving lifecycle separation");
+});
+
+test("legacy opportunity migration is additive, auditable and cannot self-certify a CSV row as verified (issue #200)", async () => {
+  const [migration, reportText] = await Promise.all([
+    readFile(new URL("../infra/postgres/migrations/0013_trustworthy_opportunity_catalogue.sql", import.meta.url), "utf8"),
+    readFile(new URL("../docs/audits/legacy-opportunities-2026-08-28.json", import.meta.url), "utf8"),
+  ]);
+  const report = JSON.parse(reportText);
+  assert.match(migration, /legacy_opportunity_migration_audit/);
+  assert.match(migration, /classification <> 'verified_migratable' or canonical_occurrence_id is not null/);
+  assert.doesNotMatch(migration, /drop table|truncate table/i);
+  assert.equal(report.summary.totalRows, report.rows.length);
+  assert.equal(report.summary.classificationCounts.verified_migratable, 0);
+  assert.ok(report.rows.every((row) => row.reasonCodes.length > 0 && /^[0-9a-f]{64}$/.test(row.snapshotFingerprint)));
+  assert.ok(report.rows.some((row) => row.classification === "source_only"));
+  assert.ok(report.rows.some((row) => row.classification === "expired_historical"));
+});
+
+test("canonical course facts override contradictory legacy fields without collapsing education, difficulty or credential level (issue #200)", () => {
+  const mapped = fpItemToCourse({
+    ...fixtureFpCourseItem,
+    title: "Wrong legacy title",
+    status: "empezado",
+    description: "Request information",
+    notes: "Internal priority: high",
+    canonical: fixtureCanonicalCourse,
+  });
+  const presentation = getCoursePresentation(mapped);
+
+  assert.equal(mapped.status, "pendiente", "legacy catalogue lifecycle must not become student progress");
+  assert.equal(presentation.title, "Java profesional");
+  assert.equal(presentation.description, "Aprende Java con ejercicios verificables.");
+  assert.equal(presentation.courseDifficulty, "introductory");
+  assert.equal(presentation.minimumEducation, "CFGS");
+  assert.equal(presentation.credentialLevel, "Professional certificate level 3");
+  assert.equal(presentation.sourceUrl, "https://academy.example/java/enrol");
+  assert.doesNotMatch(JSON.stringify(presentation), /Request information|Internal priority/i);
+});
+
+test("canonical event presentation keeps exact edition, registration, eligibility and prize facts separate (issue #200)", () => {
+  const mapped = fpItemToHackathon({
+    ...fixtureFpCourseItem,
+    type: "hackathon",
+    title: "Legacy listing",
+    description: "Editorial guess",
+    status: "revisar",
+    canonical: fixtureCanonicalEvent,
+  });
+  const presentation = getHackathonPresentation(mapped);
+
+  assert.equal(mapped.status, "pendiente", "objective lifecycle must not be coerced into per-user completion");
+  assert.equal(presentation.title, "Verified Hackathon 2026");
+  assert.equal(presentation.registrationDeadline, "2026-09-20T21:59:00.000Z");
+  assert.equal(presentation.sourceUrl, "https://event.example/2026/register");
+  assert.deepEqual(presentation.otherEligibility, ["18 years or older"]);
+  assert.deepEqual(presentation.requirements, ["Teams of 2 to 4"]);
+  assert.equal(presentation.prize, "€1,000 jury prize");
+  assert.equal(presentation.certification, undefined);
+  assert.doesNotMatch(JSON.stringify(presentation), /Editorial guess|revisar/i);
 });
 
 test("CourseDetailPage resolves the item via the already user/cycle-scoped global store and calls notFound() instead of querying by a client-supplied id", async () => {
@@ -2834,7 +2959,7 @@ test("Archivado and Guardado stay fully independent for courses: is_favorite nev
   assert.match(archivedFnSource, /course\.status === "terminado" \|\| course\.status === "descartado"/, "a course becomes archived when the student marks it Terminado (or Descartado) - the same action, not a separate one");
 
   const coursesFnStart = source.indexOf("function Courses(");
-  const coursesFnEnd = source.indexOf("function coursePriorityClass");
+  const coursesFnEnd = source.indexOf("function courseStatusPillClass");
   const coursesFnSource = source.slice(coursesFnStart, coursesFnEnd);
   assert.match(coursesFnSource, /const guardados = useMemo\(\(\) => sorted\.filter\(\(c\) => c\.is_favorite\), \[sorted\]\);/, "Guardados is driven purely by is_favorite, independent of the Terminado-driven Archivados split");
 
@@ -2878,21 +3003,21 @@ test("the global store loads course aptitudes and shares live completion state w
   assert.match(storeSource, /aptitude\.id === skillId \? \{ \.\.\.aptitude, completed \} : aptitude/);
 });
 
-test("CourseDetailView feeds the mapped aptitudes into Qué aprenderás and Estructura del curso, with an honest fallback and no fabricated relationships (issue #160)", async () => {
+test("CourseDetailView combines only canonical learning outcomes and reviewed aptitudes, omitting the section when neither exists (issue #160, issue #200)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const fnStart = source.indexOf("export function CourseDetailView");
   const fnEnd = source.indexOf("function Hackathons(");
   const fnSource = source.slice(fnStart, fnEnd);
   assert.match(fnSource, /const aptitudes = item\.aptitudes \?\? \[\];/);
-  // "Qué aprenderás" is derived only from the reviewed taught aptitudes,
-  // never invented copy.
+  // "Qué aprenderás" is derived only from canonical facts and reviewed
+  // taught aptitudes, never invented copy.
+  assert.match(fnSource, /\.\.\.presentation\.learningOutcomes/);
   assert.match(fnSource, /aptitudes\.filter\(\(a\) => a\.relation === "ensena"\)/);
   assert.match(fnSource, /Qué aprenderás/);
   // "Estructura del curso" lists the same aptitudes as ordered steps.
   assert.match(fnSource, /Estructura del curso/);
   assert.match(fnSource, /aptitudes\.map\(\(a, i\) =>/);
-  // Honest fallback when a course has no reviewed aptitudes yet.
-  assert.match(fnSource, /Los objetivos concretos se publicarán antes del inicio\./);
+  assert.doesNotMatch(fnSource, /Los objetivos concretos se publicarán antes del inicio\./);
   assert.doesNotMatch(fnSource, /requiredCompetencies/, "course outcomes must use their own relation-aware contract");
 });
 
@@ -3038,12 +3163,13 @@ test("The inline requirements section never constructs a /ruta/ URL - replaces t
   assert.doesNotMatch(fnSource, /rutaHref|Ver en tu ruta/, "the old event-level ruta CTA concept must not resurface here");
 });
 
-test("HackathonDetailView never renders item.notes directly - the description always goes through hackathonPublicDescription, same as the card and hero (issue #135)", async () => {
+test("HackathonDetailView never renders item.notes directly and uses the canonical presentation description (issue #135, issue #200)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const fnStart = source.indexOf("export function HackathonDetailView");
   const fnEnd = source.indexOf("function LinksView");
   const fnSource = source.slice(fnStart, fnEnd);
-  assert.match(fnSource, /const description = hackathonPublicDescription\(item\);/);
+  assert.match(fnSource, /const presentation = getHackathonPresentation\(item\);/);
+  assert.match(fnSource, /\{presentation\.description && <CatalogPanel title="Sobre el evento o reto">/);
   assert.doesNotMatch(fnSource, /\{item\.notes\}/, "notes must never be interpolated directly into the page");
 });
 
@@ -3064,7 +3190,7 @@ test("The detail view's official source link is gated by isSafeHttpUrl, same as 
   const fnStart = source.indexOf("export function HackathonDetailView");
   const fnEnd = source.indexOf("function LinksView");
   const fnSource = source.slice(fnStart, fnEnd);
-  assert.match(fnSource, /\{isSafeHttpUrl\(item\.url\) && \(/);
+  assert.match(fnSource, /\{isSafeHttpUrl\(presentation\.sourceUrl\) && \(/);
   assert.match(fnSource, /rel="noopener noreferrer"/);
 });
 
@@ -3168,7 +3294,7 @@ test("A second user cannot reach another user's saved items through the hub - it
 test("Cursos merges its stats and status tabs into one clickable row (Total / Empezados / Próx. inicio / Guardados); finished courses stay reachable via the Estado filter, and no 'Terminado'/'Archivados' tab survives", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const coursesFnStart = source.indexOf("function Courses(");
-  const coursesFnEnd = source.indexOf("function coursePriorityClass");
+  const coursesFnEnd = source.indexOf("function courseStatusPillClass");
   const fnSource = source.slice(coursesFnStart, coursesFnEnd);
 
   assert.match(fnSource, /useState<"total" \| "empezados" \| "proximos" \| "guardados">/);
@@ -3340,7 +3466,7 @@ test("Phones: Cursos / Eventos y retos pull the control strip up under the heade
     readFile(new URL("../src/app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  const courses = guestApp.slice(guestApp.indexOf("function Courses("), guestApp.indexOf("function coursePriorityClass"));
+  const courses = guestApp.slice(guestApp.indexOf("function Courses("), guestApp.indexOf("function courseStatusPillClass"));
   const hackathons = guestApp.slice(guestApp.indexOf("function Hackathons("), guestApp.indexOf("function HackathonsEmptyState"));
   assert.match(courses, /<div className="al-catalog-view space-y-4">/);
   assert.match(hackathons, /<div className="al-catalog-view space-y-4">/);

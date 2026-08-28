@@ -130,6 +130,59 @@ export interface DbFpContentItem {
   updated_at: string;
 }
 
+export type DbRadarDestination = "news" | "course" | "event" | "job";
+export type DbRadarLifecycle =
+  | "announced"
+  | "registration_open"
+  | "registration_closed"
+  | "ongoing"
+  | "completed"
+  | "cancelled"
+  | "postponed"
+  | "evergreen";
+
+export interface DbCanonicalOpportunityFacts {
+  canonical_occurrence_id: string | null;
+  canonical_destination: DbRadarDestination | null;
+  canonical_opportunity_type: string | null;
+  canonical_title: string | null;
+  canonical_summary_short: string | null;
+  canonical_summary_expanded: string | null;
+  canonical_about_summary: string | null;
+  canonical_organizer: string | null;
+  canonical_provider: string | null;
+  canonical_url: string | null;
+  canonical_registration_url: string | null;
+  canonical_starts_at: string | null;
+  canonical_ends_at: string | null;
+  canonical_registration_opens_at: string | null;
+  canonical_registration_deadline: string | null;
+  canonical_attendance_mode: string | null;
+  canonical_country: string | null;
+  canonical_autonomous_community: string | null;
+  canonical_province: string | null;
+  canonical_municipality: string | null;
+  canonical_venue: string | null;
+  canonical_address: string | null;
+  canonical_duration_hours: number | null;
+  canonical_course_difficulty: string | null;
+  canonical_minimum_education: string | null;
+  canonical_other_eligibility: string[];
+  canonical_credential_level: string | null;
+  canonical_price_state: "free" | "paid" | null;
+  canonical_price_amount_minor: number | null;
+  canonical_price_currency: string | null;
+  canonical_certification: string | null;
+  canonical_prize: string | null;
+  canonical_requirements: string[];
+  canonical_audience: string[];
+  canonical_learning_outcomes: string[];
+  canonical_skills_tested: string[];
+  canonical_preparation_tips: string[];
+  canonical_source_lifecycle_status: DbRadarLifecycle | null;
+  canonical_source_verified_at: string | null;
+}
+
 export interface DbFpResourceNote {
   id: string;
   user_id: string;

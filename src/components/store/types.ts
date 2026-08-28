@@ -23,6 +23,56 @@ export type CourseAptitude = {
   completed?: boolean;
 };
 
+export type CanonicalOpportunityFacts = {
+  occurrenceId: string;
+  destination: "course" | "event";
+  opportunityType: string;
+  title: string;
+  summaryShort?: string;
+  summaryExpanded?: string;
+  aboutSummary?: string;
+  organizer?: string;
+  provider?: string;
+  canonicalUrl: string;
+  registrationUrl?: string;
+  startsAt?: string;
+  endsAt?: string;
+  registrationOpensAt?: string;
+  registrationDeadline?: string;
+  attendanceMode?: string;
+  country?: string;
+  autonomousCommunity?: string;
+  province?: string;
+  municipality?: string;
+  venue?: string;
+  address?: string;
+  durationHours?: number;
+  courseDifficulty?: string;
+  minimumEducation?: string;
+  otherEligibility: string[];
+  credentialLevel?: string;
+  priceState?: "free" | "paid";
+  priceAmountMinor?: number;
+  priceCurrency?: string;
+  certification?: string;
+  prize?: string;
+  requirements: string[];
+  audience: string[];
+  learningOutcomes: string[];
+  skillsTested: string[];
+  preparationTips: string[];
+  sourceLifecycleStatus?:
+    | "announced"
+    | "registration_open"
+    | "registration_closed"
+    | "ongoing"
+    | "completed"
+    | "cancelled"
+    | "postponed"
+    | "evergreen";
+  sourceVerifiedAt: string;
+};
+
 export type Task = {
   id: string;
   title: string;
@@ -83,6 +133,8 @@ export type Course = {
   sourceTable?: "courses" | "tech_opportunities" | "fp_content_items";
   is_favorite?: boolean;
   aptitudes?: CourseAptitude[];
+  canonical?: CanonicalOpportunityFacts;
+  user_status?: string | null;
   created_at: string;
 };
 
@@ -142,6 +194,7 @@ export type FpCatalogItem = {
   is_favorite?: boolean;
   user_status?: string | null;
   user_completed_at?: string | null;
+  canonical?: CanonicalOpportunityFacts;
   created_at: string;
 };
 
@@ -174,6 +227,8 @@ export type Hackathon = {
   sourceTable?: "hackathons" | "tech_opportunities" | "fp_content_items";
   requiredCompetencies?: RequiredCompetency[];
   is_favorite?: boolean;
+  canonical?: CanonicalOpportunityFacts;
+  user_status?: string | null;
   created_at: string;
 };
 

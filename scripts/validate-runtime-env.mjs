@@ -71,6 +71,11 @@ if (demoFlag && demoFlag !== "true" && demoFlag !== "false") {
   errors.push("AL_LIO_DEMO_ACCESS_ENABLED debe ser true o false");
 }
 
+const verifiedOpportunitiesFlag = process.env.AL_LIO_VERIFIED_OPPORTUNITIES_ONLY?.trim().toLowerCase();
+if (verifiedOpportunitiesFlag && verifiedOpportunitiesFlag !== "true" && verifiedOpportunitiesFlag !== "false") {
+  errors.push("AL_LIO_VERIFIED_OPPORTUNITIES_ONLY debe ser true o false");
+}
+
 commaSeparatedEnum(
   "AL_LIO_RADAR_V4_PROJECT_DESTINATIONS",
   new Set(["news", "course", "event"]),

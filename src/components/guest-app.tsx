@@ -57,7 +57,6 @@ import {
   canToggleHackathonFavorite,
   fpItemToHackathon,
   getHackathonPresentation,
-  hackathonPublicDescription,
   isFpHackathonLike,
   isTechHackathonOrEvent,
   techOpportunityToHackathon,
@@ -2075,15 +2074,6 @@ function hackathonStatusLabel(status: string) {
   return m[status] ?? status;
 }
 
-function ChipTag({ children, className, icon }: { children: React.ReactNode; className?: string; icon?: "pin" }) {
-  return (
-    <span className={cn("inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-medium", className)}>
-      {icon === "pin" && <MapPin className="h-2.5 w-2.5 shrink-0" />}
-      {children}
-    </span>
-  );
-}
-
 function FilterCalendar({
   datesWithItems,
   dayFilter,
@@ -2194,7 +2184,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   const [dayFilter, setDayFilter] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("");
   const [modalidadFilter, setModalidadFilter] = useState("");
-  const [prioridadFilter, setPrioridadFilter] = useState("");
   const [soloGratuitos, setSoloGratuitos] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -2256,16 +2245,15 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
       if (dayFilter && dateKey(c.fecha_inicio || c.start_at) !== dayFilter) return false;
       if (estadoFilter && c.status !== estadoFilter) return false;
       if (modalidadFilter && c.modalidad !== modalidadFilter) return false;
-      if (prioridadFilter && normalizePriorityText(c.prioridad) !== prioridadFilter) return false;
       if (soloGratuitos) {
         const coste = (c.coste || "").toLowerCase().trim();
         if (coste && coste !== "gratis" && coste !== "0" && coste !== "gratuito" && coste !== "free") return false;
       }
       return true;
     });
-  }, [tabBase, search, monthFilter, dayFilter, estadoFilter, modalidadFilter, prioridadFilter, soloGratuitos]);
+  }, [tabBase, search, monthFilter, dayFilter, estadoFilter, modalidadFilter, soloGratuitos]);
 
-  const activeFilterCount = [monthFilter, dayFilter, estadoFilter, modalidadFilter, prioridadFilter, soloGratuitos].filter(Boolean).length;
+  const activeFilterCount = [monthFilter, dayFilter, estadoFilter, modalidadFilter, soloGratuitos].filter(Boolean).length;
 
   // One featured course above the grid: the next one due to start, breaking
   // ties by priority. Only on the untouched Total view - once the student
@@ -2299,7 +2287,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   );
 
   function clearAll() {
-    setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setModalidadFilter(""); setPrioridadFilter(""); setSoloGratuitos(false); setSearchInput(""); setSearch("");
+    setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setModalidadFilter(""); setSoloGratuitos(false); setSearchInput(""); setSearch("");
   }
 
   return (
@@ -2352,14 +2340,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                 </div>
               )}
               <div>
-                <p className="al-fp-row-label">Prioridad</p>
-                <FilterChips
-                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
-                  value={prioridadFilter}
-                  onChange={setPrioridadFilter}
-                />
-              </div>
-              <div>
                 <p className="al-fp-row-label">Fecha de inicio</p>
                 <FilterDateRow
                   dayFilter={dayFilter}
@@ -2400,7 +2380,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                     <>
                       {fp.startDate && <CatalogFact icon={<CalendarDays />}>{formatDateLabel(fp.startDate)}</CatalogFact>}
                       {fp.modality && <CatalogFact icon={<Building2 />}>{fp.modality}</CatalogFact>}
-                      {fp.level && <CatalogFact icon={<Target />}>{fp.level}</CatalogFact>}
+                      {fp.courseDifficulty && <CatalogFact icon={<Target />}>{fp.courseDifficulty}</CatalogFact>}
                     </>
                   )}
                   detailHref={`/courses/${encodeURIComponent(featuredCourse.id)}`}
@@ -2432,7 +2412,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                         <>
                           {presentation.startDate && <CatalogFact icon={<CalendarDays />}>{formatDateLabel(presentation.startDate)}</CatalogFact>}
                           {presentation.modality && <CatalogFact icon={<Building2 />}>{presentation.modality}</CatalogFact>}
-                          {presentation.level && <CatalogFact icon={<Target />}>{presentation.level}</CatalogFact>}
+                          {presentation.courseDifficulty && <CatalogFact icon={<Target />}>{presentation.courseDifficulty}</CatalogFact>}
                         </>
                       )}
                       detailHref={`/courses/${encodeURIComponent(item.id)}`}
@@ -2460,13 +2440,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   );
 }
 
-function coursePriorityClass(value?: string): string {
-  const priority = normalizePriorityText(value);
-  if (priority.includes("alta")) return "al-course-chip-terracotta";
-  if (priority.includes("baja")) return "al-course-chip-green";
-  return "al-course-chip-amber";
-}
-
 function courseStatusPillClass(status: Course["status"]): string {
   const classes: Record<Course["status"], string> = {
     pendiente: "al-catalog-status-pending",
@@ -2480,6 +2453,20 @@ function courseStatusPillClass(status: Course["status"]): string {
 
 function capitalizeFirst(value: string): string {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+}
+
+function opportunityLifecycleLabel(value?: string): string | undefined {
+  const labels: Record<string, string> = {
+    announced: "Anunciado",
+    registration_open: "Inscripción abierta",
+    registration_closed: "Inscripción cerrada",
+    ongoing: "En curso",
+    completed: "Finalizado",
+    cancelled: "Cancelado",
+    postponed: "Aplazado",
+    evergreen: "Disponible sin convocatoria",
+  };
+  return value ? labels[value] : undefined;
 }
 
 // Number of banner variants available per professional family under
@@ -2577,24 +2564,35 @@ export function CourseDetailView({ id }: { id: string }) {
   const archived = isCourseArchived(item);
   const aptitudes = item.aptitudes ?? [];
 
-  const learnings = aptitudes.filter((a) => a.relation === "ensena").map((a) => a.titulo).filter(Boolean);
-  // requisitos_resumen is a single free-text field; only treat it as a
-  // requirements checklist when it is actually delimited into 2+ items,
-  // otherwise it is prose already shown under "Sobre el curso".
-  const requirements = (presentation.requirements ?? "")
-    .split(/\r?\n|·|•|;/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const hasRequirementList = requirements.length >= 2;
+  const learnings = [...new Set([
+    ...presentation.learningOutcomes,
+    ...aptitudes.filter((a) => a.relation === "ensena").map((a) => a.titulo),
+  ].filter(Boolean))];
+  const requirements = [...new Set([
+    ...(presentation.minimumEducation ? [`Formación mínima: ${presentation.minimumEducation}`] : []),
+    ...presentation.otherEligibility,
+    ...presentation.requirements,
+  ].filter(Boolean))];
   const startKey = (presentation.startDate ?? "").slice(0, 10);
   const daysUntil = startKey ? Math.ceil((new Date(`${startKey}T00:00:00`).getTime() - Date.now()) / 86_400_000) : null;
   const nextCourse = getNextCatalogItem(allCourses, item.id);
   const infoRows: Array<[string, string | undefined]> = [
     ["Certificación", presentation.certification],
+    ["Nivel de la acreditación", presentation.credentialLevel],
     ["Modalidad", presentation.modality],
     ["Entidad", presentation.provider],
     ["Duración", presentation.duration],
+    ["Precio", presentation.price],
+    ["Disponibilidad", opportunityLifecycleLabel(presentation.lifecycle)],
   ];
+  const overviewRows = [
+    presentation.startDate ? { label: "Fechas", value: `${formatDateLabel(presentation.startDate)}${presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}` } : null,
+    presentation.location ? { label: "Ubicación", value: presentation.location } : null,
+    presentation.modality ? { label: "Modalidad", value: presentation.modality } : null,
+    presentation.courseDifficulty ? { label: "Dificultad", value: presentation.courseDifficulty } : null,
+    presentation.minimumEducation ? { label: "Formación mínima", value: presentation.minimumEducation } : null,
+    presentation.duration ? { label: "Duración", value: presentation.duration } : null,
+  ].filter((row): row is { label: string; value: string } => Boolean(row));
 
   return (
     <div className="space-y-5">
@@ -2621,48 +2619,31 @@ export function CourseDetailView({ id }: { id: string }) {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge className={cn(courseStatusClass(item.status))}>{item.status}</Badge>
-              {presentation.priority && <ChipTag className={coursePriorityClass(presentation.priority)}>{priorityText(presentation.priority)}</ChipTag>}
             </div>
-            <CatalogInfoGrid items={[
-              {
-                label: "Fechas",
-                value: <>{presentation.startDate ? formatDateLabel(presentation.startDate) : "Sin fecha"}{presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}</>,
-              },
-              { label: "Ubicación", value: presentation.location || "No especificada" },
-              { label: "Modalidad", value: presentation.modality || "No especificada" },
-              { label: "Nivel", value: presentation.level || "No especificado" },
-              { label: "Duración", value: presentation.duration || "No especificada" },
-              { label: "Estado", value: capitalizeFirst(presentation.status) },
-            ]} />
+            {overviewRows.length > 0 && <CatalogInfoGrid items={overviewRows} />}
           </CatalogPanel>
 
-          <div className="al-catalog-detail-cols">
-            <CatalogPanel title="Sobre el curso">
-              <p className="whitespace-pre-wrap text-[12.5px] leading-6 text-[#4b4740]">{presentation.description || "Este curso todavía no tiene una descripción disponible."}</p>
-            </CatalogPanel>
-            <CatalogPanel title="Qué aprenderás">
-              {learnings.length ? (
+          {(presentation.description || learnings.length > 0 || requirements.length > 0) && (
+            <div className="al-catalog-detail-cols">
+            {presentation.description && <CatalogPanel title="Sobre el curso">
+              <p className="whitespace-pre-wrap text-[12.5px] leading-6 text-[#4b4740]">{presentation.description}</p>
+            </CatalogPanel>}
+            {learnings.length > 0 && <CatalogPanel title="Qué aprenderás">
                 <ul className="space-y-2">
                   {learnings.map((t, i) => (
                     <li key={i} className="flex items-start gap-2 text-[12.5px] leading-5 text-[#4b4740]"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1f7a4d]" />{t}</li>
                   ))}
                 </ul>
-              ) : (
-                <p className="text-[12.5px] leading-6 text-[#6b6f72]">Los objetivos concretos se publicarán antes del inicio.</p>
-              )}
-            </CatalogPanel>
-            <CatalogPanel title="Requisitos de acceso">
-              {hasRequirementList ? (
+            </CatalogPanel>}
+            {requirements.length > 0 && <CatalogPanel title="Requisitos de acceso">
                 <ul className="space-y-2">
                   {requirements.map((t, i) => (
                     <li key={i} className="flex items-start gap-2 text-[12.5px] leading-5 text-[#4b4740]"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#9a958a]" />{t}</li>
                   ))}
                 </ul>
-              ) : (
-                <p className="text-[12.5px] leading-6 text-[#6b6f72]">Consulta los requisitos en la convocatoria oficial.</p>
-              )}
-            </CatalogPanel>
-          </div>
+            </CatalogPanel>}
+            </div>
+          )}
 
           {aptitudes.length > 0 && (
             <CatalogPanel title="Estructura del curso">
@@ -2680,10 +2661,9 @@ export function CourseDetailView({ id }: { id: string }) {
             </CatalogPanel>
           )}
 
-          <CatalogPanel title="Información adicional">
+          {infoRows.some(([, value]) => value) && <CatalogPanel title="Información adicional">
             <CatalogInfoGrid items={infoRows.filter(([, value]) => value).map(([label, value]) => ({ label, value }))} />
-            {presentation.requirements && <p className="text-[11.5px] leading-5 text-[#777269]"><span className="al-catalog-info-k">Observaciones</span><br />{presentation.requirements}</p>}
-          </CatalogPanel>
+          </CatalogPanel>}
 
         </div>
 
@@ -2691,10 +2671,10 @@ export function CourseDetailView({ id }: { id: string }) {
           <CatalogPanel>
             <p className="al-catalog-side-title">Estado del curso</p>
             <Badge className={cn(courseStatusClass(item.status))}>{item.status}</Badge>
-            <div>
+            {presentation.startDate && <div>
               <p className="al-catalog-info-k">Próximo hito</p>
-              <p className="al-catalog-info-v">{presentation.startDate ? `Inicio · ${formatDateLabel(presentation.startDate)}` : "Fecha por confirmar"}</p>
-            </div>
+              <p className="al-catalog-info-v">Inicio · {formatDateLabel(presentation.startDate)}</p>
+            </div>}
             {typeof daysUntil === "number" && daysUntil >= 0 && (
               <div className="rounded-xl bg-[#e7f5ee] px-3 py-2 text-[12px] font-semibold text-[#1f7a4d]">
                 {daysUntil === 0 ? "Empieza hoy" : `Faltan ${daysUntil} ${daysUntil === 1 ? "día" : "días"}`}
@@ -2757,7 +2737,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   const [estadoFilter, setEstadoFilter] = useState("");
   const [provinciaFilter, setProvinciaFilter] = useState("");
   const [modalidadFilter, setModalidadFilter] = useState("");
-  const [prioridadFilter, setPrioridadFilter] = useState("");
   const [soloInscripcionAbierta, setSoloInscripcionAbierta] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -2827,16 +2806,15 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
       if (estadoFilter && h.status !== estadoFilter) return false;
       if (provinciaFilter && h.province !== provinciaFilter) return false;
       if (modalidadFilter && h.modalidad !== modalidadFilter) return false;
-      if (prioridadFilter && normalizePriorityText(h.priority) !== prioridadFilter) return false;
       if (soloInscripcionAbierta && h.status !== "inscripcion_abierta") return false;
       return true;
     });
-  }, [tabBase, search, monthFilter, dayFilter, estadoFilter, provinciaFilter, modalidadFilter, prioridadFilter, soloInscripcionAbierta]);
+  }, [tabBase, search, monthFilter, dayFilter, estadoFilter, provinciaFilter, modalidadFilter, soloInscripcionAbierta]);
 
-  const activeFilterCount = [monthFilter, dayFilter, estadoFilter, provinciaFilter, modalidadFilter, prioridadFilter, soloInscripcionAbierta].filter(Boolean).length;
+  const activeFilterCount = [monthFilter, dayFilter, estadoFilter, provinciaFilter, modalidadFilter, soloInscripcionAbierta].filter(Boolean).length;
 
   function clearAll() {
-    setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setProvinciaFilter(""); setModalidadFilter(""); setPrioridadFilter(""); setSoloInscripcionAbierta(false); setSearchInput(""); setSearch("");
+    setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setProvinciaFilter(""); setModalidadFilter(""); setSoloInscripcionAbierta(false); setSearchInput(""); setSearch("");
   }
 
   const showFeatured = viewTab === "total" && !search && activeFilterCount === 0;
@@ -2911,14 +2889,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                   />
                 </div>
               )}
-              <div>
-                <p className="al-fp-row-label">Prioridad</p>
-                <FilterChips
-                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
-                  value={prioridadFilter}
-                  onChange={setPrioridadFilter}
-                />
-              </div>
               <div>
                 <p className="al-fp-row-label">Fecha de inicio</p>
                 <FilterDateRow
@@ -3007,7 +2977,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                           {presentation.startDate && <CatalogFact icon={<CalendarDays />}>{formatDateLabel(presentation.startDate)}</CatalogFact>}
                           {presentation.location && <CatalogFact icon={<MapPin />}>{presentation.location}</CatalogFact>}
                           {presentation.modality && <CatalogFact icon={<Building2 />}>{presentation.modality}</CatalogFact>}
-                          {presentation.priority && <CatalogFact icon={<Target />}>{priorityText(presentation.priority)}</CatalogFact>}
                         </>
                       )}
                       detailHref={`/hackathons/${encodeURIComponent(item.id)}`}
@@ -3060,13 +3029,6 @@ function isCompetencyDone(competency: RequiredCompetency): boolean {
 function hackathonAptitudeProgress(item: Hackathon): { done: number; total: number } {
   const obligatorias = (item.requiredCompetencies ?? []).filter((c) => c.obligatoria_para_item);
   return { done: obligatorias.filter(isCompetencyDone).length, total: obligatorias.length };
-}
-
-function hackPriorityClass(value?: string): string {
-  const priority = normalizePriorityText(value);
-  if (priority.includes("alta")) return "al-hack-chip-terracotta";
-  if (priority.includes("baja")) return "al-hack-chip-green";
-  return "al-hack-chip-amber";
 }
 
 function hackathonStatusPillClass(status: Hackathon["status"]): string {
@@ -3177,15 +3139,36 @@ export function HackathonDetailView({ id }: { id: string }) {
     );
   }
 
-  const description = hackathonPublicDescription(item);
   const presentation = getHackathonPresentation(item);
   const canFavorite = canToggleHackathonFavorite(item);
-  const inscripcionFin = item.inscripcion_hasta || item.registration_deadline_at;
+  const inscripcionFin = presentation.registrationDeadline;
   const requirements = item.requiredCompetencies ?? [];
   const progress = hackathonAptitudeProgress(item);
   const past = isHackathonPast(item);
   const archived = isHackathonArchived(item);
   const requiredSkills = requirements.filter((competency) => competency.obligatoria_para_item);
+  const testedSkills = [...new Set([
+    ...presentation.skillsTested,
+    ...requiredSkills.map((competency) => competency.titulo),
+  ].filter(Boolean))];
+  const preparationTips = presentation.preparationTips;
+  const eligibility = [...new Set([...presentation.audience, ...presentation.otherEligibility, ...presentation.requirements].filter(Boolean))];
+  const overviewRows = [
+    presentation.startDate ? { label: "Fechas", value: `${formatDateLabel(presentation.startDate)}${presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}` } : null,
+    presentation.location ? { label: "Ubicación", value: presentation.location } : null,
+    presentation.modality ? { label: "Modalidad", value: presentation.modality } : null,
+    inscripcionFin ? { label: "Inscripción hasta", value: formatDateLabel(inscripcionFin) } : null,
+    opportunityLifecycleLabel(presentation.lifecycle) ? { label: "Estado", value: opportunityLifecycleLabel(presentation.lifecycle)! } : null,
+  ].filter((row): row is { label: string; value: string } => Boolean(row));
+  const additionalRows = [
+    presentation.type ? { label: "Tipo", value: presentation.type } : null,
+    presentation.organizer ? { label: "Entidad", value: presentation.organizer } : null,
+    presentation.certification ? { label: "Certificación", value: presentation.certification } : null,
+    presentation.prize ? { label: "Premio", value: presentation.prize } : null,
+    presentation.price ? { label: "Precio", value: presentation.price } : null,
+    presentation.modality ? { label: "Modalidad", value: presentation.modality } : null,
+    presentation.location ? { label: "Ubicación", value: presentation.location } : null,
+  ].filter((row): row is { label: string; value: string } => Boolean(row));
   const startKey = (presentation.startDate ?? "").slice(0, 10);
   const nextHackathon = (() => {
     const pool = allHackathons
@@ -3246,48 +3229,38 @@ export function HackathonDetailView({ id }: { id: string }) {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className={cn("al-catalog-status", hackathonStatusPillClass(item.status))}>{hackathonStatusLabel(item.status)}</span>
-              {presentation.priority && <ChipTag className={hackPriorityClass(presentation.priority)}>{priorityText(presentation.priority)}</ChipTag>}
               {!archived && isPreparationComplete(item) && (
                 <Badge className="al-hack-prep-ready al-hack-chip-green"><CheckCircle2 className="h-3 w-3" />Preparación lista</Badge>
               )}
             </div>
             {past && <p className="rounded-lg bg-[#f3ece1] px-3 py-2 text-xs font-semibold text-[#6b6f72]">Este evento ya ha finalizado.</p>}
-            <CatalogInfoGrid items={[
-              {
-                label: "Fechas",
-                value: <>{presentation.startDate ? formatDateLabel(presentation.startDate) : "Sin fecha indicada"}{presentation.endDate ? ` → ${formatDateLabel(presentation.endDate)}` : ""}</>,
-              },
-              { label: "Ubicación", value: presentation.location || "No especificada" },
-              { label: "Modalidad", value: presentation.modality || "No especificada" },
-              { label: "Inscripción hasta", value: inscripcionFin ? formatDateLabel(inscripcionFin) : "No especificada" },
-              { label: "Prioridad", value: presentation.priority ? priorityText(presentation.priority) : "No especificada" },
-              { label: "Estado", value: hackathonStatusLabel(item.status) },
-            ]} />
+            {overviewRows.length > 0 && <CatalogInfoGrid items={overviewRows} />}
           </CatalogPanel>
 
-          <div className="al-catalog-detail-cols">
-            <CatalogPanel title="Sobre el evento o reto">
-              <p className="whitespace-pre-wrap text-[12.5px] leading-6 text-[#4b4740]">{description || "Este evento todavía no tiene una descripción disponible."}</p>
-            </CatalogPanel>
-            <CatalogPanel title="Qué pondrás a prueba">
-              {requiredSkills.length ? (
+          {(presentation.description || testedSkills.length > 0 || preparationTips.length > 0 || eligibility.length > 0) && (
+            <div className="al-catalog-detail-cols">
+            {presentation.description && <CatalogPanel title="Sobre el evento o reto">
+              <p className="whitespace-pre-wrap text-[12.5px] leading-6 text-[#4b4740]">{presentation.description}</p>
+            </CatalogPanel>}
+            {testedSkills.length > 0 && <CatalogPanel title="Qué pondrás a prueba">
                 <ul className="space-y-2">
-                  {requiredSkills.slice(0, 4).map((competency) => (
-                    <li key={competency.id} className="flex items-start gap-2 text-[12.5px] leading-5 text-[#4b4740]"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1f7a4d]" />{competency.titulo}</li>
+                  {testedSkills.slice(0, 6).map((skill) => (
+                    <li key={skill} className="flex items-start gap-2 text-[12.5px] leading-5 text-[#4b4740]"><CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1f7a4d]" />{skill}</li>
                   ))}
                 </ul>
-              ) : (
-                <p className="text-[12.5px] leading-6 text-[#6b6f72]">Las aptitudes concretas se publicarán cuando la convocatoria las confirme.</p>
-              )}
-            </CatalogPanel>
-            <CatalogPanel title="Cómo prepararte">
-              {requirements.length ? (
-                <p className="text-[12.5px] leading-6 text-[#4b4740]">Tienes {requirements.length} {requirements.length === 1 ? "aptitud vinculada" : "aptitudes vinculadas"}. Revisa debajo los cursos y recursos disponibles para cada una.</p>
-              ) : (
-                <p className="text-[12.5px] leading-6 text-[#6b6f72]">Consulta la convocatoria oficial y vuelve cuando publiquemos una preparación vinculada a tu ciclo.</p>
-              )}
-            </CatalogPanel>
-          </div>
+            </CatalogPanel>}
+            {preparationTips.length > 0 && <CatalogPanel title="Cómo prepararte">
+              <ul className="space-y-2">
+                {preparationTips.map((tip) => <li key={tip} className="flex items-start gap-2 text-[12.5px] leading-5 text-[#4b4740]"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#9a958a]" />{tip}</li>)}
+              </ul>
+            </CatalogPanel>}
+            {eligibility.length > 0 && <CatalogPanel title="Quién puede participar">
+              <ul className="space-y-2">
+                {eligibility.map((rule) => <li key={rule} className="flex items-start gap-2 text-[12.5px] leading-5 text-[#4b4740]"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#9a958a]" />{rule}</li>)}
+              </ul>
+            </CatalogPanel>}
+            </div>
+          )}
 
           {requirements.length > 0 && (
             <CatalogPanel title="Recursos para prepararte">
@@ -3303,32 +3276,23 @@ export function HackathonDetailView({ id }: { id: string }) {
             </CatalogPanel>
           )}
 
-          <CatalogPanel title="Información adicional">
-            <CatalogInfoGrid items={[
-              { label: "Tipo", value: presentation.type || "Evento o reto" },
-              { label: "Entidad", value: presentation.organizer || "No especificada" },
-              { label: "Certificación o premio", value: item.certificacion_o_premio || "No especificado" },
-              { label: "Modalidad", value: presentation.modality || "No especificada" },
-              { label: "Ubicación", value: presentation.location || "No especificada" },
-              { label: "Prioridad", value: presentation.priority ? priorityText(presentation.priority) : "No especificada" },
-            ]} />
-          </CatalogPanel>
+          {additionalRows.length > 0 && <CatalogPanel title="Información adicional">
+            <CatalogInfoGrid items={additionalRows} />
+          </CatalogPanel>}
         </div>
 
         <div className="space-y-4">
           <CatalogPanel>
             <p className="al-catalog-side-title">Estado del evento</p>
             <span className={cn("al-catalog-status w-fit", hackathonStatusPillClass(item.status))}>{hackathonStatusLabel(item.status)}</span>
-            <div>
+            {(inscripcionFin || presentation.startDate) && <div>
               <p className="al-catalog-info-k">Próximo hito</p>
               <p className="al-catalog-info-v">
                 {inscripcionFin
                   ? `Cierre de inscripción · ${formatDateLabel(inscripcionFin)}`
-                  : presentation.startDate
-                    ? `Inicio · ${formatDateLabel(presentation.startDate)}`
-                    : "Fecha por confirmar"}
+                  : `Inicio · ${formatDateLabel(presentation.startDate!)}`}
               </p>
-            </div>
+            </div>}
             {progress.total > 0 && (
               <div className="rounded-xl bg-[#faf8f4] p-3">
                 <div className="flex items-center justify-between gap-2 text-[11.5px] font-semibold text-[#4b4740]">
@@ -3341,8 +3305,8 @@ export function HackathonDetailView({ id }: { id: string }) {
               </div>
             )}
             <div className="flex flex-col gap-2 pt-1">
-              {isSafeHttpUrl(item.url) && (
-                <a href={item.url} target="_blank" rel="noopener noreferrer" className="al-catalog-action al-catalog-action-solid">
+              {isSafeHttpUrl(presentation.sourceUrl) && (
+                <a href={presentation.sourceUrl} target="_blank" rel="noopener noreferrer" className="al-catalog-action al-catalog-action-solid">
                   <ExternalLink className="h-3.5 w-3.5" />Abrir convocatoria oficial
                 </a>
               )}
@@ -3786,15 +3750,6 @@ function val(form: FormData, key: string) {
 function normalizePriorityText(value?: string) {
   return String(value || "media").trim().toLowerCase();
 }
-
-function priorityText(value?: string) {
-  const priority = normalizePriorityText(value);
-  if (priority.includes("alta")) return "Alta";
-  if (priority.includes("baja")) return "Baja";
-  return "Media";
-}
-
-
 
 function toTaskBucket(value?: string): TaskBucket {
   if (value === "log_ia") return "semanal";

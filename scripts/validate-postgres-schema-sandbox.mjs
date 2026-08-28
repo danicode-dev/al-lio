@@ -92,6 +92,7 @@ const EXPECTED_TABLES = [
   "radar_content_current_facts", "radar_content_field_evidence", "radar_content_targets",
   "radar_content_identity_aliases", "radar_delivery_revisions", "radar_content_conflicts",
   "radar_projector_events", "radar_ingest_events",
+  "legacy_opportunity_migration_audit",
   "fp_learning_competencies", "fp_learning_resources", "fp_learning_competency_resources",
   "fp_user_learning_state", "fp_learning_notes",
 ];
@@ -111,6 +112,7 @@ const EXPECTED_INDEXES = [
   "radar_content_revisions_occurrence_idx",
   "radar_content_field_evidence_field_idx",
   "radar_content_targets_lookup_idx",
+  "legacy_opportunity_audit_source_key_uidx",
   "fp_learning_competencies_cycle_idx",
   "fp_user_learning_state_user_idx",
   "fp_learning_notes_user_resource_idx",

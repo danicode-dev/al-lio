@@ -2,6 +2,7 @@ import "server-only";
 import { query } from "@/lib/db/pool";
 import type {
   DbFpContentItem,
+  DbCanonicalOpportunityFacts,
   DbFpCycle,
   DbFpCycleSkill,
   DbFpSkill,
@@ -14,7 +15,7 @@ import type {
   FpItemCompetencyRelation,
 } from "@/lib/db/types";
 
-export type FpCatalogContentRow = DbFpContentItem & {
+export type FpCatalogContentRow = DbFpContentItem & DbCanonicalOpportunityFacts & {
   cycle_code: FpCycleCode;
   cycle_group: FpCycleGroup;
   priority: "Alta" | "Media" | "Baja";
@@ -68,6 +69,7 @@ export async function getFpContentForProfile(
 
   const values: unknown[] = [userId, profile.cycle_group, profile.cycle_code];
   const filters = ["fit.cycle_group = $2", "fit.cycle_code = $3"];
+  const verifiedOnly = process.env.AL_LIO_VERIFIED_OPPORTUNITIES_ONLY?.trim().toLowerCase() === "true";
 
   if (profile.academic_year) {
     values.push(profile.academic_year);
@@ -76,6 +78,23 @@ export async function getFpContentForProfile(
 
   if (!options.includeVolatile) {
     filters.push("item.type <> 'empleo_busqueda'");
+  }
+
+  if (verifiedOnly) {
+    filters.push("canonical.id is not null");
+    filters.push("canonical.publication_decision = 'accepted'");
+    filters.push("entity.destination in ('course', 'event')");
+    filters.push(`(
+      state.status in ('saved', 'started', 'completed')
+      or canonical.source_lifecycle_status in ('announced', 'registration_open', 'ongoing', 'evergreen', 'postponed')
+    )`);
+    filters.push(`(
+      entity.destination <> 'event'
+      or (
+        canonical.starts_at is not null
+        and coalesce(canonical.ends_at, canonical.starts_at) >= now()
+      )
+    )`);
   }
 
   const res = await query<FpCatalogContentRow>(
@@ -89,13 +108,56 @@ export async function getFpContentForProfile(
        state.status as user_status,
        coalesce(state.is_favorite, false) as is_favorite,
        state.notes as user_notes,
-       state.completed_at as user_completed_at
+       state.completed_at as user_completed_at,
+       canonical.id::text as canonical_occurrence_id,
+       entity.destination as canonical_destination,
+       entity.opportunity_type as canonical_opportunity_type,
+       canonical.title as canonical_title,
+       canonical.summary_short as canonical_summary_short,
+       canonical.summary_expanded as canonical_summary_expanded,
+       canonical.about_summary as canonical_about_summary,
+       canonical.organizer as canonical_organizer,
+       canonical.provider as canonical_provider,
+       canonical.canonical_url,
+       canonical.registration_url as canonical_registration_url,
+       canonical.starts_at as canonical_starts_at,
+       canonical.ends_at as canonical_ends_at,
+       canonical.registration_opens_at as canonical_registration_opens_at,
+       canonical.registration_deadline as canonical_registration_deadline,
+       canonical.attendance_mode as canonical_attendance_mode,
+       canonical.country as canonical_country,
+       canonical.autonomous_community as canonical_autonomous_community,
+       canonical.province as canonical_province,
+       canonical.municipality as canonical_municipality,
+       canonical.venue as canonical_venue,
+       canonical.address as canonical_address,
+       canonical.duration_hours::float8 as canonical_duration_hours,
+       canonical.course_difficulty as canonical_course_difficulty,
+       canonical.minimum_education as canonical_minimum_education,
+       canonical.other_eligibility as canonical_other_eligibility,
+       canonical.credential_level as canonical_credential_level,
+       canonical.price_state as canonical_price_state,
+       canonical.price_amount_minor as canonical_price_amount_minor,
+       canonical.price_currency as canonical_price_currency,
+       canonical.certification as canonical_certification,
+       canonical.prize as canonical_prize,
+       canonical.requirements as canonical_requirements,
+       canonical.audience as canonical_audience,
+       canonical.learning_outcomes as canonical_learning_outcomes,
+       canonical.skills_tested as canonical_skills_tested,
+       canonical.preparation_tips as canonical_preparation_tips,
+       canonical.source_lifecycle_status as canonical_source_lifecycle_status,
+       canonical.source_verified_at as canonical_source_verified_at
      FROM public.fp_content_items item
      INNER JOIN public.fp_content_cycle_fit fit
        ON fit.content_item_id = item.id
-     LEFT JOIN public.fp_user_content_state state
+    LEFT JOIN public.fp_user_content_state state
        ON state.content_item_id = item.id
       AND state.user_id = $1
+    LEFT JOIN public.radar_content_occurrences canonical
+      ON canonical.legacy_fp_content_item_id = item.id
+    LEFT JOIN public.radar_content_entities entity
+      ON entity.id = canonical.entity_id
      WHERE ${filters.join(" AND ")}
      ORDER BY
        case fit.priority when 'Alta' then 0 when 'Media' then 1 else 2 end,
