@@ -2128,55 +2128,6 @@ function FilterCalendar({
   );
 }
 
-function MonthChips({
-  monthGroups,
-  monthFilter,
-  totalCount,
-  onSelect,
-}: {
-  monthGroups: Map<string, number>;
-  monthFilter: string;
-  totalCount: number;
-  onSelect: (month: string) => void;
-}) {
-  if (monthGroups.size === 0) return null;
-  return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
-      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">MES</span>
-      <button
-        type="button"
-        onClick={() => onSelect("")}
-        className={cn(
-          "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors hover:bg-muted",
-          !monthFilter && "al-action-soft-selected"
-        )}
-      >
-        TODOS <span className={cn("font-normal", !monthFilter && "text-[#a63f1a]/70")}>{totalCount}</span>
-      </button>
-      {Array.from(monthGroups.entries()).map(([month, count]) => {
-        const [y, m] = month.split("-");
-        const label = new Date(Number(y), Number(m) - 1)
-          .toLocaleDateString("es-ES", { month: "short", year: "2-digit" })
-          .toUpperCase();
-        const isSelected = monthFilter === month;
-        return (
-          <button
-            key={month}
-            type="button"
-            onClick={() => onSelect(isSelected ? "" : month)}
-            className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors hover:bg-muted",
-              isSelected && "al-action-soft-selected"
-            )}
-          >
-            {label} <span className={cn("font-normal", isSelected && "text-[#a63f1a]/70")}>{count}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function ViewToggle({ value, onChange }: { value: "grid" | "lista"; onChange: (v: "grid" | "lista") => void }) {
   return (
     <div className="flex shrink-0 items-center rounded-md border bg-card p-0.5 gap-0.5">
@@ -2202,12 +2153,13 @@ function ViewToggle({ value, onChange }: { value: "grid" | "lista"; onChange: (v
 }
 
 type CollectionTab = { id: string; label: string; count: number; withHeart?: boolean };
-type CollectionStat = { icon: typeof BookOpen; tint: "orange" | "green" | "amber" | "grey"; value: number; label: string };
+type CollectionStat = { value: number; label: string };
 
-// The shared control strip above the Cursos and Eventos y retos lists:
-// search, status tabs, the Filtros toggle, month chips, the KPI card and
-// the count / view-mode row. One component so both pages stay identical
-// and it only has to be made responsive once.
+// The shared control strip above the Cursos and Eventos y retos lists.
+// The KPI row on top reads as an informational menu bar (flat, only a
+// bottom rule), then search + Filtros, the status segmented control and
+// the result count. One component so both pages stay identical and it is
+// only made responsive once.
 function CollectionControls({
   searchValue,
   onSearchChange,
@@ -2218,10 +2170,6 @@ function CollectionControls({
   filterCount,
   filtersOpen,
   onToggleFilters,
-  monthGroups,
-  monthFilter,
-  monthTotal,
-  onMonthSelect,
   stats,
   metaText,
   viewMode,
@@ -2236,10 +2184,6 @@ function CollectionControls({
   filterCount: number;
   filtersOpen: boolean;
   onToggleFilters: () => void;
-  monthGroups: Map<string, number>;
-  monthFilter: string;
-  monthTotal: number;
-  onMonthSelect: (month: string) => void;
   stats: CollectionStat[];
   metaText: string;
   viewMode: "grid" | "lista";
@@ -2248,7 +2192,13 @@ function CollectionControls({
   return (
     <section className="al-cc">
       <style>{`
-        .al-cc { display: flex; flex-direction: column; gap: 12px; }
+        .al-cc { display: flex; flex-direction: column; gap: 14px; }
+        .al-cc-kpis { display: flex; align-items: stretch; overflow-x: auto; scrollbar-width: none; padding-bottom: 12px; border-bottom: 1px solid #ece7dc; }
+        .al-cc-kpis::-webkit-scrollbar { display: none; }
+        .al-cc-kpi { display: flex; flex-direction: column; gap: 2px; flex: 1 1 0; min-width: 74px; padding: 0 16px; border-left: 1px solid #f0ece2; }
+        .al-cc-kpi:first-child { border-left: none; padding-left: 2px; }
+        .al-cc-kpi-value { font-size: 19px; font-weight: 800; line-height: 1.1; color: #111111; font-variant-numeric: tabular-nums; }
+        .al-cc-kpi-label { font-size: 10.5px; font-weight: 600; letter-spacing: .02em; color: #9a958a; white-space: nowrap; }
         .al-cc-bar { display: flex; gap: 8px; }
         .al-cc-search { position: relative; flex: 1 1 auto; min-width: 0; }
         .al-cc-search > svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #9a958a; pointer-events: none; }
@@ -2270,20 +2220,18 @@ function CollectionControls({
         .al-cc-tab-active { background: white; color: var(--al-action-soft-text-hover); box-shadow: 0 1px 3px rgba(17,17,17,.09), inset 0 0 0 1px var(--al-action-soft-border); }
         .al-cc-tab-count { font-size: 11px; font-weight: 700; color: #9a958a; }
         .al-cc-tab-active .al-cc-tab-count { color: var(--al-action-soft-text); }
-        .al-cc-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: #f2ece1; border: 1px solid #ece7dc; border-radius: 16px; box-shadow: 0 8px 22px rgba(17,17,17,.045); overflow: hidden; }
-        @media (min-width: 720px) { .al-cc-kpis { grid-template-columns: repeat(4, 1fr); } }
-        .al-cc-kpi { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 13px 15px; background: white; }
-        .al-cc-kpi-icon { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; margin-bottom: 5px; }
-        .al-cc-kpi-icon svg { width: 15px; height: 15px; }
-        .al-cc-kpi-icon--orange { background: #fbe7dd; color: #E15D2D; }
-        .al-cc-kpi-icon--green { background: #e7f5ee; color: #1f7a4d; }
-        .al-cc-kpi-icon--amber { background: #fdf1dd; color: #b4791f; }
-        .al-cc-kpi-icon--grey { background: #f2ece1; color: #6b6f72; }
-        .al-cc-kpi-value { font-size: 21px; font-weight: 800; line-height: 1.05; color: #111111; font-variant-numeric: tabular-nums; }
-        .al-cc-kpi-label { font-size: 10.5px; font-weight: 600; letter-spacing: .02em; color: #6b6f72; }
         .al-cc-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
         .al-cc-meta-text { font-size: 12px; color: #777269; }
       `}</style>
+
+      <div className="al-cc-kpis">
+        {stats.map((stat) => (
+          <div key={stat.label} className="al-cc-kpi">
+            <span className="al-cc-kpi-value">{stat.value}</span>
+            <span className="al-cc-kpi-label">{stat.label}</span>
+          </div>
+        ))}
+      </div>
 
       <div className="al-cc-bar">
         <div className="al-cc-search">
@@ -2333,20 +2281,6 @@ function CollectionControls({
         })}
       </div>
 
-      <MonthChips monthGroups={monthGroups} monthFilter={monthFilter} totalCount={monthTotal} onSelect={onMonthSelect} />
-
-      <div className="al-cc-kpis">
-        {stats.map((stat) => (
-          <div key={stat.label} className="al-cc-kpi">
-            <span className={cn("al-cc-kpi-icon", `al-cc-kpi-icon--${stat.tint}`)}>
-              <stat.icon />
-            </span>
-            <span className="al-cc-kpi-value">{stat.value}</span>
-            <span className="al-cc-kpi-label">{stat.label}</span>
-          </div>
-        ))}
-      </div>
-
       <div className="al-cc-meta">
         <p className="al-cc-meta-text">{metaText}</p>
         <ViewToggle value={viewMode} onChange={onViewModeChange} />
@@ -2355,53 +2289,73 @@ function CollectionControls({
   );
 }
 
+// Filters as an inline, full-width panel that opens in place under the
+// control bar - not a sidebar that narrows the grid and not a block that
+// lands at the bottom of the list on mobile. Sections lay out in a
+// responsive grid; Escape and the corner button close it.
 function FilterPanel({
   title = "Filtros",
   activeCount,
   onClear,
+  onClose,
   children,
 }: {
   title?: string;
   activeCount: number;
   onClear: () => void;
+  onClose: () => void;
   children: React.ReactNode;
 }) {
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
-    <div className="w-full shrink-0 lg:w-64">
+    <div className="al-filter-panel">
       <style>{`
-        .al-filter-panel { background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 10px 26px rgba(17, 17, 17, 0.045); padding: 16px; display: flex; flex-direction: column; gap: 16px; }
-        .al-filter-head { display: flex; align-items: center; justify-content: space-between; }
-        .al-filter-title { font-size: 13px; font-weight: 700; color: #111111; }
-        .al-filter-clear { font-size: 11.5px; font-weight: 600; color: #9a958a; }
-        .al-filter-clear:hover { color: #c94f21; }
-        .al-filter-section { padding-top: 14px; border-top: 1px solid #f0ece2; }
-        .al-filter-section:first-child { padding-top: 0; border-top: none; }
-        .al-filter-section-label { margin-bottom: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9a958a; }
-        .al-filter-chip { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 999px; border: 1px solid #ece7dc; background: white; color: #333029; padding: 3px 10px; font-size: 11.5px; font-weight: 600; transition: border-color 0.15s, color 0.15s; }
+        .al-filter-panel { background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 12px 30px rgba(17, 17, 17, 0.06); padding: 16px 18px 18px; }
+        .al-filter-head { display: flex; align-items: center; gap: 10px; padding-bottom: 14px; margin-bottom: 16px; border-bottom: 1px solid #f0ece2; }
+        .al-filter-title { flex: 1; font-size: 13.5px; font-weight: 800; color: #111111; }
+        .al-filter-clear { font-size: 11.5px; font-weight: 700; color: var(--al-action-soft-text); }
+        .al-filter-clear:hover { color: var(--al-action-soft-text-hover); }
+        .al-filter-close { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; transition: border-color .15s, color .15s; }
+        .al-filter-close:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
+        .al-filter-close svg { width: 14px; height: 14px; }
+        .al-filter-grid { display: grid; gap: 16px 22px; grid-template-columns: 1fr; }
+        @media (min-width: 640px) { .al-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (min-width: 980px) { .al-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        .al-filter-section--wide { grid-column: 1 / -1; }
+        .al-filter-section-label { margin-bottom: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #9a958a; }
+        .al-filter-chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 999px; border: 1px solid #ece7dc; background: white; color: #333029; padding: 4px 11px; font-size: 11.5px; font-weight: 600; transition: border-color 0.15s, color 0.15s; }
         .al-filter-chip:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
         .al-filter-chip-active, .al-filter-chip-active:hover { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); }
         .al-filter-day-selected, .al-filter-day-selected:hover { background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); }
         .al-filter-day-today { color: #c94f21; }
         .al-filter-dot { background: #E15D2D; }
       `}</style>
-      <div className="al-filter-panel">
-        <div className="al-filter-head">
-          <span className="al-filter-title">{title}</span>
-          {activeCount > 0 && (
-            <button type="button" onClick={onClear} className="al-filter-clear">
-              Limpiar
-            </button>
-          )}
-        </div>
-        {children}
+      <div className="al-filter-head">
+        <span className="al-filter-title">{title}</span>
+        {activeCount > 0 && (
+          <button type="button" onClick={onClear} className="al-filter-clear">
+            Limpiar ({activeCount})
+          </button>
+        )}
+        <button type="button" onClick={onClose} className="al-filter-close" aria-label="Cerrar filtros">
+          <X />
+        </button>
       </div>
+      <div className="al-filter-grid">{children}</div>
     </div>
   );
 }
 
-function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
+function FilterSection({ label, wide, children }: { label: string; wide?: boolean; children: React.ReactNode }) {
   return (
-    <div className="al-filter-section">
+    <div className={cn(wide && "al-filter-section--wide")}>
       <p className="al-filter-section-label">{label}</p>
       {children}
     </div>
@@ -2473,16 +2427,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
     () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : viewTab === "guardados" ? guardados : sorted,
     [viewTab, activos, archivados, guardados, sorted]
   );
-
-  const monthGroups = useMemo(() => {
-    const groups = new Map<string, number>();
-    for (const c of tabBase) {
-      const d = (c.fecha_inicio || c.start_at || "").slice(0, 7);
-      if (!d) continue;
-      groups.set(d, (groups.get(d) ?? 0) + 1);
-    }
-    return groups;
-  }, [tabBase]);
 
   const datesWithItems = useMemo(() => {
     const set = new Set<string>();
@@ -2589,23 +2533,55 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
           filterCount={activeFilterCount}
           filtersOpen={showFilters}
           onToggleFilters={() => setShowFilters((v) => !v)}
-          monthGroups={monthGroups}
-          monthFilter={monthFilter}
-          monthTotal={tabBase.length}
-          onMonthSelect={(m) => { setMonthFilter(m); setDayFilter(""); }}
           stats={[
-            { icon: BookOpen, tint: "orange", value: tabBase.length, label: "Total" },
-            { icon: CheckCircle2, tint: "green", value: kpiEmpezados, label: "Empezados" },
-            { icon: Clock, tint: "amber", value: kpiPendientes, label: "Pendientes" },
-            { icon: AlarmClock, tint: "grey", value: kpiProx, label: "Próx. inicio" },
+            { value: tabBase.length, label: "Total" },
+            { value: kpiEmpezados, label: "Empezados" },
+            { value: kpiPendientes, label: "Pendientes" },
+            { value: kpiProx, label: "Próx. inicio" },
           ]}
           metaText={`${filtered.length} ${filtered.length === 1 ? "curso" : "cursos"} · desde ${formatDateLabel(today)} · por fecha de inicio`}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
         />
 
-        <div className="flex flex-col gap-5 lg:flex-row">
-          <div className="min-w-0 flex-1 space-y-4">
+        {showFilters && (
+          <FilterPanel activeCount={activeFilterCount} onClear={clearAll} onClose={() => setShowFilters(false)}>
+            <FilterSection label="Calendario" wide>
+              <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
+            </FilterSection>
+            <FilterSection label="Estado">
+              <FilterChips
+                options={[["", "Todos"], ["pendiente", "Pendiente"], ["empezado", "Activo"], ["pausado", "Pausado"]]}
+                value={estadoFilter}
+                onChange={setEstadoFilter}
+              />
+            </FilterSection>
+            {modalidades.length > 0 && (
+              <FilterSection label="Modalidad">
+                <FilterChips
+                  options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
+                  value={modalidadFilter}
+                  onChange={setModalidadFilter}
+                />
+              </FilterSection>
+            )}
+            <FilterSection label="Prioridad">
+              <FilterChips
+                options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
+                value={prioridadFilter}
+                onChange={setPrioridadFilter}
+              />
+            </FilterSection>
+            <FilterSection label="Solo">
+              <label className="flex cursor-pointer items-center gap-2 text-xs">
+                <input type="checkbox" checked={soloGratuitos} onChange={(e) => setSoloGratuitos(e.target.checked)} className="rounded" />
+                Gratuitos
+              </label>
+            </FilterSection>
+          </FilterPanel>
+        )}
+
+        <div className="min-w-0 space-y-4">
             {featuredCourse && (() => {
               const fp = getCoursePresentation(featuredCourse);
               return (
@@ -2687,44 +2663,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                 {(search || activeFilterCount > 0) && <button type="button" className="al-course-empty-btn" onClick={clearAll}>Quitar filtros</button>}
               </div>
             )}
-          </div>
-
-          {showFilters && (
-            <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
-              <FilterSection label="Calendario">
-                <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
-              </FilterSection>
-              <FilterSection label="Estado">
-                <FilterChips
-                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["empezado", "Activo"], ["pausado", "Pausado"]]}
-                  value={estadoFilter}
-                  onChange={setEstadoFilter}
-                />
-              </FilterSection>
-              {modalidades.length > 0 && (
-                <FilterSection label="Modalidad">
-                  <FilterChips
-                    options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
-                    value={modalidadFilter}
-                    onChange={setModalidadFilter}
-                  />
-                </FilterSection>
-              )}
-              <FilterSection label="Prioridad">
-                <FilterChips
-                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
-                  value={prioridadFilter}
-                  onChange={setPrioridadFilter}
-                />
-              </FilterSection>
-              <FilterSection label="Solo">
-                <label className="flex cursor-pointer items-center gap-2 text-xs">
-                  <input type="checkbox" checked={soloGratuitos} onChange={(e) => setSoloGratuitos(e.target.checked)} className="rounded" />
-                  Gratuitos
-                </label>
-              </FilterSection>
-            </FilterPanel>
-          )}
         </div>
       </div>
     </>
@@ -3050,15 +2988,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     [viewTab, activos, archivados, guardados, sorted]
   );
 
-  const monthGroups = useMemo(() => {
-    const groups = new Map<string, number>();
-    for (const h of tabBase) {
-      const d = (h.start_at || "").slice(0, 7);
-      if (!d) continue;
-      groups.set(d, (groups.get(d) ?? 0) + 1);
-    }
-    return groups;
-  }, [tabBase]);
 
   const datesWithItems = useMemo(() => {
     const set = new Set<string>();
@@ -3149,23 +3078,64 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
           filterCount={activeFilterCount}
           filtersOpen={showFilters}
           onToggleFilters={() => setShowFilters((v) => !v)}
-          monthGroups={monthGroups}
-          monthFilter={monthFilter}
-          monthTotal={tabBase.length}
-          onMonthSelect={(m) => { setMonthFilter(m); setDayFilter(""); }}
           stats={[
-            { icon: Trophy, tint: "orange", value: tabBase.length, label: "Total" },
-            { icon: CheckCircle2, tint: "green", value: kpiAbiertos, label: "Inscripción abierta" },
-            { icon: Clock, tint: "amber", value: kpiPendientes, label: "Pendientes" },
-            { icon: AlarmClock, tint: "grey", value: kpiProx, label: "Próx. inicio" },
+            { value: tabBase.length, label: "Total" },
+            { value: kpiAbiertos, label: "Inscripción abierta" },
+            { value: kpiPendientes, label: "Pendientes" },
+            { value: kpiProx, label: "Próx. inicio" },
           ]}
           metaText={`${filtered.length} ${filtered.length === 1 ? "evento o reto" : "eventos y retos"} · desde ${formatDateLabel(today)} · por fecha de inicio`}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
         />
 
-        <div className="flex flex-col gap-5 lg:flex-row">
-          <div className="min-w-0 flex-1 space-y-4">
+        {showFilters && (
+          <FilterPanel activeCount={activeFilterCount} onClear={clearAll} onClose={() => setShowFilters(false)}>
+            <FilterSection label="Calendario" wide>
+              <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
+            </FilterSection>
+            <FilterSection label="Estado">
+              <FilterChips
+                options={[["", "Todos"], ["pendiente", "Pendiente"], ["inscripcion_abierta", "Activo"]]}
+                value={estadoFilter}
+                onChange={setEstadoFilter}
+              />
+            </FilterSection>
+            {modalidades.length > 0 && (
+              <FilterSection label="Modalidad">
+                <FilterChips
+                  options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
+                  value={modalidadFilter}
+                  onChange={setModalidadFilter}
+                />
+              </FilterSection>
+            )}
+            {provincias.length > 0 && (
+              <FilterSection label="Provincia">
+                <FilterChips
+                  options={[["", "Todas"], ...provincias.map((p): [string, string] => [p, p])]}
+                  value={provinciaFilter}
+                  onChange={setProvinciaFilter}
+                />
+              </FilterSection>
+            )}
+            <FilterSection label="Prioridad">
+              <FilterChips
+                options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
+                value={prioridadFilter}
+                onChange={setPrioridadFilter}
+              />
+            </FilterSection>
+            <FilterSection label="Solo">
+              <label className="flex cursor-pointer items-center gap-2 text-xs">
+                <input type="checkbox" checked={soloInscripcionAbierta} onChange={(e) => setSoloInscripcionAbierta(e.target.checked)} className="rounded" />
+                Inscripción abierta
+              </label>
+            </FilterSection>
+          </FilterPanel>
+        )}
+
+        <div className="min-w-0 space-y-4">
             {featuredHackathon && (() => {
               const presentation = getHackathonPresentation(featuredHackathon);
               return (
@@ -3245,53 +3215,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             ) : (
               <HackathonsEmptyState variant={search || activeFilterCount > 0 ? "sin_resultados" : viewTab === "activos" ? "sin_activos" : "sin_datos"} onClearFilters={clearAll} />
             )}
-          </div>
-
-          {showFilters && (
-            <FilterPanel activeCount={activeFilterCount} onClear={clearAll}>
-              <FilterSection label="Calendario">
-                <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
-              </FilterSection>
-              <FilterSection label="Estado">
-                <FilterChips
-                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["inscripcion_abierta", "Activo"]]}
-                  value={estadoFilter}
-                  onChange={setEstadoFilter}
-                />
-              </FilterSection>
-              {modalidades.length > 0 && (
-                <FilterSection label="Modalidad">
-                  <FilterChips
-                    options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
-                    value={modalidadFilter}
-                    onChange={setModalidadFilter}
-                  />
-                </FilterSection>
-              )}
-              {provincias.length > 0 && (
-                <FilterSection label="Provincia">
-                  <FilterChips
-                    options={[["", "Todas"], ...provincias.map((p): [string, string] => [p, p])]}
-                    value={provinciaFilter}
-                    onChange={setProvinciaFilter}
-                  />
-                </FilterSection>
-              )}
-              <FilterSection label="Prioridad">
-                <FilterChips
-                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
-                  value={prioridadFilter}
-                  onChange={setPrioridadFilter}
-                />
-              </FilterSection>
-              <FilterSection label="Solo">
-                <label className="flex cursor-pointer items-center gap-2 text-xs">
-                  <input type="checkbox" checked={soloInscripcionAbierta} onChange={(e) => setSoloInscripcionAbierta(e.target.checked)} className="rounded" />
-                  Inscripción abierta
-                </label>
-              </FilterSection>
-            </FilterPanel>
-          )}
         </div>
       </div>
     </>
