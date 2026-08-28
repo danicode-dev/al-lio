@@ -2197,8 +2197,10 @@ function CollectionControls({
         .al-cc-filters-badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--al-action-soft-text); color: white; font-size: 10.5px; font-weight: 700; }
         @media (max-width: 640px) {
           .al-cc-strip { flex-wrap: wrap; align-items: stretch; gap: 12px 0; }
-          .al-cc-strip-tabs { order: 1; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-          .al-cc-strip-actions { order: 2; width: 100%; justify-content: flex-end; }
+          /* phones: search + Filtros ride up under the header, the stat
+             grid sits below them. */
+          .al-cc-strip-actions { order: 1; width: 100%; justify-content: flex-end; }
+          .al-cc-strip-tabs { order: 2; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
           .al-cc-stat { border: 1px solid #ece7dc; border-radius: 10px; padding: 8px 10px; }
           .al-cc-stat-active { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg); }
           .al-cc-search.is-open { width: auto; flex: 1 1 auto; }
