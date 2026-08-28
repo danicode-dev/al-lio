@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CalendarDays, Check, Circle, ListChecks, ListTodo, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { useStore } from "@/components/guest-store";
@@ -22,6 +23,9 @@ const categoryMeta = {
 
 export function TasksView() {
   const { store, actions } = useStore();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [filter, setFilter] = useState<TaskFilter>("pending");
   const [composerOpen, setComposerOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -30,6 +34,21 @@ export function TasksView() {
   const [priority, setPriority] = useState<Task["priority"]>("media");
   const [dueAt, setDueAt] = useState("");
   const [taskDialog, setTaskDialog] = useState<TaskDialogState | null>(null);
+
+  // Deep link from the calendar / alerts: /tasks?task=<id> opens that task
+  // in view mode, then the param is dropped so a refresh doesn't reopen it.
+  // Wait for the store to load before resolving the id, and consume it once.
+  const requestedTaskId = searchParams.get("task");
+  const taskParamConsumed = useRef(false);
+  useEffect(() => {
+    if (!requestedTaskId || taskParamConsumed.current) return;
+    const tasksLoaded = store.tasks.length > 0 || store.loadIssues?.includes("tasks");
+    if (!tasksLoaded) return;
+    taskParamConsumed.current = true;
+    const match = store.tasks.find((task) => task.id === requestedTaskId);
+    if (match) setTaskDialog({ taskId: match.id, mode: "view" });
+    router.replace(pathname, { scroll: false });
+  }, [requestedTaskId, store.tasks, store.loadIssues, router, pathname]);
 
   const counts = useMemo(() => {
     const completed = store.tasks.filter(isCompleted).length;
