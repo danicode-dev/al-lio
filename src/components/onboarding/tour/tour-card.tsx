@@ -54,7 +54,9 @@ export function TourCard({
         .al-tour-card-title { font-size: 15.5px; font-weight: 800; line-height: 1.25; }
         .al-tour-card-body { font-size: 12.5px; line-height: 1.5; color: #6b6f72; }
         .al-tour-card-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; }
-        .al-tour-card-actions.is-final { justify-content: flex-end; }
+        /* One action and nothing to balance it against: centred reads as
+           finished, where flush right read as if something were missing. */
+        .al-tour-card-actions.is-final { justify-content: center; }
         .al-tour-card-actions-right { display: flex; align-items: center; gap: 12px; }
         .al-tour-card-ghost {
           border: none; background: none; padding: 8px 2px; white-space: nowrap;
