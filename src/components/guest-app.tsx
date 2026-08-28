@@ -2156,12 +2156,13 @@ type CollectionTab = { id: string; label: string; count: number; withHeart?: boo
 type CollectionStat = { value: number; label: string };
 
 // The shared control strip above the Cursos and Eventos y retos lists.
-// The KPI row on top reads as an informational menu bar (flat, only a
-// bottom rule), then search + Filtros and the status segmented control.
-// One component so both pages stay identical and it is only made
-// responsive once. `compact` (Cursos) collapses the search to just its
-// icon until used, drops the result-count / view-toggle row, and lets the
-// KPI strip wrap to 2x2 on phones instead of scrolling sideways.
+// Default layout (Eventos y retos): a KPI row, then search + Filtros, then
+// a segmented status control and the result count.
+// `compact` (Cursos) folds all of that into ONE line - the counts and the
+// status tabs are the same thing, rendered as flat clickable stats with a
+// single hairline under them, search collapsed to its icon and Filtros
+// pinned right. On phones the stats drop to a 2x2 grid and the actions sit
+// above them. One component so the two pages can be unified deliberately.
 function CollectionControls({
   searchValue,
   onSearchChange,
@@ -2187,7 +2188,7 @@ function CollectionControls({
   filterCount: number;
   filtersOpen: boolean;
   onToggleFilters: () => void;
-  stats: CollectionStat[];
+  stats?: CollectionStat[];
   metaText?: string;
   viewMode?: "grid" | "lista";
   onViewModeChange?: (value: "grid" | "lista") => void;
@@ -2199,6 +2200,85 @@ function CollectionControls({
   useEffect(() => {
     if (compact && searchOpen) searchRef.current?.focus();
   }, [compact, searchOpen]);
+
+  const searchNode = (
+    <div className={cn("al-cc-search", searchExpanded && "is-open")}>
+      {compact && (
+        <button
+          type="button"
+          className="al-cc-search-toggle"
+          onClick={() => setSearchOpen(true)}
+          aria-label="Buscar"
+          aria-expanded={searchExpanded}
+          tabIndex={searchExpanded ? -1 : 0}
+        >
+          <Search />
+        </button>
+      )}
+      {!compact && <Search />}
+      <input
+        ref={searchRef}
+        value={searchValue}
+        onChange={(event) => onSearchChange(event.target.value)}
+        placeholder={searchPlaceholder}
+        aria-label={searchPlaceholder}
+        tabIndex={compact && !searchExpanded ? -1 : 0}
+        onBlur={() => { if (compact && !searchValue) setSearchOpen(false); }}
+      />
+      {searchValue && (
+        <button type="button" className="al-cc-search-clear" onClick={() => onSearchChange("")} aria-label="Limpiar búsqueda">
+          <X />
+        </button>
+      )}
+    </div>
+  );
+
+  const filtersNode = (
+    <button
+      type="button"
+      className={cn("al-cc-filters", filtersOpen && "al-action-soft-selected")}
+      onClick={onToggleFilters}
+      aria-pressed={filtersOpen}
+      aria-label={filterCount > 0 ? `Filtros, ${filterCount} activos` : "Filtros"}
+    >
+      <SlidersHorizontal />
+      <span className="al-cc-filters-label">Filtros</span>
+      {filterCount > 0 && <span className="al-cc-filters-badge">{filterCount}</span>}
+    </button>
+  );
+
+  const tabNodes = tabs.map((tab) => {
+    const isActive = activeTab === tab.id;
+    return (
+      <button
+        key={tab.id}
+        type="button"
+        role="tab"
+        aria-selected={isActive}
+        className={cn(
+          compact ? "al-cc-stat" : "al-cc-tab",
+          isActive && (compact ? "al-cc-stat-active" : "al-cc-tab-active"),
+        )}
+        onClick={() => onTabChange(tab.id)}
+      >
+        {compact ? (
+          <>
+            <span className="al-cc-stat-value">{tab.count}</span>
+            <span className="al-cc-stat-label">
+              {tab.withHeart && <Heart fill={isActive ? "currentColor" : "none"} />}
+              {tab.label}
+            </span>
+          </>
+        ) : (
+          <>
+            {tab.withHeart && <Heart className="h-3 w-3" fill={isActive ? "currentColor" : "none"} />}
+            <span>{tab.label}</span>
+            <span className="al-cc-tab-count">{tab.count}</span>
+          </>
+        )}
+      </button>
+    );
+  });
 
   return (
     <section className={cn("al-cc", compact && "al-cc-compact")}>
@@ -2234,21 +2314,32 @@ function CollectionControls({
         .al-cc-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
         .al-cc-meta-text { font-size: 12px; color: #777269; }
 
-        /* compact (Cursos): KPI strip is a real grid - no sideways scroll,
-           wraps to 2x2 on phones so long labels stop colliding. */
-        .al-cc-compact .al-cc-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; }
-        .al-cc-compact .al-cc-kpi { min-width: 0; }
-        .al-cc-compact .al-cc-kpi-label { white-space: normal; }
-        @media (max-width: 560px) {
-          .al-cc-compact .al-cc-kpis { grid-template-columns: 1fr 1fr; gap: 14px 0; }
-          .al-cc-compact .al-cc-kpi:nth-child(3) { border-left: none; }
-          .al-cc-compact .al-cc-kpi:nth-child(odd) { padding-left: 2px; }
+        /* compact (Cursos): a single line - the KPI counts ARE the filter
+           tabs (no duplicate row), with search + Filtros pinned right and
+           one hairline under the whole thing. */
+        .al-cc-compact .al-cc { gap: 0; }
+        .al-cc-strip { display: flex; align-items: flex-end; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid #ece7dc; }
+        .al-cc-strip-tabs { display: flex; align-items: stretch; gap: 2px; flex: 1 1 auto; min-width: 0; }
+        .al-cc-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; flex: 1 1 0; min-width: 0; padding: 4px 10px 6px; border: none; border-bottom: 2px solid transparent; border-radius: 8px 8px 0 0; background: transparent; text-align: left; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+        .al-cc-stat:hover:not(.al-cc-stat-active) { background: #faf7f1; }
+        .al-cc-stat-value { font-size: 19px; font-weight: 800; line-height: 1.05; color: #6b6f72; font-variant-numeric: tabular-nums; transition: color .15s; }
+        .al-cc-stat-label { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; font-weight: 600; letter-spacing: .02em; color: #9a958a; white-space: nowrap; transition: color .15s; }
+        .al-cc-stat-label svg { width: 12px; height: 12px; flex-shrink: 0; }
+        .al-cc-stat-active { border-bottom-color: var(--al-action-soft-text); }
+        .al-cc-stat-active .al-cc-stat-value { color: var(--al-action-soft-text-hover); }
+        .al-cc-stat-active .al-cc-stat-label { color: var(--al-action-soft-text); }
+        .al-cc-strip-actions { display: flex; gap: 8px; flex: 0 0 auto; align-items: center; padding-bottom: 2px; }
+        @media (max-width: 640px) {
+          .al-cc-strip { flex-wrap: wrap; align-items: stretch; gap: 12px 0; }
+          .al-cc-strip-actions { order: 1; width: 100%; justify-content: flex-end; }
+          .al-cc-strip-tabs { order: 2; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+          .al-cc-stat { border: 1px solid #ece7dc; border-radius: 10px; padding: 8px 10px; }
+          .al-cc-stat-active { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg); }
         }
-        /* compact: search stays a single icon until it is used, Filtros
-           sits at the far right until the search grows and pushes it. */
-        .al-cc-compact .al-cc-search { flex: 0 0 auto; width: 42px; transition: flex-basis .18s ease, width .18s ease; }
-        .al-cc-compact .al-cc-search.is-open { flex: 1 1 auto; width: auto; }
-        .al-cc-compact .al-cc-filters { margin-left: auto; }
+        /* compact search: one icon until used, then it grows in place */
+        .al-cc-compact .al-cc-search { flex: 0 0 auto; width: 42px; transition: width .18s ease; }
+        .al-cc-compact .al-cc-search.is-open { width: 240px; }
+        @media (max-width: 640px) { .al-cc-compact .al-cc-search.is-open { width: auto; flex: 1 1 auto; } }
         .al-cc-compact .al-cc-search:not(.is-open) input { opacity: 0; pointer-events: none; }
         .al-cc-search-toggle { position: absolute; left: 0; top: 0; z-index: 1; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border-radius: 12px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; transition: border-color .15s, color .15s; }
         .al-cc-search-toggle:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
@@ -2256,83 +2347,39 @@ function CollectionControls({
         .al-cc-search.is-open .al-cc-search-toggle { pointer-events: none; border-color: transparent; background: transparent; color: #9a958a; }
       `}</style>
 
-      <div className="al-cc-kpis">
-        {stats.map((stat) => (
-          <div key={stat.label} className="al-cc-kpi">
-            <span className="al-cc-kpi-value">{stat.value}</span>
-            <span className="al-cc-kpi-label">{stat.label}</span>
+      {compact ? (
+        <div className="al-cc-strip">
+          <div className="al-cc-strip-tabs" role="tablist">{tabNodes}</div>
+          <div className="al-cc-strip-actions">
+            {searchNode}
+            {filtersNode}
           </div>
-        ))}
-      </div>
-
-      <div className="al-cc-bar">
-        <div className={cn("al-cc-search", searchExpanded && "is-open")}>
-          {compact && (
-            <button
-              type="button"
-              className="al-cc-search-toggle"
-              onClick={() => setSearchOpen(true)}
-              aria-label="Buscar"
-              aria-expanded={searchExpanded}
-              tabIndex={searchExpanded ? -1 : 0}
-            >
-              <Search />
-            </button>
-          )}
-          {!compact && <Search />}
-          <input
-            ref={searchRef}
-            value={searchValue}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
-            tabIndex={compact && !searchExpanded ? -1 : 0}
-            onBlur={() => { if (compact && !searchValue) setSearchOpen(false); }}
-          />
-          {searchValue && (
-            <button type="button" className="al-cc-search-clear" onClick={() => onSearchChange("")} aria-label="Limpiar búsqueda">
-              <X />
-            </button>
-          )}
         </div>
-        <button
-          type="button"
-          className={cn("al-cc-filters", filtersOpen && "al-action-soft-selected")}
-          onClick={onToggleFilters}
-          aria-pressed={filtersOpen}
-          aria-label={filterCount > 0 ? `Filtros, ${filterCount} activos` : "Filtros"}
-        >
-          <SlidersHorizontal />
-          <span className="al-cc-filters-label">Filtros</span>
-          {filterCount > 0 && <span className="al-cc-filters-badge">{filterCount}</span>}
-        </button>
-      </div>
+      ) : (
+        <>
+          <div className="al-cc-kpis">
+            {(stats ?? []).map((stat) => (
+              <div key={stat.label} className="al-cc-kpi">
+                <span className="al-cc-kpi-value">{stat.value}</span>
+                <span className="al-cc-kpi-label">{stat.label}</span>
+              </div>
+            ))}
+          </div>
 
-      <div className="al-cc-tabs" role="tablist">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              className={cn("al-cc-tab", isActive && "al-cc-tab-active")}
-              onClick={() => onTabChange(tab.id)}
-            >
-              {tab.withHeart && <Heart className="h-3 w-3" fill={isActive ? "currentColor" : "none"} />}
-              <span>{tab.label}</span>
-              <span className="al-cc-tab-count">{tab.count}</span>
-            </button>
-          );
-        })}
-      </div>
+          <div className="al-cc-bar">
+            {searchNode}
+            {filtersNode}
+          </div>
 
-      {metaText != null && viewMode && onViewModeChange && (
-        <div className="al-cc-meta">
-          <p className="al-cc-meta-text">{metaText}</p>
-          <ViewToggle value={viewMode} onChange={onViewModeChange} />
-        </div>
+          <div className="al-cc-tabs" role="tablist">{tabNodes}</div>
+
+          {metaText != null && viewMode && onViewModeChange && (
+            <div className="al-cc-meta">
+              <p className="al-cc-meta-text">{metaText}</p>
+              <ViewToggle value={viewMode} onChange={onViewModeChange} />
+            </div>
+          )}
+        </>
       )}
     </section>
   );
@@ -2554,7 +2601,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
     [store.courses, store.techOpportunities, store.fpContent]
   );
 
-  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "guardados" | "todos">("activos");
+  const [viewTab, setViewTab] = useState<"total" | "empezados" | "proximos" | "guardados">("total");
   const [showFilters, setShowFilters] = useState(false);
   const [monthFilter, setMonthFilter] = useState("");
   const [dayFilter, setDayFilter] = useState("");
@@ -2579,12 +2626,25 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
     return da.localeCompare(db);
   }), [allCourses]);
 
-  const archivados = useMemo(() => sorted.filter(isCourseArchived), [sorted]);
-  const activos = useMemo(() => sorted.filter((c) => !isCourseArchived(c) && !isCoursePast(c)), [sorted]);
+  // The four control-row entries double as the KPI counts and the filter
+  // tabs: Total (current courses - not finished, not past), Empezados and
+  // Próx. inicio (starts within 30 days) as subsets of it, plus the
+  // heart-driven Guardados. "Terminado" is no longer its own tab - it
+  // stays reachable through the Estado filter.
+  const total = useMemo(() => sorted.filter((c) => !isCourseArchived(c) && !isCoursePast(c)), [sorted]);
   const guardados = useMemo(() => sorted.filter((c) => c.is_favorite), [sorted]);
+  const empezados = useMemo(() => total.filter((c) => c.status === "empezado"), [total]);
+  const proximos = useMemo(() => {
+    const t = todayKey();
+    const i30 = dateKey(addDays(new Date(), 30).toISOString());
+    return total.filter((c) => {
+      const d = (c.fecha_inicio || c.start_at || "").slice(0, 10);
+      return d >= t && d <= i30;
+    });
+  }, [total]);
   const tabBase = useMemo(
-    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : viewTab === "guardados" ? guardados : sorted,
-    [viewTab, activos, archivados, guardados, sorted]
+    () => viewTab === "empezados" ? empezados : viewTab === "proximos" ? proximos : viewTab === "guardados" ? guardados : total,
+    [viewTab, empezados, proximos, guardados, total]
   );
 
   const datesWithItems = useMemo(() => {
@@ -2618,22 +2678,12 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
     });
   }, [tabBase, search, monthFilter, dayFilter, estadoFilter, modalidadFilter, prioridadFilter, soloGratuitos]);
 
-  const { kpiEmpezados, kpiPendientes, kpiProx } = useMemo(() => {
-    const t = todayKey();
-    const i30 = dateKey(addDays(new Date(), 30).toISOString());
-    return {
-      kpiEmpezados: tabBase.filter((c) => c.status === "empezado").length,
-      kpiPendientes: tabBase.filter((c) => c.status === "pendiente").length,
-      kpiProx: tabBase.filter((c) => { const d = (c.fecha_inicio || c.start_at || "").slice(0, 10); return d >= t && d <= i30; }).length,
-    };
-  }, [tabBase]);
-
   const activeFilterCount = [monthFilter, dayFilter, estadoFilter, modalidadFilter, prioridadFilter, soloGratuitos].filter(Boolean).length;
 
   // One featured course above the grid: the next one due to start, breaking
-  // ties by priority. Only on the untouched Activos/Todos views - once the
-  // student searches or filters, every result is shown flat in the grid.
-  const showFeatured = (viewTab === "activos" || viewTab === "todos") && !search && activeFilterCount === 0;
+  // ties by priority. Only on the untouched Total view - once the student
+  // picks another tab, searches or filters, every result is shown flat.
+  const showFeatured = viewTab === "total" && !search && activeFilterCount === 0;
   const featuredCourse = useMemo(() => {
     if (!showFeatured) return null;
     const pool = filtered.filter((c) => !isCourseArchived(c) && c.status !== "terminado");
@@ -2683,22 +2733,16 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
             onSearchChange={setSearchInput}
             searchPlaceholder="Buscar título, entidad, tag..."
             tabs={[
-              { id: "activos", label: "Activos", count: activos.length },
-              { id: "archivados", label: "Terminado", count: archivados.length },
+              { id: "total", label: "Total", count: total.length },
+              { id: "empezados", label: "Empezados", count: empezados.length },
+              { id: "proximos", label: "Próx. inicio", count: proximos.length },
               { id: "guardados", label: "Guardados", count: guardados.length, withHeart: true },
-              { id: "todos", label: "Todos", count: sorted.length },
             ]}
             activeTab={viewTab}
             onTabChange={(id) => { setViewTab(id as typeof viewTab); clearAll(); }}
             filterCount={activeFilterCount}
             filtersOpen={showFilters}
             onToggleFilters={() => setShowFilters((v) => !v)}
-            stats={[
-              { value: tabBase.length, label: "Total" },
-              { value: kpiEmpezados, label: "Empezados" },
-              { value: kpiPendientes, label: "Pendientes" },
-              { value: kpiProx, label: "Próx. inicio" },
-            ]}
           />
 
           {showFilters && (
@@ -2706,7 +2750,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
               <div>
                 <p className="al-fp-row-label">Estado</p>
                 <FilterChips
-                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["empezado", "Activo"], ["pausado", "Pausado"]]}
+                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["empezado", "Activo"], ["terminado", "Terminado"], ["pausado", "Pausado"]]}
                   value={estadoFilter}
                   onChange={setEstadoFilter}
                 />
@@ -2809,12 +2853,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
                     />
                   );
                 })}
-              </div>
-            ) : viewTab === "archivados" && !search && activeFilterCount === 0 ? (
-              <div className="al-course-empty">
-                <Image src="/assets/cursos/cursos-empty-archivados.png" alt="" width={480} height={294} className="al-course-empty-illustration" />
-                <p className="al-course-empty-title">No tienes cursos terminados</p>
-                <p className="al-course-empty-desc">Cuando marques un curso como Terminado, aparecerá aquí.</p>
               </div>
             ) : viewTab === "guardados" && !search && activeFilterCount === 0 ? (
               <div className="al-course-empty">
