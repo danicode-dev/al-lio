@@ -37,7 +37,7 @@ function isVisibleRoute(pathname: string) {
   return VISIBLE_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
 
-export function StudentHeaderActions() {
+export function StudentHeaderActions({ showCalendar = true }: { showCalendar?: boolean } = {}) {
   const pathname = usePathname();
   const { store, actions } = useStore();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -49,9 +49,11 @@ export function StudentHeaderActions() {
       <button type="button" onClick={() => setQuickAddOpen(true)} aria-label="Añadir rápido" className={iconButtonClass}>
         <Plus className="h-4 w-4" />
       </button>
-      <Link href="/calendar" aria-label="Abrir calendario" className={iconButtonClass}>
-        <CalendarDays className="h-4 w-4" />
-      </Link>
+      {showCalendar && (
+        <Link href="/calendar" aria-label="Abrir calendario" className={iconButtonClass}>
+          <CalendarDays className="h-4 w-4" />
+        </Link>
+      )}
       <NotificationsPopover store={store} />
       <QuickAdd open={quickAddOpen} setOpen={setQuickAddOpen} actions={actions} />
     </div>

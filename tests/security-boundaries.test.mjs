@@ -446,10 +446,9 @@ test("The merged store fetch loads every section with fail-soft handling (issue 
 });
 
 test("The desktop navigation provides the branded expanded sidebar and persistent collapsed rail (issue #178)", async () => {
-  const [sidebarSource, layoutSource, bottomNavSource] = await Promise.all([
+  const [sidebarSource, layoutSource] = await Promise.all([
     readFile(new URL("../src/components/app-sidebar.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../src/components/bottom-nav.tsx", import.meta.url), "utf8"),
   ]);
 
   for (const group of ["Principal", "Comunicación", "Aprendizaje"]) {
@@ -472,14 +471,52 @@ test("The desktop navigation provides the branded expanded sidebar and persisten
   assert.match(layoutSource, /userName=\{store\.userName\}/);
   assert.match(layoutSource, /cookieStore\.get\("al-lio-sidebar-collapsed"\)/);
   assert.doesNotMatch(layoutSource, /isCurrentUserAdmin/, "the removed admin sidebar item must not keep an unnecessary authorization query in the shared layout");
-  assert.match(layoutSource, /<BottomNav \/>/, "the existing mobile navigation remains mounted and outside this desktop-only change");
-  assert.match(bottomNavSource, /md:hidden/, "the mobile navigation breakpoint remains unchanged");
+  assert.match(layoutSource, /<MobileHeaderNavigation \/>/, "mobile navigation remains independent from the desktop sidebar");
 });
 
-test("Quick Add, Calendar and Notifications form one shared header action group, mounted once for mobile and once per page's own header on desktop (issue #91, issue #129)", async () => {
-  const [headerSource, layoutSource, guestAppSource, quickAddSource, dashboardClientSource, dashboardGreetingSource] = await Promise.all([
+test("The mobile header menu replaces the bottom navigation without changing the desktop navigation contract (issue #182)", async () => {
+  const [mobileSource, layoutSource, headerSource, guestAppSource, tasksSource] = await Promise.all([
+    readFile(new URL("../src/components/mobile-header-navigation.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/student-header-actions.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(layoutSource, /<MobileHeaderNavigation \/>/);
+  assert.doesNotMatch(layoutSource, /BottomNav|pb-20/, "the fixed mobile bottom navigation and its reserved spacing must be removed");
+  assert.doesNotMatch(`${guestAppSource}\n${tasksSource}`, /pb-20/, "page-level bottom-nav clearance must not leave empty space behind");
+  assert.match(mobileSource, /sticky top-0[\s\S]*md:hidden/);
+  assert.match(mobileSource, /src="\/assets\/al_lio_logo_horizontal\.png"/);
+  assert.match(mobileSource, /<Menu className=/, "the closed navigation trigger must be icon-only");
+  assert.doesNotMatch(mobileSource, />Secciones</, "the icon-only menu trigger must not add a visible text label");
+  assert.match(mobileSource, /<StudentHeaderActions showCalendar=\{false\} \/>/, "mobile keeps Quick Add and notifications but removes Calendar from the action cluster");
+  assert.match(headerSource, /showCalendar = true/, "desktop page headers must continue showing Calendar by default");
+  assert.match(headerSource, /\{showCalendar && \(/);
+
+  for (const route of ["/dashboard", "/roadmap", "/tasks", "/bloc", "/noticias", "/work", "/courses", "/hackathons", "/calendar", "/profile"]) {
+    assert.ok(mobileSource.includes(`href: "${route}"`) || mobileSource.includes(`href="${route}"`), `missing mobile navigation route: ${route}`);
+  }
+  for (const group of ["Navegación", "Estudio y oportunidades"]) {
+    assert.ok(mobileSource.includes(`label="${group}"`), `missing mobile navigation group: ${group}`);
+  }
+
+  assert.match(mobileSource, /aria-expanded=\{open\}/);
+  assert.match(mobileSource, /aria-controls=\{menuId\}/);
+  assert.match(mobileSource, /aria-current=\{active \? "page" : undefined\}/);
+  assert.match(mobileSource, /event\.key !== "Escape"/);
+  assert.match(mobileSource, /addEventListener\("pointerdown", onPointerDown\)/);
+  assert.match(mobileSource, /document\.body\.style\.overflow = "hidden"/);
+  assert.match(mobileSource, /firstLinkRef\.current\?\.focus\(\)/);
+  assert.match(mobileSource, /triggerRef\.current\?\.focus\(\)/);
+  assert.match(mobileSource, /pathname === href \|\| \(href !== "\/dashboard" && pathname\.startsWith\(`\$\{href\}\/`\)\)/);
+});
+
+test("Quick Add, Calendar and Notifications form one shared header action group, with a calendar-free mobile instance and complete desktop instances (issue #91, issue #129, issue #182)", async () => {
+  const [headerSource, layoutSource, mobileSource, guestAppSource, quickAddSource, dashboardClientSource, dashboardGreetingSource] = await Promise.all([
     readFile(new URL("../src/components/student-header-actions.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/mobile-header-navigation.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/quick-add.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/dashboard/dashboard-client.tsx", import.meta.url), "utf8"),
@@ -499,12 +536,13 @@ test("Quick Add, Calendar and Notifications form one shared header action group,
   // Admin-only /settings is not part of the allowlist.
   assert.doesNotMatch(headerSource, /"\/settings"/);
 
-  // issue #129: the layout's own standalone desktop actions row (the source of
-  // the excessive top gap) is gone - only the mobile sticky-header mount remains
-  // there. The desktop mount now lives inside each page's own PageHeader, next
-  // to its title, instead of floating in a disconnected row above the content.
-  const layoutMounts = (layoutSource.match(/<StudentHeaderActions \/>/g) ?? []).length;
-  assert.equal(layoutMounts, 1, "expected exactly the mobile sticky-header mount in the layout, no separate desktop row");
+  // issue #129 and #182: the layout owns neither a detached desktop action row
+  // nor a second mobile copy. The mobile shell composes the shared action group
+  // once and opts out of Calendar; desktop page headers keep the default group.
+  const layoutMounts = (layoutSource.match(/<StudentHeaderActions\b/g) ?? []).length;
+  const mobileMounts = (mobileSource.match(/<StudentHeaderActions showCalendar=\{false\} \/>/g) ?? []).length;
+  assert.equal(layoutMounts, 0, "the layout must delegate the complete mobile header to MobileHeaderNavigation");
+  assert.equal(mobileMounts, 1, "expected exactly one calendar-free action group in the mobile header");
 
   // The old per-view/per-route duplicates are gone: no more BrandHeaderActions row,
   // no more floating QuickAdd mount, no more local NotificationBell in guest-app.tsx.
@@ -1912,15 +1950,11 @@ test("globals.css's --primary and --ring are the brand terracotta, not the defau
   }
 });
 
-test("the #80/#81/daily-alerts hardcoded terracotta overrides now read the fixed --primary token instead of a second, parallel hex value (issue #82)", async () => {
-  const [bottomNav, morePage, dailyAlerts] = await Promise.all([
-    readFile(new URL("../src/components/bottom-nav.tsx", import.meta.url), "utf8"),
+test("the surviving #81/daily-alerts hardcoded terracotta overrides read the fixed --primary token instead of a second, parallel hex value (issue #82, bottom navigation retired by issue #182)", async () => {
+  const [morePage, dailyAlerts] = await Promise.all([
     readFile(new URL("../src/app/(dashboard)/more/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/daily-alerts.tsx", import.meta.url), "utf8"),
   ]);
-
-  assert.match(bottomNav, /isActive \? "text-primary" : "text-muted-foreground"/);
-  assert.doesNotMatch(bottomNav, /text-\[#E15D2D\]/i);
 
   assert.match(morePage, /text-primary/);
   assert.doesNotMatch(morePage, /text-\[#E15D2D\]/i);
@@ -1936,7 +1970,7 @@ test("the #80/#81/daily-alerts hardcoded terracotta overrides now read the fixed
   // not missed. See docs/architecture/decisions or the PR for the exact
   // rationale (Tailwind's bg-primary/N opacity modifier does not reproduce
   // #FBE7DD exactly).
-  for (const source of [bottomNav, morePage, dailyAlerts]) {
+  for (const source of [morePage, dailyAlerts]) {
     assert.match(source, /#FBE7DD|#fbe7dd/i, "the light-tint badge background is expected to remain hardcoded");
   }
 });
@@ -2218,12 +2252,16 @@ test("The shared page-header tokens in globals.css style the eyebrow/title/subti
   assert.doesNotMatch(source, /\.al-page-header[^}]*font-barlow/);
 });
 
-test("The dashboard layout no longer renders a standalone desktop actions row above the content - actions live inside each page's own header - and the mobile sticky header is untouched (issue #129)", async () => {
-  const source = await readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /pt-6 md:flex/, "the old standalone desktop actions row (the source of the excessive top gap) must be removed");
-  assert.match(source, /StudentHeaderActions/, "StudentHeaderActions must still be imported for the mobile sticky bar");
-  assert.match(source, /md:hidden/, "the mobile-only sticky header row must remain");
-  assert.match(source, /pb-safe|pb-20|safe-area/, "mobile safe-area/bottom-nav spacing must remain intact");
+test("The dashboard layout keeps desktop actions inside each page header and delegates the new sticky mobile header to one component (issue #129, issue #182)", async () => {
+  const [layoutSource, mobileSource] = await Promise.all([
+    readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/mobile-header-navigation.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.doesNotMatch(layoutSource, /pt-6 md:flex/, "the old standalone desktop actions row (the source of the excessive top gap) must be removed");
+  assert.doesNotMatch(layoutSource, /StudentHeaderActions/, "the layout must not recreate the action cluster outside the mobile header component");
+  assert.match(layoutSource, /<MobileHeaderNavigation \/>/);
+  assert.match(mobileSource, /sticky top-0[\s\S]*md:hidden/, "the replacement top navigation must remain mobile-only and sticky");
+  assert.doesNotMatch(layoutSource, /pb-safe|pb-20/, "bottom-navigation spacing must not leave an empty mobile footer");
 });
 
 test("Every first-level authenticated route renders the shared PageHeader instead of a bespoke ad-hoc heading (issue #129)", async () => {
