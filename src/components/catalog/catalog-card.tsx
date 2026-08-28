@@ -108,7 +108,6 @@ export function CatalogFeaturedCard({
 }) {
   return (
     <article className="al-catalog-featured">
-      {favorite}
       <div className="al-catalog-featured-media">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imageSrc} alt={imageAlt} />
@@ -120,7 +119,10 @@ export function CatalogFeaturedCard({
             <p className="al-catalog-featured-title">{title}</p>
             {subtitle && <p className="al-catalog-featured-org">{subtitle}</p>}
           </div>
-          {status}
+          <div className="al-catalog-featured-head-meta">
+            {status}
+            {favorite}
+          </div>
         </div>
         {description && <p className="al-catalog-featured-desc line-clamp-3">{description}</p>}
         <div className="al-catalog-facts">{facts}</div>
