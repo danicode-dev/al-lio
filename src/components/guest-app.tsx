@@ -2128,41 +2128,14 @@ function FilterCalendar({
   );
 }
 
-function ViewToggle({ value, onChange }: { value: "grid" | "lista"; onChange: (v: "grid" | "lista") => void }) {
-  return (
-    <div className="flex shrink-0 items-center rounded-md border bg-card p-0.5 gap-0.5">
-      {(["grid", "lista"] as const).map((v) => (
-        <Button
-          key={v}
-          type="button"
-          size="sm"
-          variant="ghost"
-          className={cn(
-            "h-6 px-2 text-[11px]",
-            value === v
-              ? "al-action-soft-selected hover:bg-[#fbe7dd] hover:text-[#a63f1a]"
-              : "text-[#333029]"
-          )}
-          onClick={() => onChange(v)}
-        >
-          {v === "grid" ? "Grid" : "Lista"}
-        </Button>
-      ))}
-    </div>
-  );
-}
-
 type CollectionTab = { id: string; label: string; count: number; withHeart?: boolean };
-type CollectionStat = { value: number; label: string };
 
-// The shared control strip above the Cursos and Eventos y retos lists.
-// Default layout (Eventos y retos): a KPI row, then search + Filtros, then
-// a segmented status control and the result count.
-// `compact` (Cursos) folds all of that into ONE line - the counts and the
-// status tabs are the same thing, rendered as flat clickable stats with a
-// single hairline under them, search collapsed to its icon and Filtros
-// pinned right. On phones the stats drop to a 2x2 grid and the actions sit
-// above them. One component so the two pages can be unified deliberately.
+// The one control strip above the Cursos and Eventos y retos lists: a
+// single line where the KPI counts and the status filter are the same
+// thing - flat clickable stats with a hairline under the row, the active
+// one underlined (menu-style, not a chunky button) - plus a search that is
+// just its icon until used and the Filtros button pinned right. On phones
+// the stats take the top as a 2x2 grid and the actions sit below.
 function CollectionControls({
   searchValue,
   onSearchChange,
@@ -2173,11 +2146,6 @@ function CollectionControls({
   filterCount,
   filtersOpen,
   onToggleFilters,
-  stats,
-  metaText,
-  viewMode,
-  onViewModeChange,
-  compact = false,
 }: {
   searchValue: string;
   onSearchChange: (value: string) => void;
@@ -2188,136 +2156,17 @@ function CollectionControls({
   filterCount: number;
   filtersOpen: boolean;
   onToggleFilters: () => void;
-  stats?: CollectionStat[];
-  metaText?: string;
-  viewMode?: "grid" | "lista";
-  onViewModeChange?: (value: "grid" | "lista") => void;
-  compact?: boolean;
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
-  const searchExpanded = !compact || searchOpen || searchValue.length > 0;
+  const searchExpanded = searchOpen || searchValue.length > 0;
   useEffect(() => {
-    if (compact && searchOpen) searchRef.current?.focus();
-  }, [compact, searchOpen]);
-
-  const searchNode = (
-    <div className={cn("al-cc-search", searchExpanded && "is-open")}>
-      {compact && (
-        <button
-          type="button"
-          className="al-cc-search-toggle"
-          onClick={() => setSearchOpen(true)}
-          aria-label="Buscar"
-          aria-expanded={searchExpanded}
-          tabIndex={searchExpanded ? -1 : 0}
-        >
-          <Search />
-        </button>
-      )}
-      {!compact && <Search />}
-      <input
-        ref={searchRef}
-        value={searchValue}
-        onChange={(event) => onSearchChange(event.target.value)}
-        placeholder={searchPlaceholder}
-        aria-label={searchPlaceholder}
-        tabIndex={compact && !searchExpanded ? -1 : 0}
-        onBlur={() => { if (compact && !searchValue) setSearchOpen(false); }}
-      />
-      {searchValue && (
-        <button type="button" className="al-cc-search-clear" onClick={() => onSearchChange("")} aria-label="Limpiar búsqueda">
-          <X />
-        </button>
-      )}
-    </div>
-  );
-
-  const filtersNode = (
-    <button
-      type="button"
-      className={cn("al-cc-filters", filtersOpen && "al-action-soft-selected")}
-      onClick={onToggleFilters}
-      aria-pressed={filtersOpen}
-      aria-label={filterCount > 0 ? `Filtros, ${filterCount} activos` : "Filtros"}
-    >
-      <SlidersHorizontal />
-      <span className="al-cc-filters-label">Filtros</span>
-      {filterCount > 0 && <span className="al-cc-filters-badge">{filterCount}</span>}
-    </button>
-  );
-
-  const tabNodes = tabs.map((tab) => {
-    const isActive = activeTab === tab.id;
-    return (
-      <button
-        key={tab.id}
-        type="button"
-        role="tab"
-        aria-selected={isActive}
-        className={cn(
-          compact ? "al-cc-stat" : "al-cc-tab",
-          isActive && (compact ? "al-cc-stat-active" : "al-cc-tab-active"),
-        )}
-        onClick={() => onTabChange(tab.id)}
-      >
-        {compact ? (
-          <>
-            <span className="al-cc-stat-value">{tab.count}</span>
-            <span className="al-cc-stat-label">
-              {tab.withHeart && <Heart fill={isActive ? "currentColor" : "none"} />}
-              {tab.label}
-            </span>
-          </>
-        ) : (
-          <>
-            {tab.withHeart && <Heart className="h-3 w-3" fill={isActive ? "currentColor" : "none"} />}
-            <span>{tab.label}</span>
-            <span className="al-cc-tab-count">{tab.count}</span>
-          </>
-        )}
-      </button>
-    );
-  });
+    if (searchOpen) searchRef.current?.focus();
+  }, [searchOpen]);
 
   return (
-    <section className={cn("al-cc", compact && "al-cc-compact")}>
+    <section className="al-cc">
       <style>{`
-        .al-cc { display: flex; flex-direction: column; gap: 14px; }
-        .al-cc-kpis { display: flex; align-items: stretch; overflow-x: auto; scrollbar-width: none; padding-bottom: 12px; border-bottom: 1px solid #ece7dc; }
-        .al-cc-kpis::-webkit-scrollbar { display: none; }
-        .al-cc-kpi { display: flex; flex-direction: column; gap: 2px; flex: 1 1 0; min-width: 74px; padding: 0 16px; border-left: 1px solid #f0ece2; }
-        .al-cc-kpi:first-child { border-left: none; padding-left: 2px; }
-        .al-cc-kpi-value { font-size: 19px; font-weight: 800; line-height: 1.1; color: #111111; font-variant-numeric: tabular-nums; }
-        .al-cc-kpi-label { font-size: 10.5px; font-weight: 600; letter-spacing: .02em; color: #9a958a; white-space: nowrap; }
-        .al-cc-bar { display: flex; gap: 8px; }
-        .al-cc-search { position: relative; flex: 1 1 auto; min-width: 0; }
-        .al-cc-search > svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #9a958a; pointer-events: none; }
-        .al-cc-search input { width: 100%; height: 42px; padding: 0 34px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 13.5px; color: #333029; outline: none; transition: border-color .15s, box-shadow .15s; }
-        .al-cc-search input::placeholder { color: #a59f94; }
-        .al-cc-search input:focus { border-color: var(--al-action-soft-border-hover); box-shadow: 0 0 0 3px var(--al-action-soft-focus); }
-        .al-cc-search-clear { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 22px; height: 22px; border-radius: 999px; border: none; background: transparent; color: #9a958a; cursor: pointer; }
-        .al-cc-search-clear:hover { background: #f3ece1; color: #333029; }
-        .al-cc-search-clear svg { width: 13px; height: 13px; }
-        .al-cc-filters { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid #ece7dc; background: white; color: #333029; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: border-color .15s, background .15s, color .15s; }
-        .al-cc-filters:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
-        .al-cc-filters svg { width: 15px; height: 15px; }
-        .al-cc-filters-badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--al-action-soft-text); color: white; font-size: 10.5px; font-weight: 700; }
-        @media (max-width: 420px) { .al-cc-filters-label { display: none; } .al-cc-filters { padding: 0 11px; } }
-        .al-cc-tabs { display: flex; gap: 3px; padding: 3px; border-radius: 12px; border: 1px solid #ece7dc; background: #faf7f1; overflow-x: auto; scrollbar-width: none; }
-        .al-cc-tabs::-webkit-scrollbar { display: none; }
-        .al-cc-tab { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: 1 0 auto; height: 34px; padding: 0 13px; border-radius: 9px; border: none; background: transparent; color: #6b6f72; font-size: 12.5px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: background .15s, color .15s; }
-        .al-cc-tab:hover:not(.al-cc-tab-active) { color: #333029; }
-        .al-cc-tab-active { background: white; color: var(--al-action-soft-text-hover); box-shadow: 0 1px 3px rgba(17,17,17,.09), inset 0 0 0 1px var(--al-action-soft-border); }
-        .al-cc-tab-count { font-size: 11px; font-weight: 700; color: #9a958a; }
-        .al-cc-tab-active .al-cc-tab-count { color: var(--al-action-soft-text); }
-        .al-cc-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
-        .al-cc-meta-text { font-size: 12px; color: #777269; }
-
-        /* compact (Cursos): a single line - the KPI counts ARE the filter
-           tabs (no duplicate row), with search + Filtros pinned right and
-           one hairline under the whole thing. */
-        .al-cc-compact .al-cc { gap: 0; }
         .al-cc-strip { display: flex; align-items: flex-end; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid #ece7dc; }
         .al-cc-strip-tabs { display: flex; align-items: stretch; gap: 2px; flex: 1 1 auto; min-width: 0; }
         .al-cc-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; flex: 1 1 0; min-width: 0; padding: 4px 10px 6px; border: none; border-bottom: 2px solid transparent; border-radius: 8px 8px 0 0; background: transparent; text-align: left; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
@@ -2329,139 +2178,104 @@ function CollectionControls({
         .al-cc-stat-active .al-cc-stat-value { color: var(--al-action-soft-text-hover); }
         .al-cc-stat-active .al-cc-stat-label { color: var(--al-action-soft-text); }
         .al-cc-strip-actions { display: flex; gap: 8px; flex: 0 0 auto; align-items: center; padding-bottom: 2px; }
-        @media (max-width: 640px) {
-          .al-cc-strip { flex-wrap: wrap; align-items: stretch; gap: 12px 0; }
-          .al-cc-strip-actions { order: 1; width: 100%; justify-content: flex-end; }
-          .al-cc-strip-tabs { order: 2; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-          .al-cc-stat { border: 1px solid #ece7dc; border-radius: 10px; padding: 8px 10px; }
-          .al-cc-stat-active { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg); }
-        }
-        /* compact search: one icon until used, then it grows in place */
-        .al-cc-compact .al-cc-search { flex: 0 0 auto; width: 42px; transition: width .18s ease; }
-        .al-cc-compact .al-cc-search.is-open { width: 240px; }
-        @media (max-width: 640px) { .al-cc-compact .al-cc-search.is-open { width: auto; flex: 1 1 auto; } }
-        .al-cc-compact .al-cc-search:not(.is-open) input { opacity: 0; pointer-events: none; }
+        .al-cc-search { position: relative; flex: 0 0 auto; width: 42px; transition: width .18s ease; }
+        .al-cc-search.is-open { width: 240px; }
+        .al-cc-search input { width: 100%; height: 42px; padding: 0 34px; border-radius: 12px; border: 1px solid #ece7dc; background: white; font-size: 13.5px; color: #333029; outline: none; transition: border-color .15s, box-shadow .15s; }
+        .al-cc-search input::placeholder { color: #a59f94; }
+        .al-cc-search input:focus { border-color: var(--al-action-soft-border-hover); box-shadow: 0 0 0 3px var(--al-action-soft-focus); }
+        .al-cc-search:not(.is-open) input { opacity: 0; pointer-events: none; }
         .al-cc-search-toggle { position: absolute; left: 0; top: 0; z-index: 1; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border-radius: 12px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; transition: border-color .15s, color .15s; }
         .al-cc-search-toggle:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
         .al-cc-search-toggle svg { width: 16px; height: 16px; }
         .al-cc-search.is-open .al-cc-search-toggle { pointer-events: none; border-color: transparent; background: transparent; color: #9a958a; }
+        .al-cc-search-clear { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 22px; height: 22px; border-radius: 999px; border: none; background: transparent; color: #9a958a; cursor: pointer; z-index: 2; }
+        .al-cc-search-clear:hover { background: #f3ece1; color: #333029; }
+        .al-cc-search-clear svg { width: 13px; height: 13px; }
+        .al-cc-filters { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid #ece7dc; background: white; color: #333029; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: border-color .15s, background .15s, color .15s; }
+        .al-cc-filters:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
+        .al-cc-filters svg { width: 15px; height: 15px; }
+        .al-cc-filters-badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--al-action-soft-text); color: white; font-size: 10.5px; font-weight: 700; }
+        @media (max-width: 640px) {
+          .al-cc-strip { flex-wrap: wrap; align-items: stretch; gap: 12px 0; }
+          .al-cc-strip-tabs { order: 1; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+          .al-cc-strip-actions { order: 2; width: 100%; justify-content: flex-end; }
+          .al-cc-stat { border: 1px solid #ece7dc; border-radius: 10px; padding: 8px 10px; }
+          .al-cc-stat-active { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg); }
+          .al-cc-search.is-open { width: auto; flex: 1 1 auto; }
+        }
+        @media (max-width: 420px) { .al-cc-filters-label { display: none; } .al-cc-filters { padding: 0 11px; } }
       `}</style>
 
-      {compact ? (
-        <div className="al-cc-strip">
-          <div className="al-cc-strip-tabs" role="tablist">{tabNodes}</div>
-          <div className="al-cc-strip-actions">
-            {searchNode}
-            {filtersNode}
-          </div>
+      <div className="al-cc-strip">
+        <div className="al-cc-strip-tabs" role="tablist">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={cn("al-cc-stat", isActive && "al-cc-stat-active")}
+                onClick={() => onTabChange(tab.id)}
+              >
+                <span className="al-cc-stat-value">{tab.count}</span>
+                <span className="al-cc-stat-label">
+                  {tab.withHeart && <Heart fill={isActive ? "currentColor" : "none"} />}
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
-      ) : (
-        <>
-          <div className="al-cc-kpis">
-            {(stats ?? []).map((stat) => (
-              <div key={stat.label} className="al-cc-kpi">
-                <span className="al-cc-kpi-value">{stat.value}</span>
-                <span className="al-cc-kpi-label">{stat.label}</span>
-              </div>
-            ))}
+        <div className="al-cc-strip-actions">
+          <div className={cn("al-cc-search", searchExpanded && "is-open")}>
+            <button
+              type="button"
+              className="al-cc-search-toggle"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Buscar"
+              aria-expanded={searchExpanded}
+              tabIndex={searchExpanded ? -1 : 0}
+            >
+              <Search />
+            </button>
+            <input
+              ref={searchRef}
+              value={searchValue}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
+              tabIndex={searchExpanded ? 0 : -1}
+              onBlur={() => { if (!searchValue) setSearchOpen(false); }}
+            />
+            {searchValue && (
+              <button type="button" className="al-cc-search-clear" onClick={() => onSearchChange("")} aria-label="Limpiar búsqueda">
+                <X />
+              </button>
+            )}
           </div>
-
-          <div className="al-cc-bar">
-            {searchNode}
-            {filtersNode}
-          </div>
-
-          <div className="al-cc-tabs" role="tablist">{tabNodes}</div>
-
-          {metaText != null && viewMode && onViewModeChange && (
-            <div className="al-cc-meta">
-              <p className="al-cc-meta-text">{metaText}</p>
-              <ViewToggle value={viewMode} onChange={onViewModeChange} />
-            </div>
-          )}
-        </>
-      )}
+          <button
+            type="button"
+            className={cn("al-cc-filters", filtersOpen && "al-action-soft-selected")}
+            onClick={onToggleFilters}
+            aria-pressed={filtersOpen}
+            aria-label={filterCount > 0 ? `Filtros, ${filterCount} activos` : "Filtros"}
+          >
+            <SlidersHorizontal />
+            <span className="al-cc-filters-label">Filtros</span>
+            {filterCount > 0 && <span className="al-cc-filters-badge">{filterCount}</span>}
+          </button>
+        </div>
+      </div>
     </section>
   );
 }
 
-// Filters as an inline, full-width panel that opens in place under the
-// control bar - not a sidebar that narrows the grid and not a block that
-// lands at the bottom of the list on mobile. Sections lay out in a
-// responsive grid; Escape and the corner button close it.
-function FilterPanel({
-  title = "Filtros",
-  activeCount,
-  onClear,
-  onClose,
-  children,
-}: {
-  title?: string;
-  activeCount: number;
-  onClear: () => void;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  return (
-    <div className="al-filter-panel">
-      <style>{`
-        .al-filter-panel { background: white; border: 1px solid #ece7dc; border-radius: 18px; box-shadow: 0 12px 30px rgba(17, 17, 17, 0.06); padding: 16px 18px 18px; }
-        .al-filter-head { display: flex; align-items: center; gap: 10px; padding-bottom: 14px; margin-bottom: 16px; border-bottom: 1px solid #f0ece2; }
-        .al-filter-title { flex: 1; font-size: 13.5px; font-weight: 800; color: #111111; }
-        .al-filter-clear { font-size: 11.5px; font-weight: 700; color: var(--al-action-soft-text); }
-        .al-filter-clear:hover { color: var(--al-action-soft-text-hover); }
-        .al-filter-close { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; transition: border-color .15s, color .15s; }
-        .al-filter-close:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
-        .al-filter-close svg { width: 14px; height: 14px; }
-        .al-filter-grid { display: grid; gap: 16px 22px; grid-template-columns: 1fr; }
-        @media (min-width: 640px) { .al-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (min-width: 980px) { .al-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-        .al-filter-section--wide { grid-column: 1 / -1; }
-        .al-filter-section-label { margin-bottom: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #9a958a; }
-        .al-filter-chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 999px; border: 1px solid #ece7dc; background: white; color: #333029; padding: 4px 11px; font-size: 11.5px; font-weight: 600; transition: border-color 0.15s, color 0.15s; }
-        .al-filter-chip:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
-        .al-filter-chip-active, .al-filter-chip-active:hover { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); }
-        .al-filter-day-selected, .al-filter-day-selected:hover { background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); }
-        .al-filter-day-today { color: #c94f21; }
-        .al-filter-dot { background: #E15D2D; }
-      `}</style>
-      <div className="al-filter-head">
-        <span className="al-filter-title">{title}</span>
-        {activeCount > 0 && (
-          <button type="button" onClick={onClear} className="al-filter-clear">
-            Limpiar ({activeCount})
-          </button>
-        )}
-        <button type="button" onClick={onClose} className="al-filter-close" aria-label="Cerrar filtros">
-          <X />
-        </button>
-      </div>
-      <div className="al-filter-grid">{children}</div>
-    </div>
-  );
-}
-
-function FilterSection({ label, wide, children }: { label: string; wide?: boolean; children: React.ReactNode }) {
-  return (
-    <div className={cn(wide && "al-filter-section--wide")}>
-      <p className="al-filter-section-label">{label}</p>
-      {children}
-    </div>
-  );
-}
-
-// Compact variant of the filters surface (Cursos): a small dropdown that
-// hangs off the Filtros button instead of a full-width block that pushes
-// the whole list down. Its parent must carry `.al-cc-shell` so the panel
-// can anchor to it; closes on Escape or a click outside that shell.
+// The filters surface: a small dropdown that hangs off the Filtros button
+// instead of a full-width block that pushes the whole list down. Its
+// parent must carry `.al-cc-shell` so the panel can anchor to it; closes
+// on Escape or a click outside that shell.
 function FilterPanelCompact({
   title = "Filtros",
   activeCount,
@@ -2728,7 +2542,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
       <div className="space-y-4">
         <div className="al-cc-shell">
           <CollectionControls
-            compact
             searchValue={searchInput}
             onSearchChange={setSearchInput}
             searchPlaceholder="Buscar título, entidad, tag..."
@@ -3154,7 +2967,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     [store.hackathons, store.techOpportunities, store.fpContent]
   );
 
-  const [viewTab, setViewTab] = useState<"activos" | "archivados" | "guardados" | "todos">("activos");
+  const [viewTab, setViewTab] = useState<"total" | "abiertos" | "proximos" | "guardados">("total");
   const [showFilters, setShowFilters] = useState(false);
   const [monthFilter, setMonthFilter] = useState("");
   const [dayFilter, setDayFilter] = useState("");
@@ -3165,7 +2978,6 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
   const [soloInscripcionAbierta, setSoloInscripcionAbierta] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
@@ -3181,16 +2993,27 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     return da.localeCompare(db);
   }), [allHackathons]);
 
-  const archivados = useMemo(() => sorted.filter(isHackathonArchived), [sorted]);
-  const activos = useMemo(() => sorted.filter((h) => !isHackathonArchived(h) && !isHackathonPast(h)), [sorted]);
+  // Mirrors Cursos: the four control-row entries are both the KPI counts
+  // and the filter tabs. Total is the current events (not finished, not
+  // past); Inscripción abierta and Próx. inicio are subsets of it.
+  // "Realizado" is no longer its own tab - it moves to the Estado filter.
+  const total = useMemo(() => sorted.filter((h) => !isHackathonArchived(h) && !isHackathonPast(h)), [sorted]);
   // Guardados (issue #131): a heart-driven filter, independent of the
-  // Activos/Realizado lifecycle split above - saving an event never moves
-  // it between those tabs, so the same event can appear in both Guardados
-  // and whichever lifecycle tab it already belongs to.
+  // lifecycle split above - saving an event never moves it between tabs,
+  // so the same event can appear in both Guardados and Total.
   const guardados = useMemo(() => sorted.filter((h) => h.is_favorite), [sorted]);
+  const abiertos = useMemo(() => total.filter((h) => h.status === "inscripcion_abierta"), [total]);
+  const proximos = useMemo(() => {
+    const t = todayKey();
+    const i30 = dateKey(addDays(new Date(), 30).toISOString());
+    return total.filter((h) => {
+      const d = (h.start_at || "").slice(0, 10);
+      return d >= t && d <= i30;
+    });
+  }, [total]);
   const tabBase = useMemo(
-    () => viewTab === "activos" ? activos : viewTab === "archivados" ? archivados : viewTab === "guardados" ? guardados : sorted,
-    [viewTab, activos, archivados, guardados, sorted]
+    () => viewTab === "abiertos" ? abiertos : viewTab === "proximos" ? proximos : viewTab === "guardados" ? guardados : total,
+    [viewTab, abiertos, proximos, guardados, total]
   );
 
 
@@ -3227,27 +3050,16 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
     });
   }, [tabBase, search, monthFilter, dayFilter, estadoFilter, provinciaFilter, modalidadFilter, prioridadFilter, soloInscripcionAbierta]);
 
-  const { today, kpiAbiertos, kpiPendientes, kpiProx } = useMemo(() => {
-    const t = todayKey();
-    const i30 = dateKey(addDays(new Date(), 30).toISOString());
-    return {
-      today: t,
-      kpiAbiertos: tabBase.filter((h) => h.status === "inscripcion_abierta").length,
-      kpiPendientes: tabBase.filter((h) => h.status === "pendiente").length,
-      kpiProx: tabBase.filter((h) => { const d = (h.start_at || "").slice(0, 10); return d >= t && d <= i30; }).length,
-    };
-  }, [tabBase]);
-
   const activeFilterCount = [monthFilter, dayFilter, estadoFilter, provinciaFilter, modalidadFilter, prioridadFilter, soloInscripcionAbierta].filter(Boolean).length;
 
   function clearAll() {
     setMonthFilter(""); setDayFilter(""); setEstadoFilter(""); setProvinciaFilter(""); setModalidadFilter(""); setPrioridadFilter(""); setSoloInscripcionAbierta(false); setSearchInput(""); setSearch("");
   }
 
-  const showFeatured = (viewTab === "activos" || viewTab === "todos") && !search && activeFilterCount === 0 && viewMode === "grid";
+  const showFeatured = viewTab === "total" && !search && activeFilterCount === 0;
   const featuredHackathon = useMemo(
-    () => showFeatured ? selectFeaturedHackathon(activos) : null,
-    [activos, showFeatured],
+    () => showFeatured ? selectFeaturedHackathon(total) : null,
+    [total, showFeatured],
   );
   const gridHackathons = useMemo(
     () => featuredHackathon ? filtered.filter((item) => item.id !== featuredHackathon.id) : filtered,
@@ -3268,77 +3080,80 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: var(--al-action-soft-bg); color: var(--al-action-soft-text); font-size: 12.5px; font-weight: 700; border: 1px solid var(--al-action-soft-border); cursor: pointer; }
       `}</style>
       <div className="space-y-4">
-        <CollectionControls
-          searchValue={searchInput}
-          onSearchChange={setSearchInput}
-          searchPlaceholder="Buscar nombre, organizador, tema, aptitud..."
-          tabs={[
-            { id: "activos", label: "Activos", count: activos.length },
-            { id: "archivados", label: "Realizado", count: archivados.length },
-            { id: "guardados", label: "Guardados", count: guardados.length, withHeart: true },
-            { id: "todos", label: "Todos", count: sorted.length },
-          ]}
-          activeTab={viewTab}
-          onTabChange={(id) => { setViewTab(id as typeof viewTab); clearAll(); }}
-          filterCount={activeFilterCount}
-          filtersOpen={showFilters}
-          onToggleFilters={() => setShowFilters((v) => !v)}
-          stats={[
-            { value: tabBase.length, label: "Total" },
-            { value: kpiAbiertos, label: "Inscripción abierta" },
-            { value: kpiPendientes, label: "Pendientes" },
-            { value: kpiProx, label: "Próx. inicio" },
-          ]}
-          metaText={`${filtered.length} ${filtered.length === 1 ? "evento o reto" : "eventos y retos"} · desde ${formatDateLabel(today)} · por fecha de inicio`}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-        />
+        <div className="al-cc-shell">
+          <CollectionControls
+            searchValue={searchInput}
+            onSearchChange={setSearchInput}
+            searchPlaceholder="Buscar nombre, organizador, tema, aptitud..."
+            tabs={[
+              { id: "total", label: "Total", count: total.length },
+              { id: "abiertos", label: "Inscripción abierta", count: abiertos.length },
+              { id: "proximos", label: "Próx. inicio", count: proximos.length },
+              { id: "guardados", label: "Guardados", count: guardados.length, withHeart: true },
+            ]}
+            activeTab={viewTab}
+            onTabChange={(id) => { setViewTab(id as typeof viewTab); clearAll(); }}
+            filterCount={activeFilterCount}
+            filtersOpen={showFilters}
+            onToggleFilters={() => setShowFilters((v) => !v)}
+          />
 
-        {showFilters && (
-          <FilterPanel activeCount={activeFilterCount} onClear={clearAll} onClose={() => setShowFilters(false)}>
-            <FilterSection label="Calendario" wide>
-              <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
-            </FilterSection>
-            <FilterSection label="Estado">
-              <FilterChips
-                options={[["", "Todos"], ["pendiente", "Pendiente"], ["inscripcion_abierta", "Activo"]]}
-                value={estadoFilter}
-                onChange={setEstadoFilter}
-              />
-            </FilterSection>
-            {modalidades.length > 0 && (
-              <FilterSection label="Modalidad">
+          {showFilters && (
+            <FilterPanelCompact activeCount={activeFilterCount} onClear={clearAll} onClose={() => setShowFilters(false)}>
+              <div>
+                <p className="al-fp-row-label">Estado</p>
                 <FilterChips
-                  options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
-                  value={modalidadFilter}
-                  onChange={setModalidadFilter}
+                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["inscripcion_abierta", "Activo"], ["realizado", "Realizado"]]}
+                  value={estadoFilter}
+                  onChange={setEstadoFilter}
                 />
-              </FilterSection>
-            )}
-            {provincias.length > 0 && (
-              <FilterSection label="Provincia">
+              </div>
+              {modalidades.length > 0 && (
+                <div>
+                  <p className="al-fp-row-label">Modalidad</p>
+                  <FilterChips
+                    options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
+                    value={modalidadFilter}
+                    onChange={setModalidadFilter}
+                  />
+                </div>
+              )}
+              {provincias.length > 0 && (
+                <div>
+                  <p className="al-fp-row-label">Provincia</p>
+                  <FilterChips
+                    options={[["", "Todas"], ...provincias.map((p): [string, string] => [p, p])]}
+                    value={provinciaFilter}
+                    onChange={setProvinciaFilter}
+                  />
+                </div>
+              )}
+              <div>
+                <p className="al-fp-row-label">Prioridad</p>
                 <FilterChips
-                  options={[["", "Todas"], ...provincias.map((p): [string, string] => [p, p])]}
-                  value={provinciaFilter}
-                  onChange={setProvinciaFilter}
+                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
+                  value={prioridadFilter}
+                  onChange={setPrioridadFilter}
                 />
-              </FilterSection>
-            )}
-            <FilterSection label="Prioridad">
-              <FilterChips
-                options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
-                value={prioridadFilter}
-                onChange={setPrioridadFilter}
-              />
-            </FilterSection>
-            <FilterSection label="Solo">
-              <label className="flex cursor-pointer items-center gap-2 text-xs">
-                <input type="checkbox" checked={soloInscripcionAbierta} onChange={(e) => setSoloInscripcionAbierta(e.target.checked)} className="rounded" />
-                Inscripción abierta
-              </label>
-            </FilterSection>
-          </FilterPanel>
-        )}
+              </div>
+              <div>
+                <p className="al-fp-row-label">Fecha de inicio</p>
+                <FilterDateRow
+                  dayFilter={dayFilter}
+                  datesWithItems={datesWithItems}
+                  onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }}
+                />
+              </div>
+              <div>
+                <p className="al-fp-row-label">Solo</p>
+                <label className="flex cursor-pointer items-center gap-2 text-xs">
+                  <input type="checkbox" checked={soloInscripcionAbierta} onChange={(e) => setSoloInscripcionAbierta(e.target.checked)} className="rounded" />
+                  Inscripción abierta
+                </label>
+              </div>
+            </FilterPanelCompact>
+          )}
+        </div>
 
         <div className="min-w-0 space-y-4">
             {featuredHackathon && (() => {
@@ -3381,7 +3196,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
             })()}
 
             {(featuredHackathon || gridHackathons.length) ? (
-              <div className={cn("al-catalog-grid", viewMode === "grid" && "al-catalog-grid-cards")}>
+              <div className="al-catalog-grid al-catalog-grid-cards">
                 {gridHackathons.map((item) => {
                   const presentation = getHackathonPresentation(item);
                   const canFavorite = canToggleHackathonFavorite(item);
@@ -3418,7 +3233,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
                 })}
               </div>
             ) : (
-              <HackathonsEmptyState variant={search || activeFilterCount > 0 ? "sin_resultados" : viewTab === "activos" ? "sin_activos" : "sin_datos"} onClearFilters={clearAll} />
+              <HackathonsEmptyState variant={search || activeFilterCount > 0 ? "sin_resultados" : viewTab === "total" ? "sin_activos" : "sin_datos"} onClearFilters={clearAll} />
             )}
         </div>
       </div>

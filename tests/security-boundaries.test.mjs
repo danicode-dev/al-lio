@@ -1063,12 +1063,12 @@ test("Realizado is not offered for tech_opportunities and is guarded against dou
   assert.match(detailSource, /disabled=\{pendingComplete\}/);
 });
 
-test("The featured event card reads the pure selection helper and follows the same filtered/list gating as Courses (issue #95, issue #164)", async () => {
+test("The featured event card reads the pure selection helper and follows the same filtered gating as Courses (issue #95, issue #164)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const start = guestAppSource.indexOf("function Hackathons(");
   const source = guestAppSource.slice(start, guestAppSource.indexOf("function HackathonsEmptyState", start));
-  assert.match(source, /showFeatured \? selectFeaturedHackathon\(activos\) : null/);
-  assert.match(source, /viewMode === "grid"/, "featured content must disappear in list mode, matching Courses");
+  assert.match(source, /showFeatured \? selectFeaturedHackathon\(total\) : null/);
+  assert.match(source, /const showFeatured = viewTab === "total" && !search && activeFilterCount === 0;/, "featured content only shows on the untouched Total view, matching Courses");
   assert.match(source, /filtered\.filter\(\(item\) => item\.id !== featuredHackathon\.id\)/, "the featured item must not be repeated in the grid");
 });
 
@@ -2416,13 +2416,13 @@ test("Competencias' progress card sits inside PageHeader's own actions, glued to
   assert.match(actionsBlock, /shrink-0/, "the card must not be allowed to stretch/shrink oddly when squeezed next to the icon cluster");
 });
 
-test("Guardados is a real heart-driven filter tab, independent of and additional to Activos/Archivados/Todos - not just the heart control on its own (issue #131)", async () => {
+test("Guardados is a real heart-driven filter tab, independent of and additional to Total/Inscripción abierta/Próx. inicio - not just the heart control on its own (issue #131)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const hackathonsFnStart = source.indexOf("function Hackathons(");
   const hackathonsFnEnd = source.indexOf("function HackathonsEmptyState");
   const fnSource = source.slice(hackathonsFnStart, hackathonsFnEnd);
 
-  assert.match(fnSource, /useState<"activos" \| "archivados" \| "guardados" \| "todos">/);
+  assert.match(fnSource, /useState<"total" \| "abiertos" \| "proximos" \| "guardados">/);
   assert.match(fnSource, /const guardados = useMemo\(\(\) => sorted\.filter\(\(h\) => h\.is_favorite\), \[sorted\]\);/);
   assert.match(fnSource, /viewTab === "guardados" \? guardados/);
   assert.match(fnSource, /\{ id: "guardados", label: "Guardados", count: guardados\.length, withHeart: true \}/, "the tab must be a real filter tab with a live heart count, matching the issue's explicit ask");
@@ -2953,13 +2953,13 @@ test("A second user cannot reach another user's saved items through the hub - it
 });
 
 // ---------------------------------------------------------------------------
-// Owner redesign: Cursos folds its KPI row and its status tabs into ONE
-// clickable row - Total / Empezados / Próx. inicio / Guardados - because
-// showing both was duplicated. "Terminado" is no longer a dedicated tab;
-// finished courses stay reachable through the Estado filter. Eventos y
-// retos keeps its own two-row layout (and its "Realizado" tab) for now.
-// isCourseArchived and the Archivado/Guardado independence guarantee are
-// untouched (see the #120 independence test above).
+// Owner redesign: Cursos AND Eventos y retos fold their KPI row and their
+// status tabs into ONE clickable row - Total / <status> / Próx. inicio /
+// Guardados - because showing both was duplicated. "Terminado" (Cursos)
+// and "Realizado" (Eventos) stop being dedicated tabs and move to the
+// Estado filter, so finished items stay reachable. isCourseArchived /
+// isHackathonArchived and the Archivado/Guardado independence guarantee
+// are untouched (see the #120 / #131 independence tests above).
 // ---------------------------------------------------------------------------
 
 test("Cursos merges its stats and status tabs into one clickable row (Total / Empezados / Próx. inicio / Guardados); finished courses stay reachable via the Estado filter, and no 'Terminado'/'Archivados' tab survives", async () => {
@@ -2981,14 +2981,21 @@ test("Cursos merges its stats and status tabs into one clickable row (Total / Em
   assert.match(fnSource, /return total\.filter\(\(c\) => \{/);
 });
 
-test("The Eventos y retos tab formerly labelled Archivados now reads Realizado - matching that page's own completion button, so Cursos and Eventos y retos use consistent, button-matching terminology", async () => {
+test("Eventos y retos merges its stats and status tabs into the same one-row control as Cursos (Total / Inscripción abierta / Próx. inicio / Guardados); 'Realizado' moves to the Estado filter and no 'Archivados' label survives", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const hackathonsFnStart = source.indexOf("function Hackathons(");
   const hackathonsFnEnd = source.indexOf("function HackathonsEmptyState");
   const fnSource = source.slice(hackathonsFnStart, hackathonsFnEnd);
 
-  assert.match(fnSource, /\{ id: "archivados", label: "Realizado", count: archivados\.length \}/, "the displayed label changes; the internal \"archivados\" view-tab key does not, so isHackathonArchived/status logic stays untouched");
-  assert.doesNotMatch(fnSource, /label: "Archivados"/, "the old label must not survive alongside the new one");
+  assert.match(fnSource, /useState<"total" \| "abiertos" \| "proximos" \| "guardados">/);
+  assert.match(fnSource, /\{ id: "total", label: "Total", count: total\.length \}/);
+  assert.match(fnSource, /\{ id: "abiertos", label: "Inscripción abierta", count: abiertos\.length \}/);
+  assert.match(fnSource, /\{ id: "proximos", label: "Próx\. inicio", count: proximos\.length \}/);
+  assert.match(fnSource, /\{ id: "guardados", label: "Guardados", count: guardados\.length, withHeart: true \}/);
+  assert.doesNotMatch(fnSource, /label: "Realizado"/, "Realizado is no longer a tab");
+  assert.doesNotMatch(fnSource, /label: "Archivados"/);
+  assert.match(fnSource, /\["realizado", "Realizado"\]/, "finished events must stay filterable via the Estado control");
+  assert.match(fnSource, /const abiertos = useMemo\(\(\) => total\.filter/);
 });
 
 test("No user-facing 'Archivados' label survives anywhere in the app - Cursos and Eventos y retos were the only two", async () => {
