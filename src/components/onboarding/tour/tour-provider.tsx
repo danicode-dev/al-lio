@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 import { TourCard } from "@/components/onboarding/tour/tour-card";
@@ -35,13 +35,39 @@ export function ProductTourShell({ initialState }: { initialState: ProductTourSt
   const [phase, setPhase] = useState<Phase>("inviting");
   const [index, setIndex] = useState(() => findStepIndex(initialState.step));
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [onPhone, setOnPhone] = useState(false);
+  // Whether the sheet on screen was opened by the tour, so leaving can put
+  // the interface back exactly as it found it.
+  const openedMenuRef = useRef(false);
 
   useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setReducedMotion(query.matches);
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const phoneQuery = window.matchMedia("(max-width: 767px)");
+    const sync = () => {
+      setReducedMotion(motionQuery.matches);
+      setOnPhone(phoneQuery.matches);
+    };
     sync();
-    query.addEventListener("change", sync);
-    return () => query.removeEventListener("change", sync);
+    motionQuery.addEventListener("change", sync);
+    phoneQuery.addEventListener("change", sync);
+    return () => {
+      motionQuery.removeEventListener("change", sync);
+      phoneQuery.removeEventListener("change", sync);
+    };
+  }, []);
+
+  // The one place the tour touches the interface. On a phone every
+  // destination lives behind the menu button, so a step that talks about
+  // them opens the sheet and the spotlight covers it whole; any step that
+  // does not need it closes it again. The sheet is toggled through its own
+  // button, so its component stays the owner of its state.
+  const setMobileMenu = useCallback((open: boolean) => {
+    const trigger = document.querySelector<HTMLElement>("[data-tour='mobile-menu-trigger']");
+    if (!trigger || trigger.getBoundingClientRect().width === 0) return;
+    const isOpen = trigger.getAttribute("aria-expanded") === "true";
+    if (isOpen === open) return;
+    trigger.click();
+    openedMenuRef.current = open;
   }, []);
 
   const begin = useCallback(() => {
@@ -51,9 +77,10 @@ export function ProductTourShell({ initialState }: { initialState: ProductTourSt
 
   const leave = useCallback((outcome: "complete" | "skip") => {
     setPhase("done");
+    if (openedMenuRef.current) setMobileMenu(false);
     if (outcome === "complete") void completeProductTourAction();
     else void skipProductTourAction();
-  }, []);
+  }, [setMobileMenu]);
 
   const move = useCallback((intent: "next" | "previous" | "skip") => {
     const transition = resolveTransition(intent, index);
@@ -76,6 +103,18 @@ export function ProductTourShell({ initialState }: { initialState: ProductTourSt
 
   const motionMs = reducedMotion ? 0 : MOTION_MS;
   const step = productTourSteps[index];
+
+  // Open or close the phone's navigation sheet as the recorrido moves in and
+  // out of the steps that describe it.
+  useEffect(() => {
+    if (phase !== "running" || !onPhone) return;
+    setMobileMenu(Boolean(step?.opensMobileMenu));
+  }, [phase, onPhone, step, setMobileMenu]);
+
+  // Leaving the page mid-tour must not strand an open sheet either.
+  useEffect(() => () => {
+    if (openedMenuRef.current) setMobileMenu(false);
+  }, [setMobileMenu]);
 
   // The four steps describe the dashboard, so that is the only place the tour
   // runs - it never interrupts a deep link into another page, and it never

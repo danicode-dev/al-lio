@@ -122,6 +122,10 @@ export function MobileHeaderNavigation() {
                 />
                 <nav
                   id={menuId}
+                  // The product tour opens this sheet and spotlights it whole,
+                  // so a student on a phone sees the destinations instead of
+                  // just the button that hides them.
+                  data-tour="mobile-menu-panel"
                   aria-label="Navegación móvil"
                   className="fixed inset-x-0 top-14 z-10 max-h-[calc(100dvh-3.5rem)] overflow-y-auto overscroll-contain rounded-b-[24px] border-b border-[#e9e3d8] bg-[#fffefa] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5 shadow-[0_20px_45px_rgba(35,29,24,0.16)]"
                 >

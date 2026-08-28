@@ -107,13 +107,32 @@ test("the first step names what the app can actually create", () => {
   assert.ok(!/hackathon/i.test(first.body));
 });
 
-test("the tour never navigates, never creates content and never presses anything", () => {
+test("the tour never navigates and never creates content", () => {
   const serialised = JSON.stringify(productTourSteps);
-  for (const forbidden of ["nextRoute", "prevRoute", "route", "enter", "exit", "pointerClick"]) {
+  for (const forbidden of ["nextRoute", "prevRoute", "route", "enter", "exit"]) {
     assert.ok(!serialised.includes(forbidden), `step data still carries ${forbidden}`);
   }
   assert.ok(!productTourSteps.some((step) => step.id === "demo-task"), "the demo-task step is gone");
   assert.ok(!productTourSteps.some((step) => step.id === "welcome"), "the welcome step is gone");
+});
+
+test("on a phone the navigation steps open the menu and spotlight the panel behind it", () => {
+  const navigationSteps = productTourSteps.filter((step) => step.id.startsWith("nav-"));
+  assert.equal(navigationSteps.length, 3);
+
+  for (const step of navigationSteps) {
+    // Every destination lives behind the menu button on a phone, so these
+    // steps open the sheet and point at the panel, not at the button.
+    assert.equal(step.opensMobileMenu, true, `${step.id} does not open the menu`);
+    assert.equal(step.selector.mobile, "[data-tour='mobile-menu-panel']");
+  }
+
+  // Nothing else touches the interface: the quick-add step only points, and
+  // the closing card has nothing to open.
+  for (const step of productTourSteps) {
+    if (step.id.startsWith("nav-")) continue;
+    assert.ok(!step.opensMobileMenu, `${step.id} must not open the menu`);
+  }
 });
 
 // ---------------------------------------------------------------------------

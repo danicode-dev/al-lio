@@ -27,6 +27,12 @@ export type ProductTourStep = {
   /** Spotlight geometry. Small values: these anchors are real controls. */
   pointerPadding?: number;
   pointerRadius?: number;
+  /**
+   * On a phone, open the navigation sheet before this step and keep it open
+   * while it runs. The destinations live behind that button, so pointing at
+   * a closed menu explained nothing.
+   */
+  opensMobileMenu?: boolean;
   /** The closing beat: celebrated, and it ends the recorrido. */
   finale?: boolean;
 };
@@ -38,7 +44,9 @@ export type TourStepSide =
 
 export const PRODUCT_TOUR_NAME = "product-tour";
 
-const MOBILE_NAV_ANCHOR = "[data-tour='mobile-menu-trigger']";
+// On a phone the tour opens the navigation sheet and spotlights the whole
+// panel, so the three navigation steps all point at it.
+const MOBILE_NAV_ANCHOR = "[data-tour='mobile-menu-panel']";
 
 export const productTourSteps: ProductTourStep[] = [
   {
@@ -60,6 +68,7 @@ export const productTourSteps: ProductTourStep[] = [
     side: { desktop: "right", mobile: "bottom-left" },
     pointerPadding: 12,
     pointerRadius: 18,
+    opensMobileMenu: true,
   },
   {
     id: "nav-communication",
@@ -69,6 +78,7 @@ export const productTourSteps: ProductTourStep[] = [
     side: { desktop: "right", mobile: "bottom-left" },
     pointerPadding: 12,
     pointerRadius: 18,
+    opensMobileMenu: true,
   },
   {
     id: "nav-learning",
@@ -78,6 +88,7 @@ export const productTourSteps: ProductTourStep[] = [
     side: { desktop: "right", mobile: "bottom-left" },
     pointerPadding: 12,
     pointerRadius: 18,
+    opensMobileMenu: true,
   },
   {
     id: "finale",

@@ -53,8 +53,10 @@ export function TourCard({
         .al-tour-card-close svg { width: 13px; height: 13px; }
         .al-tour-card-title { font-size: 15.5px; font-weight: 800; line-height: 1.25; }
         .al-tour-card-body { font-size: 12.5px; line-height: 1.5; color: #6b6f72; }
-        .al-tour-card-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding-top: 8px; }
-        .al-tour-card-actions:has(.al-tour-card-ghost:first-child) { justify-content: space-between; }
+        .al-tour-card-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; }
+        /* The closing step has no "Omitir", so its two controls sit together
+           on the right instead of drifting apart across the card. */
+        .al-tour-card-actions.is-final { justify-content: flex-end; }
         .al-tour-card-actions-right { display: flex; align-items: center; gap: 12px; }
         .al-tour-card-ghost {
           border: none; background: none; padding: 8px 2px; white-space: nowrap;
@@ -86,7 +88,7 @@ export function TourCard({
       <h2 className="al-tour-card-title">{step.title}</h2>
       <p className="al-tour-card-body">{step.body}</p>
 
-      <div className="al-tour-card-actions">
+      <div className={`al-tour-card-actions${last ? " is-final" : ""}`}>
         {/* The closing beat has nothing left to skip: the only way out is
             forward, into the app. */}
         {!last && <button type="button" className="al-tour-card-ghost" onClick={onSkip}>Omitir</button>}

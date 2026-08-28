@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import type { ProductTourStep, TourStepSide } from "@/lib/onboarding/tour-steps";
@@ -77,6 +77,10 @@ export function TourSpotlight({
   const [mounted, setMounted] = useState(false);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [rect, setRect] = useState<Rect | null>(null);
+  // The card's own height, measured rather than assumed, so a centred card is
+  // actually centred whatever its text turns out to be.
+  const [cardHeight, setCardHeight] = useState(200);
+  const cardRef = useRef<HTMLDivElement>(null);
   const onPhone = viewport.width > 0 && viewport.width < MOBILE_BREAKPOINT;
   const selector = step.selector
     ? (onPhone ? step.selector.mobile : step.selector.desktop)
@@ -86,6 +90,17 @@ export function TourSpotlight({
     : "bottom";
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    const node = cardRef.current;
+    if (!node) return;
+    const observer = new ResizeObserver(() => {
+      const height = node.getBoundingClientRect().height;
+      if (height > 0) setCardHeight(height);
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [mounted]);
 
   // Measured live: a resize, a rotation, a scroll or a card that changes
   // height all re-measure, so the hole can never drift off its element.
@@ -110,10 +125,18 @@ export function TourSpotlight({
     };
 
     const element = findVisible(selector);
-    // The anchor may not exist yet on the very first paint after a step
-    // change; watching the tree picks it up on the frame it lands.
-    const observer = new MutationObserver(schedule);
+    // The anchor often does not exist yet when a step begins - the phone's
+    // navigation sheet, for instance, is opened by the step itself. Watching
+    // the tree catches it the moment it lands, and measuring straight away
+    // rather than on the next animation frame keeps that working even where
+    // frames are throttled.
+    const observer = new MutationObserver(() => measure());
     observer.observe(document.body, { childList: true, subtree: true });
+
+    // A couple of catch-up measurements for anchors that arrive with an
+    // animation, so the hole settles on its final size rather than the one it
+    // had halfway through opening.
+    const settle = [window.setTimeout(measure, 80), window.setTimeout(measure, 260)];
     const resizeObserver = new ResizeObserver(schedule);
     if (element) resizeObserver.observe(element);
     window.addEventListener("resize", schedule);
@@ -130,6 +153,7 @@ export function TourSpotlight({
 
     return () => {
       window.cancelAnimationFrame(frame);
+      for (const timer of settle) window.clearTimeout(timer);
       observer.disconnect();
       resizeObserver.disconnect();
       window.removeEventListener("resize", schedule);
@@ -154,7 +178,7 @@ export function TourSpotlight({
 
   const centred = !rect;
   const card = centred
-    ? centredCard(viewport)
+    ? centredCard(viewport, cardHeight)
     : cardPosition({ hole, side, viewport, isMobile: onPhone });
   const ease = "cubic-bezier(0.22, 1, 0.36, 1)";
   const glide = `transform ${motionMs}ms ${ease}, width ${motionMs}ms ${ease}, height ${motionMs}ms ${ease}, top ${motionMs}ms ${ease}, left ${motionMs}ms ${ease}`;
@@ -188,6 +212,7 @@ export function TourSpotlight({
       {step.finale && <TourFireworks muted={motionMs === 0} />}
 
       <div
+        ref={cardRef}
         className="al-tour-anchor"
         style={{ top: card.top, left: card.left, width: card.width, transition: glide }}
       >
@@ -205,45 +230,70 @@ function TourFireworks({ muted }: { muted: boolean }) {
   if (muted) return null;
 
   const bursts = [
-    { left: "26%", top: "34%", delay: 0, hue: "#E15D2D" },
-    { left: "72%", top: "28%", delay: 0.45, hue: "#1f7a4d" },
-    { left: "50%", top: "58%", delay: 0.9, hue: "#e8b04b" },
+    { left: "18%", top: "22%", delay: 0, hue: "#E15D2D", size: 16 },
+    { left: "80%", top: "18%", delay: 0.35, hue: "#e8b04b", size: 14 },
+    { left: "50%", top: "12%", delay: 0.7, hue: "#1f7a4d", size: 15 },
+    { left: "26%", top: "74%", delay: 1.05, hue: "#e8b04b", size: 14 },
+    { left: "76%", top: "70%", delay: 1.4, hue: "#E15D2D", size: 16 },
   ];
-  const sparks = 12;
+  const sparks = 18;
 
   return (
     <div className="al-tour-fireworks" aria-hidden="true">
       <style>{`
         .al-tour-fireworks { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
         .al-tour-burst { position: absolute; width: 0; height: 0; }
-        .al-tour-spark {
+        .al-tour-flash {
           position: absolute;
-          width: 7px; height: 7px;
-          margin: -3.5px 0 0 -3.5px;
+          width: 26px; height: 26px; margin: -13px 0 0 -13px;
           border-radius: 999px;
           opacity: 0;
-          animation: al-tour-spark 1500ms cubic-bezier(0.15, 0.7, 0.3, 1) infinite;
+          animation: al-tour-flash 2200ms ease-out infinite;
+        }
+        .al-tour-spark {
+          position: absolute;
+          border-radius: 999px;
+          opacity: 0;
+          animation: al-tour-spark 2200ms cubic-bezier(0.1, 0.75, 0.25, 1) infinite;
+        }
+        @keyframes al-tour-flash {
+          0%   { transform: scale(0.2); opacity: 0; }
+          6%   { transform: scale(1.6); opacity: .95; }
+          22%  { transform: scale(2.4); opacity: 0; }
+          100% { opacity: 0; }
         }
         @keyframes al-tour-spark {
-          0%   { transform: translate3d(0, 0, 0) scale(0.4); opacity: 0; }
-          12%  { opacity: 1; }
-          70%  { opacity: .85; }
-          100% { transform: translate3d(var(--dx), var(--dy), 0) scale(0.35); opacity: 0; }
+          0%   { transform: translate3d(0, 0, 0) scale(1); opacity: 0; }
+          6%   { opacity: 1; }
+          55%  { opacity: 1; }
+          100% { transform: translate3d(var(--dx), var(--dy), 0) scale(0.5); opacity: 0; }
         }
         @media (prefers-reduced-motion: reduce) { .al-tour-fireworks { display: none; } }
       `}</style>
       {bursts.map((burst) => (
         <div key={burst.left} className="al-tour-burst" style={{ left: burst.left, top: burst.top }}>
+          <span
+            className="al-tour-flash"
+            style={{
+              background: `radial-gradient(circle, ${burst.hue} 0%, transparent 70%)`,
+              animationDelay: `${burst.delay}s`,
+            }}
+          />
           {Array.from({ length: sparks }, (_, index) => {
             const angle = (index / sparks) * Math.PI * 2;
-            const distance = 92 + (index % 3) * 26;
+            const distance = 150 + (index % 3) * 55;
+            const size = burst.size - (index % 3) * 3;
             return (
               <span
                 key={index}
                 className="al-tour-spark"
                 style={{
+                  width: size,
+                  height: size,
+                  margin: `${-size / 2}px 0 0 ${-size / 2}px`,
                   background: burst.hue,
-                  animationDelay: `${burst.delay + (index % 4) * 0.05}s`,
+                  boxShadow: `0 0 14px 3px ${burst.hue}`,
+                  animationDelay: `${burst.delay + (index % 3) * 0.04}s`,
                   ["--dx" as string]: `${Math.cos(angle) * distance}px`,
                   ["--dy" as string]: `${Math.sin(angle) * distance}px`,
                 }}
@@ -258,11 +308,14 @@ function TourFireworks({ muted }: { muted: boolean }) {
 
 // A step with nothing to point at: the card sits in the middle of the screen,
 // which is also where the closing beat belongs.
-function centredCard(viewport: { width: number; height: number }): { top: number; left: number; width: number } {
+function centredCard(
+  viewport: { width: number; height: number },
+  cardHeight: number,
+): { top: number; left: number; width: number } {
   const width = Math.min(380, Math.max(viewport.width - EDGE * 2, 240));
   return {
     left: Math.max((viewport.width - width) / 2, EDGE),
-    top: Math.max(viewport.height / 2 - 150, EDGE),
+    top: Math.max((viewport.height - cardHeight) / 2, EDGE),
     width,
   };
 }
