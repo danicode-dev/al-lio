@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { FpCycleCode } from "@/lib/db/types";
 import type { NewsItem, NewsSyncStatus, NewsTrustTier } from "@/lib/news/types";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
@@ -362,21 +363,31 @@ function NewsFacts({ item }: { item: NewsItem }) {
   );
 }
 
-// Banner variants available per cycle in the news assets folder, named by
-// cycle and index. While a cycle has none, the branded placeholder stands
-// in - raise its number here as the artwork lands.
-const NEWS_HERO_POOL: Record<string, number> = { daw: 0, dam: 0, af: 0, tsaf: 0, mp: 0 };
+// Banner artwork is organised by professional family, the way the course
+// banners are: the two development cycles share one family, and every
+// family holds several variants. The counts are how many files exist.
+const NEWS_HERO_POOL = { desarrollo: 5, administracion: 4, marketing: 4, deporte: 3 } as const;
+
+const CYCLE_HERO_FAMILY: Record<FpCycleCode, keyof typeof NEWS_HERO_POOL> = {
+  DAW: "desarrollo",
+  DAM: "desarrollo",
+  AF: "administracion",
+  MP: "marketing",
+  TSAF: "deporte",
+};
 
 // An item keeps one stable banner (hashed from its id), so a re-featured
-// item always carries the same image and two items of one cycle rarely
-// share it.
+// item always carries the same image and two items of one family rarely
+// share it. An item with no target cycle - which the database forbids -
+// falls back to the neutral placeholder rather than to someone else's
+// artwork.
 function newsHeroImage(item: NewsItem): string {
-  const cycle = (item.targetCycleCodes[0] ?? "").toLowerCase();
-  const count = NEWS_HERO_POOL[cycle] ?? 0;
-  if (!count) return "/assets/noticias/noticia-hero-placeholder.svg";
+  const cycle = item.targetCycleCodes[0];
+  const family = cycle ? CYCLE_HERO_FAMILY[cycle] : undefined;
+  if (!family) return "/assets/noticias/noticia-hero-placeholder.svg";
   let hash = 0;
   for (let index = 0; index < item.id.length; index += 1) hash = (hash * 31 + item.id.charCodeAt(index)) | 0;
-  return `/assets/noticias/noticia-hero-${cycle}-${(Math.abs(hash) % count) + 1}.jpg`;
+  return `/assets/noticias/noticia-hero-${family}-${(Math.abs(hash) % NEWS_HERO_POOL[family]) + 1}.jpg`;
 }
 
 export function EmptyState({ icon: Icon, title, description }: { icon: typeof Search; title: string; description?: string }) {
