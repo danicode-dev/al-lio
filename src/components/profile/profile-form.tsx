@@ -15,7 +15,6 @@ import { FieldListbox, type FieldListboxOption } from "@/components/ui/field-lis
 import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import { SavedHub } from "@/components/profile/saved-hub";
-import { ReplayTourButton } from "@/components/onboarding/tour/replay-tour-button";
 
 const errorCopy: Record<string, string> = {
   onboarding_invalid: "Revisa los datos e inténtalo de nuevo.",
@@ -252,7 +251,6 @@ export function ProfileForm({
               </div>
             </div>
           </div>
-          <div className="mt-1"><ReplayTourButton /></div>
           {state.error && <p className="al-profile-error">{errorCopy[state.error] ?? "No se pudo guardar. Inténtalo de nuevo."}</p>}
 
           <form action={formAction} className="al-profile-form">
