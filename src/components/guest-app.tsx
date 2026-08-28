@@ -2157,9 +2157,11 @@ type CollectionStat = { value: number; label: string };
 
 // The shared control strip above the Cursos and Eventos y retos lists.
 // The KPI row on top reads as an informational menu bar (flat, only a
-// bottom rule), then search + Filtros, the status segmented control and
-// the result count. One component so both pages stay identical and it is
-// only made responsive once.
+// bottom rule), then search + Filtros and the status segmented control.
+// One component so both pages stay identical and it is only made
+// responsive once. `compact` (Cursos) collapses the search to just its
+// icon until used, drops the result-count / view-toggle row, and lets the
+// KPI strip wrap to 2x2 on phones instead of scrolling sideways.
 function CollectionControls({
   searchValue,
   onSearchChange,
@@ -2174,6 +2176,7 @@ function CollectionControls({
   metaText,
   viewMode,
   onViewModeChange,
+  compact = false,
 }: {
   searchValue: string;
   onSearchChange: (value: string) => void;
@@ -2185,12 +2188,20 @@ function CollectionControls({
   filtersOpen: boolean;
   onToggleFilters: () => void;
   stats: CollectionStat[];
-  metaText: string;
-  viewMode: "grid" | "lista";
-  onViewModeChange: (value: "grid" | "lista") => void;
+  metaText?: string;
+  viewMode?: "grid" | "lista";
+  onViewModeChange?: (value: "grid" | "lista") => void;
+  compact?: boolean;
 }) {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const searchExpanded = !compact || searchOpen || searchValue.length > 0;
+  useEffect(() => {
+    if (compact && searchOpen) searchRef.current?.focus();
+  }, [compact, searchOpen]);
+
   return (
-    <section className="al-cc">
+    <section className={cn("al-cc", compact && "al-cc-compact")}>
       <style>{`
         .al-cc { display: flex; flex-direction: column; gap: 14px; }
         .al-cc-kpis { display: flex; align-items: stretch; overflow-x: auto; scrollbar-width: none; padding-bottom: 12px; border-bottom: 1px solid #ece7dc; }
@@ -2222,6 +2233,27 @@ function CollectionControls({
         .al-cc-tab-active .al-cc-tab-count { color: var(--al-action-soft-text); }
         .al-cc-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
         .al-cc-meta-text { font-size: 12px; color: #777269; }
+
+        /* compact (Cursos): KPI strip is a real grid - no sideways scroll,
+           wraps to 2x2 on phones so long labels stop colliding. */
+        .al-cc-compact .al-cc-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; }
+        .al-cc-compact .al-cc-kpi { min-width: 0; }
+        .al-cc-compact .al-cc-kpi-label { white-space: normal; }
+        @media (max-width: 560px) {
+          .al-cc-compact .al-cc-kpis { grid-template-columns: 1fr 1fr; gap: 14px 0; }
+          .al-cc-compact .al-cc-kpi:nth-child(3) { border-left: none; }
+          .al-cc-compact .al-cc-kpi:nth-child(odd) { padding-left: 2px; }
+        }
+        /* compact: search stays a single icon until it is used, Filtros
+           sits at the far right until the search grows and pushes it. */
+        .al-cc-compact .al-cc-search { flex: 0 0 auto; width: 42px; transition: flex-basis .18s ease, width .18s ease; }
+        .al-cc-compact .al-cc-search.is-open { flex: 1 1 auto; width: auto; }
+        .al-cc-compact .al-cc-filters { margin-left: auto; }
+        .al-cc-compact .al-cc-search:not(.is-open) input { opacity: 0; pointer-events: none; }
+        .al-cc-search-toggle { position: absolute; left: 0; top: 0; z-index: 1; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border-radius: 12px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; transition: border-color .15s, color .15s; }
+        .al-cc-search-toggle:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
+        .al-cc-search-toggle svg { width: 16px; height: 16px; }
+        .al-cc-search.is-open .al-cc-search-toggle { pointer-events: none; border-color: transparent; background: transparent; color: #9a958a; }
       `}</style>
 
       <div className="al-cc-kpis">
@@ -2234,13 +2266,28 @@ function CollectionControls({
       </div>
 
       <div className="al-cc-bar">
-        <div className="al-cc-search">
-          <Search />
+        <div className={cn("al-cc-search", searchExpanded && "is-open")}>
+          {compact && (
+            <button
+              type="button"
+              className="al-cc-search-toggle"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Buscar"
+              aria-expanded={searchExpanded}
+              tabIndex={searchExpanded ? -1 : 0}
+            >
+              <Search />
+            </button>
+          )}
+          {!compact && <Search />}
           <input
+            ref={searchRef}
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={searchPlaceholder}
             aria-label={searchPlaceholder}
+            tabIndex={compact && !searchExpanded ? -1 : 0}
+            onBlur={() => { if (compact && !searchValue) setSearchOpen(false); }}
           />
           {searchValue && (
             <button type="button" className="al-cc-search-clear" onClick={() => onSearchChange("")} aria-label="Limpiar búsqueda">
@@ -2281,10 +2328,12 @@ function CollectionControls({
         })}
       </div>
 
-      <div className="al-cc-meta">
-        <p className="al-cc-meta-text">{metaText}</p>
-        <ViewToggle value={viewMode} onChange={onViewModeChange} />
-      </div>
+      {metaText != null && viewMode && onViewModeChange && (
+        <div className="al-cc-meta">
+          <p className="al-cc-meta-text">{metaText}</p>
+          <ViewToggle value={viewMode} onChange={onViewModeChange} />
+        </div>
+      )}
     </section>
   );
 }
@@ -2362,6 +2411,117 @@ function FilterSection({ label, wide, children }: { label: string; wide?: boolea
   );
 }
 
+// Compact variant of the filters surface (Cursos): a small dropdown that
+// hangs off the Filtros button instead of a full-width block that pushes
+// the whole list down. Its parent must carry `.al-cc-shell` so the panel
+// can anchor to it; closes on Escape or a click outside that shell.
+function FilterPanelCompact({
+  title = "Filtros",
+  activeCount,
+  onClear,
+  onClose,
+  children,
+}: {
+  title?: string;
+  activeCount: number;
+  onClear: () => void;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    function onDown(event: PointerEvent) {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest?.(".al-cc-shell")) onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [onClose]);
+
+  return (
+    <div className="al-fp" role="dialog" aria-label={title}>
+      <style>{`
+        .al-cc-shell { position: relative; }
+        .al-fp { position: absolute; z-index: 30; top: calc(100% + 8px); right: 0; width: 340px; max-width: calc(100vw - 32px); max-height: min(70vh, 520px); overflow-y: auto; background: white; border: 1px solid #e7e2d6; border-radius: 14px; box-shadow: 0 16px 40px rgba(17, 17, 17, 0.13), 0 2px 8px rgba(17, 17, 17, 0.05); padding: 14px 14px 16px; }
+        @media (max-width: 560px) { .al-fp { left: 0; right: 0; width: auto; } }
+        .al-fp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .al-fp-title { flex: 1; font-size: 12.5px; font-weight: 800; color: #111111; }
+        .al-fp-clear { border: none; background: none; padding: 0; font-size: 11.5px; font-weight: 700; color: var(--al-action-soft-text); cursor: pointer; }
+        .al-fp-clear:hover { color: var(--al-action-soft-text-hover); }
+        .al-fp-close { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; border: 1px solid #ece7dc; background: white; color: #6b6f72; cursor: pointer; transition: border-color .15s, color .15s; }
+        .al-fp-close:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
+        .al-fp-close svg { width: 13px; height: 13px; }
+        .al-fp-body { display: flex; flex-direction: column; gap: 13px; }
+        .al-fp-row-label { margin-bottom: 6px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: #9a958a; }
+        .al-fp-date-toggle { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px; border-radius: 9px; border: 1px solid #ece7dc; background: white; color: #333029; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: border-color .15s, color .15s; }
+        .al-fp-date-toggle:hover { border-color: var(--al-action-soft-border-hover); color: var(--al-action-soft-text); }
+        .al-fp-date-toggle svg { width: 13px; height: 13px; }
+        .al-fp-date-clear { border: none; background: none; padding: 0 0 0 8px; font-size: 11px; font-weight: 700; color: var(--al-action-soft-text); cursor: pointer; }
+        .al-fp-date-cal { margin-top: 10px; }
+        .al-filter-chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 999px; border: 1px solid #ece7dc; background: white; color: #333029; padding: 4px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+        .al-filter-chip:hover { border-color: rgba(225, 93, 45, 0.35); color: #c94f21; }
+        .al-filter-chip-active, .al-filter-chip-active:hover { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); }
+        .al-filter-day-selected, .al-filter-day-selected:hover { background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); }
+        .al-filter-day-today { color: #c94f21; }
+        .al-filter-dot { background: #E15D2D; }
+      `}</style>
+      <div className="al-fp-head">
+        <span className="al-fp-title">{title}</span>
+        {activeCount > 0 && (
+          <button type="button" onClick={onClear} className="al-fp-clear">
+            Limpiar ({activeCount})
+          </button>
+        )}
+        <button type="button" onClick={onClose} className="al-fp-close" aria-label="Cerrar filtros">
+          <X />
+        </button>
+      </div>
+      <div className="al-fp-body">{children}</div>
+    </div>
+  );
+}
+
+// A single collapsed row inside FilterPanelCompact: the month grid stays
+// hidden until the student opens it, so the panel is short by default.
+function FilterDateRow({
+  dayFilter,
+  datesWithItems,
+  onDaySelect,
+}: {
+  dayFilter: string;
+  datesWithItems: Set<string>;
+  onDaySelect: (day: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <div className="flex items-center">
+        <button type="button" className="al-fp-date-toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+          <CalendarDays />
+          {dayFilter ? formatDateLabel(dayFilter) : "Cualquier fecha"}
+          <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
+        </button>
+        {dayFilter && (
+          <button type="button" className="al-fp-date-clear" onClick={() => onDaySelect("")}>
+            Quitar
+          </button>
+        )}
+      </div>
+      {open && (
+        <div className="al-fp-date-cal">
+          <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={onDaySelect} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FilterChips({ options, value, onChange }: { options: [string, string][]; value: string; onChange: (v: string) => void }) {
   const hasLong = options.some(([, l]) => l.length > 20) || options.length > 7;
   if (hasLong) {
@@ -2404,7 +2564,6 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   const [soloGratuitos, setSoloGratuitos] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "lista">("grid");
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
@@ -2459,11 +2618,10 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
     });
   }, [tabBase, search, monthFilter, dayFilter, estadoFilter, modalidadFilter, prioridadFilter, soloGratuitos]);
 
-  const { today, kpiEmpezados, kpiPendientes, kpiProx } = useMemo(() => {
+  const { kpiEmpezados, kpiPendientes, kpiProx } = useMemo(() => {
     const t = todayKey();
     const i30 = dateKey(addDays(new Date(), 30).toISOString());
     return {
-      today: t,
       kpiEmpezados: tabBase.filter((c) => c.status === "empezado").length,
       kpiPendientes: tabBase.filter((c) => c.status === "pendiente").length,
       kpiProx: tabBase.filter((c) => { const d = (c.fecha_inicio || c.start_at || "").slice(0, 10); return d >= t && d <= i30; }).length,
@@ -2475,7 +2633,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
   // One featured course above the grid: the next one due to start, breaking
   // ties by priority. Only on the untouched Activos/Todos views - once the
   // student searches or filters, every result is shown flat in the grid.
-  const showFeatured = (viewTab === "activos" || viewTab === "todos") && !search && activeFilterCount === 0 && viewMode === "grid";
+  const showFeatured = (viewTab === "activos" || viewTab === "todos") && !search && activeFilterCount === 0;
   const featuredCourse = useMemo(() => {
     if (!showFeatured) return null;
     const pool = filtered.filter((c) => !isCourseArchived(c) && c.status !== "terminado");
@@ -2518,68 +2676,77 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: var(--al-action-soft-bg); color: var(--al-action-soft-text); font-size: 12.5px; font-weight: 700; border: 1px solid var(--al-action-soft-border); cursor: pointer; }
       `}</style>
       <div className="space-y-4">
-        <CollectionControls
-          searchValue={searchInput}
-          onSearchChange={setSearchInput}
-          searchPlaceholder="Buscar título, entidad, tag..."
-          tabs={[
-            { id: "activos", label: "Activos", count: activos.length },
-            { id: "archivados", label: "Terminado", count: archivados.length },
-            { id: "guardados", label: "Guardados", count: guardados.length, withHeart: true },
-            { id: "todos", label: "Todos", count: sorted.length },
-          ]}
-          activeTab={viewTab}
-          onTabChange={(id) => { setViewTab(id as typeof viewTab); clearAll(); }}
-          filterCount={activeFilterCount}
-          filtersOpen={showFilters}
-          onToggleFilters={() => setShowFilters((v) => !v)}
-          stats={[
-            { value: tabBase.length, label: "Total" },
-            { value: kpiEmpezados, label: "Empezados" },
-            { value: kpiPendientes, label: "Pendientes" },
-            { value: kpiProx, label: "Próx. inicio" },
-          ]}
-          metaText={`${filtered.length} ${filtered.length === 1 ? "curso" : "cursos"} · desde ${formatDateLabel(today)} · por fecha de inicio`}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-        />
+        <div className="al-cc-shell">
+          <CollectionControls
+            compact
+            searchValue={searchInput}
+            onSearchChange={setSearchInput}
+            searchPlaceholder="Buscar título, entidad, tag..."
+            tabs={[
+              { id: "activos", label: "Activos", count: activos.length },
+              { id: "archivados", label: "Terminado", count: archivados.length },
+              { id: "guardados", label: "Guardados", count: guardados.length, withHeart: true },
+              { id: "todos", label: "Todos", count: sorted.length },
+            ]}
+            activeTab={viewTab}
+            onTabChange={(id) => { setViewTab(id as typeof viewTab); clearAll(); }}
+            filterCount={activeFilterCount}
+            filtersOpen={showFilters}
+            onToggleFilters={() => setShowFilters((v) => !v)}
+            stats={[
+              { value: tabBase.length, label: "Total" },
+              { value: kpiEmpezados, label: "Empezados" },
+              { value: kpiPendientes, label: "Pendientes" },
+              { value: kpiProx, label: "Próx. inicio" },
+            ]}
+          />
 
-        {showFilters && (
-          <FilterPanel activeCount={activeFilterCount} onClear={clearAll} onClose={() => setShowFilters(false)}>
-            <FilterSection label="Calendario" wide>
-              <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }} />
-            </FilterSection>
-            <FilterSection label="Estado">
-              <FilterChips
-                options={[["", "Todos"], ["pendiente", "Pendiente"], ["empezado", "Activo"], ["pausado", "Pausado"]]}
-                value={estadoFilter}
-                onChange={setEstadoFilter}
-              />
-            </FilterSection>
-            {modalidades.length > 0 && (
-              <FilterSection label="Modalidad">
+          {showFilters && (
+            <FilterPanelCompact activeCount={activeFilterCount} onClear={clearAll} onClose={() => setShowFilters(false)}>
+              <div>
+                <p className="al-fp-row-label">Estado</p>
                 <FilterChips
-                  options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
-                  value={modalidadFilter}
-                  onChange={setModalidadFilter}
+                  options={[["", "Todos"], ["pendiente", "Pendiente"], ["empezado", "Activo"], ["pausado", "Pausado"]]}
+                  value={estadoFilter}
+                  onChange={setEstadoFilter}
                 />
-              </FilterSection>
-            )}
-            <FilterSection label="Prioridad">
-              <FilterChips
-                options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
-                value={prioridadFilter}
-                onChange={setPrioridadFilter}
-              />
-            </FilterSection>
-            <FilterSection label="Solo">
-              <label className="flex cursor-pointer items-center gap-2 text-xs">
-                <input type="checkbox" checked={soloGratuitos} onChange={(e) => setSoloGratuitos(e.target.checked)} className="rounded" />
-                Gratuitos
-              </label>
-            </FilterSection>
-          </FilterPanel>
-        )}
+              </div>
+              {modalidades.length > 0 && (
+                <div>
+                  <p className="al-fp-row-label">Modalidad</p>
+                  <FilterChips
+                    options={[["", "Todas"], ...modalidades.map((m): [string, string] => [m, m])]}
+                    value={modalidadFilter}
+                    onChange={setModalidadFilter}
+                  />
+                </div>
+              )}
+              <div>
+                <p className="al-fp-row-label">Prioridad</p>
+                <FilterChips
+                  options={[["", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]]}
+                  value={prioridadFilter}
+                  onChange={setPrioridadFilter}
+                />
+              </div>
+              <div>
+                <p className="al-fp-row-label">Fecha de inicio</p>
+                <FilterDateRow
+                  dayFilter={dayFilter}
+                  datesWithItems={datesWithItems}
+                  onDaySelect={(d) => { setDayFilter(d); if (d) setMonthFilter(""); }}
+                />
+              </div>
+              <div>
+                <p className="al-fp-row-label">Solo</p>
+                <label className="flex cursor-pointer items-center gap-2 text-xs">
+                  <input type="checkbox" checked={soloGratuitos} onChange={(e) => setSoloGratuitos(e.target.checked)} className="rounded" />
+                  Gratuitos
+                </label>
+              </div>
+            </FilterPanelCompact>
+          )}
+        </div>
 
         <div className="min-w-0 space-y-4">
             {featuredCourse && (() => {
@@ -2612,7 +2779,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
             })()}
 
             {(featuredCourse || gridCourses.length) ? (
-              <div className={cn("al-catalog-grid", viewMode === "grid" && "al-catalog-grid-cards")}>
+              <div className="al-catalog-grid al-catalog-grid-cards">
                 {gridCourses.map((item) => {
                   const presentation = getCoursePresentation(item);
                   return (
