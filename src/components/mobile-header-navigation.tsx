@@ -70,7 +70,13 @@ export function MobileHeaderNavigation() {
     const focusFrame = window.requestAnimationFrame(() => firstLinkRef.current?.focus());
 
     function onPointerDown(event: PointerEvent) {
-      if (menuRootRef.current && !menuRootRef.current.contains(event.target as Node)) setOpen(false);
+      const target = event.target as HTMLElement | null;
+      // The product tour holds this sheet open on purpose while it explains
+      // what is inside, and its card sits outside the menu. Treating a press
+      // on that card as "clicked away" closed the sheet underneath the very
+      // step describing it, and left the student pressing Siguiente twice.
+      if (target?.closest?.(".al-tour-layer")) return;
+      if (menuRootRef.current && !menuRootRef.current.contains(target as Node)) setOpen(false);
     }
 
     function onKeyDown(event: KeyboardEvent) {

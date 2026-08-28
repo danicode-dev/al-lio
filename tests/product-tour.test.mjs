@@ -201,6 +201,20 @@ test("every anchor the steps ask for exists in the sidebar, the header or the mo
   }
 });
 
+test("pressing the card does not count as clicking away from the phone menu", async () => {
+  const mobileSource = await read("../src/components/mobile-header-navigation.tsx");
+
+  // The sheet closes when a press lands outside it. The tour's card is
+  // outside it by definition, so without this exception every Siguiente
+  // closed the sheet under the step describing it, and the student had to
+  // press twice to move on.
+  const handler = mobileSource.slice(
+    mobileSource.indexOf("function onPointerDown"),
+    mobileSource.indexOf("function onKeyDown"),
+  );
+  assert.match(handler, /al-tour-layer/, "the outside-press handler must ignore the tour overlay");
+});
+
 test("the tour's own state never reuses the profile wizard's onboarding columns", async () => {
   const [actions, repository] = await Promise.all([
     read("../src/lib/onboarding/tour-actions.ts"),

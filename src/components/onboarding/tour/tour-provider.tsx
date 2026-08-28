@@ -106,9 +106,17 @@ export function ProductTourShell({ initialState }: { initialState: ProductTourSt
 
   // Open or close the phone's navigation sheet as the recorrido moves in and
   // out of the steps that describe it.
+  //
+  // Checked again on the next tick: the state is read off the trigger, and a
+  // React update queued in the same tick (the sheet reacting to the very
+  // press that advanced the step) would not be visible there yet. One retry
+  // settles it - the second read happens after that update has landed.
   useEffect(() => {
     if (phase !== "running" || !onPhone) return;
-    setMobileMenu(Boolean(step?.opensMobileMenu));
+    const wanted = Boolean(step?.opensMobileMenu);
+    setMobileMenu(wanted);
+    const timer = window.setTimeout(() => setMobileMenu(wanted), 60);
+    return () => window.clearTimeout(timer);
   }, [phase, onPhone, step, setMobileMenu]);
 
   // Leaving the page mid-tour must not strand an open sheet either.
