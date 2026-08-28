@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { ingestRadarDelivery, RadarDeliveryConflictError } from "@/lib/db/repositories/radar";
+import {
+  ingestRadarDelivery,
+  RadarDeliveryConflictError,
+  recordRadarIngestRejection,
+} from "@/lib/db/repositories/radar";
 import { RADAR_MAX_BODY_BYTES, radarDeliverySchema } from "@/lib/radar/contract";
 import { verifyRadarWebhook } from "@/lib/radar/webhook-auth";
 
@@ -33,23 +37,41 @@ export async function POST(request: Request) {
   try {
     unknownPayload = JSON.parse(rawBody);
   } catch {
+    await auditRejection(auth, rawBody, "invalid_json");
     return jsonError("invalid json", 400);
   }
   if (!isVersionedPayload(unknownPayload) || unknownPayload.schemaVersion !== auth.schemaVersion) {
+    await auditRejection(auth, rawBody, "schema_version_mismatch");
     return jsonError("schema version mismatch", 400);
   }
   const parsed = radarDeliverySchema.safeParse(unknownPayload);
-  if (!parsed.success) return jsonError("invalid radar payload", 400);
-  if (parsed.data.deliveryId !== auth.deliveryId) return jsonError("delivery id mismatch", 400);
+  if (!parsed.success) {
+    await auditRejection(auth, rawBody, "invalid_contract");
+    return jsonError("invalid radar payload", 400);
+  }
+  if (parsed.data.deliveryId !== auth.deliveryId) {
+    await auditRejection(auth, rawBody, "delivery_id_mismatch");
+    return jsonError("delivery id mismatch", 400);
+  }
 
   try {
     const result = await ingestRadarDelivery(parsed.data, rawBody);
     return NextResponse.json(
-      { ok: true, duplicate: result.duplicate, deliveryId: parsed.data.deliveryId, itemCount: result.itemCount },
+      {
+        ok: true,
+        duplicate: result.duplicate,
+        deliveryId: parsed.data.deliveryId,
+        itemCount: result.itemCount,
+        projectedItemCount: result.projectedItemCount,
+        conflictCount: result.conflictCount,
+      },
       { status: result.duplicate ? 200 : 201, headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    if (error instanceof RadarDeliveryConflictError) return jsonError(error.message, 409);
+    if (error instanceof RadarDeliveryConflictError) {
+      await auditRejection(auth, rawBody, "identity_or_delivery_conflict");
+      return jsonError(error.message, 409);
+    }
     console.error("Radar delivery ingestion failed", { deliveryId: parsed.data.deliveryId });
     return jsonError("radar ingestion failed", 500);
   }
@@ -61,4 +83,24 @@ function jsonError(error: string, status: number) {
 
 function isVersionedPayload(value: unknown): value is { schemaVersion: number } {
   return typeof value === "object" && value !== null && typeof (value as { schemaVersion?: unknown }).schemaVersion === "number";
+}
+
+async function auditRejection(
+  auth: { deliveryId: string; schemaVersion: number },
+  rawBody: string,
+  reasonCode: string,
+) {
+  try {
+    await recordRadarIngestRejection({
+      deliveryId: auth.deliveryId,
+      schemaVersion: auth.schemaVersion,
+      rawBody,
+      reasonCode,
+    });
+  } catch {
+    console.error("Radar ingest rejection audit could not be persisted", {
+      deliveryId: auth.deliveryId,
+      reasonCode,
+    });
+  }
 }

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 3,
+  "deliveryId": "44444444-4444-4444-8444-444444444444",
+  "items": [
+    {
+      "schemaVersion": 3,
+      "sourceId": "boe",
+      "sourceName": "Boletín Oficial del Estado",
+      "externalId": "BOE-A-2026-12345",
+      "canonicalUrl": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-12345",
+      "title": "Actualización normativa para formación profesional",
+      "summary": "Resumen oficial limitado al contenido de la fuente.",
+      "publishedAt": "2026-08-28T06:00:00.000Z",
+      "fetchedAt": "2026-08-28T07:00:00.000Z",
+      "expiresAt": null,
+      "eventStartsAt": null,
+      "eventEndsAt": null,
+      "registrationUrl": null,
+      "registrationDeadline": null,
+      "kind": "legal",
+      "locality": null,
+      "province": null,
+      "targetCycleCodes": ["AF"],
+      "moduleCodes": ["EMP"],
+      "topics": ["laboral"],
+      "matchedRuleIds": ["boe-fp-labour"],
+      "matchedKeywords": ["formación profesional", "laboral"],
+      "trustTier": "official",
+      "reviewStatus": "approved",
+      "reviewedBy": "system:publication-policy-v2",
+      "reviewedAt": "2026-08-28T07:01:00.000Z",
+      "reviewReason": "Official source and strict curriculum evidence matched.",
+      "sourceUrl": "https://www.boe.es/diario_boe/",
+      "contentHash": "1212121212121212121212121212121212121212121212121212121212121212",
+      "destination": "news",
+      "semanticKey": "3434343434343434343434343434343434343434343434343434343434343434"
+    }
+  ]
+}

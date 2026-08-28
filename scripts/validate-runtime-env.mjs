@@ -71,6 +71,11 @@ if (demoFlag && demoFlag !== "true" && demoFlag !== "false") {
   errors.push("AL_LIO_DEMO_ACCESS_ENABLED debe ser true o false");
 }
 
+commaSeparatedEnum(
+  "AL_LIO_RADAR_V4_PROJECT_DESTINATIONS",
+  new Set(["news", "course", "event"]),
+);
+
 integer("PG_POOL_MAX", 1, 50);
 integer("PG_IDLE_TIMEOUT_MS", 1_000, 300_000);
 integer("PG_CONNECTION_TIMEOUT_MS", 500, 60_000);
@@ -125,5 +130,15 @@ function integer(name, minimum, maximum) {
   const value = /^\d+$/.test(normalized) ? Number(normalized) : Number.NaN;
   if (!Number.isFinite(value) || value < minimum || value > maximum) {
     errors.push(`${name} debe estar entre ${minimum} y ${maximum}`);
+  }
+}
+
+function commaSeparatedEnum(name, allowed) {
+  const raw = process.env[name]?.trim();
+  if (!raw) return;
+  const values = raw.split(",").map((value) => value.trim()).filter(Boolean);
+  const invalid = values.filter((value) => !allowed.has(value));
+  if (new Set(values).size !== values.length || invalid.length > 0) {
+    errors.push(`${name} solo admite valores únicos: ${[...allowed].join(", ")}`);
   }
 }

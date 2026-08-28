@@ -74,6 +74,38 @@ if (competencyStateMigration) {
   check("the migration keeps updated_at current via a trigger", competencyStateMigration.sql.includes("set_fp_user_competency_state_updated_at"));
 }
 
+const radarV4Migration = migrations.find((migration) => migration.version === "0011_radar_v4_canonical_content");
+check("Radar v4 canonical-content migration exists", Boolean(radarV4Migration));
+if (radarV4Migration) {
+  check(
+    "Radar v4 separates entities, occurrences, immutable revisions and evidence",
+    ["radar_content_entities", "radar_content_occurrences", "radar_content_revisions", "radar_content_field_evidence"]
+      .every((table) => radarV4Migration.sql.includes(table)),
+  );
+  check(
+    "Radar v4 stores typed targets and bounded current facts",
+    radarV4Migration.sql.includes("radar_content_targets")
+      && radarV4Migration.sql.includes("radar_content_current_facts"),
+  );
+  check(
+    "publication, source lifecycle and ranking domains remain independent",
+    radarV4Migration.sql.includes("publication_decision")
+      && radarV4Migration.sql.includes("source_lifecycle_status")
+      && radarV4Migration.sql.includes("ranking_priority"),
+  );
+  check(
+    "identity aliases and compatibility links preserve student state",
+    radarV4Migration.sql.includes("radar_content_identity_aliases")
+      && radarV4Migration.sql.includes("legacy_fp_content_item_id"),
+  );
+  check(
+    "ingest and projector outcomes are observable without raw secret storage",
+    radarV4Migration.sql.includes("radar_ingest_events")
+      && radarV4Migration.sql.includes("radar_projector_events")
+      && !radarV4Migration.sql.includes("webhook_secret"),
+  );
+}
+
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 check("postgres:migrate usa el runner versionado", packageJson.scripts?.["postgres:migrate"] === "node scripts/postgres/migrate.mjs");
 check("existe importador versionado de competencias", packageJson.scripts?.["import:learning-competencies"] === "node scripts/import-learning-competencies.mjs");

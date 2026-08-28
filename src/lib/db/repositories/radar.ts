@@ -2,10 +2,25 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { PoolClient } from "pg";
 import { query, withTransaction } from "@/lib/db/pool";
-import type { RadarCycleCode, RadarDelivery, RadarDeliveryItem } from "@/lib/radar/contract";
+import {
+  RADAR_V4_SCHEMA_VERSION,
+  type RadarCycleCode,
+  type RadarDelivery,
+  type RadarDeliveryItem,
+} from "@/lib/radar/contract";
+import {
+  ingestRadarV4Delivery,
+  RadarV4IdentityConflictError,
+  RadarV4RevisionConflictError,
+} from "@/lib/db/repositories/radar-v4";
 import type { NewsItem, NewsListFilters, NewsStatus, NewsSyncStatus } from "@/lib/news/types";
 
-type DeliveryInsertResult = { duplicate: boolean; itemCount: number };
+type DeliveryInsertResult = {
+  duplicate: boolean;
+  itemCount: number;
+  projectedItemCount: number;
+  conflictCount: number;
+};
 
 type RadarItemRow = {
   id: string;
@@ -29,6 +44,18 @@ type RadarItemRow = {
   topics: string[];
   trust_tier: NewsItem["trustTier"];
   status: NewsStatus;
+  summary_short: string | null;
+  summary_expanded: string | null;
+  key_facts: string[] | null;
+  why_relevant: string | null;
+  source_updated_at: string | null;
+  source_verified_at: string | null;
+  ranking_priority: number | null;
+  current_revision: number | null;
+  material_fingerprint: string | null;
+  primary_evidence_url: string | null;
+  language: "es" | null;
+  match_reasons: string[] | null;
 };
 
 type RadarStatsRow = {
@@ -52,7 +79,14 @@ export async function ingestRadarDelivery(delivery: RadarDelivery, rawBody: stri
       if (row.payload_hash !== payloadHash || row.item_count !== delivery.items.length) {
         throw new RadarDeliveryConflictError();
       }
-      return { duplicate: true, itemCount: row.item_count };
+      await insertRadarIngestEvent(client, {
+        deliveryId: delivery.deliveryId,
+        schemaVersion: delivery.schemaVersion,
+        outcome: "duplicate",
+        payloadHash,
+        itemCount: row.item_count,
+      });
+      return { duplicate: true, itemCount: row.item_count, projectedItemCount: 0, conflictCount: 0 };
     }
 
     await client.query(
@@ -61,18 +95,74 @@ export async function ingestRadarDelivery(delivery: RadarDelivery, rawBody: stri
       [delivery.deliveryId, delivery.schemaVersion, payloadHash, delivery.items.length],
     );
 
-    for (const item of delivery.items) {
-      const radarItemId = await upsertRadarItem(client, item);
-      if (item.destination !== "news") await upsertRadarCatalogItem(client, item);
-      await client.query(
-        `INSERT INTO public.radar_delivery_items (delivery_id, radar_item_id)
-         VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-        [delivery.deliveryId, radarItemId],
-      );
+    let projectedItemCount = 0;
+    let conflictCount = 0;
+    if (delivery.schemaVersion === RADAR_V4_SCHEMA_VERSION) {
+      try {
+        const result = await ingestRadarV4Delivery(client, delivery);
+        projectedItemCount = result.projectedItemCount;
+        conflictCount = result.conflictCount;
+      } catch (error) {
+        if (error instanceof RadarV4RevisionConflictError || error instanceof RadarV4IdentityConflictError) {
+          throw new RadarDeliveryConflictError(error.message);
+        }
+        throw error;
+      }
+    } else {
+      for (const item of delivery.items) {
+        const radarItemId = await upsertRadarItem(client, item);
+        if (item.destination !== "news") await upsertRadarCatalogItem(client, item);
+        await client.query(
+          `INSERT INTO public.radar_delivery_items (delivery_id, radar_item_id)
+           VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          [delivery.deliveryId, radarItemId],
+        );
+      }
+      projectedItemCount = delivery.items.length;
     }
 
-    return { duplicate: false, itemCount: delivery.items.length };
+    await insertRadarIngestEvent(client, {
+      deliveryId: delivery.deliveryId,
+      schemaVersion: delivery.schemaVersion,
+      outcome: conflictCount > 0 ? "conflict" : "accepted",
+      payloadHash,
+      itemCount: delivery.items.length,
+    });
+    return { duplicate: false, itemCount: delivery.items.length, projectedItemCount, conflictCount };
   });
+}
+
+export async function recordRadarIngestRejection(input: {
+  deliveryId: string;
+  schemaVersion: number;
+  rawBody: string;
+  reasonCode: string;
+}): Promise<void> {
+  const payloadHash = createHash("sha256").update(input.rawBody).digest("hex");
+  await query(
+    `INSERT INTO public.radar_ingest_events (
+       delivery_id, schema_version, outcome, reason_code, payload_hash
+     ) VALUES ($1, $2, 'rejected', $3, $4)`,
+    [input.deliveryId, input.schemaVersion, input.reasonCode, payloadHash],
+  );
+}
+
+async function insertRadarIngestEvent(
+  client: PoolClient,
+  input: {
+    deliveryId: string;
+    schemaVersion: number;
+    outcome: "accepted" | "duplicate" | "conflict";
+    payloadHash: string;
+    itemCount: number;
+  },
+) {
+  await client.query(
+    `INSERT INTO public.radar_ingest_events (
+       delivery_id, schema_version, outcome, payload_hash, item_count
+     ) VALUES ($1, $2, $3, $4, $5)`,
+    [input.deliveryId, input.schemaVersion, input.outcome, input.payloadHash, input.itemCount],
+  );
 }
 
 async function upsertRadarItem(client: PoolClient, item: RadarDeliveryItem): Promise<string> {
@@ -236,7 +326,7 @@ export async function listRadarItemsForCycle(
   }
   if (filters.search) {
     values.push(`%${filters.search}%`);
-    conditions.push(`(item.title ILIKE $${values.length} OR item.summary ILIKE $${values.length})`);
+    conditions.push(`(item.title ILIKE $${values.length} OR item.summary ILIKE $${values.length} OR canonical.summary_expanded ILIKE $${values.length})`);
   }
   const limit = Math.min(Math.max(filters.limit ?? 100, 1), 200);
   values.push(limit);
@@ -247,12 +337,21 @@ export async function listRadarItemsForCycle(
             item.event_starts_at, item.event_ends_at, item.registration_url,
             item.registration_deadline, item.locality, item.province, item.target_cycle_codes,
             item.module_codes, item.topics, item.trust_tier,
+            COALESCE(canonical.summary_short, item.summary) AS summary_short,
+            canonical.summary_expanded, canonical.key_facts, canonical.why_relevant,
+            canonical.source_updated_at, canonical.source_verified_at,
+            canonical.ranking_priority, canonical.current_revision,
+            canonical.material_fingerprint, canonical.primary_evidence_url,
+            canonical.language, canonical.match_reasons,
             COALESCE(state.status, 'new')::text AS status
      FROM public.radar_items item
+     LEFT JOIN public.radar_content_occurrences canonical
+       ON canonical.legacy_radar_item_id = item.id
+      AND canonical.publication_decision = 'accepted'
      LEFT JOIN public.radar_item_user_states state
        ON state.radar_item_id = item.id AND state.user_id = $1
      WHERE ${conditions.join(" AND ")}
-     ORDER BY ${filters.sort === "trust" ? trustOrderSql() : "COALESCE(item.published_at, item.fetched_at) DESC"}
+     ORDER BY ${filters.sort === "trust" ? trustOrderSql() : "COALESCE(canonical.ranking_priority, 0) DESC, COALESCE(item.published_at, item.fetched_at) DESC, item.id ASC"}
      LIMIT $${values.length}`,
     values,
   );
@@ -379,8 +478,17 @@ export async function getRadarItemDetailForUser(
             item.event_starts_at, item.event_ends_at, item.registration_url,
             item.registration_deadline, item.locality, item.province, item.target_cycle_codes,
             item.module_codes, item.topics, item.trust_tier,
+            COALESCE(canonical.summary_short, item.summary) AS summary_short,
+            canonical.summary_expanded, canonical.key_facts, canonical.why_relevant,
+            canonical.source_updated_at, canonical.source_verified_at,
+            canonical.ranking_priority, canonical.current_revision,
+            canonical.material_fingerprint, canonical.primary_evidence_url,
+            canonical.language, canonical.match_reasons,
             COALESCE(state.status, 'new')::text AS status
      FROM public.radar_items item
+     LEFT JOIN public.radar_content_occurrences canonical
+       ON canonical.legacy_radar_item_id = item.id
+      AND canonical.publication_decision = 'accepted'
      LEFT JOIN public.radar_item_user_states state
        ON state.radar_item_id = item.id AND state.user_id = $1
      WHERE item.id = $3::bigint
@@ -432,16 +540,33 @@ export async function getRelatedNewsItems(
     .map((entry) => entry.candidate);
 }
 
+/** The next article is taken from the exact same authorised live ordering as the list. */
+export async function getNextRadarNewsItem(
+  userId: string,
+  cycleCode: RadarCycleCode,
+  currentItemId: string,
+): Promise<NewsItem | null> {
+  const authorised = await listRadarItemsForCycle(userId, cycleCode, { limit: 200, sort: "date" });
+  const index = authorised.findIndex((item) => item.id === currentItemId);
+  return index >= 0 && index + 1 < authorised.length ? authorised[index + 1] ?? null : null;
+}
+
 function mapRadarItem(row: RadarItemRow): NewsItem {
   return {
     id: row.id,
     sourceId: row.source_id,
     sourceName: row.source_name,
     title: row.title,
-    description: row.summary || undefined,
+    summaryShort: (row.summary_short ?? row.summary) || undefined,
+    summaryExpanded: row.summary_expanded ?? undefined,
+    keyFacts: row.key_facts ?? [],
+    whyRelevant: row.why_relevant ?? undefined,
+    description: (row.summary_short ?? row.summary) || undefined,
     url: row.canonical_url,
     kind: row.kind,
     publishedAt: row.published_at ?? undefined,
+    sourceUpdatedAt: row.source_updated_at ?? undefined,
+    verifiedAt: row.source_verified_at ?? undefined,
     fetchedAt: row.fetched_at,
     expiresAt: row.expires_at ?? undefined,
     eventStartsAt: row.event_starts_at ?? undefined,
@@ -453,6 +578,12 @@ function mapRadarItem(row: RadarItemRow): NewsItem {
     targetCycleCodes: row.target_cycle_codes,
     moduleCodes: row.module_codes,
     topics: row.topics,
+    language: row.language ?? undefined,
+    matchReasons: row.match_reasons ?? [],
+    rankingPriority: row.ranking_priority ?? undefined,
+    revision: row.current_revision ?? undefined,
+    materialFingerprint: row.material_fingerprint ?? undefined,
+    primaryEvidenceUrl: row.primary_evidence_url ?? undefined,
     trustTier: row.trust_tier,
     status: row.status,
     isFeatured: false,
@@ -460,6 +591,7 @@ function mapRadarItem(row: RadarItemRow): NewsItem {
 }
 
 function featuredScore(item: NewsItem): number {
+  if (item.rankingPriority !== undefined) return item.rankingPriority;
   const trustWeight: Record<NewsItem["trustTier"], number> = {
     official: 5,
     institutional: 4,
@@ -483,8 +615,8 @@ function trustOrderSql(): string {
 }
 
 export class RadarDeliveryConflictError extends Error {
-  constructor() {
-    super("delivery id already exists with different payload");
+  constructor(message = "delivery id already exists with different payload") {
+    super(message);
     this.name = "RadarDeliveryConflictError";
   }
 }
