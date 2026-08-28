@@ -104,15 +104,31 @@ export function TourSpotlight({
 
   // Measured live: a resize, a rotation, a scroll or a card that changes
   // height all re-measure, so the hole can never drift off its element.
+  // Every setState here keeps the previous object when nothing actually
+  // moved. Measuring runs on DOM mutations, scroll and resize, and returning
+  // a fresh object each time would re-render the overlay on every one of
+  // them - which on a phone, where opening the menu fires a burst of
+  // mutations, was enough to bring the tour to a crawl.
   const measure = useCallback(() => {
-    setViewport({ width: window.innerWidth, height: window.innerHeight });
+    setViewport((current) =>
+      current.width === window.innerWidth && current.height === window.innerHeight
+        ? current
+        : { width: window.innerWidth, height: window.innerHeight });
+
     const element = findVisible(selector);
     if (!element) {
-      setRect(null);
+      setRect((current) => (current === null ? current : null));
       return;
     }
     const box = element.getBoundingClientRect();
-    setRect({ top: box.top, left: box.left, width: box.width, height: box.height });
+    setRect((current) =>
+      current
+        && current.top === box.top
+        && current.left === box.left
+        && current.width === box.width
+        && current.height === box.height
+        ? current
+        : { top: box.top, left: box.left, width: box.width, height: box.height });
   }, [selector]);
 
   useLayoutEffect(() => {
@@ -130,7 +146,16 @@ export function TourSpotlight({
     // the tree catches it the moment it lands, and measuring straight away
     // rather than on the next animation frame keeps that working even where
     // frames are throttled.
-    const observer = new MutationObserver(() => measure());
+    const observer = new MutationObserver((mutations) => {
+      // The overlay itself lives in the body, so its own re-renders show up
+      // here. Reacting to them would be a loop: measure, set state, render,
+      // mutate, measure again.
+      const fromTheApp = mutations.some((mutation) => {
+        const target = mutation.target as HTMLElement | null;
+        return !target?.closest?.(".al-tour-layer");
+      });
+      if (fromTheApp) measure();
+    });
     observer.observe(document.body, { childList: true, subtree: true });
 
     // A couple of catch-up measurements for anchors that arrive with an

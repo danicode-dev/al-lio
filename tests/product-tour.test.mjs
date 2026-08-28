@@ -116,15 +116,18 @@ test("the tour never navigates and never creates content", () => {
   assert.ok(!productTourSteps.some((step) => step.id === "welcome"), "the welcome step is gone");
 });
 
-test("on a phone the navigation steps open the menu and spotlight the panel behind it", () => {
+test("on a phone the navigation steps open the menu and highlight the same block as on desktop", () => {
   const navigationSteps = productTourSteps.filter((step) => step.id.startsWith("nav-"));
   assert.equal(navigationSteps.length, 3);
 
   for (const step of navigationSteps) {
     // Every destination lives behind the menu button on a phone, so these
-    // steps open the sheet and point at the panel, not at the button.
+    // steps open the sheet - and then point at the same named block the
+    // sidebar shows, rather than at the whole panel or at the button.
     assert.equal(step.opensMobileMenu, true, `${step.id} does not open the menu`);
-    assert.equal(step.selector.mobile, "[data-tour='mobile-menu-panel']");
+    const block = step.id.replace(/^nav-/, "");
+    assert.equal(step.selector.desktop, `[data-tour='nav-${block}']`);
+    assert.equal(step.selector.mobile, `[data-tour='mobile-nav-${block}']`);
   }
 
   // Nothing else touches the interface: the quick-add step only points, and

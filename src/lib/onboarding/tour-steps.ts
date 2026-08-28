@@ -44,9 +44,10 @@ export type TourStepSide =
 
 export const PRODUCT_TOUR_NAME = "product-tour";
 
-// On a phone the tour opens the navigation sheet and spotlights the whole
-// panel, so the three navigation steps all point at it.
-const MOBILE_NAV_ANCHOR = "[data-tour='mobile-menu-panel']";
+// On a phone the tour opens the navigation sheet, and then highlights the
+// same three blocks the sidebar shows on a desktop - the sheet repeats those
+// groups under the same headings, so both formats explain the app the same
+// way and the tour points at the same thing in each.
 
 export const productTourSteps: ProductTourStep[] = [
   {
@@ -64,7 +65,7 @@ export const productTourSteps: ProductTourStep[] = [
     id: "nav-principal",
     title: "Tu espacio principal",
     body: "Inicio reúne de un vistazo tu To-do, tu ruta, próximos pasos, calendario y progreso. Desde este bloque también puedes acceder a Competencias, Tareas y Bloc.",
-    selector: { desktop: "[data-tour='nav-principal']", mobile: MOBILE_NAV_ANCHOR },
+    selector: { desktop: "[data-tour='nav-principal']", mobile: "[data-tour='mobile-nav-principal']" },
     side: { desktop: "right", mobile: "bottom-left" },
     pointerPadding: 12,
     pointerRadius: 18,
@@ -74,7 +75,7 @@ export const productTourSteps: ProductTourStep[] = [
     id: "nav-communication",
     title: "Oportunidades e información",
     body: "En Noticias encontrarás información relevante y en Trabajo podrás consultar oportunidades relacionadas con tu perfil y formación.",
-    selector: { desktop: "[data-tour='nav-communication']", mobile: MOBILE_NAV_ANCHOR },
+    selector: { desktop: "[data-tour='nav-communication']", mobile: "[data-tour='mobile-nav-communication']" },
     side: { desktop: "right", mobile: "bottom-left" },
     pointerPadding: 12,
     pointerRadius: 18,
@@ -84,7 +85,7 @@ export const productTourSteps: ProductTourStep[] = [
     id: "nav-learning",
     title: "Todo para seguir avanzando",
     body: "Aquí tienes tus cursos, eventos y retos, y el calendario para organizar las próximas fechas importantes.",
-    selector: { desktop: "[data-tour='nav-learning']", mobile: MOBILE_NAV_ANCHOR },
+    selector: { desktop: "[data-tour='nav-learning']", mobile: "[data-tour='mobile-nav-learning']" },
     side: { desktop: "right", mobile: "bottom-left" },
     pointerPadding: 12,
     pointerRadius: 18,
