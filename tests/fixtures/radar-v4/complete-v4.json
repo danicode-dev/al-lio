@@ -28,10 +28,12 @@
         "destination": "course",
         "opportunityType": "course",
         "kind": "call",
+        "language": "es",
         "targetCycleCodes": ["DAW", "DAM"],
         "moduleCodes": ["PROG"],
         "topics": ["java", "testing"],
-        "skills": ["Java", "Pruebas automatizadas"]
+        "skills": ["Java", "Pruebas automatizadas"],
+        "matchReasons": ["rule:daw-dam-java", "keyword:java"]
       },
       "publication": {
         "decision": "accepted",

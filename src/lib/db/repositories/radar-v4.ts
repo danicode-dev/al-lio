@@ -305,10 +305,10 @@ async function resolveOccurrence(
        canonical_url, primary_evidence_url, supporting_evidence_urls, trust_tier,
        source_published_at, source_updated_at, source_verified_at, current_revision,
        material_fingerprint, publication_decision, source_lifecycle_status,
-       ranking_priority, title
+       ranking_priority, title, language, match_reasons
      ) VALUES (
        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-       $11, $12, $13, $14, $15, $16, $17, $18, $19
+       $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
      )
      ON CONFLICT (source_id, occurrence_key) DO UPDATE SET
        source_verified_at = GREATEST(public.radar_content_occurrences.source_verified_at, excluded.source_verified_at)
@@ -334,6 +334,8 @@ async function resolveOccurrence(
       item.facts.sourceLifecycleStatus,
       item.publication.rankingPriority,
       item.facts.title,
+      item.classification.language,
+      item.classification.matchReasons,
     ],
   );
   if (!result.rows[0]) throw new Error("Radar v4 occurrence upsert did not return an id");
@@ -465,6 +467,8 @@ async function updateOccurrence(
     material_fingerprint: item.identity.materialFingerprint,
     publication_decision: publicationDecision,
     ranking_priority: item.publication.rankingPriority,
+    language: item.classification.language,
+    match_reasons: item.classification.matchReasons,
     ...Object.fromEntries(RADAR_V4_FACT_FIELDS.map((field) => [FACT_COLUMN_BY_FIELD[field], facts[field]])),
     about_summary: item.derived.aboutSummary,
     learning_outcomes: item.derived.learningOutcomes,

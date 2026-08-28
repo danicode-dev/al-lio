@@ -44,6 +44,18 @@ type RadarItemRow = {
   topics: string[];
   trust_tier: NewsItem["trustTier"];
   status: NewsStatus;
+  summary_short: string | null;
+  summary_expanded: string | null;
+  key_facts: string[] | null;
+  why_relevant: string | null;
+  source_updated_at: string | null;
+  source_verified_at: string | null;
+  ranking_priority: number | null;
+  current_revision: number | null;
+  material_fingerprint: string | null;
+  primary_evidence_url: string | null;
+  language: "es" | null;
+  match_reasons: string[] | null;
 };
 
 type RadarStatsRow = {
@@ -314,7 +326,7 @@ export async function listRadarItemsForCycle(
   }
   if (filters.search) {
     values.push(`%${filters.search}%`);
-    conditions.push(`(item.title ILIKE $${values.length} OR item.summary ILIKE $${values.length})`);
+    conditions.push(`(item.title ILIKE $${values.length} OR item.summary ILIKE $${values.length} OR canonical.summary_expanded ILIKE $${values.length})`);
   }
   const limit = Math.min(Math.max(filters.limit ?? 100, 1), 200);
   values.push(limit);
@@ -325,12 +337,21 @@ export async function listRadarItemsForCycle(
             item.event_starts_at, item.event_ends_at, item.registration_url,
             item.registration_deadline, item.locality, item.province, item.target_cycle_codes,
             item.module_codes, item.topics, item.trust_tier,
+            COALESCE(canonical.summary_short, item.summary) AS summary_short,
+            canonical.summary_expanded, canonical.key_facts, canonical.why_relevant,
+            canonical.source_updated_at, canonical.source_verified_at,
+            canonical.ranking_priority, canonical.current_revision,
+            canonical.material_fingerprint, canonical.primary_evidence_url,
+            canonical.language, canonical.match_reasons,
             COALESCE(state.status, 'new')::text AS status
      FROM public.radar_items item
+     LEFT JOIN public.radar_content_occurrences canonical
+       ON canonical.legacy_radar_item_id = item.id
+      AND canonical.publication_decision = 'accepted'
      LEFT JOIN public.radar_item_user_states state
        ON state.radar_item_id = item.id AND state.user_id = $1
      WHERE ${conditions.join(" AND ")}
-     ORDER BY ${filters.sort === "trust" ? trustOrderSql() : "COALESCE(item.published_at, item.fetched_at) DESC"}
+     ORDER BY ${filters.sort === "trust" ? trustOrderSql() : "COALESCE(canonical.ranking_priority, 0) DESC, COALESCE(item.published_at, item.fetched_at) DESC, item.id ASC"}
      LIMIT $${values.length}`,
     values,
   );
@@ -457,8 +478,17 @@ export async function getRadarItemDetailForUser(
             item.event_starts_at, item.event_ends_at, item.registration_url,
             item.registration_deadline, item.locality, item.province, item.target_cycle_codes,
             item.module_codes, item.topics, item.trust_tier,
+            COALESCE(canonical.summary_short, item.summary) AS summary_short,
+            canonical.summary_expanded, canonical.key_facts, canonical.why_relevant,
+            canonical.source_updated_at, canonical.source_verified_at,
+            canonical.ranking_priority, canonical.current_revision,
+            canonical.material_fingerprint, canonical.primary_evidence_url,
+            canonical.language, canonical.match_reasons,
             COALESCE(state.status, 'new')::text AS status
      FROM public.radar_items item
+     LEFT JOIN public.radar_content_occurrences canonical
+       ON canonical.legacy_radar_item_id = item.id
+      AND canonical.publication_decision = 'accepted'
      LEFT JOIN public.radar_item_user_states state
        ON state.radar_item_id = item.id AND state.user_id = $1
      WHERE item.id = $3::bigint
@@ -510,16 +540,33 @@ export async function getRelatedNewsItems(
     .map((entry) => entry.candidate);
 }
 
+/** The next article is taken from the exact same authorised live ordering as the list. */
+export async function getNextRadarNewsItem(
+  userId: string,
+  cycleCode: RadarCycleCode,
+  currentItemId: string,
+): Promise<NewsItem | null> {
+  const authorised = await listRadarItemsForCycle(userId, cycleCode, { limit: 200, sort: "date" });
+  const index = authorised.findIndex((item) => item.id === currentItemId);
+  return index >= 0 && index + 1 < authorised.length ? authorised[index + 1] ?? null : null;
+}
+
 function mapRadarItem(row: RadarItemRow): NewsItem {
   return {
     id: row.id,
     sourceId: row.source_id,
     sourceName: row.source_name,
     title: row.title,
-    description: row.summary || undefined,
+    summaryShort: (row.summary_short ?? row.summary) || undefined,
+    summaryExpanded: row.summary_expanded ?? undefined,
+    keyFacts: row.key_facts ?? [],
+    whyRelevant: row.why_relevant ?? undefined,
+    description: (row.summary_short ?? row.summary) || undefined,
     url: row.canonical_url,
     kind: row.kind,
     publishedAt: row.published_at ?? undefined,
+    sourceUpdatedAt: row.source_updated_at ?? undefined,
+    verifiedAt: row.source_verified_at ?? undefined,
     fetchedAt: row.fetched_at,
     expiresAt: row.expires_at ?? undefined,
     eventStartsAt: row.event_starts_at ?? undefined,
@@ -531,6 +578,12 @@ function mapRadarItem(row: RadarItemRow): NewsItem {
     targetCycleCodes: row.target_cycle_codes,
     moduleCodes: row.module_codes,
     topics: row.topics,
+    language: row.language ?? undefined,
+    matchReasons: row.match_reasons ?? [],
+    rankingPriority: row.ranking_priority ?? undefined,
+    revision: row.current_revision ?? undefined,
+    materialFingerprint: row.material_fingerprint ?? undefined,
+    primaryEvidenceUrl: row.primary_evidence_url ?? undefined,
     trustTier: row.trust_tier,
     status: row.status,
     isFeatured: false,
@@ -538,6 +591,7 @@ function mapRadarItem(row: RadarItemRow): NewsItem {
 }
 
 function featuredScore(item: NewsItem): number {
+  if (item.rankingPriority !== undefined) return item.rankingPriority;
   const trustWeight: Record<NewsItem["trustTier"], number> = {
     official: 5,
     institutional: 4,

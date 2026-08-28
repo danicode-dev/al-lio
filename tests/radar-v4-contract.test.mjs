@@ -26,6 +26,9 @@ test("the same protected receiver accepts strict v3 and complete or partial v4",
     assert.equal(parsed.success, true, name);
   }
   assert.deepEqual([...RADAR_SUPPORTED_SCHEMA_VERSIONS], [2, 3, 4]);
+  const complete = radarDeliverySchema.parse(fixture("complete-v4.json"));
+  assert.equal(complete.items[0].classification.language, "es");
+  assert.deepEqual(complete.items[0].classification.matchReasons, ["rule:daw-dam-java", "keyword:java"]);
 });
 
 test("v4 rejects a missing publication-critical fact and its evidence atomically", () => {
@@ -140,4 +143,11 @@ test("identity corrections resolve through auditable canonical aliases", () => {
   assert.match(repository, /canonical-entity-key-transition/);
   assert.match(repository, /canonical-occurrence-key-transition/);
   assert.match(repository, /uniqueCandidates\.size > 1/);
+});
+
+test("news language and deterministic match reasons are persisted with each canonical occurrence", () => {
+  const repository = readFileSync(join(process.cwd(), "src", "lib", "db", "repositories", "radar-v4.ts"), "utf8");
+  assert.match(repository, /title, language, match_reasons/);
+  assert.match(repository, /item\.classification\.language/);
+  assert.match(repository, /item\.classification\.matchReasons/);
 });

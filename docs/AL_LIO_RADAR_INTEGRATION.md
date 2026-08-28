@@ -1,5 +1,7 @@
 # AL-LIO Radar integration
 
+Verified v4 news list/detail fields, shared authorisation, revision continuity, and deterministic next-item behaviour are documented in [VERIFIED_NEWS_DETAILS.md](./VERIFIED_NEWS_DETAILS.md).
+
 This document describes the application side of the Radar contract. The sender
 keeps the matching contract in its own repository.
 
