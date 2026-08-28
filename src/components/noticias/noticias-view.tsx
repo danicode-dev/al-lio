@@ -194,11 +194,11 @@ export function NewsView() {
     // Same shell as Courses and Events: a space-y-6 wrapper around the page
     // header plus an .al-catalog-view block, so the vertical rhythm and the
     // phone-only pull-up above the control strip match those routes. The
-    // `al-news-view` scope adds one phone-only tweak on top of that shared
-    // rhythm (globals.css): the search / reload / filters cluster is lifted
-    // into the free top-right band of this header instead of taking its own
-    // row, so the stat grid and the featured card start higher.
-    <div className="space-y-6 al-news-view">
+    // shared `al-catalog-hoist` opt-in adds one phone-only tweak on top of
+    // that rhythm (globals.css): the search / reload / filters cluster is
+    // lifted into the free top-right band of this header instead of taking
+    // its own row, so the stat grid and the featured card start higher.
+    <div className="space-y-6 al-catalog-hoist">
       <PageHeader
         eyebrow="Radar de noticias"
         title={

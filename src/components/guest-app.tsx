@@ -181,7 +181,16 @@ export function GuestApp({ view }: { view: View }) {
   const headerContent = VIEW_HEADER_CONTENT[view];
 
   return (
-    <div className={cn("pb-6", view === "bloc" ? "space-y-3 md:space-y-6" : "space-y-6")}>
+    <div
+      className={cn(
+        "pb-6",
+        view === "bloc" ? "space-y-3 md:space-y-6" : "space-y-6",
+        // Same phone-only treatment as the news route: Courses and Events
+        // lift their search / filters cluster into the header's empty
+        // right-side band (globals.css, .al-catalog-hoist).
+        (view === "courses" || view === "hackathons") && "al-catalog-hoist",
+      )}
+    >
       {view !== "dashboard" && view !== "calendar" && headerContent && (
         <PageHeader
           eyebrow={headerContent.eyebrow}
