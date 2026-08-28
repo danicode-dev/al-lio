@@ -373,13 +373,27 @@ test("Task edit waits for persistence and keeps the dialog open after failure", 
     readFile(new URL("../src/components/guest-store.tsx", import.meta.url), "utf8"),
   ]);
 
-  assert.match(viewSource, /await actions\.updateTask\(editingTask\.id, data\);\s+setEditingTask\(null\);/);
+  assert.match(viewSource, /await actions\.updateTask\(dialogTask\.id, data\);\s+setTaskDialog\(null\);/);
   assert.match(viewSource, /No se pudo guardar la tarea/);
   assert.match(viewSource, /\{saving \? "Guardando…" : "Guardar"\}/);
 
   assert.match(storeSource, /if \(!response\?\.result\) throw new Error\("Task update was not persisted"\)/);
   assert.match(storeSource, /patchById\(current\.tasks, id, previousTask\)/);
   assert.match(storeSource, /throw error;/);
+});
+
+test("Task rows open one shared detail/edit dialog and keep the existing edit form reusable", async () => {
+  const source = await readFile(new URL("../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /type TaskDialogMode = "view" \| "edit"/);
+  assert.match(source, /aria-label=\{`Ver detalles de \$\{task\.title\}`\}/);
+  assert.match(source, /onOpen=\{\(\) => setTaskDialog\(\{ taskId: task\.id, mode: "view" \}\)\}/);
+  assert.match(source, /onEdit=\{\(\) => setTaskDialog\(\{ taskId: task\.id, mode: "edit" \}\)\}/);
+  assert.match(source, /function TaskDialog\(/);
+  assert.match(source, /Detalle de la tarea/);
+  assert.match(source, /setMode\("edit"\)/);
+  assert.match(source, /task\.description \|\| "Sin descripción añadida\."/);
+  assert.doesNotMatch(source, /function EditTaskDialog\(/, "view and edit must not drift into separate modal implementations");
 });
 
 test("The authenticated student tree owns exactly one store provider (issue #90)", async () => {
@@ -2305,7 +2319,7 @@ test("tech_opportunities-sourced events are excluded from saving with a document
   assert.doesNotMatch(guestAppSource, /function canToggleHackathonFavorite/, "guest-app.tsx must not keep a second, potentially-drifting local copy");
 });
 
-test("Nueva tarea sits on the Tu lista heading row (top-right) with the status filter on its own row beneath, stays out of the global top header, and the summary tile labels are never truncated (issue #153, owner-reported follow-up)", async () => {
+test("The three task summary tiles are the only status filters, while Nueva tarea stays on the Tu lista heading row", async () => {
   const source = await readFile(new URL("../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8");
 
   // The page-specific composer button must never live in the shared top header
@@ -2316,23 +2330,14 @@ test("Nueva tarea sits on the Tu lista heading row (top-right) with the status f
   assert.doesNotMatch(headerJsx, /Nueva tarea/, "the top PageHeader must not carry the page-specific composer button");
   assert.match(headerJsx, /<StudentHeaderActions \/>/, "the global icon cluster must remain there, same as every other page");
 
-  // List card header: the composer button shares one row with the "Tu lista"
-  // <h2> (top-right), and the Pendientes/Hechas/Todas filter is a separate row
-  // below it - so the button stays visible next to the title instead of
-  // wrapping under the filter on a narrow screen.
+  // List card header: the composer button still shares one row with "Tu lista",
+  // but the duplicated Pendientes/Hechas/Todas control row is gone.
   const cardHeaderStart = source.indexOf(">Tu lista</h2>");
   const cardHeaderEnd = source.indexOf("{store.loadIssues", cardHeaderStart);
   const cardHeader = source.slice(cardHeaderStart, cardHeaderEnd);
 
   assert.match(cardHeader, /setComposerOpen\(\(open\) => !open\)/, "the exact same composer toggle handler must be reused, not reimplemented");
-  assert.match(cardHeader, /FilterButton active=\{filter === "pending"\}/);
-  assert.match(cardHeader, /FilterButton active=\{filter === "completed"\}/);
-  assert.match(cardHeader, /FilterButton active=\{filter === "all"\}/);
-
-  const buttonIdx = cardHeader.indexOf("Nueva tarea");
-  const filterIdx = cardHeader.indexOf('FilterButton active={filter === "pending"}');
-  assert.ok(buttonIdx > -1 && filterIdx > -1, "both the composer button and the filter live in the list card header");
-  assert.ok(buttonIdx < filterIdx, "Nueva tarea is on the heading row, before the Pendientes/Hechas/Todas filter row");
+  assert.doesNotMatch(cardHeader, /FilterButton|>Hechas<|>Todas</, "the repeated compact filter row must stay removed");
   assert.match(
     cardHeader,
     /Tu lista<\/h2>[\s\S]*?<\/div>\s*<button type="button" onClick=\{\(\) => setComposerOpen/,
@@ -2341,8 +2346,14 @@ test("Nueva tarea sits on the Tu lista heading row (top-right) with the status f
 
   // Issue #153: the summary tiles (Pendientes/Completadas/Totales) show their
   // full label on mobile - no ellipsis.
-  const summaryCard = source.slice(source.indexOf("function SummaryCard"), source.indexOf("function FilterButton"));
+  for (const filter of ["pending", "completed", "all"]) {
+    assert.match(source, new RegExp(`active=\\{filter === "${filter}"\\}[\\s\\S]*?onClick=\\{\\(\\) => setFilter\\("${filter}"\\)\\}`));
+  }
+  const summaryCard = source.slice(source.indexOf("function SummaryCard"), source.indexOf("function EmptyState"));
+  assert.match(summaryCard, /<button type="button"/);
+  assert.match(summaryCard, /aria-pressed=\{active\}/);
   assert.doesNotMatch(summaryCard, /truncate/, "summary tile labels must not be clipped with truncate");
+  assert.doesNotMatch(source, /function FilterButton/, "there must be one filter implementation, not two");
 });
 
 test("Nuevo evento and the Google Calendar status move into the calendar's own month-navigation toolbar, next to Hoy - the top header keeps only the global icon cluster (owner-reported follow-up)", async () => {
