@@ -2425,7 +2425,7 @@ test("Guardados is a real heart-driven filter tab, independent of and additional
   assert.match(fnSource, /useState<"total" \| "abiertos" \| "proximos" \| "guardados">/);
   assert.match(fnSource, /const guardados = useMemo\(\(\) => sorted\.filter\(\(h\) => h\.is_favorite\), \[sorted\]\);/);
   assert.match(fnSource, /viewTab === "guardados" \? guardados/);
-  assert.match(fnSource, /\{ id: "guardados", label: "Guardados", count: guardados\.length, withHeart: true \}/, "the tab must be a real filter tab with a live heart count, matching the issue's explicit ask");
+  assert.match(fnSource, /\{ id: "guardados", label: "Guardados", count: guardados\.length \}/, "the tab must be a real filter tab with a live count, matching the issue's explicit ask");
 });
 
 test("Toggling the heart is wired through a distinct action from completion/status changes - completeHackathon and the Realizado button never touch is_favorite (issue #131)", async () => {
@@ -2524,7 +2524,7 @@ test("Guardados is a real heart-driven filter tab in Courses, independent of and
   assert.match(fnSource, /useState<"total" \| "empezados" \| "proximos" \| "guardados">/);
   assert.match(fnSource, /const guardados = useMemo\(\(\) => sorted\.filter\(\(c\) => c\.is_favorite\), \[sorted\]\);/);
   assert.match(fnSource, /viewTab === "guardados" \? guardados/);
-  assert.match(fnSource, /\{ id: "guardados", label: "Guardados", count: guardados\.length, withHeart: true \}/, "the tab must be a real filter tab with a live heart count");
+  assert.match(fnSource, /\{ id: "guardados", label: "Guardados", count: guardados\.length \}/, "the tab must be a real filter tab with a live count");
 });
 
 test("Course favorite state survives a reload - serializeCourses passes the DB row through unfiltered, it never strips is_favorite before it reaches the client store (issue #120)", async () => {
@@ -2972,7 +2972,7 @@ test("Cursos merges its stats and status tabs into one clickable row (Total / Em
   assert.match(fnSource, /\{ id: "total", label: "Total", count: total\.length \}/);
   assert.match(fnSource, /\{ id: "empezados", label: "Empezados", count: empezados\.length \}/);
   assert.match(fnSource, /\{ id: "proximos", label: "Próx\. inicio", count: proximos\.length \}/);
-  assert.match(fnSource, /\{ id: "guardados", label: "Guardados", count: guardados\.length, withHeart: true \}/);
+  assert.match(fnSource, /\{ id: "guardados", label: "Guardados", count: guardados\.length \}/);
   assert.doesNotMatch(fnSource, /label: "Terminado"/, "Terminado is no longer a tab");
   assert.doesNotMatch(fnSource, /label: "Archivados"/);
   assert.match(fnSource, /\["terminado", "Terminado"\]/, "finished courses must stay filterable via the Estado control");
@@ -2991,7 +2991,7 @@ test("Eventos y retos merges its stats and status tabs into the same one-row con
   assert.match(fnSource, /\{ id: "total", label: "Total", count: total\.length \}/);
   assert.match(fnSource, /\{ id: "abiertos", label: "Inscripción abierta", count: abiertos\.length \}/);
   assert.match(fnSource, /\{ id: "proximos", label: "Próx\. inicio", count: proximos\.length \}/);
-  assert.match(fnSource, /\{ id: "guardados", label: "Guardados", count: guardados\.length, withHeart: true \}/);
+  assert.match(fnSource, /\{ id: "guardados", label: "Guardados", count: guardados\.length \}/);
   assert.doesNotMatch(fnSource, /label: "Realizado"/, "Realizado is no longer a tab");
   assert.doesNotMatch(fnSource, /label: "Archivados"/);
   assert.match(fnSource, /\["realizado", "Realizado"\]/, "finished events must stay filterable via the Estado control");

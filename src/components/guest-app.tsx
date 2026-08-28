@@ -2128,7 +2128,7 @@ function FilterCalendar({
   );
 }
 
-type CollectionTab = { id: string; label: string; count: number; withHeart?: boolean };
+type CollectionTab = { id: string; label: string; count: number };
 
 // The one control strip above the Cursos and Eventos y retos lists: a
 // single line where the KPI counts and the status filter are the same
@@ -2172,8 +2172,7 @@ function CollectionControls({
         .al-cc-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; flex: 1 1 0; min-width: 0; padding: 4px 10px 6px; border: none; border-bottom: 2px solid transparent; border-radius: 8px 8px 0 0; background: transparent; text-align: left; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
         .al-cc-stat:hover:not(.al-cc-stat-active) { background: #faf7f1; }
         .al-cc-stat-value { font-size: 19px; font-weight: 800; line-height: 1.05; color: #6b6f72; font-variant-numeric: tabular-nums; transition: color .15s; }
-        .al-cc-stat-label { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; font-weight: 600; letter-spacing: .02em; color: #9a958a; white-space: nowrap; transition: color .15s; }
-        .al-cc-stat-label svg { width: 12px; height: 12px; flex-shrink: 0; }
+        .al-cc-stat-label { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; font-weight: 600; letter-spacing: .02em; color: #9a958a; white-space: nowrap; transition: color .15s; }
         .al-cc-stat-active { border-bottom-color: var(--al-action-soft-text); }
         .al-cc-stat-active .al-cc-stat-value { color: var(--al-action-soft-text-hover); }
         .al-cc-stat-active .al-cc-stat-label { color: var(--al-action-soft-text); }
@@ -2222,10 +2221,7 @@ function CollectionControls({
                 onClick={() => onTabChange(tab.id)}
               >
                 <span className="al-cc-stat-value">{tab.count}</span>
-                <span className="al-cc-stat-label">
-                  {tab.withHeart && <Heart fill={isActive ? "currentColor" : "none"} />}
-                  {tab.label}
-                </span>
+                <span className="al-cc-stat-label">{tab.label}</span>
               </button>
             );
           })}
@@ -2551,7 +2547,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
               { id: "total", label: "Total", count: total.length },
               { id: "empezados", label: "Empezados", count: empezados.length },
               { id: "proximos", label: "Próx. inicio", count: proximos.length },
-              { id: "guardados", label: "Guardados", count: guardados.length, withHeart: true },
+              { id: "guardados", label: "Guardados", count: guardados.length },
             ]}
             activeTab={viewTab}
             onTabChange={(id) => { setViewTab(id as typeof viewTab); clearAll(); }}
@@ -3091,7 +3087,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
               { id: "total", label: "Total", count: total.length },
               { id: "abiertos", label: "Inscripción abierta", count: abiertos.length },
               { id: "proximos", label: "Próx. inicio", count: proximos.length },
-              { id: "guardados", label: "Guardados", count: guardados.length, withHeart: true },
+              { id: "guardados", label: "Guardados", count: guardados.length },
             ]}
             activeTab={viewTab}
             onTabChange={(id) => { setViewTab(id as typeof viewTab); clearAll(); }}
