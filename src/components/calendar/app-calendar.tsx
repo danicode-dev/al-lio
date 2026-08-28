@@ -111,7 +111,6 @@ export function TaskCalendar({ events: localEvents }: { events: CalendarEvent[] 
         compact
         controlsRef={newEventRef}
         onPrevious={() => { setMonth(addMonths(month, -1)); setAgendaOpen(false); }}
-        onToday={() => { setMonth(startOfMonth(new Date())); setSelectedDay(todayKey()); setAgendaOpen(false); }}
         onNext={() => { setMonth(addMonths(month, 1)); setAgendaOpen(false); }}
         onCreate={() => { setAgendaOpen(false); setNewEventOpen((open) => !open); }}
       >
@@ -193,11 +192,6 @@ export function CalendarView({
     setSelectedDay(dateKey(nextMonth.toISOString()));
   }
 
-  function goToday() {
-    setMonth(startOfMonth(new Date()));
-    setSelectedDay(todayKey());
-  }
-
   return (
     <div className="space-y-5 text-[#111111]">
       <PageHeader
@@ -215,7 +209,6 @@ export function CalendarView({
             <CalendarHeader
               month={month}
               onPrevious={() => moveMonth(-1)}
-              onToday={goToday}
               onNext={() => moveMonth(1)}
               onCreate={() => setNewEventOpen(true)}
               statusSlot={calendarStatus}
@@ -290,17 +283,16 @@ type CalendarHeaderProps = {
   compact?: boolean;
   controlsRef?: React.RefObject<HTMLDivElement | null>;
   onPrevious: () => void;
-  onToday: () => void;
   onNext: () => void;
   onCreate?: () => void;
   // The Google Calendar connection indicator - rendered inline with
-  // Hoy/Nuevo evento (full variant only) so a student sees whether the
-  // event they're about to create will sync, right where they create it.
+  // Nuevo evento (full variant only) so a student sees whether the event
+  // they're about to create will sync, right where they create it.
   statusSlot?: React.ReactNode;
   children?: React.ReactNode;
 };
 
-function CalendarHeader({ month, compact = false, controlsRef, onPrevious, onToday, onNext, onCreate, statusSlot, children }: CalendarHeaderProps) {
+function CalendarHeader({ month, compact = false, controlsRef, onPrevious, onNext, onCreate, statusSlot, children }: CalendarHeaderProps) {
   if (compact) {
     return (
       <div className="mb-3 flex items-center justify-between gap-2">
@@ -310,7 +302,6 @@ function CalendarHeader({ month, compact = false, controlsRef, onPrevious, onTod
         </div>
         <div ref={controlsRef} className="relative flex shrink-0 items-center gap-0.5">
           <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={onPrevious} aria-label="Mes anterior"><ChevronLeft className="h-3.5 w-3.5" /></Button>
-          <Button type="button" size="sm" variant="ghost" className="h-7 rounded-lg px-2 text-xs text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={onToday}>Hoy</Button>
           <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={onNext} aria-label="Mes siguiente"><ChevronRight className="h-3.5 w-3.5" /></Button>
           {onCreate && <Button type="button" size="icon" variant="ghost" className="ml-0.5 h-7 w-7 rounded-lg bg-[#fff0e9] text-[#e15d2d] hover:bg-[#fbe2d6] hover:text-[#c6491d]" onClick={onCreate} aria-label="Crear evento"><Plus className="h-3.5 w-3.5" /></Button>}
           {children}
@@ -327,7 +318,6 @@ function CalendarHeader({ month, compact = false, controlsRef, onPrevious, onTod
         <h2 className="ml-1 text-base font-semibold sm:text-lg">{monthTitle(month)}</h2>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" size="sm" variant="outline" className="h-9 rounded-xl border-[#e6dfd4] !bg-white px-3 !text-[#4e4941] hover:border-[#e5bba8] hover:!bg-[#fff4ee] hover:!text-[#e15d2d]" onClick={onToday}>Hoy</Button>
         {statusSlot}
         {onCreate && (
           <Button type="button" size="sm" className="h-9 rounded-xl px-3" onClick={onCreate}>
@@ -510,34 +500,30 @@ function EventDateTimeFields({ value, onChange }: { value: Date; onChange: (date
   );
 }
 
+// Every event - task, course, hackathon, Google - opens this dialog on
+// click. Nothing navigates on the first tap: the student reads the event
+// where they are, then the dialog's action takes them to that exact item
+// (the to-do on the tasks page, the course/event detail page) instead of
+// dropping them on a list.
 function CalendarAgendaRow({ event }: { event: CalendarEvent }) {
   const [detailOpen, setDetailOpen] = useState(false);
   const timeLabel = calendarTimeLabel(event);
-  const content = (
-    <>
-      <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", calendarDotClass(event.type, event.status))} />
-      <span className="min-w-0">
-        <span className="block truncate font-medium">{event.title}</span>
-        <span className="text-xs text-muted-foreground">{timeLabel} - {calendarTypeLabel(event.type)}</span>
-      </span>
-    </>
-  );
-
-  if (event.type === "google") {
-    return (
-      <>
-        <button type="button" onClick={() => setDetailOpen(true)} className="flex w-full items-start gap-2 rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-2.5 text-left text-sm transition-colors hover:border-[#e5c7b8] hover:bg-[#fff8f4]">
-          {content}
-        </button>
-        {detailOpen && <GoogleEventDetailDialog event={event} onClose={() => setDetailOpen(false)} />}
-      </>
-    );
-  }
 
   return (
-    <Link href={event.href} className="flex items-start gap-2 rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-2.5 text-sm transition-colors hover:border-[#e5c7b8] hover:bg-[#fff8f4]">
-      {content}
-    </Link>
+    <>
+      <button
+        type="button"
+        onClick={() => setDetailOpen(true)}
+        className="flex w-full items-start gap-2 rounded-xl border border-[#ece7dc] bg-[#fcfbf8] p-2.5 text-left text-sm transition-colors hover:border-[#e5c7b8] hover:bg-[#fff8f4]"
+      >
+        <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", calendarDotClass(event.type, event.status))} />
+        <span className="min-w-0">
+          <span className="block truncate font-medium">{event.title}</span>
+          <span className="text-xs text-muted-foreground">{timeLabel} - {calendarTypeLabel(event.type)}</span>
+        </span>
+      </button>
+      {detailOpen && <CalendarEventDetailDialog event={event} onClose={() => setDetailOpen(false)} />}
+    </>
   );
 }
 
@@ -545,25 +531,38 @@ function CalendarPill({ event }: { event: CalendarEvent }) {
   const [detailOpen, setDetailOpen] = useState(false);
   const label = (event.type === "task" && event.date_at ? `${formatTime(event.date_at)} ` : "") + event.title;
 
-  if (event.type === "google") {
-    return (
-      <>
-        <button type="button" onClick={() => setDetailOpen(true)} className={cn("block w-full truncate rounded px-2 py-1 text-left text-[11px] leading-tight", calendarEventClass(event.type, event.status))} title={event.title}>
-          {label}
-        </button>
-        {detailOpen && <GoogleEventDetailDialog event={event} onClose={() => setDetailOpen(false)} />}
-      </>
-    );
-  }
-
   return (
-    <Link href={event.href} className={cn("block truncate rounded px-2 py-1 text-[11px] leading-tight", calendarEventClass(event.type, event.status))} title={event.title}>
-      {label}
-    </Link>
+    <>
+      <button
+        type="button"
+        onClick={() => setDetailOpen(true)}
+        className={cn("block w-full truncate rounded px-2 py-1 text-left text-[11px] leading-tight", calendarEventClass(event.type, event.status))}
+        title={event.title}
+      >
+        {label}
+      </button>
+      {detailOpen && <CalendarEventDetailDialog event={event} onClose={() => setDetailOpen(false)} />}
+    </>
   );
 }
 
-function GoogleEventDetailDialog({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
+function calendarEventEyebrow(type: CalendarEvent["type"]) {
+  if (type === "task") return "Tarea";
+  if (type === "course") return "Curso";
+  if (type === "hackathon" || type === "event") return "Evento";
+  return "Evento de Google Calendar";
+}
+
+function calendarEventAction(event: CalendarEvent): { label: string; href: string; external: boolean } | null {
+  if (event.type === "google") {
+    return event.href?.startsWith("http") ? { label: "Ver en Google Calendar", href: event.href, external: true } : null;
+  }
+  if (!event.href || event.href === "/calendar") return null;
+  const label = event.type === "task" ? "Abrir tarea" : event.type === "course" ? "Ver curso" : "Ver evento";
+  return { label, href: event.href, external: false };
+}
+
+function CalendarEventDetailDialog({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
@@ -621,12 +620,16 @@ function GoogleEventDetailDialog({ event, onClose }: { event: CalendarEvent; onC
     };
   }, []);
 
+  const action = calendarEventAction(event);
+
   return (
     <>
       <button type="button" aria-label="Cerrar evento" onClick={onClose} className="fixed inset-0 z-50 cursor-default bg-black/30 backdrop-blur-[1px]" />
       <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={detailId} className="fixed left-1/2 top-1/2 z-[51] max-h-[calc(100dvh-2rem)] w-[min(25rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[18px] border border-[#e4dfd5] bg-white text-[#111111] shadow-[0_22px_50px_rgba(17,17,17,0.24)]">
         <div className="flex items-center justify-between border-b border-[#f0ece2] px-4 py-3">
-          <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#a43b32]">Evento de Google Calendar</span>
+          <span className={cn("text-xs font-bold uppercase tracking-[0.08em]", event.type === "google" ? "text-[#a43b32]" : "text-[#c94f21]")}>
+            {calendarEventEyebrow(event.type)}
+          </span>
           <button ref={closeButtonRef} type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-[#f7f3ed] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e15d2d]" aria-label="Cerrar"><X className="h-3.5 w-3.5" /></button>
         </div>
         <div className="space-y-2.5 p-4">
@@ -641,10 +644,16 @@ function GoogleEventDetailDialog({ event, onClose }: { event: CalendarEvent; onC
           )}
         </div>
         <div className="flex items-center justify-between gap-2 border-t border-[#f0ece2] px-4 py-3">
-          {event.href && event.href !== "/calendar" ? (
-            <a href={event.href} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#e15d2d] underline underline-offset-2 hover:text-[#c6491d]">
-              Ver en Google Calendar
-            </a>
+          {action ? (
+            action.external ? (
+              <a href={action.href} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center rounded-xl bg-[#e15d2d] px-3.5 text-xs font-bold text-white transition-colors hover:bg-[#c6491d]">
+                {action.label}
+              </a>
+            ) : (
+              <Link href={action.href} onClick={onClose} className="inline-flex h-9 items-center rounded-xl bg-[#e15d2d] px-3.5 text-xs font-bold text-white transition-colors hover:bg-[#c6491d]">
+                {action.label}
+              </Link>
+            )
           ) : <span />}
           <Button variant="ghost" size="sm" onClick={onClose}>Cerrar</Button>
         </div>

@@ -2387,7 +2387,7 @@ test("The three task summary tiles are the only status filters, while Nueva tare
   assert.doesNotMatch(source, /function FilterButton/, "there must be one filter implementation, not two");
 });
 
-test("Nuevo evento and the Google Calendar status move into the calendar's own month-navigation toolbar, next to Hoy - the top header keeps only the global icon cluster (owner-reported follow-up)", async () => {
+test("Nuevo evento and the Google Calendar status live in the calendar's own month-navigation toolbar; the top header keeps only the global icon cluster and the calendar-navigation Hoy button is gone (owner-reported follow-up, issue #179)", async () => {
   const source = await readFile(new URL("../src/components/calendar/app-calendar.tsx", import.meta.url), "utf8");
 
   const headerStart = source.indexOf("<PageHeader");
@@ -2398,10 +2398,15 @@ test("Nuevo evento and the Google Calendar status move into the calendar's own m
   assert.match(pageHeaderJsx, /\{headerActions\}/, "the global icon cluster must remain there, same as every other page");
 
   assert.match(source, /statusSlot\?: React\.ReactNode;/, "CalendarHeader needs a dedicated slot for the connection status, distinct from the anchored-popover children prop used by the compact variant");
-  const nonCompactButtonRow = source.slice(source.indexOf('<Button type="button" size="sm" variant="outline"'), source.indexOf("</div>\r\n    </div>\r\n  );\r\n}"));
-  assert.match(nonCompactButtonRow, />Hoy<\/Button>/);
-  assert.match(nonCompactButtonRow, /\{statusSlot\}/);
-  assert.match(nonCompactButtonRow, /Nuevo evento/);
+
+  // The month-navigation "Hoy" button was removed from both header variants
+  // (issue #179) - the month arrows plus the always-visible agenda cover it.
+  const headerFn = source.slice(source.indexOf("function CalendarHeader"), source.indexOf("type CalendarMonthGridProps"));
+  assert.doesNotMatch(headerFn, />Hoy<\/Button>/, "no calendar-navigation Hoy button in either header variant");
+  assert.doesNotMatch(headerFn, /onToday/, "the onToday prop and handler are gone with the button");
+
+  const nonCompactActionsRow = headerFn.slice(headerFn.indexOf('<div className="flex flex-wrap items-center gap-2">'));
+  assert.match(nonCompactActionsRow, /\{statusSlot\}[\s\S]*Nuevo evento/, "the status slot and the create button share the toolbar row");
 
   const calendarViewCall = source.slice(source.indexOf("<CalendarHeader", source.indexOf("export function CalendarView")), source.indexOf("<CalendarHeader", source.indexOf("export function CalendarView")) + 300);
   assert.match(calendarViewCall, /onCreate=\{\(\) => setNewEventOpen\(true\)\}/, "must reuse the exact same handler the old header button called, not a new one");
@@ -2431,6 +2436,53 @@ test("GoogleCalendarStatusControl's connected/disconnected/loading states are vi
   assert.match(fn, /"Google Calendar conectado"/);
   assert.match(fn, /"Conectar Google Calendar"/);
   assert.doesNotMatch(fn, /hidden sm:inline/, "the status label must always be visible now that it lives in the calendar's own toolbar, not squeezed into a narrow global header");
+  // issue #179: a real Google "G", not an ambiguous four-colour square; the label is not clipped.
+  assert.match(fn, /function GoogleGlyph/, "the mark is the Google G glyph");
+  assert.match(fn, /<GoogleGlyph \/>/);
+  assert.doesNotMatch(fn, /grid-cols-2 overflow-hidden rounded-\[3px\]/, "the old four-colour square is gone");
+  assert.doesNotMatch(fn, /\btruncate\b/, "the connection label must not be clipped");
+});
+
+test("Calendar events open a detail dialog on click and its action deep-links to the exact item, never a bare list page (issue #179)", async () => {
+  const [calendar, events, guestApp, tasksView, tasksPage] = await Promise.all([
+    readFile(new URL("../src/components/calendar/app-calendar.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/lib/dashboard/calendar-events.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/(dashboard)/tasks/page.tsx", import.meta.url), "utf8"),
+  ]);
+
+  // Nothing navigates on the first click: both the pill and the agenda row
+  // open the shared dialog for every type, not a <Link>.
+  const pill = calendar.slice(calendar.indexOf("function CalendarPill"), calendar.indexOf("function calendarEventEyebrow"));
+  const row = calendar.slice(calendar.indexOf("function CalendarAgendaRow"), calendar.indexOf("function CalendarPill"));
+  for (const fragment of [pill, row]) {
+    assert.match(fragment, /onClick=\{\(\) => setDetailOpen\(true\)\}/);
+    assert.match(fragment, /<CalendarEventDetailDialog event=\{event\} onClose/);
+    assert.doesNotMatch(fragment, /<Link href=\{event\.href\}/, "the event itself must not be a navigating link");
+  }
+
+  // The dialog action resolves per type; Google stays an external link.
+  const action = calendar.slice(calendar.indexOf("function calendarEventAction"), calendar.indexOf("function CalendarEventDetailDialog"));
+  assert.match(action, /"Abrir tarea"/);
+  assert.match(action, /"Ver curso"/);
+  assert.match(action, /"Ver evento"/);
+  assert.match(action, /event\.type === "google"[\s\S]*?"Ver en Google Calendar"[\s\S]*?external: true/);
+
+  // Real deep links, shared by the calendar page, mini-calendar and alerts.
+  assert.match(events, /task: \(id: string\) => `\/tasks\?task=\$\{encodeURIComponent\(id\)\}`/);
+  assert.match(events, /course: \(id: string\) => `\/courses\/\$\{encodeURIComponent\(id\)\}`/);
+  assert.match(events, /hackathon: \(id: string\) => `\/hackathons\/\$\{encodeURIComponent\(id\)\}`/);
+  assert.doesNotMatch(events, /href: "\/tasks"/, "task events must carry the ?task= deep link");
+  assert.doesNotMatch(events, /href: "\/courses"/, "course events must carry the detail route");
+  assert.doesNotMatch(guestApp.slice(guestApp.indexOf("function getCalendarEvents")), /href: "\/courses"|href: "\/tasks"/, "the /calendar generator must not fall back to list pages");
+
+  // A single task can be opened straight from its id.
+  assert.match(tasksView, /useSearchParams/);
+  assert.match(tasksView, /searchParams\.get\("task"\)/);
+  assert.match(tasksView, /setTaskDialog\(\{ taskId: match\.id, mode: "view" \}\)/);
+  assert.match(tasksView, /router\.replace\(pathname/, "the ?task= param is dropped once consumed");
+  assert.match(tasksPage, /<Suspense/, "useSearchParams needs a Suspense boundary");
 });
 
 test("Competencias' progress card sits inside PageHeader's own actions, glued to the +/calendar/bell icon cluster in the same top row - not stacked below it in its own row leaving an empty gap (owner-reported follow-up)", async () => {
