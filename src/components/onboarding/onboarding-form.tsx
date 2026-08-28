@@ -1,24 +1,11 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { ArrowRight, BookOpen, Calendar, Folder, GraduationCap, Info, Lock, Trophy, Wrench, type LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowRight, BookOpen, GraduationCap, Info, Lock } from "lucide-react";
 import { completeOnboardingAction, type OnboardingState } from "@/lib/profile/onboarding-actions";
-import { ONBOARDING_INTEREST_OPTIONS } from "@/lib/profile/onboarding-options";
 import type { DbFpCycle, DbProfile } from "@/lib/db/types";
 import { OnboardingBrandPanel } from "@/components/onboarding/onboarding-brand-panel";
 import { FieldListbox, type FieldListboxOption } from "@/components/ui/field-listbox";
-
-const INTEREST_META: Record<
-  (typeof ONBOARDING_INTEREST_OPTIONS)[number],
-  { label: string; icon: LucideIcon; accent: string }
-> = {
-  herramientas: { label: "Herramientas", icon: Wrench, accent: "#E15D2D" },
-  cursos: { label: "Cursos", icon: BookOpen, accent: "#2F6FED" },
-  portfolio: { label: "Portfolio y evidencias", icon: Folder, accent: "#E15D2D" },
-  hackathons: { label: "Eventos y retos", icon: Trophy, accent: "#D6A419" },
-  organizacion: { label: "Organización", icon: Calendar, accent: "#4C7A68" },
-};
 
 const errorCopy: Record<string, string> = {
   onboarding_invalid: "Revisa los datos e inténtalo de nuevo.",
@@ -37,11 +24,6 @@ export function OnboardingForm({
   const [state, formAction, isPending] = useActionState(completeOnboardingAction, initialState);
   const [cycleCode, setCycleCode] = useState(profile?.cycle_code ?? "");
   const [academicYear, setAcademicYear] = useState(profile?.academic_year ? String(profile.academic_year) : "");
-  const [interests, setInterests] = useState<string[]>(profile?.interests ?? []);
-
-  function toggleInterest(id: string) {
-    setInterests((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
-  }
 
   const cycleOptions: FieldListboxOption[] = cycles.map((cycle) => ({ value: cycle.code, label: cycle.name }));
   const yearOptions: FieldListboxOption[] = [
@@ -161,36 +143,6 @@ export function OnboardingForm({
           gap: 20px;
         }
 
-        .onboarding-chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-
-        .onboarding-chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          border: 1px solid #E4DFD5;
-          border-radius: 10px;
-          padding: 9px 12px;
-          font-size: 13.5px;
-          color: var(--alio-graphite);
-          cursor: pointer;
-          background: white;
-          transition: border-color 0.15s, background 0.15s;
-        }
-
-        .onboarding-chip:hover { border-color: #d8d1c2; }
-        .onboarding-chip-checked {
-          border-color: rgba(225, 93, 45, 0.4);
-          background: var(--alio-terracotta-soft);
-        }
-
-        .onboarding-chip-checkbox {
-          width: 14px;
-          height: 14px;
-          accent-color: var(--alio-terracotta);
-        }
-
-        .onboarding-chip-icon { width: 15px; height: 15px; flex-shrink: 0; }
-
         .onboarding-submit {
           height: 54px;
           border-radius: 14px;
@@ -276,31 +228,6 @@ export function OnboardingForm({
                 onChange={setAcademicYear}
               />
 
-              <div className="al-field">
-                <span className="al-field-label">Te interesa (opcional)</span>
-                <div className="onboarding-chip-grid">
-                  {ONBOARDING_INTEREST_OPTIONS.map((id) => {
-                    const meta = INTEREST_META[id];
-                    const Icon = meta.icon;
-                    const checked = interests.includes(id);
-                    return (
-                      <label key={id} className={cn("onboarding-chip", checked && "onboarding-chip-checked")}>
-                        <input
-                          type="checkbox"
-                          name="interests"
-                          value={id}
-                          checked={checked}
-                          onChange={() => toggleInterest(id)}
-                          className="onboarding-chip-checkbox"
-                        />
-                        <Icon className="onboarding-chip-icon" style={{ color: meta.accent }} aria-hidden="true" />
-                        <span>{meta.label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
               <button type="submit" disabled={isPending || !cycleCode || !academicYear} className="onboarding-submit">
                 {isPending ? (
                   "Guardando..."
@@ -314,7 +241,7 @@ export function OnboardingForm({
 
               <p className="onboarding-helper">
                 <Lock className="onboarding-helper-icon" aria-hidden="true" />
-                Podrás cambiar estas preferencias más adelante.
+                Podrás cambiar estos datos más adelante.
               </p>
             </form>
           </div>

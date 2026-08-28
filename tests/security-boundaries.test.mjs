@@ -2310,7 +2310,7 @@ test("Profile and Saved size themselves from the available dashboard width and r
   assert.match(profile, /\.al-profile-shell \{[\s\S]*min-width: 0;[\s\S]*container-type: inline-size;/);
   assert.match(profile, /\.al-profile-grid \{[\s\S]*grid-template-columns: minmax\(0, 1fr\);/);
   assert.match(profile, /@container \(min-width: 700px\)[\s\S]*grid-template-columns: minmax\(0, 1\.4fr\) minmax\(240px, 1fr\)/);
-  assert.match(profile, /@media \(max-width: 480px\)[\s\S]*\.al-profile-chip \{ min-height: 44px; width: 100%; \}/);
+  assert.match(profile, /@media \(max-width: 480px\)[\s\S]*\.al-profile-card,[\s\S]*\.al-profile-stats-card \{[\s\S]*padding: 16px;/);
   assert.match(profile, /\.al-profile-actions \{ align-items: stretch; flex-direction: column; \}/);
   assert.match(profile, /\.al-profile-submit \{ width: 100%; \}/);
 
@@ -3687,4 +3687,23 @@ test("Owner-reported follow-up: sendTransactionalEmail requires a text alternati
   for (const templateFn of ["confirmEmailTemplate", "passwordResetTemplate", "alreadyRegisteredTemplate"]) {
     assert.match(templatesSource, new RegExp(`export function ${templateFn}\\(`), `${templateFn} must exist and be exported`);
   }
+});
+
+test("Inactive interest questions are absent from onboarding and Profile without erasing the stored field (issue #192)", async () => {
+  const [onboardingSource, profileSource, actionsSource, optionsSource, catalogSource, schemaSource] = await Promise.all([
+    readFile(new URL("../src/components/onboarding/onboarding-form.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/profile/profile-form.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/lib/profile/onboarding-actions.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/lib/profile/onboarding-options.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8"),
+    readFile(new URL("../infra/postgres/schema.sql", import.meta.url), "utf8"),
+  ]);
+
+  for (const source of [onboardingSource, profileSource]) {
+    assert.doesNotMatch(source, /Te interesa|name="interests"|toggleInterest|ONBOARDING_INTEREST_OPTIONS/);
+  }
+  assert.doesNotMatch(actionsSource, /\binterests\b/, "saving onboarding or Profile must not overwrite historical interests");
+  assert.doesNotMatch(optionsSource, /ONBOARDING_INTEREST_OPTIONS/, "the retired fixed option list must not remain as dead product logic");
+  assert.doesNotMatch(catalogSource, /\binterests\b/, "catalog recommendations must not claim a dependency on inactive interest data");
+  assert.match(schemaSource, /interests\s+text\[\]\s+not null default '\{\}'/, "the stored field remains available for a future personalized implementation");
 });
