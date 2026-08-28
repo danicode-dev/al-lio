@@ -63,7 +63,6 @@ export function NewsView() {
   const [sourceFilter, setSourceFilter] = useState("");
   const [sort, setSort] = useState<SortMode>("date");
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const lastReceivedAtRef = useRef<string | null>(null);
 
   const load = useCallback(async ({ quiet = false }: { quiet?: boolean } = {}) => {
@@ -216,9 +215,14 @@ export function NewsView() {
         subtitle="Actualidad reciente, fiable y relacionada con lo que estudias. Radar revisa las fuentes cada 12 horas; recargar solo consulta la última entrega disponible."
         actions={
           <>
+            {/* The trust line carries the freshness stamp too, so the list
+                below stays free of informational bands. */}
             <div className="flex items-center gap-2 text-xs text-[#6b6f72]">
               <ShieldCheck className="h-4 w-4 shrink-0 text-[#1f7a4d]" />
-              Fuentes verificadas y reglas de publicación auditadas
+              <span>
+                Fuentes verificadas
+                {status?.lastReceivedAt ? ` · Actualizado ${formatDateTime(status.lastReceivedAt)}` : ""}
+              </span>
             </div>
             <div className="hidden md:flex md:items-center md:gap-2">
               <StudentHeaderActions />
@@ -276,21 +280,6 @@ export function NewsView() {
           )}
         </div>
 
-        <div className="flex flex-col gap-1 rounded-xl border border-[#ece7dc] bg-[#faf8f3] px-4 py-3 text-xs text-[#6b6f72] sm:flex-row sm:items-center sm:justify-between">
-          <span>La actualidad caduca a los 7 días; tus noticias guardadas permanecen en su archivo.</span>
-          <span className="font-semibold text-[#333029]">
-            Última actualización: {status?.lastReceivedAt ? formatDateTime(status.lastReceivedAt) : "todavía no disponible"}
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-[#6b6f72]">Mostrando {filteredItems.length} contenidos de {sources.length} fuentes verificadas</p>
-          <div className="flex rounded-xl border border-[#ece7dc] bg-white p-1">
-            <FilterButton active={viewMode === "list"} onClick={() => setViewMode("list")}>Lista</FilterButton>
-            <FilterButton active={viewMode === "grid"} onClick={() => setViewMode("grid")}>Grid</FilterButton>
-          </div>
-        </div>
-
         {loading && items.length === 0 ? (
           <EmptyState icon={RefreshCw} title="Cargando noticias verificadas..." />
         ) : filteredItems.length === 0 ? (
@@ -310,7 +299,10 @@ export function NewsView() {
               />
             )}
             {regularItems.length > 0 && (
-              <div className={cn("grid gap-3", viewMode === "grid" && "sm:grid-cols-2 xl:grid-cols-3")}>
+              // One layout only, the catalogue grid Courses and Events use:
+              // the featured item on top, everything else in the same
+              // three-column rhythm. There is no list/grid switch any more.
+              <div className="al-catalog-grid al-catalog-grid-cards">
                 {regularItems.map((item) => (
                   <NewsCard key={item.id} item={item} onRead={() => void markRead(item)} onSave={() => void saveItem(item)} />
                 ))}
@@ -399,21 +391,6 @@ function NewsCard({ item, featured = false, onRead, onSave }: {
         .icon-button:hover { border-color:rgba(225,93,45,.4); color:#c94f21; }
       `}</style>
     </article>
-  );
-}
-
-function FilterButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition",
-        active ? "al-action-soft-selected" : "bg-[#f7f4ee] text-[#6b6f72] hover:text-[#c94f21]",
-      )}
-    >
-      {children}
-    </button>
   );
 }
 
