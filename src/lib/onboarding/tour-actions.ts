@@ -45,8 +45,10 @@ export async function skipProductTourAction(): Promise<void> {
   await setProductTourState(userId, { status: "skipped", version: PRODUCT_TOUR_VERSION, step: null });
 }
 
-// Used by "repeat the tour" in the profile, and by the Product Lab (#195).
-// Resetting only ever clears the caller's own state; it never deletes content.
+// Not called from anywhere in the shipped app - no student-facing control
+// resets the tour. Kept for the Product Lab (#195), which will call this
+// same entry point from behind a real internal_tester capability. Resetting
+// only ever clears the caller's own state; it never deletes content.
 export async function resetProductTourAction(): Promise<void> {
   const userId = await currentUserId();
   if (!userId) return;
