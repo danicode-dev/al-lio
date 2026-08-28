@@ -106,9 +106,40 @@ test("steps synchronise on real conditions, with timeouts only as a recovery cei
 
   // Navigation resolves on the committed route, never on a guessed delay.
   assert.match(provider, /waitForCondition\(\(\) => pathnameRef\.current === href/);
-  // A failed step must release the overlay rather than strand the student.
-  assert.match(provider, /catch \(error\) \{\s*if \(error instanceof TourAbortError\) return;/);
-  assert.match(provider, /finally \{\s*if \(!cancelled\) setBusy\(false\);/);
+  // A failed step must release the overlay rather than strand the student:
+  // an abort is expected and silent, anything else is reported, and either
+  // way the controls come back.
+  assert.match(provider, /if \(!\(error instanceof TourAbortError\)\) \{/);
+  assert.match(provider, /finally \{[\s\S]*?setBusy\(false\);/);
+});
+
+// Owner-reported: the tour froze on step 2 and again right after creating the
+// demo task, stuck on "Un momento…" with Siguiente disabled.
+//
+// Cause: the store rebuilds `actions` as a fresh object every render, so the
+// step runner's dependencies changed identity constantly. Any re-render - the
+// toast, or the optimistic insert the tour itself had just made - re-ran the
+// effect, which aborted the in-flight step and left `busy` true forever. The
+// step's `enter` also has side effects, so a re-run would have repeated them.
+test("the step runner is keyed on the step alone and always releases `busy`, so an unrelated re-render cannot freeze the tour", async () => {
+  const provider = await read("../src/components/onboarding/tour/tour-provider.tsx");
+
+  const runner = provider.slice(provider.indexOf("// Runs one step:"), provider.indexOf("const leaveStep"));
+  assert.match(runner, /\}, \[phase, step, buildContext\]\);/, "the runner must not depend on values that change identity every render");
+  assert.doesNotMatch(runner, /\[phase, step, buildContext, viewport\]/);
+
+  // `busy` is released unconditionally - not only when the run was not cancelled.
+  assert.match(runner, /finally \{[\s\S]*?setBusy\(false\);/);
+  assert.doesNotMatch(runner, /if \(!cancelled\) setBusy\(false\)/, "an aborted run must still hand the controls back");
+
+  // buildContext reads the store and router through a ref, so it stays stable.
+  assert.match(provider, /const liveRef = useRef\(\{ actions, router, viewport \}\);/);
+  assert.match(provider, /liveRef\.current\.actions\.addTask\(\{/);
+  const buildContext = provider.slice(provider.indexOf("const buildContext"), provider.indexOf("// Runs one step:"));
+  assert.match(buildContext, /\}\),\s*\[\],\s*\);/, "buildContext must have no dependencies");
+
+  // And a watchdog exists so no future step can strand the overlay either.
+  assert.match(provider, /const timer = window\.setTimeout\(\(\) => setBusy\(false\), 15_000\);/);
 });
 
 test("Escape leaves the tour and the overlay never blocks the app permanently", async () => {
@@ -133,7 +164,7 @@ test("everything the tour creates is marked by origin, through the existing crea
   ]);
 
   // The task goes through the same store action the + dialog calls.
-  assert.match(provider, /await actions\.addTask\(\{/, "no second task-create implementation for the tour");
+  assert.match(provider, /await liveRef\.current\.actions\.addTask\(\{/, "no second task-create implementation for the tour");
   assert.match(provider, /demo_source: ONBOARDING_DEMO_SOURCE/);
   assert.match(provider, /demo_dataset_id: datasetIdRef\.current/);
   assert.match(store, /demo_source: data\.demo_source \?\? null/, "a student's own task stays unmarked");

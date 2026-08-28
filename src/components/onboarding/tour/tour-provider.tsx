@@ -35,6 +35,13 @@ export function ProductTourProvider({ initialState }: { initialState: ProductTou
   // Read inside async step bodies that outlive the render they started in.
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
+  // The store rebuilds `actions` as a fresh object on every render, so anything
+  // that closes over it changes identity constantly. Reading these through a
+  // ref keeps the step runner below keyed on the step alone - otherwise an
+  // unrelated re-render (a toast, the optimistic insert the tour itself just
+  // made) would abort the running step and leave it stuck mid-flight.
+  const liveRef = useRef({ actions, router, viewport });
+  liveRef.current = { actions, router, viewport };
   const runRef = useRef<AbortController | null>(null);
   // One id per run, so everything a single tour creates can be cleaned up
   // together later without touching anything else (issue #195).
@@ -71,13 +78,15 @@ export function ProductTourProvider({ initialState }: { initialState: ProductTou
     publishTourUiCommand({ type: "mobile-menu:close" });
   }, []);
 
+  // Stable for the lifetime of the provider: everything it needs comes from
+  // liveRef at call time, so it never invalidates the step runner.
   const buildContext = useCallback(
     (signal: AbortSignal): TourStepContext => ({
-      viewport,
+      viewport: liveRef.current.viewport,
       signal,
       navigate: async (href) => {
         if (pathnameRef.current === href) return;
-        router.push(href);
+        liveRef.current.router.push(href);
         await waitForCondition(() => pathnameRef.current === href, { signal, timeoutMs: 10_000 });
       },
       ui: async (command: TourUiCommand) => {
@@ -93,7 +102,7 @@ export function ProductTourProvider({ initialState }: { initialState: ProductTou
           // The store action the + dialog already calls. The demo columns ride
           // along through insertDb, which passes the payload straight to the
           // allowlisted table - no second create path for the tour.
-          return await actions.addTask({
+          return await liveRef.current.actions.addTask({
             title,
             description,
             due_at: dueAt ?? "",
@@ -115,19 +124,23 @@ export function ProductTourProvider({ initialState }: { initialState: ProductTou
         return null;
       },
     }),
-    [actions, router, viewport],
+    [],
   );
 
   // Runs one step: its `enter` effects, then resolving the element to
   // spotlight. Any failure inside a step degrades to "no spotlight, callout
   // still shown" rather than stalling - the overlay must never trap the app.
+  //
+  // Keyed on the step alone. It must not re-run because something else
+  // re-rendered: `enter` has side effects (it opens dialogs and creates the
+  // demo rows), so a spurious re-run would both abort the in-flight step and
+  // repeat those effects.
   useEffect(() => {
     if (phase !== "running" || !step) return;
 
     const controller = new AbortController();
     runRef.current?.abort();
     runRef.current = controller;
-    let cancelled = false;
 
     (async () => {
       setBusy(true);
@@ -139,10 +152,10 @@ export function ProductTourProvider({ initialState }: { initialState: ProductTou
         }
         await step.enter?.(context);
 
-        const selector = typeof step.target === "function" ? step.target(viewport) : step.target;
+        const selector = typeof step.target === "function" ? step.target(liveRef.current.viewport) : step.target;
         if (selector) {
           const element = await waitForElement(selector, { signal: controller.signal, timeoutMs: 5_000 });
-          if (!cancelled && element) {
+          if (!controller.signal.aborted && element) {
             element.scrollIntoView({
               behavior: prefersReducedMotion() ? "auto" : "smooth",
               block: "center",
@@ -152,17 +165,21 @@ export function ProductTourProvider({ initialState }: { initialState: ProductTou
           }
         }
       } catch (error) {
-        if (error instanceof TourAbortError) return;
+        if (!(error instanceof TourAbortError)) {
+          // A step that throws for any other reason still hands control back:
+          // the callout stays, without a spotlight, and Siguiente works.
+          console.error("[tour] step failed", step.id, error);
+        }
       } finally {
-        if (!cancelled) setBusy(false);
+        // Always released, including on abort. Leaving `busy` set was what
+        // previously froze the tour on its "Un momento…" state with no way
+        // forward.
+        setBusy(false);
       }
     })();
 
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [phase, step, buildContext, viewport]);
+    return () => controller.abort();
+  }, [phase, step, buildContext]);
 
   const leaveStep = useCallback(async () => {
     if (!step?.exit) return;
@@ -196,6 +213,15 @@ export function ProductTourProvider({ initialState }: { initialState: ProductTou
     const timer = window.setTimeout(() => void goTo(index + 1), step.autoAdvanceMs);
     return () => window.clearTimeout(timer);
   }, [phase, busy, step, index, goTo]);
+
+  // Last-resort watchdog. Every wait inside a step already has its own ceiling,
+  // so this should never fire; if some future step ever leaves the runner
+  // hanging, the student gets their controls back instead of a dead overlay.
+  useEffect(() => {
+    if (!busy) return;
+    const timer = window.setTimeout(() => setBusy(false), 15_000);
+    return () => window.clearTimeout(timer);
+  }, [busy]);
 
   const begin = useCallback(() => {
     datasetIdRef.current = crypto.randomUUID();
