@@ -2,10 +2,25 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { PoolClient } from "pg";
 import { query, withTransaction } from "@/lib/db/pool";
-import type { RadarCycleCode, RadarDelivery, RadarDeliveryItem } from "@/lib/radar/contract";
+import {
+  RADAR_V4_SCHEMA_VERSION,
+  type RadarCycleCode,
+  type RadarDelivery,
+  type RadarDeliveryItem,
+} from "@/lib/radar/contract";
+import {
+  ingestRadarV4Delivery,
+  RadarV4IdentityConflictError,
+  RadarV4RevisionConflictError,
+} from "@/lib/db/repositories/radar-v4";
 import type { NewsItem, NewsListFilters, NewsStatus, NewsSyncStatus } from "@/lib/news/types";
 
-type DeliveryInsertResult = { duplicate: boolean; itemCount: number };
+type DeliveryInsertResult = {
+  duplicate: boolean;
+  itemCount: number;
+  projectedItemCount: number;
+  conflictCount: number;
+};
 
 type RadarItemRow = {
   id: string;
@@ -52,7 +67,14 @@ export async function ingestRadarDelivery(delivery: RadarDelivery, rawBody: stri
       if (row.payload_hash !== payloadHash || row.item_count !== delivery.items.length) {
         throw new RadarDeliveryConflictError();
       }
-      return { duplicate: true, itemCount: row.item_count };
+      await insertRadarIngestEvent(client, {
+        deliveryId: delivery.deliveryId,
+        schemaVersion: delivery.schemaVersion,
+        outcome: "duplicate",
+        payloadHash,
+        itemCount: row.item_count,
+      });
+      return { duplicate: true, itemCount: row.item_count, projectedItemCount: 0, conflictCount: 0 };
     }
 
     await client.query(
@@ -61,18 +83,74 @@ export async function ingestRadarDelivery(delivery: RadarDelivery, rawBody: stri
       [delivery.deliveryId, delivery.schemaVersion, payloadHash, delivery.items.length],
     );
 
-    for (const item of delivery.items) {
-      const radarItemId = await upsertRadarItem(client, item);
-      if (item.destination !== "news") await upsertRadarCatalogItem(client, item);
-      await client.query(
-        `INSERT INTO public.radar_delivery_items (delivery_id, radar_item_id)
-         VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-        [delivery.deliveryId, radarItemId],
-      );
+    let projectedItemCount = 0;
+    let conflictCount = 0;
+    if (delivery.schemaVersion === RADAR_V4_SCHEMA_VERSION) {
+      try {
+        const result = await ingestRadarV4Delivery(client, delivery);
+        projectedItemCount = result.projectedItemCount;
+        conflictCount = result.conflictCount;
+      } catch (error) {
+        if (error instanceof RadarV4RevisionConflictError || error instanceof RadarV4IdentityConflictError) {
+          throw new RadarDeliveryConflictError(error.message);
+        }
+        throw error;
+      }
+    } else {
+      for (const item of delivery.items) {
+        const radarItemId = await upsertRadarItem(client, item);
+        if (item.destination !== "news") await upsertRadarCatalogItem(client, item);
+        await client.query(
+          `INSERT INTO public.radar_delivery_items (delivery_id, radar_item_id)
+           VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          [delivery.deliveryId, radarItemId],
+        );
+      }
+      projectedItemCount = delivery.items.length;
     }
 
-    return { duplicate: false, itemCount: delivery.items.length };
+    await insertRadarIngestEvent(client, {
+      deliveryId: delivery.deliveryId,
+      schemaVersion: delivery.schemaVersion,
+      outcome: conflictCount > 0 ? "conflict" : "accepted",
+      payloadHash,
+      itemCount: delivery.items.length,
+    });
+    return { duplicate: false, itemCount: delivery.items.length, projectedItemCount, conflictCount };
   });
+}
+
+export async function recordRadarIngestRejection(input: {
+  deliveryId: string;
+  schemaVersion: number;
+  rawBody: string;
+  reasonCode: string;
+}): Promise<void> {
+  const payloadHash = createHash("sha256").update(input.rawBody).digest("hex");
+  await query(
+    `INSERT INTO public.radar_ingest_events (
+       delivery_id, schema_version, outcome, reason_code, payload_hash
+     ) VALUES ($1, $2, 'rejected', $3, $4)`,
+    [input.deliveryId, input.schemaVersion, input.reasonCode, payloadHash],
+  );
+}
+
+async function insertRadarIngestEvent(
+  client: PoolClient,
+  input: {
+    deliveryId: string;
+    schemaVersion: number;
+    outcome: "accepted" | "duplicate" | "conflict";
+    payloadHash: string;
+    itemCount: number;
+  },
+) {
+  await client.query(
+    `INSERT INTO public.radar_ingest_events (
+       delivery_id, schema_version, outcome, payload_hash, item_count
+     ) VALUES ($1, $2, $3, $4, $5)`,
+    [input.deliveryId, input.schemaVersion, input.outcome, input.payloadHash, input.itemCount],
+  );
 }
 
 async function upsertRadarItem(client: PoolClient, item: RadarDeliveryItem): Promise<string> {
@@ -483,8 +561,8 @@ function trustOrderSql(): string {
 }
 
 export class RadarDeliveryConflictError extends Error {
-  constructor() {
-    super("delivery id already exists with different payload");
+  constructor(message = "delivery id already exists with different payload") {
+    super(message);
     this.name = "RadarDeliveryConflictError";
   }
 }
