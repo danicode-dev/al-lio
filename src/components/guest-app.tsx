@@ -2543,7 +2543,7 @@ function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions 
         .al-course-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
         .al-course-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: var(--al-action-soft-bg); color: var(--al-action-soft-text); font-size: 12.5px; font-weight: 700; border: 1px solid var(--al-action-soft-border); cursor: pointer; }
       `}</style>
-      <div className="space-y-4">
+      <div className="al-catalog-view space-y-4">
         <div className="al-cc-shell">
           <CollectionControls
             searchValue={searchInput}
@@ -3093,7 +3093,7 @@ function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActio
         .al-hack-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
         .al-hack-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: var(--al-action-soft-bg); color: var(--al-action-soft-text); font-size: 12.5px; font-weight: 700; border: 1px solid var(--al-action-soft-border); cursor: pointer; }
       `}</style>
-      <div className="space-y-4">
+      <div className="al-catalog-view space-y-4">
         <div className="al-cc-shell">
           <CollectionControls
             searchValue={searchInput}

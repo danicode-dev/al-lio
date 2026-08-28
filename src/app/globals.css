@@ -218,6 +218,19 @@
   max-width: 64ch;
 }
 
+/* Phones: Cursos / Eventos y retos put the search + Filtros row directly
+   under the page header, and the header's 24px bottom margin left too much
+   air above it - the featured card started fully below the fold. Pull the
+   control strip up (negative margin folds into the collapsed gap) so it
+   opens ~12px under the subtitle without touching desktop or other views.
+   Specificity ties Tailwind's space-y-6 sibling selector; this rule wins
+   on source order (it comes after @tailwind utilities). */
+@media (max-width: 640px) {
+  .space-y-6 > .al-page-header ~ .al-catalog-view {
+    margin-top: -12px;
+  }
+}
+
 /* Shared catalogue surface for Courses and Events & challenges. Both modules
    use the same card anatomy and detail hierarchy; only their data and state
    semantics differ. */
