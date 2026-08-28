@@ -9,8 +9,8 @@ const techHackathonCategories = new Set(["hackathon_reto"]);
 const techEventCategories = new Set(["evento_tech", "reto_programacion", "concurso_programacion"]);
 
 // Every calendar event points at the item it represents, not at the list
-// page it lives on: a task opens in Tareas, a course/event opens its own
-// detail route. `tech-` / `fp-` prefixed ids are the same ones
+// page it lives on: a to-do opens on the tasks page, a course/event opens
+// its own detail route. `tech-` / `fp-` prefixed ids are the same ones
 // resolveCourseById / resolveHackathonById already accept.
 export const calendarHref = {
   task: (id: string) => `/tasks?task=${encodeURIComponent(id)}`,

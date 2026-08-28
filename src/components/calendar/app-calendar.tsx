@@ -503,8 +503,8 @@ function EventDateTimeFields({ value, onChange }: { value: Date; onChange: (date
 // Every event - task, course, hackathon, Google - opens this dialog on
 // click. Nothing navigates on the first tap: the student reads the event
 // where they are, then the dialog's action takes them to that exact item
-// (the task in Tareas, the course/event detail page) instead of dropping
-// them on a list.
+// (the to-do on the tasks page, the course/event detail page) instead of
+// dropping them on a list.
 function CalendarAgendaRow({ event }: { event: CalendarEvent }) {
   const [detailOpen, setDetailOpen] = useState(false);
   const timeLabel = calendarTimeLabel(event);
