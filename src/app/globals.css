@@ -499,6 +499,7 @@
 
 .al-catalog-card-actions {
   display: flex;
+  justify-content: center;
   margin-top: auto;
   padding-top: 12px;
   border-top: 1px solid #f2ece1;
@@ -516,7 +517,10 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  width: 100%;
+  /* Grid cards: a compact, centred "see more" - not a full-width bar that
+     reads as the primary CTA. The featured card overrides this below. */
+  width: 50%;
+  min-width: 132px;
   height: 38px;
   border: 1px solid var(--al-action-soft-border);
   border-radius: 11px;
