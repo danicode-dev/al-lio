@@ -8,11 +8,9 @@ export type ProductTourStatus = (typeof PRODUCT_TOUR_STATUSES)[number];
 
 // Bump when the tour changes enough that everyone should be offered it again.
 // A student who finished version N is not re-prompted until this passes N.
-export const PRODUCT_TOUR_VERSION = 1;
-
-// Marks every row the tour creates. The Product Lab (issue #195) writes
-// "internal_test" through the same columns.
-export const ONBOARDING_DEMO_SOURCE = "onboarding";
+// Version 2 is the four-step recorrido: it points at the interface and creates
+// nothing, so anyone who saw version 1 is offered this one.
+export const PRODUCT_TOUR_VERSION = 2;
 
 export type ProductTourState = {
   status: ProductTourStatus;

@@ -1,86 +1,125 @@
-import type { TourStep, TourViewport } from "@/lib/onboarding/types";
-
-// The tour, as data. No JSX and no DOM access here - every effect a step needs
-// arrives through TourStepContext, so reordering, adding or removing a beat is
-// an edit to this array and nothing else.
+// The tour, as data. Four steps, all of them on the dashboard: the tour points
+// at the interface and explains it, and never navigates, opens a dialog,
+// presses a control or creates content. Driving the app's own surfaces turned
+// out to break them, and the value here is the explanation, not the remote
+// control - so the tour points, and the student clicks when they want.
 //
-// Everything happens on the dashboard and nothing is opened or navigated: the
-// pointer moves over the real interface and explains it. Driving the app's own
-// dialogs and menus turned out to break them (a menu that opens under an
-// overlay it did not expect), and the value here is the explanation, not the
-// remote control - so the tour points, and the student clicks when they want.
-// The single exception is the example task, which is genuinely created.
+// No JSX and no DOM access here, so the whole recorrido can be asserted in a
+// plain unit test.
 
-const DEMO_TASK_TITLE = "Preparar la entrega de esta semana";
+export type TourViewport = "desktop" | "mobile";
 
-function inThreeDays(): string {
-  const date = new Date();
-  date.setDate(date.getDate() + 3);
-  return date.toISOString().slice(0, 10);
-}
+export type ProductTourStep = {
+  id: string;
+  title: string;
+  body: string;
+  /**
+   * Anchors, per viewport. Both must resolve to something already on screen:
+   * on a phone the destinations live behind the menu button, and the tour
+   * points at that button rather than opening the sheet.
+   */
+  selector: Record<TourViewport, string>;
+  /** Which side of the anchor the card sits on, per viewport. */
+  side: Record<TourViewport, TourStepSide>;
+  /** Spotlight geometry. Small values: these anchors are real controls. */
+  pointerPadding: number;
+  pointerRadius: number;
+};
 
-export const productTourSteps: TourStep[] = [
-  {
-    id: "welcome",
-    title: "Bienvenido a AL-LÍO",
-    body: "Te enseñamos en un minuto lo que puedes hacer aquí. No tocamos nada tuyo.",
-    placement: "center",
-    route: "/dashboard",
-  },
-  {
-    id: "dashboard",
-    title: "Tu punto de partida",
-    body: "El inicio reúne lo que tienes pendiente, lo que viene por fecha y por dónde ibas en tu ciclo. Si solo abres una pantalla al día, que sea esta.",
-    route: "/dashboard",
-    target: "[data-tour='dashboard-main']",
-    placement: "bottom",
-  },
-  {
-    id: "todo",
-    title: "Lo que tienes pendiente",
-    body: "Aquí aparece lo último que has añadido. Puedes completarlo o abrirlo sin salir del inicio.",
-    target: "[data-tour='dashboard-todo']",
-    placement: "top",
-  },
+export type TourStepSide =
+  | "top" | "bottom" | "left" | "right"
+  | "top-left" | "top-right" | "bottom-left" | "bottom-right"
+  | "left-top" | "left-bottom" | "right-top" | "right-bottom";
+
+export const PRODUCT_TOUR_NAME = "product-tour";
+
+const MOBILE_NAV_ANCHOR = "[data-tour='mobile-menu-trigger']";
+
+export const productTourSteps: ProductTourStep[] = [
   {
     id: "quick-add",
-    title: "Añadir a mano",
-    body: "Con este botón das de alta una tarea, un curso o un evento en cualquier momento, estés en la pantalla que estés.",
-    target: (viewport: TourViewport) =>
-      viewport === "mobile" ? "[data-tour='quick-add-mobile']" : "[data-tour='quick-add']",
-    placement: "bottom",
-    pointerClick: true,
+    title: "Añade lo que necesites",
+    body: "Desde aquí puedes crear rápidamente tareas, eventos, retos y hackathones sin salir de lo que estés haciendo.",
+    selector: { desktop: "[data-tour='quick-add']", mobile: "[data-tour='quick-add-mobile']" },
+    // The button lives at the top right corner, so the card hangs below it and
+    // aligned to its right edge - centred underneath would overflow the page.
+    side: { desktop: "bottom-right", mobile: "bottom-right" },
+    pointerPadding: 10,
+    pointerRadius: 16,
   },
   {
-    id: "navigation",
-    title: "Todo lo demás",
-    body: "Competencias es tu ciclo y lo que se espera de ti. Tareas y Bloc, para organizarte y escribir. Cursos, Eventos y Trabajo traen lo que sale fuera. Calendario lo junta todo por fecha.",
-    target: (viewport: TourViewport) =>
-      viewport === "mobile" ? "[data-tour='mobile-menu-trigger']" : "[data-tour='nav-roadmap']",
-    placement: "right",
+    id: "nav-principal",
+    title: "Tu espacio principal",
+    body: "Inicio reúne de un vistazo tu To-do, tu ruta, próximos pasos, calendario y progreso. Desde este bloque también puedes acceder a Competencias, Tareas y Bloc.",
+    selector: { desktop: "[data-tour='nav-principal']", mobile: MOBILE_NAV_ANCHOR },
+    side: { desktop: "right", mobile: "bottom-left" },
+    pointerPadding: 12,
+    pointerRadius: 18,
   },
   {
-    id: "demo-task",
-    title: "Te dejamos una para empezar",
-    body: "Esta tarea es de ejemplo: edítala, complétala o bórrala cuando quieras. Ya sabes moverte por AL-LÍO.",
-    target: "[data-tour='dashboard-todo']",
-    placement: "top",
-    pointerClick: true,
-    async enter(context) {
-      // Created through the same store action the + dialog calls, and marked
-      // by origin so it is never confused with the student's own work.
-      await context.createDemoTask({
-        title: DEMO_TASK_TITLE,
-        description: "Revisa lo que tienes que entregar y repártelo en lo que queda de semana.",
-        dueAt: inThreeDays(),
-      });
-      await context.beat(400);
-    },
+    id: "nav-communication",
+    title: "Oportunidades e información",
+    body: "En Noticias encontrarás información relevante y en Trabajo podrás consultar oportunidades relacionadas con tu perfil y formación.",
+    selector: { desktop: "[data-tour='nav-communication']", mobile: MOBILE_NAV_ANCHOR },
+    side: { desktop: "right", mobile: "bottom-left" },
+    pointerPadding: 12,
+    pointerRadius: 18,
+  },
+  {
+    id: "nav-learning",
+    title: "Todo para seguir avanzando",
+    body: "Aquí tienes tus cursos, eventos y retos, y el calendario para organizar las próximas fechas importantes.",
+    selector: { desktop: "[data-tour='nav-learning']", mobile: MOBILE_NAV_ANCHOR },
+    side: { desktop: "right", mobile: "bottom-left" },
+    pointerPadding: 12,
+    pointerRadius: 18,
   },
 ];
 
-export function findStepIndex(stepId: string | null): number {
+export const PRODUCT_TOUR_LENGTH = productTourSteps.length;
+
+// Resuming lands on the stored step; anything unknown starts over rather than
+// dropping the student into the middle of a recorrido they never saw.
+export function findStepIndex(stepId: string | null | undefined): number {
   if (!stepId) return 0;
   const index = productTourSteps.findIndex((step) => step.id === stepId);
   return index >= 0 ? index : 0;
+}
+
+export function stepIdAt(index: number): string {
+  return productTourSteps[Math.min(Math.max(index, 0), PRODUCT_TOUR_LENGTH - 1)].id;
+}
+
+export function isLastStep(index: number): boolean {
+  return index >= PRODUCT_TOUR_LENGTH - 1;
+}
+
+// What every control on the card means: which index the tour moves to and
+// which piece of state has to be persisted. The provider only executes these
+// decisions, so "does finishing mark it completed" is a unit test over this
+// module rather than something only a browser could answer. It lives here,
+// next to the steps, so the whole recorrido stays one dependency-free file.
+export type TourIntent = "next" | "previous" | "skip";
+
+export type TourTransition =
+  /** Move the visible step and remember where the student got to. */
+  | { kind: "move"; index: number; stepId: string }
+  /** The recorrido is over. */
+  | { kind: "complete" }
+  /** The student stepped out of it. */
+  | { kind: "skip" };
+
+export function resolveTransition(intent: TourIntent, currentIndex: number): TourTransition {
+  if (intent === "skip") return { kind: "skip" };
+
+  if (intent === "previous") {
+    // Already on the first step: there is nowhere back to go, and going back
+    // must never close the tour by accident.
+    const index = Math.max(0, currentIndex - 1);
+    return { kind: "move", index, stepId: stepIdAt(index) };
+  }
+
+  const index = currentIndex + 1;
+  if (index >= PRODUCT_TOUR_LENGTH) return { kind: "complete" };
+  return { kind: "move", index, stepId: stepIdAt(index) };
 }

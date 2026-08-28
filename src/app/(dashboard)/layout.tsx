@@ -3,7 +3,7 @@ import { getGlobalStore } from "@/lib/data";
 import { StoreProvider } from "@/components/guest-store";
 import { DailyAlerts } from "@/components/daily-alerts";
 import { MobileHeaderNavigation } from "@/components/mobile-header-navigation";
-import { ProductTourProvider } from "@/components/onboarding/tour/tour-provider";
+import { ProductTourShell } from "@/components/onboarding/tour/tour-provider";
 import { getValidatedSession } from "@/lib/auth/session";
 import { getProductTourState } from "@/lib/db/repositories/product_tour";
 import { shouldOfferProductTour, type ProductTourState } from "@/lib/onboarding/tour-state";
@@ -46,7 +46,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
         </main>
         <DailyAlerts />
-        <ProductTourProvider initialState={tourState} />
+        {/* Rendered only for a student who is actually being offered the tour,
+            so nobody else's dashboard even requests its chunk. It wraps
+            nothing: the overlay is portalled to the body, which is what keeps
+            the tour incapable of disturbing this layout. */}
+        {tourState && <ProductTourShell initialState={tourState} />}
       </div>
       <Toaster position="bottom-right" richColors duration={3500} closeButton />
     </StoreProvider>
