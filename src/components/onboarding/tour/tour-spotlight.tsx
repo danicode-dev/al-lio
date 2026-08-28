@@ -164,7 +164,13 @@ export function TourSpotlight({
     const settle = [window.setTimeout(measure, 80), window.setTimeout(measure, 260)];
     const resizeObserver = new ResizeObserver(schedule);
     if (element) resizeObserver.observe(element);
-    window.addEventListener("resize", schedule);
+    // Resizing and rotating are one-off events, so they measure straight
+    // away - waiting for an animation frame leaves the hole on the geometry
+    // of the previous window size wherever frames are throttled. Scrolling
+    // can fire continuously, so that one keeps its frame.
+    const onResize = () => measure();
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
     window.addEventListener("scroll", schedule, true);
 
     // Bring the anchor into view when it is off-screen, and never otherwise:
@@ -181,7 +187,8 @@ export function TourSpotlight({
       for (const timer of settle) window.clearTimeout(timer);
       observer.disconnect();
       resizeObserver.disconnect();
-      window.removeEventListener("resize", schedule);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
       window.removeEventListener("scroll", schedule, true);
     };
   }, [measure, selector]);

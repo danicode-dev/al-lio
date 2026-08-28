@@ -1,8 +1,12 @@
-// The tour, as data. Four steps, all of them on the dashboard: the tour points
-// at the interface and explains it, and never navigates, opens a dialog,
-// presses a control or creates content. Driving the app's own surfaces turned
-// out to break them, and the value here is the explanation, not the remote
-// control - so the tour points, and the student clicks when they want.
+// The tour, as data: four steps that explain the dashboard plus a closing
+// one, and nothing else. It never navigates, never opens a dialog and never
+// creates content - the value here is the explanation, not a remote control,
+// so it points and the student clicks when they want.
+//
+// The single exception is the phone's navigation sheet, which the middle
+// steps open: every destination lives behind that button, so pointing at a
+// closed menu explained nothing. It is opened through the sheet's own
+// trigger and closed again on the way out.
 //
 // No JSX and no DOM access here, so the whole recorrido can be asserted in a
 // plain unit test.
@@ -14,9 +18,7 @@ export type ProductTourStep = {
   title: string;
   body: string;
   /**
-   * Anchors, per viewport. Both must resolve to something already on screen:
-   * on a phone the destinations live behind the menu button, and the tour
-   * points at that button rather than opening the sheet.
+   * Anchors, per viewport, each naming the equivalent block in that layout.
    *
    * Omitted on a step that talks about the app as a whole - it then shows a
    * centred card over a plain dimmed page, with nothing spotlighted.
@@ -42,13 +44,9 @@ export type TourStepSide =
   | "top-left" | "top-right" | "bottom-left" | "bottom-right"
   | "left-top" | "left-bottom" | "right-top" | "right-bottom";
 
-export const PRODUCT_TOUR_NAME = "product-tour";
-
-// On a phone the tour opens the navigation sheet, and then highlights the
-// same three blocks the sidebar shows on a desktop - the sheet repeats those
-// groups under the same headings, so both formats explain the app the same
-// way and the tour points at the same thing in each.
-
+// The three navigation steps name the same block in each layout: the phone's
+// sheet repeats the sidebar's groups under the same headings, so both formats
+// explain the app the same way and the tour points at the same thing in each.
 export const productTourSteps: ProductTourStep[] = [
   {
     id: "quick-add",

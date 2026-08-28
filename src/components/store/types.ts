@@ -35,11 +35,6 @@ export type Task = {
   progress_notes: ProgressNote[];
   created_at: string;
   completed_at?: string;
-  // Origin marking for rows created by the product tour or the internal
-  // testing tools. Null on everything a student made themselves, which is
-  // what lets demo content be cleaned up without any title matching.
-  demo_source?: "onboarding" | "internal_test";
-  demo_dataset_id?: string;
 };
 
 export type Opportunity = {
