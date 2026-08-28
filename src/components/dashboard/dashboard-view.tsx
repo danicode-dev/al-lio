@@ -30,7 +30,7 @@ export function DashboardView({ store, actions, calendar }: DashboardViewProps) 
   } as const;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" data-tour="dashboard-main">
       <DashboardGreeting userName={store.userName} />
 
       {loadIssues.length > 0 && (

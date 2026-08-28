@@ -18,7 +18,7 @@ export function CompetenciesView({
   const progress = totalResources > 0 ? Math.round((completedResources / totalResources) * 100) : 0;
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-7" data-tour="roadmap-main">
       <PageHeader
         className="mb-0 border-b border-[#e8e2d7] pb-7"
         eyebrow={`Competencias · ${cycleName}`}

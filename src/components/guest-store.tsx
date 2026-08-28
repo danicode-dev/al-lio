@@ -118,6 +118,7 @@ export function StoreProvider({ initialStore, children }: { initialStore: Store;
         }, ["/tasks", "/calendar", "/dashboard"]);
         if (!response?.result) throw new Error("Task was not persisted");
         toast.success("Tarea creada");
+        return id;
       } catch (error) {
         setStore((current) => ({ ...current, tasks: current.tasks.filter((task) => task.id !== id) }));
         toast.error("Error al crear la tarea");

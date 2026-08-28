@@ -25,6 +25,7 @@ const SIDEBAR_COOKIE = "al-lio-sidebar-collapsed";
 const NAV_GROUPS = [
   {
     label: "Principal",
+    tourId: "nav-principal",
     items: [
       { href: "/dashboard", label: "Inicio", icon: Home },
       { href: "/roadmap", label: "Competencias", icon: SlidersHorizontal },
@@ -34,6 +35,7 @@ const NAV_GROUPS = [
   },
   {
     label: "Comunicación",
+    tourId: "nav-communication",
     items: [
       { href: "/noticias", label: "Noticias", icon: Newspaper },
       { href: "/work", label: "Trabajo", icon: Briefcase },
@@ -41,6 +43,7 @@ const NAV_GROUPS = [
   },
   {
     label: "Aprendizaje",
+    tourId: "nav-learning",
     items: [
       { href: "/courses", label: "Cursos", icon: GraduationCap },
       { href: "/hackathons", label: "Eventos y retos", icon: Flag },
@@ -118,7 +121,15 @@ export function AppSidebar({ userName, defaultCollapsed = false, hasPersistedPre
 
       <nav aria-label="Navegación principal" className={cn("scrollbar-none min-h-0 flex-1 px-3", collapsed ? "overflow-visible" : "overflow-y-auto")}>
         {NAV_GROUPS.map((group, groupIndex) => (
-          <section key={group.label} className={cn("py-3", groupIndex > 0 && "border-t border-[#ece6dc]")}>
+          <section
+            key={group.label}
+            // The product tour spotlights a whole group - its heading and its
+            // destinations - so the anchor lives on the section, not on any
+            // one link. `relative` is already what Onborda would set inline,
+            // declared here so the tour changes nothing about this layout.
+            data-tour={group.tourId}
+            className={cn("relative py-3", groupIndex > 0 && "border-t border-[#ece6dc]")}
+          >
             {!collapsed && <h2 className="mb-2 px-3 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#777b82]">{group.label}</h2>}
             <div className="space-y-1">
               {group.items.map((item) => {
@@ -129,6 +140,10 @@ export function AppSidebar({ userName, defaultCollapsed = false, hasPersistedPre
                   <Link
                     key={item.href}
                     href={item.href}
+                    // Stable hook for the product tour's spotlight. Derived
+                    // from the route so adding a nav entry needs no extra
+                    // bookkeeping here.
+                    data-tour={`nav-${item.href.replace(/^\//, "")}`}
                     aria-current={active ? "page" : undefined}
                     aria-label={collapsed ? item.label : undefined}
                     className={cn(

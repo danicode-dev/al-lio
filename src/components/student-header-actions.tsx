@@ -51,7 +51,15 @@ export function StudentHeaderActions({ size = "compact" }: StudentHeaderActionsP
 
   return (
     <div className="flex items-center gap-1.5">
-      <button type="button" onClick={() => setQuickAddOpen(true)} aria-label="Añadir rápido" className={iconButtonClass}>
+      <button
+        type="button"
+        // Anchor the product tour points at. The tour only highlights and
+        // explains this button - it never opens the dialog itself.
+        data-tour={size === "touch" ? "quick-add-mobile" : "quick-add"}
+        onClick={() => setQuickAddOpen(true)}
+        aria-label="Añadir rápido"
+        className={iconButtonClass}
+      >
         <Plus className="h-4 w-4" />
       </button>
       <NotificationsPopover store={store} buttonClassName={iconButtonClass} />

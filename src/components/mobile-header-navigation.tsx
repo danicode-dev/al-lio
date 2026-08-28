@@ -24,16 +24,24 @@ import { forwardRef, useEffect, useId, useRef, useState, type ReactNode } from "
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import { cn } from "@/lib/utils";
 
-const NAVIGATION_ITEMS = [
+// The same three groups the sidebar uses, under the same headings. They used
+// to be split differently here (one "Navegación" column and one "Estudio y
+// oportunidades" column), which meant the app explained itself one way on a
+// phone and another way on a desktop - and left the product tour with no
+// equivalent block to point at.
+const MAIN_ITEMS = [
   { href: "/dashboard", label: "Inicio", icon: Home },
   { href: "/roadmap", label: "Competencias", icon: SlidersHorizontal },
   { href: "/tasks", label: "Tareas", icon: ListChecks },
   { href: "/bloc", label: "Bloc", icon: BookOpen },
+] as const;
+
+const COMMUNICATION_ITEMS = [
   { href: "/noticias", label: "Noticias", icon: Newspaper },
+  { href: "/work", label: "Trabajo", icon: Briefcase },
 ] as const;
 
 const LEARNING_ITEMS = [
-  { href: "/work", label: "Trabajo", icon: Briefcase },
   { href: "/courses", label: "Cursos", icon: GraduationCap },
   { href: "/hackathons", label: "Eventos y retos", icon: Flag },
   { href: "/calendar", label: "Calendario", icon: CalendarDays },
@@ -62,7 +70,13 @@ export function MobileHeaderNavigation() {
     const focusFrame = window.requestAnimationFrame(() => firstLinkRef.current?.focus());
 
     function onPointerDown(event: PointerEvent) {
-      if (menuRootRef.current && !menuRootRef.current.contains(event.target as Node)) setOpen(false);
+      const target = event.target as HTMLElement | null;
+      // The product tour holds this sheet open on purpose while it explains
+      // what is inside, and its card sits outside the menu. Treating a press
+      // on that card as "clicked away" closed the sheet underneath the very
+      // step describing it, and left the student pressing Siguiente twice.
+      if (target?.closest?.(".al-tour-layer")) return;
+      if (menuRootRef.current && !menuRootRef.current.contains(target as Node)) setOpen(false);
     }
 
     function onKeyDown(event: KeyboardEvent) {
@@ -99,6 +113,9 @@ export function MobileHeaderNavigation() {
             <button
               ref={triggerRef}
               type="button"
+              // On a phone the destinations live behind this button, so the
+              // tour points here instead of opening the sheet.
+              data-tour="mobile-menu-trigger"
               onClick={() => setOpen((current) => !current)}
               aria-label={open ? "Cerrar navegación" : "Abrir navegación"}
               aria-expanded={open}
@@ -119,12 +136,23 @@ export function MobileHeaderNavigation() {
                 />
                 <nav
                   id={menuId}
+                  // The product tour opens this sheet and spotlights it whole,
+                  // so a student on a phone sees the destinations instead of
+                  // just the button that hides them.
+                  data-tour="mobile-menu-panel"
                   aria-label="Navegación móvil"
                   className="fixed inset-x-0 top-14 z-10 max-h-[calc(100dvh-3.5rem)] overflow-y-auto overscroll-contain rounded-b-[24px] border-b border-[#e9e3d8] bg-[#fffefa] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5 shadow-[0_20px_45px_rgba(35,29,24,0.16)]"
                 >
-                  <div className="grid grid-cols-2">
-                    <MobileMenuGroup label="Navegación" className="border-r border-[#e9e3d8] pr-3">
-                      {NAVIGATION_ITEMS.map((item, index) => (
+                  {/* Principal on the left, the other two stacked on the right:
+                      three contiguous blocks, so each is a shape the tour can
+                      highlight on its own, exactly like the sidebar. */}
+                  <div className="grid grid-cols-2 gap-x-3">
+                    <MobileMenuGroup
+                      label="Principal"
+                      tourId="mobile-nav-principal"
+                      className="border-r border-[#e9e3d8] pr-3"
+                    >
+                      {MAIN_ITEMS.map((item, index) => (
                         <MobileMenuLink
                           key={item.href}
                           ref={index === 0 ? firstLinkRef : undefined}
@@ -135,16 +163,29 @@ export function MobileHeaderNavigation() {
                       ))}
                     </MobileMenuGroup>
 
-                    <MobileMenuGroup label="Estudio y oportunidades" className="pl-3">
-                      {LEARNING_ITEMS.map((item) => (
-                        <MobileMenuLink
-                          key={item.href}
-                          {...item}
-                          active={isMobileRouteActive(pathname, item.href)}
-                          onNavigate={() => setOpen(false)}
-                        />
-                      ))}
-                    </MobileMenuGroup>
+                    <div className="space-y-3">
+                      <MobileMenuGroup label="Comunicación" tourId="mobile-nav-communication">
+                        {COMMUNICATION_ITEMS.map((item) => (
+                          <MobileMenuLink
+                            key={item.href}
+                            {...item}
+                            active={isMobileRouteActive(pathname, item.href)}
+                            onNavigate={() => setOpen(false)}
+                          />
+                        ))}
+                      </MobileMenuGroup>
+
+                      <MobileMenuGroup label="Aprendizaje" tourId="mobile-nav-learning">
+                        {LEARNING_ITEMS.map((item) => (
+                          <MobileMenuLink
+                            key={item.href}
+                            {...item}
+                            active={isMobileRouteActive(pathname, item.href)}
+                            onNavigate={() => setOpen(false)}
+                          />
+                        ))}
+                      </MobileMenuGroup>
+                    </div>
                   </div>
 
                   <div className="mt-3 border-t border-[#e9e3d8] pt-3">
@@ -174,9 +215,9 @@ export function MobileHeaderNavigation() {
   );
 }
 
-function MobileMenuGroup({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
+function MobileMenuGroup({ label, className, tourId, children }: { label: string; className?: string; tourId?: string; children: ReactNode }) {
   return (
-    <section aria-label={label} className={className}>
+    <section aria-label={label} data-tour={tourId} className={className}>
       <h2 className="mb-2 min-h-7 px-2 text-[9px] font-extrabold uppercase leading-3 tracking-[0.08em] text-[#666a71]">{label}</h2>
       <div className="space-y-0.5">{children}</div>
     </section>
@@ -199,6 +240,9 @@ const MobileMenuLink = forwardRef<HTMLAnchorElement, MobileMenuLinkProps>(functi
     <Link
       ref={ref}
       href={href}
+      // Same stable hook the sidebar exposes, so a tour step can point at the
+      // same destination on either viewport.
+      data-tour={`nav-${href.replace(/^\//, "")}`}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(

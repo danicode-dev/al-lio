@@ -507,7 +507,11 @@ test("The mobile header menu replaces the bottom navigation without changing the
   for (const route of ["/dashboard", "/roadmap", "/tasks", "/bloc", "/noticias", "/work", "/courses", "/hackathons", "/calendar", "/profile"]) {
     assert.ok(mobileSource.includes(`href: "${route}"`) || mobileSource.includes(`href="${route}"`), `missing mobile navigation route: ${route}`);
   }
-  for (const group of ["Navegación", "Estudio y oportunidades"]) {
+  // The sheet repeats the sidebar's own three groups, under the same
+  // headings, so the app is not organised one way on a phone and another way
+  // on a desktop - and each block is something the product tour can point at
+  // in either format.
+  for (const group of ["Principal", "Comunicación", "Aprendizaje"]) {
     assert.ok(mobileSource.includes(`label="${group}"`), `missing mobile navigation group: ${group}`);
   }
 

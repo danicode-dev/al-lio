@@ -212,7 +212,7 @@ export type Store = {
 };
 
 export type ReturnTypeActions = {
-  addTask: (data: Omit<Task, "id" | "created_at" | "progress_notes"> & { progress_notes?: ProgressNote[] }) => Promise<void>;
+  addTask: (data: Omit<Task, "id" | "created_at" | "progress_notes"> & { progress_notes?: ProgressNote[] }) => Promise<string>;
   updateTask: (id: string, data: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => void;
   addTaskNote: (id: string, text: string) => void;
