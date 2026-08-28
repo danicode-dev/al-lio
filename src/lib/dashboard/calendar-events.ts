@@ -8,21 +8,52 @@ const techCourseCategories = new Set(["curso"]);
 const techHackathonCategories = new Set(["hackathon_reto"]);
 const techEventCategories = new Set(["evento_tech", "reto_programacion", "concurso_programacion"]);
 
+// Every calendar event points at the item it represents, not at the list
+// page it lives on: a task opens in Tareas, a course/event opens its own
+// detail route. `tech-` / `fp-` prefixed ids are the same ones
+// resolveCourseById / resolveHackathonById already accept.
+export const calendarHref = {
+  task: (id: string) => `/tasks?task=${encodeURIComponent(id)}`,
+  course: (id: string) => `/courses/${encodeURIComponent(id)}`,
+  hackathon: (id: string) => `/hackathons/${encodeURIComponent(id)}`,
+};
+
+function catalogHref(type: CalendarEvent["type"], id: string) {
+  if (type === "course") return calendarHref.course(id);
+  if (type === "hackathon") return calendarHref.hackathon(id);
+  // "event" is the residual tech category with no guaranteed detail page.
+  return "/hackathons";
+}
+
 export function getDashboardCalendarEvents(store: Store): CalendarEvent[] {
   const events: CalendarEvent[] = [
-    ...store.tasks.filter((task) => task.due_at).map((task) => ({ id: task.id, type: "task" as const, title: task.status === "completada" ? `OK ${task.title}` : task.title, date_at: task.due_at || "", status: task.status, href: "/tasks" })),
-    ...store.courses.flatMap((course) => [
-      ...(course.fecha_inicio || course.start_at ? [{ id: `${course.id}-start`, type: "course" as const, title: course.title, date_at: course.fecha_inicio || course.start_at || "", status: course.status, href: "/courses" }] : []),
-      ...(course.fecha_fin || course.deadline_at ? [{ id: `${course.id}-deadline`, type: "course" as const, title: `Límite ${course.title}`, date_at: course.fecha_fin || course.deadline_at || "", status: course.status, href: "/courses" }] : []),
-    ]),
-    ...store.hackathons.flatMap((hackathon) => [
-      ...(hackathon.start_at ? [{ id: `${hackathon.id}-start`, type: "hackathon" as const, title: hackathon.name, date_at: hackathon.start_at, status: hackathon.status, href: "/hackathons" }] : []),
-      ...(hackathon.registration_deadline_at ? [{ id: `${hackathon.id}-deadline`, type: "hackathon" as const, title: `Inscripción ${hackathon.name}`, date_at: hackathon.registration_deadline_at, status: hackathon.status, href: "/hackathons" }] : []),
-    ]),
+    ...store.tasks.filter((task) => task.due_at).map((task) => ({
+      id: task.id,
+      type: "task" as const,
+      title: task.status === "completada" ? `OK ${task.title}` : task.title,
+      date_at: task.due_at || "",
+      status: task.status,
+      href: calendarHref.task(task.id),
+      description: task.description || undefined,
+    })),
+    ...store.courses.flatMap((course) => {
+      const href = calendarHref.course(course.id);
+      return [
+        ...(course.fecha_inicio || course.start_at ? [{ id: `${course.id}-start`, type: "course" as const, title: course.title, date_at: course.fecha_inicio || course.start_at || "", status: course.status, href }] : []),
+        ...(course.fecha_fin || course.deadline_at ? [{ id: `${course.id}-deadline`, type: "course" as const, title: `Límite ${course.title}`, date_at: course.fecha_fin || course.deadline_at || "", status: course.status, href }] : []),
+      ];
+    }),
+    ...store.hackathons.flatMap((hackathon) => {
+      const href = calendarHref.hackathon(hackathon.id);
+      return [
+        ...(hackathon.start_at ? [{ id: `${hackathon.id}-start`, type: "hackathon" as const, title: hackathon.name, date_at: hackathon.start_at, status: hackathon.status, href }] : []),
+        ...(hackathon.registration_deadline_at ? [{ id: `${hackathon.id}-deadline`, type: "hackathon" as const, title: `Inscripción ${hackathon.name}`, date_at: hackathon.registration_deadline_at, status: hackathon.status, href }] : []),
+      ];
+    }),
     ...store.techOpportunities.flatMap(techOpportunityToCalendarEvents),
     ...store.fpContent.flatMap((item) => {
       const type: CalendarEvent["type"] = fpCourseTypes.has(item.type) ? "course" : "hackathon";
-      const href = type === "course" ? "/courses" : "/hackathons";
+      const href = catalogHref(type, `fp-${item.id_slug}`);
       return [
         ...(item.start_date ? [{ id: `fp-${item.id_slug}-start`, type, title: item.title, date_at: item.start_date, status: item.status, href }] : []),
         ...(item.end_date && item.end_date !== item.start_date ? [{ id: `fp-${item.id_slug}-end`, type, title: `Fin ${item.title}`, date_at: item.end_date, status: item.status, href }] : []),
@@ -35,7 +66,7 @@ export function getDashboardCalendarEvents(store: Store): CalendarEvent[] {
 
 function techOpportunityToCalendarEvents(item: TechOpportunity): CalendarEvent[] {
   const type = techCalendarType(item);
-  const href = type === "course" ? "/courses" : "/hackathons";
+  const href = catalogHref(type, `tech-${item.id_slug}`);
   return [
     ...(item.fecha_inicio ? [{ id: `${item.id_slug}-start`, type, title: item.nombre, date_at: item.fecha_inicio, status: item.estado ?? undefined, href }] : []),
     ...(item.fecha_fin && item.fecha_fin !== item.fecha_inicio ? [{ id: `${item.id_slug}-end`, type, title: `Fin ${item.nombre}`, date_at: item.fecha_fin, status: item.estado ?? undefined, href }] : []),
