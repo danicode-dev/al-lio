@@ -40,7 +40,7 @@ const LEARNING_ITEMS = [
 ] as const;
 
 const menuTriggerClass =
-  "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#e8e2d8] bg-white text-[#45494f] shadow-[0_2px_8px_rgba(17,17,17,0.04)] outline-none transition-[border-color,background-color,color,transform] duration-200 hover:border-[#f4b398] hover:bg-[#fff7f3] hover:text-[#d65327] active:scale-95 focus-visible:ring-2 focus-visible:ring-[#f06a37] motion-reduce:transition-none";
+  "inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#e8e2d8] bg-white text-[#45494f] shadow-[0_2px_8px_rgba(17,17,17,0.04)] outline-none transition-[border-color,background-color,color,transform] duration-200 hover:border-[#f4b398] hover:bg-[#fff7f3] hover:text-[#d65327] active:scale-95 focus-visible:ring-2 focus-visible:ring-[#f06a37] motion-reduce:transition-none";
 
 export function MobileHeaderNavigation() {
   const pathname = usePathname();
@@ -94,8 +94,8 @@ export function MobileHeaderNavigation() {
           priority
         />
 
-        <div className="flex shrink-0 items-center gap-1.5">
-          <div ref={menuRootRef}>
+        <div className="flex shrink-0 items-center">
+          <div ref={menuRootRef} className="mr-2.5">
             <button
               ref={triggerRef}
               type="button"
@@ -103,7 +103,7 @@ export function MobileHeaderNavigation() {
               aria-label={open ? "Cerrar navegación" : "Abrir navegación"}
               aria-expanded={open}
               aria-controls={menuId}
-              className={menuTriggerClass}
+              className={cn(menuTriggerClass, open && "border-[#efb49c] bg-[#fdf0ea] text-[#d65327]")}
             >
               {open ? <X className="h-[18px] w-[18px]" aria-hidden="true" /> : <Menu className="h-[18px] w-[18px]" aria-hidden="true" />}
             </button>
@@ -167,7 +167,7 @@ export function MobileHeaderNavigation() {
             )}
           </div>
 
-          <StudentHeaderActions showCalendar={false} />
+          <StudentHeaderActions showCalendar={false} size="touch" />
         </div>
       </div>
     </header>

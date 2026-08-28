@@ -490,9 +490,13 @@ test("The mobile header menu replaces the bottom navigation without changing the
   assert.match(mobileSource, /src="\/assets\/al_lio_logo_horizontal\.png"/);
   assert.match(mobileSource, /<Menu className=/, "the closed navigation trigger must be icon-only");
   assert.doesNotMatch(mobileSource, />Secciones</, "the icon-only menu trigger must not add a visible text label");
-  assert.match(mobileSource, /<StudentHeaderActions showCalendar=\{false\} \/>/, "mobile keeps Quick Add and notifications but removes Calendar from the action cluster");
+  assert.match(mobileSource, /<StudentHeaderActions showCalendar=\{false\} size="touch" \/>/, "mobile keeps touch-sized Quick Add and notifications but removes Calendar from the action cluster");
   assert.match(headerSource, /showCalendar = true/, "desktop page headers must continue showing Calendar by default");
   assert.match(headerSource, /\{showCalendar && \(/);
+  assert.match(mobileSource, /h-11 w-11/, "the mobile menu trigger must meet the 44px touch-target minimum");
+  assert.match(headerSource, /size === "touch" \? "h-11 w-11" : "h-9 w-9"/, "mobile actions must use 44px touch targets without enlarging desktop controls");
+  assert.match(mobileSource, /className="mr-2\.5"/, "navigation must be visibly separated from the action cluster");
+  assert.match(mobileSource, /open && "border-\[#efb49c\] bg-\[#fdf0ea\] text-\[#d65327\]"/, "the open menu trigger must keep a clear terracotta state");
 
   for (const route of ["/dashboard", "/roadmap", "/tasks", "/bloc", "/noticias", "/work", "/courses", "/hackathons", "/calendar", "/profile"]) {
     assert.ok(mobileSource.includes(`href: "${route}"`) || mobileSource.includes(`href="${route}"`), `missing mobile navigation route: ${route}`);
@@ -540,7 +544,7 @@ test("Quick Add, Calendar and Notifications form one shared header action group,
   // nor a second mobile copy. The mobile shell composes the shared action group
   // once and opts out of Calendar; desktop page headers keep the default group.
   const layoutMounts = (layoutSource.match(/<StudentHeaderActions\b/g) ?? []).length;
-  const mobileMounts = (mobileSource.match(/<StudentHeaderActions showCalendar=\{false\} \/>/g) ?? []).length;
+  const mobileMounts = (mobileSource.match(/<StudentHeaderActions showCalendar=\{false\} size="touch" \/>/g) ?? []).length;
   assert.equal(layoutMounts, 0, "the layout must delegate the complete mobile header to MobileHeaderNavigation");
   assert.equal(mobileMounts, 1, "expected exactly one calendar-free action group in the mobile header");
 

@@ -17,8 +17,8 @@ import {
 } from "@/components/calendar/app-calendar";
 import { getDashboardCalendarEvents } from "@/lib/dashboard/calendar-events";
 
-const iconButtonClass =
-  "relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#ece7dc] bg-white text-[#5f6368] shadow-[0_2px_8px_rgba(17,17,17,0.04)] transition hover:border-[#f4b398] hover:bg-[#fff7f3] hover:text-[#e15d2d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f06a37]";
+const iconButtonBaseClass =
+  "relative inline-flex items-center justify-center rounded-xl border border-[#ece7dc] bg-white text-[#5f6368] shadow-[0_2px_8px_rgba(17,17,17,0.04)] transition hover:border-[#f4b398] hover:bg-[#fff7f3] hover:text-[#e15d2d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f06a37]";
 
 const VISIBLE_ROUTES = [
   "/dashboard",
@@ -37,10 +37,16 @@ function isVisibleRoute(pathname: string) {
   return VISIBLE_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
 
-export function StudentHeaderActions({ showCalendar = true }: { showCalendar?: boolean } = {}) {
+type StudentHeaderActionsProps = {
+  showCalendar?: boolean;
+  size?: "compact" | "touch";
+};
+
+export function StudentHeaderActions({ showCalendar = true, size = "compact" }: StudentHeaderActionsProps = {}) {
   const pathname = usePathname();
   const { store, actions } = useStore();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const iconButtonClass = `${iconButtonBaseClass} ${size === "touch" ? "h-11 w-11" : "h-9 w-9"}`;
 
   if (!isVisibleRoute(pathname)) return null;
 
@@ -54,7 +60,7 @@ export function StudentHeaderActions({ showCalendar = true }: { showCalendar?: b
           <CalendarDays className="h-4 w-4" />
         </Link>
       )}
-      <NotificationsPopover store={store} />
+      <NotificationsPopover store={store} buttonClassName={iconButtonClass} />
       <QuickAdd open={quickAddOpen} setOpen={setQuickAddOpen} actions={actions} />
     </div>
   );
@@ -68,7 +74,7 @@ function formatEventDate(value: string) {
   return hasTime ? `${day}, ${date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}` : day;
 }
 
-function NotificationsPopover({ store }: { store: Store }) {
+function NotificationsPopover({ store, buttonClassName }: { store: Store; buttonClassName: string }) {
   const [open, setOpen] = useState(false);
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -146,7 +152,7 @@ function NotificationsPopover({ store }: { store: Store }) {
         aria-label={alerts.length ? `${alerts.length} avisos de la semana` : "Avisos de la semana"}
         aria-expanded={open}
         aria-controls={panelId}
-        className={iconButtonClass}
+        className={buttonClassName}
       >
         <Bell className="h-4 w-4" />
         {alerts.length > 0 && (
