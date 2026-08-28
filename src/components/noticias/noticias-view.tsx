@@ -2,26 +2,38 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Bell,
-  BookmarkCheck,
-  CheckCircle2,
-  ExternalLink,
+  CalendarDays,
+  Flame,
   Newspaper,
   RefreshCw,
   Search,
   ShieldCheck,
-  SlidersHorizontal,
 } from "lucide-react";
-import Link from "next/link";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { NewsItem, NewsStatus, NewsSyncStatus, NewsTrustTier } from "@/lib/news/types";
+import type { FpCycleCode } from "@/lib/db/types";
+import type { NewsItem, NewsSyncStatus, NewsTrustTier } from "@/lib/news/types";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
+import {
+  CatalogCard,
+  CatalogFact,
+  CatalogFavoriteButton,
+  CatalogFeaturedCard,
+} from "@/components/catalog/catalog-card";
+import {
+  CollectionAction,
+  CollectionControls,
+  FilterChips,
+  FilterPanelCompact,
+} from "@/components/catalog/collection-controls";
 
 type ApiResponse = { items: NewsItem[]; status: NewsSyncStatus };
 type SortMode = "date" | "trust";
+// The four control-strip entries double as the KPI counts and the status
+// filter, exactly like Cursos and Eventos: "recientes" is the whole current
+// feed and the other three are subsets of the loaded items.
+type ViewTab = "hoy" | "recientes" | "sinleer" | "guardadas";
 
 export const TRUST_LABELS: Record<NewsTrustTier, string> = {
   official: "Oficial",
@@ -53,11 +65,10 @@ export function NewsView() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<NewsStatus | "all">("all");
+  const [viewTab, setViewTab] = useState<ViewTab>("recientes");
   const [sourceFilter, setSourceFilter] = useState("");
   const [sort, setSort] = useState<SortMode>("date");
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const lastReceivedAtRef = useRef<string | null>(null);
 
   const load = useCallback(async ({ quiet = false }: { quiet?: boolean } = {}) => {
@@ -99,20 +110,9 @@ export function NewsView() {
     }
   }, []);
 
-  async function markRead(item: NewsItem) {
-    if (item.status !== "new") return;
-    const previousItems = items;
-    setItems((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, status: "read" } : candidate));
-    try {
-      const response = await fetch(`/api/news/${encodeURIComponent(item.id)}/read`, { method: "PATCH" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      setStatus((current) => current ? { ...current, newItems: Math.max(0, current.newItems - 1) } : current);
-    } catch {
-      setItems(previousItems);
-      toast.error("No se pudo marcar como leída");
-    }
-  }
-
+  // Reading is marked by the detail route itself (the only way into an
+  // item now that the cards carry a "Ver detalles" action), so the list no
+  // longer needs its own read call.
   async function saveItem(item: NewsItem) {
     if (item.status === "saved") return;
     const previousItems = items;
@@ -147,10 +147,23 @@ export function NewsView() {
     [items],
   );
 
+  // Counts and tab contents come from the same loaded items, so the number
+  // on a tab always matches the list it opens.
+  const recientes = useMemo(
+    () => items.filter((item) => item.status !== "saved" || isCurrentItem(item)),
+    [items],
+  );
+  const hoy = useMemo(() => recientes.filter(isPublishedToday), [recientes]);
+  const sinLeer = useMemo(() => items.filter((item) => item.status === "new"), [items]);
+  const guardadas = useMemo(() => items.filter((item) => item.status === "saved"), [items]);
+
+  const tabBase = useMemo(
+    () => viewTab === "hoy" ? hoy : viewTab === "sinleer" ? sinLeer : viewTab === "guardadas" ? guardadas : recientes,
+    [viewTab, hoy, sinLeer, guardadas, recientes],
+  );
+
   const filteredItems = useMemo(() => {
-    const filtered = items.filter((item) => {
-      if (statusFilter === "all" && item.status === "saved" && !isCurrentItem(item)) return false;
-      if (statusFilter !== "all" && item.status !== statusFilter) return false;
+    const filtered = tabBase.filter((item) => {
       if (sourceFilter && item.sourceId !== sourceFilter) return false;
       if (!search) return true;
       return [item.title, item.description ?? "", item.sourceName, ...item.topics, ...item.moduleCodes]
@@ -163,15 +176,14 @@ export function NewsView() {
       }
       return itemDate(second).localeCompare(itemDate(first));
     });
-  }, [items, search, sourceFilter, sort, statusFilter]);
+  }, [tabBase, search, sourceFilter, sort]);
 
-  const featuredItem = statusFilter === "saved" ? null : filteredItems.find((item) => item.isFeatured) ?? null;
+  const featuredItem = viewTab === "guardadas" ? null : filteredItems.find((item) => item.isFeatured) ?? null;
   const regularItems = featuredItem ? filteredItems.filter((item) => item.id !== featuredItem.id) : filteredItems;
 
-  const activeFilterCount = [statusFilter !== "all", Boolean(sourceFilter), sort !== "date"].filter(Boolean).length;
+  const activeFilterCount = [Boolean(sourceFilter), sort !== "date"].filter(Boolean).length;
 
   function clearFilters() {
-    setStatusFilter("all");
     setSourceFilter("");
     setSort("date");
     setSearchInput("");
@@ -179,7 +191,10 @@ export function NewsView() {
   }
 
   return (
-    <div className="space-y-5">
+    // Same shell as Courses and Events: a space-y-6 wrapper around the page
+    // header plus an .al-catalog-view block, so the vertical rhythm and the
+    // phone-only pull-up above the control strip match those routes.
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Radar de noticias"
         title={
@@ -195,9 +210,14 @@ export function NewsView() {
         subtitle="Actualidad reciente, fiable y relacionada con lo que estudias. Radar revisa las fuentes cada 12 horas; recargar solo consulta la última entrega disponible."
         actions={
           <>
+            {/* The trust line carries the freshness stamp too, so the list
+                below stays free of informational bands. */}
             <div className="flex items-center gap-2 text-xs text-[#6b6f72]">
               <ShieldCheck className="h-4 w-4 shrink-0 text-[#1f7a4d]" />
-              Fuentes verificadas y reglas de publicación auditadas
+              <span>
+                Fuentes verificadas
+                {status?.lastReceivedAt ? ` · Actualizado ${formatDateTime(status.lastReceivedAt)}` : ""}
+              </span>
             </div>
             <div className="hidden md:flex md:items-center md:gap-2">
               <StudentHeaderActions />
@@ -206,232 +226,168 @@ export function NewsView() {
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[230px] flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a958a]" />
-          <Input
-            className="h-10 rounded-xl border-[#ece7dc] bg-white pl-9 text-sm"
-            placeholder="Buscar por título, tema o módulo..."
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
+      <div className="al-catalog-view space-y-4">
+        <div className="al-cc-shell">
+          <CollectionControls
+            searchValue={searchInput}
+            onSearchChange={setSearchInput}
+            searchPlaceholder="Buscar por título, tema o módulo..."
+            tabs={[
+              { id: "hoy", label: "Publicadas hoy", count: hoy.length },
+              { id: "recientes", label: "Últimos 7 días", count: recientes.length },
+              { id: "sinleer", label: "Sin leer", count: sinLeer.length },
+              { id: "guardadas", label: "Guardadas", count: guardadas.length },
+            ]}
+            activeTab={viewTab}
+            onTabChange={(id) => { setViewTab(id as ViewTab); clearFilters(); }}
+            filterCount={activeFilterCount}
+            filtersOpen={showFilters}
+            onToggleFilters={() => setShowFilters((current) => !current)}
+            extraActions={(
+              <CollectionAction
+                icon={<RefreshCw className={cn(refreshing && "animate-spin")} />}
+                label="Recargar"
+                onClick={() => void load({ quiet: true })}
+                disabled={refreshing}
+              />
+            )}
           />
-        </div>
-        <button
-          type="button"
-          onClick={() => void load({ quiet: true })}
-          disabled={refreshing}
-          className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#ece7dc] bg-white px-3 text-xs font-semibold text-[#333029] disabled:opacity-60"
-        >
-          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-          Recargar lista
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowFilters((current) => !current)}
-          className={cn(
-            "inline-flex h-10 items-center gap-2 rounded-xl border border-[#ece7dc] bg-white px-3 text-xs font-semibold text-[#333029]",
-            showFilters && "border-[#efb79f] bg-[#fbe7dd] text-[#c94f21]",
+
+          {showFilters && (
+            <FilterPanelCompact activeCount={activeFilterCount} onClear={clearFilters} onClose={() => setShowFilters(false)}>
+              <div>
+                <p className="al-fp-row-label">Orden</p>
+                <FilterChips
+                  options={[["date", "Reciente"], ["trust", "Confianza"]]}
+                  value={sort}
+                  onChange={(value) => setSort((value || "date") as SortMode)}
+                />
+              </div>
+              <div>
+                <p className="al-fp-row-label">Fuente</p>
+                <FilterChips
+                  options={[["", "Todas"], ...sources.map(([id, name]): [string, string] => [id, name])]}
+                  value={sourceFilter}
+                  onChange={setSourceFilter}
+                />
+              </div>
+            </FilterPanelCompact>
           )}
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          Filtros{activeFilterCount ? ` ${activeFilterCount}` : ""}
-        </button>
-      </div>
+        </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard icon={Newspaper} value={status?.todayItems ?? 0} label="Publicadas hoy" color="#E15D2D" background="#fbe7dd" />
-        <StatCard icon={Bell} value={status?.totalItems ?? 0} label="Últimos 7 días" color="#1f7a4d" background="#e7f5ee" />
-        <StatCard icon={CheckCircle2} value={status?.newItems ?? 0} label="Sin leer" color="#475569" background="#eef2f6" />
-        <StatCard icon={BookmarkCheck} value={status?.savedItems ?? 0} label="Guardadas" color="#b4791f" background="#fdf1dd" />
-      </div>
-
-      <div className="flex flex-col gap-1 rounded-xl border border-[#ece7dc] bg-[#faf8f3] px-4 py-3 text-xs text-[#6b6f72] sm:flex-row sm:items-center sm:justify-between">
-        <span>La actualidad caduca a los 7 días; tus noticias guardadas permanecen en su archivo.</span>
-        <span className="font-semibold text-[#333029]">
-          Última actualización: {status?.lastReceivedAt ? formatDateTime(status.lastReceivedAt) : "todavía no disponible"}
-        </span>
-      </div>
-
-      {showFilters && (
-        <div className="grid gap-4 rounded-2xl border border-[#ece7dc] bg-white p-4 shadow-sm sm:grid-cols-3">
-          <FilterGroup label="Orden">
-            <FilterButton active={sort === "date"} onClick={() => setSort("date")}>Reciente</FilterButton>
-            <FilterButton active={sort === "trust"} onClick={() => setSort("trust")}>Confianza</FilterButton>
-          </FilterGroup>
-          <FilterGroup label="Estado">
-            {(["all", "new", "read", "saved"] as const).map((value) => (
-              <FilterButton key={value} active={statusFilter === value} onClick={() => setStatusFilter(value)}>
-                {{ all: "Todas", new: "Nueva", read: "Leída", saved: "Guardada" }[value]}
-              </FilterButton>
-            ))}
-          </FilterGroup>
-          <div>
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#9a958a]">Fuente</p>
-            <select
-              value={sourceFilter}
-              onChange={(event) => setSourceFilter(event.target.value)}
-              className="h-9 w-full rounded-lg border border-[#ece7dc] bg-white px-2 text-xs text-[#333029]"
-            >
-              <option value="">Todas las fuentes</option>
-              {sources.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-            </select>
-            {activeFilterCount > 0 && (
-              <button type="button" onClick={clearFilters} className="mt-2 text-xs font-semibold text-[#c94f21]">Limpiar filtros</button>
+        {loading && items.length === 0 ? (
+          <EmptyState icon={RefreshCw} title="Cargando noticias verificadas..." />
+        ) : filteredItems.length === 0 ? (
+          <EmptyState
+            icon={Search}
+            title="Todavía no hay contenido aprobado"
+            description="Radar solo mostrará información reciente que supere los controles de relevancia de tu ciclo."
+          />
+        ) : (
+          <div className="space-y-4">
+            {featuredItem && (
+              <CatalogFeaturedCard
+                imageSrc={newsHeroImage(featuredItem)}
+                tag={<><Flame className="h-3 w-3" />Destacada</>}
+                title={featuredItem.title}
+                subtitle={featuredItem.sourceName}
+                status={<NewsStatusPill item={featuredItem} />}
+                favorite={(
+                  <CatalogFavoriteButton
+                    active={featuredItem.status === "saved"}
+                    featured
+                    onClick={() => void saveItem(featuredItem)}
+                  />
+                )}
+                description={featuredItem.description}
+                facts={<NewsFacts item={featuredItem} />}
+                detailHref={`/noticias/${encodeURIComponent(featuredItem.id)}`}
+              />
+            )}
+            {regularItems.length > 0 && (
+              // One layout only, the catalogue grid Courses and Events use:
+              // the featured item on top, everything else in the same
+              // three-column rhythm. There is no list/grid switch any more.
+              <div className="al-catalog-grid al-catalog-grid-cards">
+                {regularItems.map((item) => (
+                  <CatalogCard
+                    key={item.id}
+                    title={item.title}
+                    subtitle={item.sourceName}
+                    badges={(
+                      <>
+                        <NewsStatusPill item={item} />
+                        <CatalogFavoriteButton
+                          active={item.status === "saved"}
+                          onClick={() => void saveItem(item)}
+                        />
+                      </>
+                    )}
+                    facts={<NewsFacts item={item} />}
+                    detailHref={`/noticias/${encodeURIComponent(item.id)}`}
+                  />
+                ))}
+              </div>
             )}
           </div>
-        </div>
-      )}
-
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-[#6b6f72]">Mostrando {filteredItems.length} contenidos de {sources.length} fuentes verificadas</p>
-        <div className="flex rounded-xl border border-[#ece7dc] bg-white p-1">
-          <FilterButton active={viewMode === "list"} onClick={() => setViewMode("list")}>Lista</FilterButton>
-          <FilterButton active={viewMode === "grid"} onClick={() => setViewMode("grid")}>Grid</FilterButton>
-        </div>
+        )}
       </div>
-
-      {loading && items.length === 0 ? (
-        <EmptyState icon={RefreshCw} title="Cargando noticias verificadas..." />
-      ) : filteredItems.length === 0 ? (
-        <EmptyState
-          icon={Search}
-          title="Todavía no hay contenido aprobado"
-          description="Radar solo mostrará información reciente que supere los controles de relevancia de tu ciclo."
-        />
-      ) : (
-        <div className="space-y-4">
-          {featuredItem && (
-            <NewsCard
-              item={featuredItem}
-              featured
-              onRead={() => void markRead(featuredItem)}
-              onSave={() => void saveItem(featuredItem)}
-            />
-          )}
-          {regularItems.length > 0 && (
-            <div className={cn("grid gap-3", viewMode === "grid" && "sm:grid-cols-2 xl:grid-cols-3")}>
-              {regularItems.map((item) => (
-                <NewsCard key={item.id} item={item} onRead={() => void markRead(item)} onSave={() => void saveItem(item)} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
 
-function NewsCard({ item, featured = false, onRead, onSave }: {
-  item: NewsItem;
-  featured?: boolean;
-  onRead: () => void;
-  onSave: () => void;
-}) {
+// The reading state as a catalogue status pill, the same shape Courses and
+// Events use for theirs: unread reads as the one that still wants
+// attention, saved as settled, already-read as muted.
+function NewsStatusPill({ item }: { item: NewsItem }) {
+  const { label, tone } = item.status === "saved"
+    ? { label: "Guardada", tone: "al-catalog-status-open" }
+    : item.status === "read"
+      ? { label: "Leída", tone: "al-catalog-status-muted" }
+      : { label: "Sin leer", tone: "al-catalog-status-review" };
+  return <span className={cn("al-catalog-status", tone)}>{label}</span>;
+}
+
+// Three facts per card, mirroring the date/modality/level row of a course:
+// when it was published, what kind of item it is and how trustworthy its
+// source is. Topics and modules stay on the detail route.
+function NewsFacts({ item }: { item: NewsItem }) {
   return (
-    <article className={cn(
-      "flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-[0_8px_20px_rgba(17,17,17,0.04)]",
-      item.status === "read" ? "border-[#ece7dc] opacity-70" : "border-[#e6e1d8]",
-      item.status === "saved" && "border-[#efb79f] opacity-100",
-      featured && "border-[#e98b67] bg-[#fffaf7] shadow-[0_12px_30px_rgba(225,93,45,0.10)]",
-    )}>
-      <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold">
-        {featured && <span className="al-action-soft-selected rounded-full px-2 py-0.5">Destacada</span>}
-        <span className="text-[#6b6f72]">{item.sourceName}</span>
-        <span className={cn(
-          "rounded-full px-2 py-0.5",
-          item.trustTier === "official" || item.trustTier === "institutional"
-            ? "bg-[#e7f5ee] text-[#1f7a4d]"
-            : "bg-[#f3ece1] text-[#6b6f72]",
-        )}>
-          {TRUST_LABELS[item.trustTier]}
-        </span>
-        <span className="rounded-full bg-[#fbe7dd] px-2 py-0.5 text-[#c94f21]">{KIND_LABELS[item.kind]}</span>
-        {item.status === "saved" && <span className="rounded-full bg-[#fdf1dd] px-2 py-0.5 text-[#9a6418]">Guardada</span>}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <Link
-          href={`/noticias/${item.id}`}
-          className="line-clamp-3 text-sm font-semibold leading-5 text-[#111111] hover:text-[#c94f21] hover:underline hover:underline-offset-2"
-        >
-          {item.title}
-        </Link>
-        {item.description && <p className="mt-1.5 line-clamp-3 text-xs leading-5 text-[#6b6f72]">{item.description}</p>}
-      </div>
-
-      {item.kind === "event" && (item.eventStartsAt || item.registrationDeadline) && (
-        <div className="rounded-xl border border-[#e5eee9] bg-[#f4f8f6] px-3 py-2 text-[11px] leading-5 text-[#315f4b]">
-          {item.eventStartsAt && <p><span className="font-bold">Comienza:</span> {formatDateTime(item.eventStartsAt)}</p>}
-          {item.eventEndsAt && <p><span className="font-bold">Finaliza:</span> {formatDateTime(item.eventEndsAt)}</p>}
-          {item.registrationDeadline && <p><span className="font-bold">Inscripción hasta:</span> {formatDateTime(item.registrationDeadline)}</p>}
-        </div>
-      )}
-
-      <div className="flex flex-wrap gap-1.5">
-        {item.topics.slice(0, 3).map((topic) => (
-          <span key={topic} className="rounded-md bg-[#f3ece1] px-2 py-1 text-[10px] text-[#6b6f72]">#{formatTopic(topic)}</span>
-        ))}
-        {item.moduleCodes.slice(0, 2).map((moduleCode) => (
-          <span key={moduleCode} className="rounded-md bg-[#eef4f1] px-2 py-1 text-[10px] text-[#1f6a4c]">{formatModule(moduleCode)}</span>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between gap-2 border-t border-[#f0ece2] pt-3">
-        <div className="text-[10px] text-[#9a958a]">
-          {item.publishedAt ? formatDate(item.publishedAt) : "Fecha no indicada"}
-          {item.province ? ` · ${item.province}` : ""}
-        </div>
-        <div className="flex items-center gap-1">
-          <a href={item.url} target="_blank" rel="noreferrer noopener" onClick={onRead} className="icon-button" title="Abrir fuente">
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-          {item.status === "saved" ? (
-            <span className="icon-button text-[#1f7a4d]" title="Guardada"><CheckCircle2 className="h-3.5 w-3.5" /></span>
-          ) : (
-            <button type="button" onClick={onSave} className="icon-button" title="Guardar"><BookmarkCheck className="h-3.5 w-3.5" /></button>
-          )}
-        </div>
-      </div>
-      <style jsx>{`
-        .icon-button { display:inline-flex; width:30px; height:30px; align-items:center; justify-content:center; border:1px solid #ece7dc; border-radius:9px; color:#6b6f72; background:white; }
-        .icon-button:hover { border-color:rgba(225,93,45,.4); color:#c94f21; }
-      `}</style>
-    </article>
+    <>
+      <CatalogFact icon={<CalendarDays />}>
+        {item.publishedAt ? formatDate(item.publishedAt) : "Fecha no indicada"}
+      </CatalogFact>
+      <CatalogFact icon={<Newspaper />}>{KIND_LABELS[item.kind]}</CatalogFact>
+      <CatalogFact icon={<ShieldCheck />}>{TRUST_LABELS[item.trustTier]}</CatalogFact>
+    </>
   );
 }
 
-function StatCard({ icon: Icon, value, label, color, background }: {
-  icon: typeof Newspaper;
-  value: number;
-  label: string;
-  color: string;
-  background: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-[#ece7dc] bg-white p-4 shadow-[0_8px_20px_rgba(17,17,17,0.04)]">
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ color, background }}><Icon className="h-4 w-4" /></span>
-      <div><p className="text-xl font-extrabold leading-none text-[#111111]">{value}</p><p className="mt-1 text-[11px] font-semibold text-[#6b6f72]">{label}</p></div>
-    </div>
-  );
-}
+// Banner artwork is organised by professional family, the way the course
+// banners are: the two development cycles share one family, and every
+// family holds several variants. The counts are how many files exist.
+const NEWS_HERO_POOL = { desarrollo: 5, administracion: 4, marketing: 4, deporte: 3 } as const;
 
-function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div><p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#9a958a]">{label}</p><div className="flex flex-wrap gap-1.5">{children}</div></div>;
-}
+const CYCLE_HERO_FAMILY: Record<FpCycleCode, keyof typeof NEWS_HERO_POOL> = {
+  DAW: "desarrollo",
+  DAM: "desarrollo",
+  AF: "administracion",
+  MP: "marketing",
+  TSAF: "deporte",
+};
 
-function FilterButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition",
-        active ? "al-action-soft-selected" : "bg-[#f7f4ee] text-[#6b6f72] hover:text-[#c94f21]",
-      )}
-    >
-      {children}
-    </button>
-  );
+// An item keeps one stable banner (hashed from its id), so a re-featured
+// item always carries the same image and two items of one family rarely
+// share it. An item with no target cycle - which the database forbids -
+// falls back to the neutral placeholder rather than to someone else's
+// artwork.
+function newsHeroImage(item: NewsItem): string {
+  const cycle = item.targetCycleCodes[0];
+  const family = cycle ? CYCLE_HERO_FAMILY[cycle] : undefined;
+  if (!family) return "/assets/noticias/noticia-hero-placeholder.svg";
+  let hash = 0;
+  for (let index = 0; index < item.id.length; index += 1) hash = (hash * 31 + item.id.charCodeAt(index)) | 0;
+  return `/assets/noticias/noticia-hero-${family}-${(Math.abs(hash) % NEWS_HERO_POOL[family]) + 1}.jpg`;
 }
 
 export function EmptyState({ icon: Icon, title, description }: { icon: typeof Search; title: string; description?: string }) {
@@ -446,6 +402,15 @@ export function EmptyState({ icon: Icon, title, description }: { icon: typeof Se
 
 function itemDate(item: NewsItem): string {
   return item.publishedAt ?? item.fetchedAt;
+}
+
+function isPublishedToday(item: NewsItem): boolean {
+  const date = new Date(itemDate(item));
+  if (Number.isNaN(date.getTime())) return false;
+  const today = new Date();
+  return date.getFullYear() === today.getFullYear()
+    && date.getMonth() === today.getMonth()
+    && date.getDate() === today.getDate();
 }
 
 function isCurrentItem(item: NewsItem): boolean {
