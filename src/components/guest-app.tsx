@@ -35,6 +35,7 @@ import {
 import { DndContext, useDraggable, useDroppable, MouseSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
+import { getNextCatalogItem } from "@/lib/catalog/next-item";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -2778,7 +2779,15 @@ export function CourseDetailView({ id }: { id: string }) {
           .al-course-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
           .al-course-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: var(--al-action-soft-bg); color: var(--al-action-soft-text); font-size: 12.5px; font-weight: 700; border: 1px solid var(--al-action-soft-border); cursor: pointer; text-decoration: none; }
         `}</style>
-        <PageHeader eyebrow="Cursos" title="Curso no disponible" actions={<StudentHeaderActions />} />
+        <PageHeader
+          eyebrow="Cursos"
+          title="Curso no disponible"
+          actions={
+            <div className="hidden md:flex md:items-center md:gap-2">
+              <StudentHeaderActions />
+            </div>
+          }
+        />
         <div className="al-course-empty">
           <span className="al-course-empty-icon"><BookOpen className="h-6 w-6" /></span>
           <p className="al-course-empty-title">Ya no podemos mostrar este curso</p>
@@ -2805,14 +2814,7 @@ export function CourseDetailView({ id }: { id: string }) {
   const hasRequirementList = requirements.length >= 2;
   const startKey = (presentation.startDate ?? "").slice(0, 10);
   const daysUntil = startKey ? Math.ceil((new Date(`${startKey}T00:00:00`).getTime() - Date.now()) / 86_400_000) : null;
-  const nextCourse = (() => {
-    const pool = allCourses
-      .filter((c) => c.id !== item.id && !isCourseArchived(c) && c.status !== "terminado")
-      .map((c) => ({ c, k: (c.fecha_inicio || c.start_at || "").slice(0, 10) }))
-      .filter((x) => x.k)
-      .sort((a, b) => a.k.localeCompare(b.k));
-    return (pool.find((x) => x.k >= startKey) ?? pool[0])?.c ?? null;
-  })();
+  const nextCourse = getNextCatalogItem(allCourses, item.id);
   const infoRows: Array<[string, string | undefined]> = [
     ["Certificación", presentation.certification],
     ["Modalidad", presentation.modality],
@@ -2825,7 +2827,16 @@ export function CourseDetailView({ id }: { id: string }) {
       <Link href="/courses" className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b6f72] transition hover:text-[#c94f21]">
         <ChevronLeft className="h-3.5 w-3.5" />Cursos
       </Link>
-      <PageHeader eyebrow="Curso" title={presentation.title} subtitle={presentation.provider} actions={<StudentHeaderActions />} />
+      <PageHeader
+        eyebrow="Curso"
+        title={presentation.title}
+        subtitle={presentation.provider}
+        actions={
+          <div className="hidden md:flex md:items-center md:gap-2">
+            <StudentHeaderActions />
+          </div>
+        }
+      />
 
       <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-4">
@@ -3373,7 +3384,15 @@ export function HackathonDetailView({ id }: { id: string }) {
           .al-hack-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
           .al-hack-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: var(--al-action-soft-bg); color: var(--al-action-soft-text); font-size: 12.5px; font-weight: 700; border: 1px solid var(--al-action-soft-border); cursor: pointer; text-decoration: none; }
         `}</style>
-        <PageHeader eyebrow="Eventos y retos" title="Evento no disponible" actions={<StudentHeaderActions />} />
+        <PageHeader
+          eyebrow="Eventos y retos"
+          title="Evento no disponible"
+          actions={
+            <div className="hidden md:flex md:items-center md:gap-2">
+              <StudentHeaderActions />
+            </div>
+          }
+        />
         <div className="al-hack-empty">
           <span className="al-hack-empty-icon"><Trophy className="h-6 w-6" /></span>
           <p className="al-hack-empty-title">Ya no podemos mostrar este evento</p>
@@ -3433,7 +3452,16 @@ export function HackathonDetailView({ id }: { id: string }) {
       <Link href="/hackathons" className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b6f72] transition hover:text-[#c94f21]">
         <ChevronLeft className="h-3.5 w-3.5" />Eventos y retos
       </Link>
-      <PageHeader eyebrow={presentation.type || "Evento o reto"} title={presentation.title} subtitle={presentation.organizer} actions={<StudentHeaderActions />} />
+      <PageHeader
+        eyebrow={presentation.type || "Evento o reto"}
+        title={presentation.title}
+        subtitle={presentation.organizer}
+        actions={
+          <div className="hidden md:flex md:items-center md:gap-2">
+            <StudentHeaderActions />
+          </div>
+        }
+      />
 
       <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-4">
