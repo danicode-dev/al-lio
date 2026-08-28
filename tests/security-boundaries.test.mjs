@@ -258,7 +258,7 @@ test("News detail API route authenticates without redirecting, validates the id,
   assert.doesNotMatch(source, /error:\s*String\(/);
 });
 
-test("Radar detail query mirrors the list boundary (cycle, destination, kind, freshness-or-saved) and related items reuse it", async () => {
+test("Radar detail query mirrors the list boundary and deterministic next-item lookup reuses its authorised ordering", async () => {
   const source = await readFile(new URL("../src/lib/db/repositories/radar.ts", import.meta.url), "utf8");
 
   assert.match(source, /export async function getRadarItemDetailForUser/);
@@ -269,11 +269,15 @@ test("Radar detail query mirrors the list boundary (cycle, destination, kind, fr
   assert.match(source, /state\.status = 'saved'/);
   assert.match(source, /interval '7 days'/);
   assert.match(source, /interval '30 days'/);
+  assert.match(source, /LEFT JOIN public\.radar_content_occurrences canonical/);
+  assert.match(source, /canonical\.publication_decision = 'accepted'/);
+  assert.match(source, /canonical\.summary_expanded/);
+  assert.match(source, /canonical\.why_relevant/);
 
-  assert.match(source, /export async function getRelatedNewsItems/);
-  const relatedFunctionSource = source.slice(source.indexOf("export async function getRelatedNewsItems"));
-  assert.match(relatedFunctionSource, /listRadarItemsForCycle\(/);
-  assert.doesNotMatch(relatedFunctionSource, /FROM public\.radar_items/);
+  assert.match(source, /export async function getNextRadarNewsItem/);
+  const nextFunctionSource = source.slice(source.indexOf("export async function getNextRadarNewsItem"));
+  assert.match(nextFunctionSource, /listRadarItemsForCycle\(/);
+  assert.doesNotMatch(nextFunctionSource, /FROM public\.radar_items/);
 });
 
 test("News cards route into the internal detail page, never straight to the source, and never inject raw HTML", async () => {
@@ -294,6 +298,10 @@ test("News detail view offers a clear Spanish source action and never injects ra
   const source = await readFile(new URL("../src/components/noticias/news-detail-view.tsx", import.meta.url), "utf8");
   assert.match(source, /Leer noticia original/);
   assert.match(source, /Volver a Noticias/);
+  assert.match(source, /Datos confirmados/);
+  assert.match(source, /Por qué puede interesarte/);
+  assert.match(source, /Siguiente noticia para tu ciclo/);
+  assert.doesNotMatch(source, /Todavía no hay un resumen|Fecha no indicada|Fuente no disponible/);
   assert.doesNotMatch(source, /dangerouslySetInnerHTML/);
 });
 
@@ -338,7 +346,7 @@ test("News detail view separates unavailable content from a temporary failure, w
   // The temporary-failure state offers a real retry action and never claims the item
   // expired or doesn't belong to the student's cycle (that would be dishonest for a
   // network/server failure that has nothing to do with authorization or freshness).
-  const errorBranch = source.slice(source.indexOf('state.status === "error"'), source.indexOf("const { item, related } = state.data;"));
+  const errorBranch = source.slice(source.indexOf('state.status === "error"'), source.indexOf("const { item, nextItem } = state.data;"));
   assert.match(errorBranch, /Reintentar/);
   assert.match(errorBranch, /onClick=\{\(\) => void load\(\)\}/);
   assert.doesNotMatch(errorBranch, /caducad|no corresponda a tu ciclo/);

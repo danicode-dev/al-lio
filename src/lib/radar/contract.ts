@@ -227,10 +227,12 @@ const radarV4ClassificationSchema = z.object({
   destination: z.enum(RADAR_V4_DESTINATIONS),
   opportunityType: z.enum(RADAR_V4_OPPORTUNITY_TYPES),
   kind: z.enum(["news", "event", "call", "legal", "vacancy"]),
+  language: z.literal("es"),
   targetCycleCodes: z.array(z.enum(RADAR_CYCLE_CODES)).min(1).max(RADAR_CYCLE_CODES.length),
   moduleCodes: z.array(z.string().trim().min(1).max(120)).max(30),
   topics: z.array(z.string().trim().min(1).max(120)).max(30),
   skills: z.array(z.string().trim().min(1).max(160)).max(50),
+  matchReasons: z.array(z.string().trim().min(1).max(160)).min(1).max(50),
 }).strict();
 
 const radarV4PublicationSchema = z.object({

@@ -28,10 +28,12 @@
         "destination": "course",
         "opportunityType": "course",
         "kind": "call",
+        "language": "es",
         "targetCycleCodes": ["DAW"],
         "moduleCodes": ["PROG"],
         "topics": ["java"],
-        "skills": ["Java"]
+        "skills": ["Java"],
+        "matchReasons": ["rule:daw-java", "keyword:java"]
       },
       "publication": {
         "decision": "accepted",

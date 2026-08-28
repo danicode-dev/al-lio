@@ -15,7 +15,7 @@ import {
   formatTopic,
 } from "@/components/noticias/noticias-view";
 
-type DetailResponse = { item: NewsItem; related: NewsItem[] };
+type DetailResponse = { item: NewsItem; nextItem: NewsItem | null };
 
 type ViewState =
   | { status: "loading" }
@@ -155,8 +155,8 @@ export function NewsDetailView({ id }: { id: string }) {
     );
   }
 
-  const { item, related } = state.data;
-  const summary = item.description?.trim();
+  const { item, nextItem } = state.data;
+  const summary = (item.summaryExpanded ?? item.summaryShort ?? item.description)?.trim();
   const hasSource = Boolean(item.url && item.url.trim());
 
   return (
@@ -184,14 +184,32 @@ export function NewsDetailView({ id }: { id: string }) {
 
         <h1 className="text-xl font-semibold leading-6 text-[#111111] sm:text-2xl">{item.title}</h1>
 
-        <p className="text-xs text-[#9a958a]">
-          {item.publishedAt ? formatDate(item.publishedAt) : "Fecha no indicada"}
-          {item.province ? ` · ${item.province}` : ""}
-        </p>
+        {(item.publishedAt || item.sourceUpdatedAt || item.verifiedAt || item.province) && (
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#9a958a]">
+            {item.publishedAt && <span>Publicada · {formatDate(item.publishedAt)}</span>}
+            {item.sourceUpdatedAt && <span>Actualizada · {formatDate(item.sourceUpdatedAt)}</span>}
+            {item.verifiedAt && <span>Verificada · {formatDate(item.verifiedAt)}</span>}
+            {item.province && <span>{item.province}</span>}
+          </div>
+        )}
 
-        <p className="text-sm leading-6 text-[#333029]">
-          {summary || "Todavía no hay un resumen disponible para esta noticia. Consulta la fuente original para más detalle."}
-        </p>
+        {summary && <p className="text-sm leading-6 text-[#333029]">{summary}</p>}
+
+        {item.keyFacts.length > 0 && (
+          <section aria-labelledby="news-key-facts" className="rounded-xl border border-[#ece7dc] bg-[#faf8f3] p-4">
+            <h2 id="news-key-facts" className="text-sm font-bold text-[#333029]">Datos confirmados</h2>
+            <ul className="mt-2 space-y-1.5 text-sm leading-5 text-[#454139]">
+              {item.keyFacts.map((fact) => <li key={fact}>• {fact}</li>)}
+            </ul>
+          </section>
+        )}
+
+        {item.whyRelevant && (
+          <aside className="rounded-xl border border-[#dceae4] bg-[#f3f8f5] p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#1f7a4d]">Por qué puede interesarte</p>
+            <p className="mt-1 text-sm leading-6 text-[#333029]">{item.whyRelevant}</p>
+          </aside>
+        )}
 
         {(item.topics.length > 0 || item.moduleCodes.length > 0) && (
           <div className="flex flex-wrap gap-1.5">
@@ -219,11 +237,7 @@ export function NewsDetailView({ id }: { id: string }) {
               Leer noticia original
               <ExternalLink className="h-4 w-4" />
             </a>
-          ) : (
-            <span className="inline-flex h-11 items-center justify-center rounded-xl border border-[#ece7dc] bg-[#faf8f3] px-5 text-sm font-semibold text-[#9a958a]">
-              Fuente no disponible
-            </span>
-          )}
+          ) : null}
           <button
             type="button"
             onClick={() => void saveItem()}
@@ -243,20 +257,15 @@ export function NewsDetailView({ id }: { id: string }) {
         </div>
       </article>
 
-      {related.length > 0 && (
+      {nextItem && (
         <div className="space-y-2">
-          <h2 className="text-sm font-bold text-[#333029]">Relacionadas para tu ciclo</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {related.map((relatedItem) => (
-              <Link
-                key={relatedItem.id}
-                href={`/noticias/${relatedItem.id}`}
-                className="rounded-xl border border-[#ece7dc] bg-white p-3 text-xs font-semibold leading-5 text-[#333029] transition hover:border-[#efb79f] hover:text-[#c94f21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]"
-              >
-                {relatedItem.title}
-              </Link>
-            ))}
-          </div>
+          <h2 className="text-sm font-bold text-[#333029]">Siguiente noticia para tu ciclo</h2>
+          <Link
+            href={`/noticias/${nextItem.id}`}
+            className="block rounded-xl border border-[#ece7dc] bg-white p-3 text-xs font-semibold leading-5 text-[#333029] transition hover:border-[#efb79f] hover:text-[#c94f21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]"
+          >
+            {nextItem.title}
+          </Link>
         </div>
       )}
     </div>
