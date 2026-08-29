@@ -225,10 +225,3 @@ export async function createReminderFromHackathon(formData: FormData) {
   revalidatePath("/calendar");
   revalidatePath("/hackathons");
 }
-
-// Deprecated: used Supabase RPC seed_hackathons_for_current_user (auth.uid()).
-// Not available in PostgreSQL propio. Pending Fase 6.
-export async function seedHackathons() {
-  console.warn("[seedHackathons] RPC not available in PostgreSQL. Pending Fase 6.");
-  revalidatePath("/hackathons");
-}
