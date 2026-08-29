@@ -123,6 +123,26 @@ if (trustworthyCatalogueMigration) {
   );
 }
 
+const verifiedJobsMigration = migrations.find((migration) => migration.version === "0015_verified_job_catalogue");
+check("verified job catalogue migration exists", Boolean(verifiedJobsMigration));
+if (verifiedJobsMigration) {
+  check(
+    "verified vacancies and student application state remain separate",
+    verifiedJobsMigration.sql.includes("radar_verified_jobs")
+      && verifiedJobsMigration.sql.includes("job_applications")
+      && verifiedJobsMigration.sql.includes("canonical_occurrence_id"),
+  );
+  check(
+    "job evidence and objective lifecycle are persisted",
+    verifiedJobsMigration.sql.includes("radar_job_field_evidence")
+      && verifiedJobsMigration.sql.includes("'open','closed','expired','unknown'"),
+  );
+  check(
+    "one user cannot duplicate private state for one canonical vacancy",
+    verifiedJobsMigration.sql.includes("job_applications_user_entity_uidx"),
+  );
+}
+
 const preparationResourcesMigration = migrations.find((migration) => migration.version === "0014_canonical_preparation_resources");
 check("canonical preparation-resource migration exists", Boolean(preparationResourcesMigration));
 if (preparationResourcesMigration) {

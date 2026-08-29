@@ -100,6 +100,34 @@ export const RADAR_V4_DERIVED_FIELDS = [
   "derived.preparationTips",
   "derived.whyRelevant",
 ] as const;
+export const RADAR_V4_JOB_FIELDS = [
+  "employer",
+  "sourceVacancyId",
+  "applicationUrl",
+  "lifecycle",
+  "applicationDeadline",
+  "country",
+  "autonomousCommunity",
+  "province",
+  "municipality",
+  "workplaceMode",
+  "contractType",
+  "workingTime",
+  "schedule",
+  "salaryMinMinor",
+  "salaryMaxMinor",
+  "salaryCurrency",
+  "salaryPeriod",
+  "minimumEducation",
+  "experienceRequirements",
+  "languages",
+  "otherEligibility",
+  "sourcePublishedAt",
+  "sourceUpdatedAt",
+] as const;
+export type RadarV4JobField = (typeof RADAR_V4_JOB_FIELDS)[number];
+export const RADAR_V4_JOB_EVIDENCE_FIELDS = RADAR_V4_JOB_FIELDS.map((field) => `job.${field}` as const);
+export type RadarV4JobEvidenceField = (typeof RADAR_V4_JOB_EVIDENCE_FIELDS)[number];
 
 const httpsUrl = z.string().url().refine((value) => new URL(value).protocol === "https:", "URL must use HTTPS");
 const nullableDateTime = z.string().datetime({ offset: true }).nullable();
@@ -254,6 +282,84 @@ const radarV4EvidenceSchema = z.object({
   authorityRank: z.number().int().min(1).max(100),
 }).strict();
 
+export const radarV4JobFactsSchema = z.object({
+  employer: z.string().trim().min(1).max(300),
+  sourceVacancyId: z.string().trim().min(1).max(500),
+  applicationUrl: httpsUrl,
+  lifecycle: z.enum(["open", "closed", "expired", "unknown"]),
+  applicationDeadline: nullableDateTime,
+  country: nullableText(160),
+  autonomousCommunity: nullableText(160),
+  province: nullableText(160),
+  municipality: nullableText(160),
+  workplaceMode: z.enum(["remote", "hybrid", "on_site"]).nullable(),
+  contractType: nullableText(300),
+  workingTime: nullableText(300),
+  schedule: nullableText(500),
+  salaryMinMinor: z.number().int().nonnegative().nullable(),
+  salaryMaxMinor: z.number().int().nonnegative().nullable(),
+  salaryCurrency: z.string().regex(/^[A-Z]{3}$/).nullable(),
+  salaryPeriod: z.enum(["hour", "month", "year"]).nullable(),
+  minimumEducation: nullableText(1_000),
+  experienceRequirements: nullableText(1_000),
+  languages: z.array(z.string().trim().min(1).max(160)).max(20),
+  otherEligibility: z.array(z.string().trim().min(1).max(1_000)).max(100),
+  sourcePublishedAt: nullableDateTime,
+  sourceUpdatedAt: nullableDateTime,
+  firstSeenAt: z.string().datetime({ offset: true }),
+  lastSeenAt: z.string().datetime({ offset: true }),
+  verifiedAt: z.string().datetime({ offset: true }),
+}).strict().superRefine((facts, context) => {
+  const hasAnySalary = facts.salaryMinMinor !== null || facts.salaryMaxMinor !== null;
+  if (hasAnySalary !== (facts.salaryCurrency !== null && facts.salaryPeriod !== null)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["salaryCurrency"],
+      message: "Salary amount, ISO currency and period must be stated together",
+    });
+  }
+  if (facts.salaryMinMinor !== null && facts.salaryMaxMinor !== null && facts.salaryMinMinor > facts.salaryMaxMinor) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["salaryMaxMinor"],
+      message: "Maximum salary must be greater than or equal to minimum salary",
+    });
+  }
+});
+
+const radarV4JobEvidenceSchema = z.object({
+  fieldPath: z.enum(RADAR_V4_JOB_EVIDENCE_FIELDS as [RadarV4JobEvidenceField, ...RadarV4JobEvidenceField[]]),
+  origin: z.enum(["authoritative_source", "source"]),
+  kind: z.enum(["official_document", "source_feed", "source_page", "registration_page"]),
+  url: httpsUrl,
+  observedAt: z.string().datetime({ offset: true }),
+  valueHash: hash,
+  authorityRank: z.number().int().min(1).max(100),
+}).strict();
+
+const radarV4JobSchema = z.object({
+  facts: radarV4JobFactsSchema,
+  factStates: z.record(
+    z.enum(RADAR_V4_JOB_EVIDENCE_FIELDS as [RadarV4JobEvidenceField, ...RadarV4JobEvidenceField[]]),
+    z.enum(RADAR_V4_FACT_OBSERVATION_STATES),
+  ),
+  evidence: z.array(radarV4JobEvidenceSchema).max(100),
+}).strict().superRefine((job, context) => {
+  for (const field of RADAR_V4_JOB_FIELDS) {
+    const fieldPath = `job.${field}` as RadarV4JobEvidenceField;
+    const value = job.facts[field];
+    const state = job.factStates[fieldPath];
+    const present = isKnownFactValue(value) || (Array.isArray(value) && state === "verified");
+    const evidence = job.evidence.filter((entry) => entry.fieldPath === fieldPath);
+    if (present && state !== "verified") {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["factStates", fieldPath], message: "A present job fact must be verified" });
+    }
+    if (present && !evidence.some((entry) => entry.valueHash === radarV4ValueHash(value))) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["evidence"], message: `Verified job fact ${fieldPath} requires matching evidence` });
+    }
+  }
+});
+
 const radarV4DerivedSchema = z.object({
   aboutSummary: nullableText(2_000),
   learningOutcomes: z.array(z.string().trim().min(1).max(1_000)).max(100),
@@ -283,6 +389,7 @@ export const radarV4ItemSchema = z.object({
   ),
   evidence: z.array(radarV4EvidenceSchema).max(100),
   derived: radarV4DerivedSchema,
+  job: radarV4JobSchema.optional(),
 }).strict().superRefine((item, context) => {
   const evidenceByField = new Map<RadarV4EvidenceField, typeof item.evidence>();
   for (const entry of item.evidence) {
@@ -349,6 +456,33 @@ export const radarV4ItemSchema = z.object({
     const required: RadarV4FactField[] = ["title", "summaryShort"];
     if (item.classification.destination === "course") required.push("provider");
     if (item.classification.destination === "event") required.push("organizer", "startsAt");
+    if (item.classification.destination === "job") {
+      if (!item.job) {
+        context.addIssue({ code: z.ZodIssueCode.custom, path: ["job"], message: "Accepted job publication requires typed job facts" });
+      } else if (item.job.facts.lifecycle === "unknown") {
+        context.addIssue({ code: z.ZodIssueCode.custom, path: ["job", "facts", "lifecycle"], message: "Accepted job publication requires a verified lifecycle" });
+      } else {
+        const expectedLifecycle = item.job.facts.lifecycle === "open"
+          ? "registration_open"
+          : item.job.facts.lifecycle === "closed"
+            ? "registration_closed"
+            : "completed";
+        if (item.facts.registrationUrl !== item.job.facts.applicationUrl) {
+          context.addIssue({ code: z.ZodIssueCode.custom, path: ["facts", "registrationUrl"], message: "Job application URL must match the generic action projection" });
+        }
+        if (item.facts.registrationDeadline !== item.job.facts.applicationDeadline) {
+          context.addIssue({ code: z.ZodIssueCode.custom, path: ["facts", "registrationDeadline"], message: "Job deadline must match the generic opportunity projection" });
+        }
+        if (item.facts.organizer !== item.job.facts.employer || item.facts.provider !== item.job.facts.employer) {
+          context.addIssue({ code: z.ZodIssueCode.custom, path: ["facts", "organizer"], message: "Job employer must match the generic source projection" });
+        }
+        if (item.facts.sourceLifecycleStatus !== expectedLifecycle) {
+          context.addIssue({ code: z.ZodIssueCode.custom, path: ["facts", "sourceLifecycleStatus"], message: "Job lifecycle must match the generic opportunity projection" });
+        }
+      }
+    } else if (item.job) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["job"], message: "Job facts are only valid for destination=job" });
+    }
     for (const field of required) {
       if (!isKnownFactValue(item.facts[field])) {
         context.addIssue({
@@ -444,6 +578,7 @@ export type RadarDeliveryV3 = {
 export type RadarDeliveryV4 = z.infer<typeof radarDeliveryV4Schema>;
 export type RadarV4DeliveryItem = z.infer<typeof radarV4ItemSchema>;
 export type RadarV4Facts = z.infer<typeof radarV4FactsSchema>;
+export type RadarV4Job = z.infer<typeof radarV4JobSchema>;
 export type RadarV4Destination = (typeof RADAR_V4_DESTINATIONS)[number];
 export type RadarDelivery = RadarDeliveryV3 | RadarDeliveryV4;
 export type RadarDeliveryItem = z.infer<typeof radarItemSchema>;

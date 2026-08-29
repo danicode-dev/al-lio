@@ -63,8 +63,15 @@ check("student state is isolated by user", repository.includes("radar_item_user_
 check("v4 persists canonical entities, occurrences and revisions", v4Repository.includes("radar_content_entities") && v4Repository.includes("radar_content_occurrences") && v4Repository.includes("radar_content_revisions"));
 check("v4 preserves last-known-good facts on missing extraction", v4Projection.includes("source_unavailable") && v4Projection.includes("kept_last_known_good"));
 check("v4 projection is destination-flagged and disabled by default", v4Projection.includes("AL_LIO_RADAR_V4_PROJECT_DESTINATIONS") && v4Projection.includes('raw = process.env.AL_LIO_RADAR_V4_PROJECT_DESTINATIONS ?? ""'));
+check("v4 job projection is an explicit supported destination", v4Projection.includes('["news", "course", "event", "job"]'));
 check("v4 identity aliases reuse canonical occurrences", v4Repository.includes("radar_content_identity_aliases") && v4Repository.includes("canonical-occurrence-key-transition"));
 check("v4 legacy catalogue projection reuses existing rows", v4Repository.includes("legacy_fp_content_item_id") && v4Repository.includes("radar_semantic_key = $1"));
+check("v4 job projection persists typed global vacancies and evidence", v4Repository.includes("radar_verified_jobs") && v4Repository.includes("radar_job_field_evidence"));
+check("job ingest never creates private student application state", !v4Repository.includes("INSERT INTO public.job_applications"));
+
+const verifiedJobsRepository = read("src/lib/jobs/repository.ts");
+check("verified jobs are cycle-scoped and deduplicated by canonical entity", verifiedJobsRepository.includes("target.target_type = 'cycle'") && verifiedJobsRepository.includes("DISTINCT ON (occurrence.entity_id)"));
+check("private job actions are user-scoped and explicit", verifiedJobsRepository.includes("application.user_id = $1") && verifiedJobsRepository.includes("applyVerifiedJobPrivateAction"));
 
 check("News obtains the authenticated profile cycle", newsRoute.includes("getProfileByUser") && newsRoute.includes("profile.cycle_code"));
 check("News queries only the Radar repository", newsRoute.includes("listRadarItemsForCycle"));

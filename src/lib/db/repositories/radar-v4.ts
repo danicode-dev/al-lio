@@ -9,6 +9,7 @@ import {
   type RadarV4EvidenceField,
   type RadarV4FactField,
   type RadarV4Facts,
+  type RadarV4Job,
 } from "@/lib/radar/contract";
 import {
   legacyLifecycleStatus,
@@ -128,6 +129,7 @@ export async function ingestRadarV4Delivery(
 
     await linkDeliveryRevision(client, delivery.deliveryId, revisionId);
     await insertEvidence(client, revisionId, item);
+    await insertJobEvidence(client, revisionId, item);
     await insertTargets(client, revisionId, item);
     await persistAliases(client, entity, occurrence, item);
 
@@ -144,6 +146,9 @@ export async function ingestRadarV4Delivery(
     const effectiveDecision = merged.unresolvedConflictCount > 0 ? "quarantined" : item.publication.decision;
 
     await updateOccurrence(client, occurrence.id, item, merged.facts, effectiveDecision);
+    if (item.classification.destination === "job" && item.job && effectiveDecision === "accepted") {
+      await upsertVerifiedJob(client, occurrence.id, revisionId, item.job);
+    }
     await client.query(
       `UPDATE public.radar_content_entities
        SET destination = $2, opportunity_type = $3, title = $4, organizer = $5,
@@ -174,7 +179,11 @@ export async function ingestRadarV4Delivery(
         client,
         delivery.deliveryId,
         revisionId,
-        item.classification.destination === "news" ? "legacy_news" : "legacy_fp_catalogue",
+        item.classification.destination === "news"
+          ? "legacy_news"
+          : item.classification.destination === "job"
+            ? "verified_job"
+            : "legacy_fp_catalogue",
         merged.unresolvedConflictCount > 0 ? "conflict" : "skipped",
         projectionReason,
       );
@@ -184,6 +193,8 @@ export async function ingestRadarV4Delivery(
     if (item.classification.destination === "news") {
       await projectNews(client, occurrence.id, item, merged.facts);
       await recordProjectorEvent(client, delivery.deliveryId, revisionId, "legacy_news", "projected", null);
+    } else if (item.classification.destination === "job") {
+      await recordProjectorEvent(client, delivery.deliveryId, revisionId, "verified_job", "projected", null);
     } else {
       await projectCatalogue(client, occurrence.id, item, merged.facts);
       await recordProjectorEvent(client, delivery.deliveryId, revisionId, "legacy_fp_catalogue", "projected", null);
@@ -508,6 +519,102 @@ async function insertEvidence(client: PoolClient, revisionId: string, item: Rada
   }
 }
 
+async function insertJobEvidence(client: PoolClient, revisionId: string, item: RadarV4DeliveryItem) {
+  if (!item.job) return;
+  for (const evidence of item.job.evidence) {
+    await client.query(
+      `INSERT INTO public.radar_job_field_evidence (
+         revision_id, field_path, origin, evidence_kind, evidence_url,
+         observed_at, value_hash, authority_rank
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (revision_id, field_path, evidence_url, value_hash) DO NOTHING`,
+      [
+        revisionId,
+        evidence.fieldPath,
+        evidence.origin,
+        evidence.kind,
+        evidence.url,
+        evidence.observedAt,
+        evidence.valueHash,
+        evidence.authorityRank,
+      ],
+    );
+  }
+}
+
+async function upsertVerifiedJob(
+  client: PoolClient,
+  occurrenceId: string,
+  revisionId: string,
+  job: RadarV4Job,
+) {
+  const facts = job.facts;
+  await client.query(
+    `INSERT INTO public.radar_verified_jobs (
+       occurrence_id, current_revision_id, employer, source_vacancy_id,
+       application_url, lifecycle, application_deadline, country,
+       autonomous_community, province, municipality, workplace_mode,
+       contract_type, working_time, schedule, salary_min_minor,
+       salary_max_minor, salary_currency, salary_period, minimum_education,
+       experience_requirements, languages, other_eligibility,
+       source_published_at, source_updated_at, first_seen_at, last_seen_at,
+       verified_at
+     ) VALUES (
+       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+       $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26,
+       $27, $28
+     )
+     ON CONFLICT (occurrence_id) DO UPDATE SET
+       current_revision_id=excluded.current_revision_id,
+       employer=excluded.employer, source_vacancy_id=excluded.source_vacancy_id,
+       application_url=excluded.application_url, lifecycle=excluded.lifecycle,
+       application_deadline=excluded.application_deadline, country=excluded.country,
+       autonomous_community=excluded.autonomous_community, province=excluded.province,
+       municipality=excluded.municipality, workplace_mode=excluded.workplace_mode,
+       contract_type=excluded.contract_type, working_time=excluded.working_time,
+       schedule=excluded.schedule, salary_min_minor=excluded.salary_min_minor,
+       salary_max_minor=excluded.salary_max_minor, salary_currency=excluded.salary_currency,
+       salary_period=excluded.salary_period, minimum_education=excluded.minimum_education,
+       experience_requirements=excluded.experience_requirements,
+       languages=excluded.languages, other_eligibility=excluded.other_eligibility,
+       source_published_at=excluded.source_published_at,
+       source_updated_at=excluded.source_updated_at,
+       first_seen_at=least(public.radar_verified_jobs.first_seen_at, excluded.first_seen_at),
+       last_seen_at=greatest(public.radar_verified_jobs.last_seen_at, excluded.last_seen_at),
+       verified_at=excluded.verified_at`,
+    [
+      occurrenceId,
+      revisionId,
+      facts.employer,
+      facts.sourceVacancyId,
+      facts.applicationUrl,
+      facts.lifecycle,
+      facts.applicationDeadline,
+      facts.country,
+      facts.autonomousCommunity,
+      facts.province,
+      facts.municipality,
+      facts.workplaceMode,
+      facts.contractType,
+      facts.workingTime,
+      facts.schedule,
+      facts.salaryMinMinor,
+      facts.salaryMaxMinor,
+      facts.salaryCurrency,
+      facts.salaryPeriod,
+      facts.minimumEducation,
+      facts.experienceRequirements,
+      facts.languages,
+      facts.otherEligibility,
+      facts.sourcePublishedAt,
+      facts.sourceUpdatedAt,
+      facts.firstSeenAt,
+      facts.lastSeenAt,
+      facts.verifiedAt,
+    ],
+  );
+}
+
 async function insertTargets(client: PoolClient, revisionId: string, item: RadarV4DeliveryItem) {
   const targets = [
     ...item.classification.targetCycleCodes.map((value) => ["cycle", value] as const),
@@ -774,7 +881,6 @@ function projectionSkipReason(
 ): string | null {
   if (decision !== "accepted") return decision === "quarantined" ? "unresolved_evidence_conflict" : "publication_not_accepted";
   if (!enabled.has(item.classification.destination)) return "feature_disabled";
-  if (item.classification.destination === "job") return "job_projector_not_implemented";
   return null;
 }
 
@@ -801,7 +907,7 @@ async function recordProjectorEvent(
   client: PoolClient,
   deliveryId: string,
   revisionId: string,
-  projector: "canonical" | "legacy_news" | "legacy_fp_catalogue",
+  projector: "canonical" | "legacy_news" | "legacy_fp_catalogue" | "verified_job",
   status: "projected" | "skipped" | "conflict" | "failed",
   reasonCode: string | null,
 ) {
