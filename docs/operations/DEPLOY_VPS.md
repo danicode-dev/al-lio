@@ -107,6 +107,16 @@ AL_LIO_IMAGE_TAG=<reviewed-sha>
 AL_LIO_RADAR_IMAGE_TAG=<reviewed-radar-sha>
 AL_LIO_RADAR_BUILD_CONTEXT=../../al-lio-radar
 AL_LIO_RADAR_WEBHOOK_SECRET=<shared-random-secret-at-least-32-characters>
+AL_LIO_RADAR_DELIVERY_SCHEMA_VERSION=3
+AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_ENABLED=false
+AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_DESTINATIONS=news
+AL_LIO_RADAR_AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON={}
+AL_LIO_RADAR_DAILY_PUBLICATION_TIMEZONE=Europe/Madrid
+AL_LIO_RADAR_DAILY_PUBLICATION_TIME=09:00
+AL_LIO_RADAR_WEB_DISCOVERY_ENABLED=false
+AL_LIO_RADAR_LEARNING_DISCOVERY_ENABLED=false
+AL_LIO_RADAR_YOUTUBE_WATCH_ENABLED=false
+AL_LIO_RADAR_JOB_RADAR_ENABLED=false
 AL_LIO_DEMO_ACCESS_ENABLED=false
 NODE_ENV=production
 ```
@@ -118,6 +128,9 @@ docker compose -f infra/docker-compose.prod.yml --env-file .env config --quiet
 
 `DATABASE_MIGRATION_URL` must never be added to the web service environment.
 Demo access remains disabled unless a controlled test explicitly enables it.
+The Radar values above are the dormant defaults. Follow
+[`OPENWEBINARS_NEWS_PILOT.md`](OPENWEBINARS_NEWS_PILOT.md) for the separate,
+owner-approved news activation; never activate another vertical by association.
 
 ## 3. Capture a read-only inventory
 

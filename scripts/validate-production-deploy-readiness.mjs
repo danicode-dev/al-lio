@@ -44,15 +44,16 @@ check("deploy script replaces only the web service", deployScript.includes("up -
 check("deploy script has an automatic web rollback", deployScript.includes("rollback_web"));
 check("deploy script never removes Compose volumes", !deployScript.includes("down -v") && !deployScript.includes("docker volume rm"));
 check(
-  "deploy script narrowly allowlists reviewed additive web environment mappings",
-  deployScript.includes("validate_compose_web_env_additions")
+  "deploy script narrowly allowlists reviewed additive service environment mappings",
+  deployScript.includes("validate_compose_env_additions")
     && deployScript.includes("GOOGLE_IDENTITY_REDIRECT_URI")
     && deployScript.includes("RESEND_API_KEY")
     && deployScript.includes("RESEND_FROM_EMAIL")
-    && deployScript.includes("'+      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}') key=\"AL_LIO_RADAR_V4_PROJECT_DESTINATIONS\" ;;")
+    && deployScript.includes("'+      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}') service=\"al_lio_web\"; key=\"AL_LIO_RADAR_V4_PROJECT_DESTINATIONS\" ;;")
+    && deployScript.includes("'+      AUTONOMOUS_PUBLICATION_ENABLED: ${AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_ENABLED:-false}') service=\"al_lio_radar\"; key=\"AUTONOMOUS_PUBLICATION_ENABLED\" ;;")
     && read("infra/docker-compose.prod.yml").includes("      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}"),
 );
-check("deploy script rejects every other Compose edit", deployScript.includes("Docker Compose changed outside the allowlisted web environment passthroughs"));
+check("deploy script rejects every other Compose edit", deployScript.includes("Docker Compose changed outside the allowlisted service environment passthroughs"));
 
 console.log("\n-- .github/workflows/deploy-production.yml --");
 const deployWorkflow = read(".github/workflows/deploy-production.yml");
@@ -108,6 +109,12 @@ check("DATABASE_URL uses restricted al_lio_app role", envExample.includes("DATAB
 check("DATABASE_MIGRATION_URL uses admin role", envExample.includes("DATABASE_MIGRATION_URL=postgresql://al_lio:"));
 check("documents shared radar webhook secret", envExample.includes("AL_LIO_RADAR_WEBHOOK_SECRET=REPLACE_ME"));
 check("documents immutable radar image tag", envExample.includes("AL_LIO_RADAR_IMAGE_TAG="));
+check("documents dormant Radar publication defaults", [
+  "AL_LIO_RADAR_DELIVERY_SCHEMA_VERSION=3",
+  "AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_ENABLED=false",
+  "AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_DESTINATIONS=news",
+  "AL_LIO_RADAR_AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON={}",
+].every((entry) => envExample.includes(entry)));
 check("does not contain aidraft BASE_URL", !envExample.includes("BASE_URL=https://aidraft"));
 check("does not contain real Supabase anon key", !(/NEXT_PUBLIC_SUPABASE_ANON_KEY=ey[A-Za-z0-9]/.test(envExample)));
 check("does not contain real Supabase service role key", !(/SUPABASE_SERVICE_ROLE_KEY=ey[A-Za-z0-9]/.test(envExample)));

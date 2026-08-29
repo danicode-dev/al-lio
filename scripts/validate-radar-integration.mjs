@@ -82,6 +82,22 @@ check("legacy News fetcher does not exist", !existsSync(join(root, "src/lib/news
 check("Compose shares the secret through environment only", compose.includes("AL_LIO_RADAR_WEBHOOK_SECRET"));
 check("Compose keeps Radar isolated from PostgreSQL", Boolean(radarService) && !radarService.includes("DATABASE_URL:"));
 check("Compose persists the Radar queue", compose.includes("al_lio_radar_data:/app/data"));
+check(
+  "Compose maps the fail-closed Radar publication boundary",
+  [
+    "AL_LIO_DELIVERY_SCHEMA_VERSION: ${AL_LIO_RADAR_DELIVERY_SCHEMA_VERSION:-3}",
+    "AUTONOMOUS_PUBLICATION_ENABLED: ${AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_ENABLED:-false}",
+    "AUTONOMOUS_PUBLICATION_DESTINATIONS: ${AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_DESTINATIONS:-news}",
+    "AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON: ${AL_LIO_RADAR_AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON:-}",
+    "DAILY_PUBLICATION_TIMEZONE: ${AL_LIO_RADAR_DAILY_PUBLICATION_TIMEZONE:-Europe/Madrid}",
+    "DAILY_PUBLICATION_TIME: ${AL_LIO_RADAR_DAILY_PUBLICATION_TIME:-09:00}",
+  ].every((mapping) => radarService.includes(mapping)),
+);
+check(
+  "Compose keeps unrelated Radar capabilities independently disabled",
+  ["WEB_DISCOVERY", "LEARNING_DISCOVERY", "YOUTUBE_WATCH", "JOB_RADAR"].every((capability) =>
+    radarService.includes(`${capability}_ENABLED: \${AL_LIO_RADAR_${capability}_ENABLED:-false}`)),
+);
 
 if (errors > 0) {
   console.error(`\nRESULT: ${errors} Radar integration issue(s).`);

@@ -20,6 +20,7 @@ and the per-release evidence under [`release-records/`](release-records/TEMPLATE
 
 - [`GITHUB_PRODUCTION_DEPLOY.md`](GITHUB_PRODUCTION_DEPLOY.md): automatic post-merge release path and one-time GitHub/VPS configuration.
 - [`AUTONOMOUS_PRODUCTION_DEPLOY.md`](AUTONOMOUS_PRODUCTION_DEPLOY.md): routine owner-operated release command and stop conditions.
+- [`OPENWEBINARS_NEWS_PILOT.md`](OPENWEBINARS_NEWS_PILOT.md): coordinated, reversible activation of the first source/cycle news pilot.
 - [`monitoring.md`](monitoring.md): health signals, alert ownership, and incident triage.
 - [`backup-and-recovery.md`](backup-and-recovery.md): backup boundaries and restore evidence.
 - [`release-and-rollback.md`](release-and-rollback.md): release approval and recovery decisions.
