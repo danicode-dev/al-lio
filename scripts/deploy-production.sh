@@ -120,6 +120,8 @@ validate_compose_web_env_additions() {
       '+      RESEND_API_KEY: ${RESEND_API_KEY:-}') key="RESEND_API_KEY" ;;
       '+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}') key="RESEND_FROM_EMAIL" ;;
       '+      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}') key="AL_LIO_RADAR_V4_PROJECT_DESTINATIONS" ;;
+      '+      AL_LIO_VERIFIED_OPPORTUNITIES_ONLY: ${AL_LIO_VERIFIED_OPPORTUNITIES_ONLY:-false}') key="AL_LIO_VERIFIED_OPPORTUNITIES_ONLY" ;;
+      '+      AL_LIO_RADAR_LEARNING_INGEST_ENABLED: ${AL_LIO_RADAR_LEARNING_INGEST_ENABLED:-false}') key="AL_LIO_RADAR_LEARNING_INGEST_ENABLED" ;;
       *) return 1 ;;
     esac
 
@@ -139,7 +141,14 @@ validate_compose_web_env_additions() {
   )"
 
   for key in "${allowed_compose_env_keys[@]}"; do
-    expected_line="      ${key}: \${${key}:-}"
+    case "$key" in
+      AL_LIO_VERIFIED_OPPORTUNITIES_ONLY | AL_LIO_RADAR_LEARNING_INGEST_ENABLED)
+        expected_line="      ${key}: \${${key}:-false}"
+        ;;
+      *)
+        expected_line="      ${key}: \${${key}:-}"
+        ;;
+    esac
     match_count="$(grep -Fxc -- "$expected_line" <<< "$target_web_environment" || true)"
     [[ "$match_count" -eq 1 ]] || return 1
   done

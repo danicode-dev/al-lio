@@ -65,6 +65,13 @@ test("the command permits only reviewed additive web environment passthroughs in
   assert.ok(source.includes(
     "'+      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}') key=\"AL_LIO_RADAR_V4_PROJECT_DESTINATIONS\" ;;",
   ));
+  assert.ok(source.includes(
+    "'+      AL_LIO_VERIFIED_OPPORTUNITIES_ONLY: ${AL_LIO_VERIFIED_OPPORTUNITIES_ONLY:-false}') key=\"AL_LIO_VERIFIED_OPPORTUNITIES_ONLY\" ;;",
+  ));
+  assert.ok(source.includes(
+    "'+      AL_LIO_RADAR_LEARNING_INGEST_ENABLED: ${AL_LIO_RADAR_LEARNING_INGEST_ENABLED:-false}') key=\"AL_LIO_RADAR_LEARNING_INGEST_ENABLED\" ;;",
+  ));
+  assert.match(source, /expected_line=.*\$\{\$\{key\}:-false\}/);
   assert.match(source, /awk '!\/\^--- \/ && !\/\^\\\+\\\+\\\+ \/ && \/\^\[\+-\]\//);
   assert.match(source, /\*\) return 1 ;;/);
   assert.match(source, /match_count.*-eq 1/);
