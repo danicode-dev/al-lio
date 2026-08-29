@@ -280,6 +280,17 @@ test("Radar detail query mirrors the list boundary and deterministic next-item l
   assert.doesNotMatch(nextFunctionSource, /FROM public\.radar_items/);
 });
 
+test("rejected legacy Radar news stay outside every user-facing read and mutation boundary", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/radar.ts", import.meta.url), "utf8");
+  const approvedBoundaries = source.match(/item\.review_status = 'approved'/g) ?? [];
+
+  assert.equal(
+    approvedBoundaries.length,
+    4,
+    "list, statistics, status mutation and detail queries must all require approved legacy news",
+  );
+});
+
 test("News cards route into the internal detail page, never straight to the source, and never inject raw HTML", async () => {
   const source = await readFile(new URL("../src/components/noticias/noticias-view.tsx", import.meta.url), "utf8");
 

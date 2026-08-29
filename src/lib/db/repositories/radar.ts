@@ -304,6 +304,7 @@ export async function listRadarItemsForCycle(
     `$2 = ANY(item.target_cycle_codes)`,
     `item.destination = 'news'`,
     `item.kind IN ('news', 'legal')`,
+    `item.review_status = 'approved'`,
   ];
 
   if (isSavedArchive) {
@@ -392,6 +393,7 @@ export async function getRadarStatsForCycle(userId: string, cycleCode: RadarCycl
      WHERE $2 = ANY(item.target_cycle_codes)
        AND item.destination = 'news'
        AND item.kind IN ('news', 'legal')
+       AND item.review_status = 'approved'
       `,
     [userId, cycleCode],
   );
@@ -436,6 +438,7 @@ export async function setRadarItemStatus(
        AND $3 = ANY(item.target_cycle_codes)
        AND item.destination = 'news'
        AND item.kind IN ('news', 'legal')
+       AND item.review_status = 'approved'
        AND (
          EXISTS (
            SELECT 1 FROM public.radar_item_user_states existing
@@ -495,6 +498,7 @@ export async function getRadarItemDetailForUser(
        AND $2 = ANY(item.target_cycle_codes)
        AND item.destination = 'news'
        AND item.kind IN ('news', 'legal')
+       AND item.review_status = 'approved'
        AND (
          state.status = 'saved'
          OR (
