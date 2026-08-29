@@ -119,6 +119,7 @@ validate_compose_web_env_additions() {
       '+      GOOGLE_IDENTITY_REDIRECT_URI: ${GOOGLE_IDENTITY_REDIRECT_URI:-}') key="GOOGLE_IDENTITY_REDIRECT_URI" ;;
       '+      RESEND_API_KEY: ${RESEND_API_KEY:-}') key="RESEND_API_KEY" ;;
       '+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}') key="RESEND_FROM_EMAIL" ;;
+      '+      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}') key="AL_LIO_RADAR_V4_PROJECT_DESTINATIONS" ;;
       *) return 1 ;;
     esac
 
