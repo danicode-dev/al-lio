@@ -73,6 +73,8 @@ import { calendarHref } from "@/lib/dashboard/calendar-events";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
 import { APPLICATION_STATUSES, STATUS_LABELS, STATUS_COLORS } from "@/lib/job-radar/types";
+import type { VerifiedJob, VerifiedJobPrivateAction } from "@/lib/jobs/types";
+import { VerifiedJobsView } from "@/components/jobs/verified-jobs-view";
 import { useStore } from "@/components/guest-store";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import { PageHeader } from "@/components/page-header";
@@ -1328,32 +1330,84 @@ const PortalLinkCard = memo(function PortalLinkCard({ platform }: { platform: Jo
   );
 });
 
-// Applications remain outside the MVP intentionally. The job_applications
-// table and collection pipeline already work, but the UI stays hidden until
-// product scope brings it back. Re-add the row to reactivate it.
-const WORK_TABS: ["portals" | "companies" | "candidaturas", string][] = [
+type WorkTab = "verified" | "portals" | "companies" | "candidaturas";
+
+const WORK_TABS: [Exclude<WorkTab, "verified">, string][] = [
   ["portals", "Portales"],
   ["companies", "Empresas"],
+  ["candidaturas", "Candidaturas"],
 ];
 
 function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
-  const [tab, setTab] = useState<"portals" | "companies" | "candidaturas">("portals");
+  const [tab, setTab] = useState<WorkTab>("portals");
   const [expandedPortal, setExpandedPortal] = useState<JobPlatform | null>(null);
   const [companySearch, setCompanySearch] = useState("");
   const [companyView, setCompanyView] = useState<"all" | "favorites">("all");
   const [savedSearches, setSavedSearches] = useState<Record<string, SavedQuickSearch>>({});
   const [savedSearchesLoaded, setSavedSearchesLoaded] = useState(false);
+  const [verifiedJobs, setVerifiedJobs] = useState<VerifiedJob[]>([]);
+  const [verifiedJobsEnabled, setVerifiedJobsEnabled] = useState(false);
+  const [verifiedJobsLoaded, setVerifiedJobsLoaded] = useState(false);
+  const [verifiedJobBusyId, setVerifiedJobBusyId] = useState<string | null>(null);
+  const workTabTouched = useRef(false);
 
   // Candidaturas state
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [appLoaded, setAppLoaded] = useState(false);
-  const [appSyncing, setAppSyncing] = useState(false);
   const [appStatusFilter, setAppStatusFilter] = useState("");
   const [noteInput, setNoteInput] = useState<Record<string, string>>({});
   const [showManualForm, setShowManualForm] = useState(false);
   const [manualForm, setManualForm] = useState({ company_name: "", company_url: "", job_title: "", job_url: "" });
 
   const handleToggleWork = useCallback((p: JobPlatform) => setExpandedPortal((v) => v === p ? null : p), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/verified-jobs", { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() : { enabled: false, jobs: [] })
+      .then((payload) => {
+        if (cancelled) return;
+        setVerifiedJobsEnabled(Boolean(payload.enabled));
+        setVerifiedJobs(Array.isArray(payload.jobs) ? payload.jobs : []);
+        if (payload.enabled && !workTabTouched.current) setTab("verified");
+      })
+      .finally(() => { if (!cancelled) setVerifiedJobsLoaded(true); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const updateVerifiedJob = useCallback(async (job: VerifiedJob, action: VerifiedJobPrivateAction) => {
+    setVerifiedJobBusyId(job.id);
+    try {
+      const response = await fetch(`/api/verified-jobs/${encodeURIComponent(job.id)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (!response.ok) throw new Error("Verified job action failed");
+      const payload = await response.json();
+      setAppLoaded(false);
+      if (action === "dismiss") {
+        setVerifiedJobs((current) => current.filter((item) => item.id !== job.id));
+        toast.success("Oferta ocultada");
+      } else {
+        setVerifiedJobs((current) => current.map((item) => item.id === job.id ? {
+          ...item,
+          isSaved: payload.state.isSaved,
+          privateApplicationId: payload.state.id,
+          privateApplicationStatus: payload.state.status,
+        } : item));
+        toast.success(action === "applied"
+          ? "Candidatura marcada como aplicada"
+          : action === "unsave"
+            ? "Oferta quitada de guardados"
+            : "Oferta guardada");
+      }
+    } catch {
+      toast.error("No se pudo actualizar la oferta");
+    } finally {
+      setVerifiedJobBusyId(null);
+    }
+  }, []);
 
   useEffect(() => {
     if (tab !== "portals" || savedSearchesLoaded) return;
@@ -1389,19 +1443,6 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
     setApplications(d.applications ?? []);
     setAppLoaded(true);
   }, []);
-
-  const syncRadar = useCallback(async () => {
-    setAppSyncing(true);
-    try {
-      await fetch("/api/job-radar/sync", { method: "POST" });
-      await fetchApplications();
-      toast.success("Candidaturas actualizadas");
-    } catch {
-      toast.error("Error al sincronizar candidaturas");
-    } finally {
-      setAppSyncing(false);
-    }
-  }, [fetchApplications]);
 
   const updateAppStatus = useCallback(async (id: string, status: ApplicationStatus) => {
     await fetch(`/api/job-radar/${id}`, {
@@ -1466,22 +1507,34 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
     () => applications.filter((a) => !appStatusFilter || a.status === appStatusFilter),
     [applications, appStatusFilter],
   );
+  const workTabs = useMemo<[WorkTab, string][]>(
+    () => verifiedJobsEnabled ? [["verified", "Ofertas verificadas"], ...WORK_TABS] : WORK_TABS,
+    [verifiedJobsEnabled],
+  );
 
   return (
     <>
       <style>{workBrandCss}</style>
       <div className="al-work-tabs" style={{ marginTop: 8 }}>
-        {WORK_TABS.map(([id, label]) => (
+        {workTabs.map(([id, label]) => (
           <button
             key={id}
             type="button"
             className={cn("al-work-tab", tab === id && "al-work-tab-active")}
-            onClick={() => setTab(id)}
+            onClick={() => { workTabTouched.current = true; setTab(id); }}
           >
             {label}
           </button>
         ))}
       </div>
+
+      {verifiedJobsEnabled && tab === "verified" && (
+        verifiedJobsLoaded ? (
+          <VerifiedJobsView jobs={verifiedJobs} busyId={verifiedJobBusyId} onAction={updateVerifiedJob} />
+        ) : (
+          <p className="text-sm text-muted-foreground">Cargando ofertas verificadas...</p>
+        )
+      )}
 
       {tab === "portals" && (
         <div className="space-y-6">
@@ -1570,37 +1623,29 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
       {tab === "candidaturas" && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => setAppStatusFilter("")}
-                className={cn("rounded-full border px-3 py-1 text-xs transition-colors", !appStatusFilter ? "al-action-soft-selected" : "hover:bg-muted")}
-              >
-                Todas
-              </button>
-              {APPLICATION_STATUSES.map((s) => (
+            <div>
+              <div className="flex flex-wrap gap-1.5">
                 <button
-                  key={s}
                   type="button"
-                  onClick={() => setAppStatusFilter((v) => v === s ? "" : s)}
-                  className={cn("rounded-full border px-3 py-1 text-xs transition-colors", appStatusFilter === s ? "al-action-soft-selected" : "hover:bg-muted")}
+                  onClick={() => setAppStatusFilter("")}
+                  className={cn("rounded-full border px-3 py-1 text-xs transition-colors", !appStatusFilter ? "al-action-soft-selected" : "hover:bg-muted")}
                 >
-                  {STATUS_LABELS[s]}
+                  Todas
                 </button>
-              ))}
+                {APPLICATION_STATUSES.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setAppStatusFilter((v) => v === s ? "" : s)}
+                    className={cn("rounded-full border px-3 py-1 text-xs transition-colors", appStatusFilter === s ? "al-action-soft-selected" : "hover:bg-muted")}
+                  >
+                    {STATUS_LABELS[s]}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">Tu seguimiento es privado y solo aparece después de una acción tuya o una entrada manual.</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={syncRadar}
-                disabled={appSyncing}
-                className="h-8 gap-1.5 text-xs"
-              >
-                <RefreshCw className={cn("h-3.5 w-3.5", appSyncing && "animate-spin")} />
-                {appSyncing ? "Escaneando..." : "Sincronizar radar"}
-              </Button>
               <Button
                 type="button"
                 size="sm"
@@ -1656,7 +1701,7 @@ function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) 
             <p className="text-sm text-muted-foreground">Cargando candidaturas...</p>
           ) : filteredApplications.length === 0 ? (
             <EmptyText>
-              {appStatusFilter ? "Sin candidaturas con ese estado." : "Sin candidaturas. Sincroniza el radar o añade una manual."}
+              {appStatusFilter ? "Sin candidaturas con ese estado." : "Sin candidaturas. Guarda una oferta verificada o añade una manual."}
             </EmptyText>
           ) : (
             <div className="space-y-3">

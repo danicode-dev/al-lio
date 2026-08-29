@@ -49,7 +49,9 @@ export interface JobApplication {
   company_url: string;
   job_title: string;
   job_url: string | null;
-  source: "radar" | "manual";
+  source: "radar" | "manual" | "verified_radar";
+  canonical_occurrence_id: string | null;
+  canonical_entity_id: string | null;
   page_hash: string | null;
   status: ApplicationStatus;
   detected_at: string;
@@ -57,6 +59,7 @@ export interface JobApplication {
   notes: ApplicationNote[];
   is_new: boolean;
   is_saved: boolean;
+  is_dismissed: boolean;
   created_at: string;
   updated_at: string;
 }
