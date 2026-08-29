@@ -87,6 +87,12 @@ export function useYouTubePlayer(videoUrl: string | null | undefined, initialTim
   const youtubeRef = useMemo(() => (videoUrl ? parseYouTubeUrl(videoUrl) : null), [videoUrl]);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YouTubePlayerInstance | null>(null);
+  // The initial jump (a "Ir al momento" link, or resuming where the student
+  // left off) has to land exactly once. YouTube frequently ignores a
+  // seekTo() issued from onReady because the video module has not finished
+  // loading yet, so the seek is retried on the first real playback state
+  // change and this ref keeps that retry idempotent.
+  const initialSeekAppliedRef = useRef(false);
   const [playerReady, setPlayerReady] = useState(false);
   const [playerError, setPlayerError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
@@ -100,9 +106,21 @@ export function useYouTubePlayer(videoUrl: string | null | undefined, initialTim
     setCurrentTime(0);
     setDuration(0);
     setPlayerState(-1);
+    initialSeekAppliedRef.current = false;
     const wrapper = wrapperRef.current;
     if (!youtubeRef || !wrapper) return;
     let cancelled = false;
+
+    // Any positive start position is honoured; a note taken at second 0-1 or
+    // a "resume" that never really started just plays from the top.
+    const applyInitialSeek = () => {
+      if (initialSeekAppliedRef.current || initialTimeSeconds <= 0) return;
+      const player = playerRef.current;
+      if (!player) return;
+      initialSeekAppliedRef.current = true;
+      player.seekTo(initialTimeSeconds, true);
+      setCurrentTime(initialTimeSeconds);
+    };
 
     const mountNode = document.createElement("div");
     mountNode.style.position = "absolute";
@@ -124,15 +142,17 @@ export function useYouTubePlayer(videoUrl: string | null | undefined, initialTim
             events: {
               onReady: () => {
                 const player = playerRef.current;
-                const playerDuration = player?.getDuration() ?? 0;
-                setDuration(playerDuration);
-                if (initialTimeSeconds > 5 && (!playerDuration || initialTimeSeconds < playerDuration - 10)) {
-                  player?.seekTo(initialTimeSeconds, true);
-                  setCurrentTime(initialTimeSeconds);
-                }
+                setDuration(player?.getDuration() ?? 0);
+                applyInitialSeek();
                 setPlayerReady(true);
               },
-              onStateChange: (event) => setPlayerState(event.data),
+              onStateChange: (event) => {
+                setPlayerState(event.data);
+                // 1 playing, 3 buffering, 5 video cued - the first time the
+                // player reports any of these it can accept the seek that
+                // onReady may have been too early to apply.
+                if (event.data === 1 || event.data === 3 || event.data === 5) applyInitialSeek();
+              },
               onError: () => setPlayerError("No se pudo reproducir este vídeo."),
             },
           });

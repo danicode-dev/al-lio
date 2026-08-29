@@ -650,20 +650,33 @@ export function BlocNotepad() {
     recordEditorContent();
   }
 
+  // A contenteditable swallows link navigation, so every link inside a note -
+  // the "Ir al momento" stamps that video notes add, and any link a student
+  // pastes - only works because this handler follows it. Modifier / non-left
+  // clicks are left to the browser so "open in new tab" keeps working.
   function handleEditorClick(event: React.MouseEvent<HTMLDivElement>) {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const target = event.target;
     if (!(target instanceof Element)) return;
     const link = target.closest<HTMLAnchorElement>("a[href]");
     const href = link?.getAttribute("href")?.trim();
     if (!href) return;
 
+    let destination: URL;
     try {
-      const destination = new URL(href, window.location.origin);
-      if (destination.origin !== window.location.origin || !destination.pathname.startsWith("/aprende/")) return;
-      event.preventDefault();
-      window.location.assign(`${destination.pathname}${destination.search}${destination.hash}`);
+      destination = new URL(href, window.location.origin);
     } catch {
-      // Leave malformed or non-navigation editor content untouched.
+      return; // Malformed href - leave the editor content untouched.
+    }
+    if (destination.protocol !== "http:" && destination.protocol !== "https:") return;
+
+    event.preventDefault();
+    if (destination.origin === window.location.origin) {
+      // A full load (not router.push) so the learning page always remounts
+      // and re-applies the ?at= seek even when it is already the open route.
+      window.location.assign(`${destination.pathname}${destination.search}${destination.hash}`);
+    } else {
+      window.open(destination.href, "_blank", "noopener,noreferrer");
     }
   }
 
@@ -2053,7 +2066,11 @@ const blocBrandCss = `
   .al-bloc-editor-empty p { margin: 12px 0 0; color: #333029; font-size: 14px; font-weight: 800; }
   .al-bloc-editor-empty > span:last-child { margin-top: 4px; max-width: 360px; color: #777269; font-size: 12px; line-height: 20px; }
   .al-bloc-content { position: relative; z-index: 1; min-width: 0; color: #333029; overflow-wrap: anywhere; }
-  .al-bloc-content a { color: #c94f21; text-decoration: underline; }
+  /* The editor is contenteditable, so links otherwise inherit the text
+     caret. A pointer plus a hover colour is the only affordance that a
+     "Ir al momento" link (or any pasted link) can actually be followed. */
+  .al-bloc-content a { color: #c94f21; text-decoration: underline; cursor: pointer; }
+  .al-bloc-content a:hover { color: #a63f1a; }
   .al-bloc-content p { margin: 0 0 8px; }
   .al-bloc-content hr { margin: 12px 0 14px; border: 0; border-top: 1px solid #ece7dc; }
   .al-bloc-content blockquote { border-left: 3px solid #ece7dc; padding-left: 14px; color: #6b6f72; }
