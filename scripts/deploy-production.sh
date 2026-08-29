@@ -29,7 +29,9 @@ postgres_backup_file=""
 radar_backup_file=""
 radar_stopped=0
 web_replacement_started=0
-allowed_compose_env_keys=()
+allowed_compose_env_mappings=()
+allowed_compose_env_services=()
+allowed_compose_env_lines=()
 
 usage() {
   cat <<'EOF'
@@ -100,13 +102,17 @@ write_env_value() {
   mv -- "$temp_file" "$env_file"
 }
 
-validate_compose_web_env_additions() {
+validate_compose_env_additions() {
   local change_lines=""
   local line=""
+  local service=""
   local key=""
+  local mapping=""
   local target_web_environment=""
-  local expected_line=""
+  local target_radar_environment=""
+  local target_environment=""
   local match_count=0
+  local index=0
 
   change_lines="$(
     git -C "$repository_dir" diff --no-ext-diff --unified=0 "$current_sha" "$release_sha" -- "$COMPOSE_FILE" |
@@ -116,17 +122,30 @@ validate_compose_web_env_additions() {
 
   while IFS= read -r line; do
     case "$line" in
-      '+      GOOGLE_IDENTITY_REDIRECT_URI: ${GOOGLE_IDENTITY_REDIRECT_URI:-}') key="GOOGLE_IDENTITY_REDIRECT_URI" ;;
-      '+      RESEND_API_KEY: ${RESEND_API_KEY:-}') key="RESEND_API_KEY" ;;
-      '+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}') key="RESEND_FROM_EMAIL" ;;
-      '+      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}') key="AL_LIO_RADAR_V4_PROJECT_DESTINATIONS" ;;
-      '+      AL_LIO_VERIFIED_OPPORTUNITIES_ONLY: ${AL_LIO_VERIFIED_OPPORTUNITIES_ONLY:-false}') key="AL_LIO_VERIFIED_OPPORTUNITIES_ONLY" ;;
-      '+      AL_LIO_RADAR_LEARNING_INGEST_ENABLED: ${AL_LIO_RADAR_LEARNING_INGEST_ENABLED:-false}') key="AL_LIO_RADAR_LEARNING_INGEST_ENABLED" ;;
+      '+      GOOGLE_IDENTITY_REDIRECT_URI: ${GOOGLE_IDENTITY_REDIRECT_URI:-}') service="al_lio_web"; key="GOOGLE_IDENTITY_REDIRECT_URI" ;;
+      '+      RESEND_API_KEY: ${RESEND_API_KEY:-}') service="al_lio_web"; key="RESEND_API_KEY" ;;
+      '+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}') service="al_lio_web"; key="RESEND_FROM_EMAIL" ;;
+      '+      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}') service="al_lio_web"; key="AL_LIO_RADAR_V4_PROJECT_DESTINATIONS" ;;
+      '+      AL_LIO_VERIFIED_OPPORTUNITIES_ONLY: ${AL_LIO_VERIFIED_OPPORTUNITIES_ONLY:-false}') service="al_lio_web"; key="AL_LIO_VERIFIED_OPPORTUNITIES_ONLY" ;;
+      '+      AL_LIO_RADAR_LEARNING_INGEST_ENABLED: ${AL_LIO_RADAR_LEARNING_INGEST_ENABLED:-false}') service="al_lio_web"; key="AL_LIO_RADAR_LEARNING_INGEST_ENABLED" ;;
+      '+      AL_LIO_DELIVERY_SCHEMA_VERSION: ${AL_LIO_RADAR_DELIVERY_SCHEMA_VERSION:-3}') service="al_lio_radar"; key="AL_LIO_DELIVERY_SCHEMA_VERSION" ;;
+      '+      AUTONOMOUS_PUBLICATION_ENABLED: ${AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_ENABLED:-false}') service="al_lio_radar"; key="AUTONOMOUS_PUBLICATION_ENABLED" ;;
+      '+      AUTONOMOUS_PUBLICATION_DESTINATIONS: ${AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_DESTINATIONS:-news}') service="al_lio_radar"; key="AUTONOMOUS_PUBLICATION_DESTINATIONS" ;;
+      '+      AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON: ${AL_LIO_RADAR_AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON:-}') service="al_lio_radar"; key="AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON" ;;
+      '+      DAILY_PUBLICATION_TIMEZONE: ${AL_LIO_RADAR_DAILY_PUBLICATION_TIMEZONE:-Europe/Madrid}') service="al_lio_radar"; key="DAILY_PUBLICATION_TIMEZONE" ;;
+      '+      DAILY_PUBLICATION_TIME: ${AL_LIO_RADAR_DAILY_PUBLICATION_TIME:-09:00}') service="al_lio_radar"; key="DAILY_PUBLICATION_TIME" ;;
+      '+      WEB_DISCOVERY_ENABLED: ${AL_LIO_RADAR_WEB_DISCOVERY_ENABLED:-false}') service="al_lio_radar"; key="WEB_DISCOVERY_ENABLED" ;;
+      '+      LEARNING_DISCOVERY_ENABLED: ${AL_LIO_RADAR_LEARNING_DISCOVERY_ENABLED:-false}') service="al_lio_radar"; key="LEARNING_DISCOVERY_ENABLED" ;;
+      '+      YOUTUBE_WATCH_ENABLED: ${AL_LIO_RADAR_YOUTUBE_WATCH_ENABLED:-false}') service="al_lio_radar"; key="YOUTUBE_WATCH_ENABLED" ;;
+      '+      JOB_RADAR_ENABLED: ${AL_LIO_RADAR_JOB_RADAR_ENABLED:-false}') service="al_lio_radar"; key="JOB_RADAR_ENABLED" ;;
       *) return 1 ;;
     esac
 
-    [[ ! " ${allowed_compose_env_keys[*]} " =~ [[:space:]]${key}[[:space:]] ]] || return 1
-    allowed_compose_env_keys+=("$key")
+    mapping="${service}:${key}"
+    [[ ! " ${allowed_compose_env_mappings[*]} " =~ [[:space:]]${mapping}[[:space:]] ]] || return 1
+    allowed_compose_env_mappings+=("$mapping")
+    allowed_compose_env_services+=("$service")
+    allowed_compose_env_lines+=("${line#+}")
   done <<< "$change_lines"
 
   target_web_environment="$(
@@ -140,16 +159,24 @@ validate_compose_web_env_additions() {
       '
   )"
 
-  for key in "${allowed_compose_env_keys[@]}"; do
-    case "$key" in
-      AL_LIO_VERIFIED_OPPORTUNITIES_ONLY | AL_LIO_RADAR_LEARNING_INGEST_ENABLED)
-        expected_line="      ${key}: \${${key}:-false}"
-        ;;
-      *)
-        expected_line="      ${key}: \${${key}:-}"
-        ;;
+  target_radar_environment="$(
+    git -C "$repository_dir" show "$release_sha:$COMPOSE_FILE" |
+      awk '
+        /^  al_lio_radar:$/ { in_radar = 1; next }
+        in_radar && /^  [^ ]/ { in_radar = 0; in_environment = 0 }
+        in_radar && /^    environment:$/ { in_environment = 1; next }
+        in_radar && in_environment && /^    [^ ]/ { in_environment = 0 }
+        in_radar && in_environment { print }
+      '
+  )"
+
+  for ((index = 0; index < ${#allowed_compose_env_mappings[@]}; index++)); do
+    case "${allowed_compose_env_services[$index]}" in
+      al_lio_web) target_environment="$target_web_environment" ;;
+      al_lio_radar) target_environment="$target_radar_environment" ;;
+      *) return 1 ;;
     esac
-    match_count="$(grep -Fxc -- "$expected_line" <<< "$target_web_environment" || true)"
+    match_count="$(grep -Fxc -- "${allowed_compose_env_lines[$index]}" <<< "$target_environment" || true)"
     [[ "$match_count" -eq 1 ]] || return 1
   done
 }
@@ -326,8 +353,8 @@ if [[ -n "$blocked_runtime_changes" ]]; then
 fi
 
 if ! git -C "$repository_dir" diff --quiet "$current_sha" "$release_sha" -- "$COMPOSE_FILE"; then
-  validate_compose_web_env_additions ||
-    fail "Docker Compose changed outside the allowlisted web environment passthroughs. Follow docs/operations/DEPLOY_VPS.md manually."
+  validate_compose_env_additions ||
+    fail "Docker Compose changed outside the allowlisted service environment passthroughs. Follow docs/operations/DEPLOY_VPS.md manually."
 fi
 
 migration_changes="$(git -C "$repository_dir" diff --name-status "$current_sha" "$release_sha" -- infra/postgres/migrations)"
@@ -346,9 +373,9 @@ if [[ -n "$migration_changes" ]]; then
 fi
 
 printf '\nCurrent release: %s\nRequested release: %s\n' "$current_sha" "$release_sha"
-if [[ "${#allowed_compose_env_keys[@]}" -gt 0 ]]; then
-  printf 'Allowlisted web environment additions:\n'
-  printf '  - %s\n' "${allowed_compose_env_keys[@]}"
+if [[ "${#allowed_compose_env_mappings[@]}" -gt 0 ]]; then
+  printf 'Allowlisted service environment additions (inactive until configured):\n'
+  printf '  - %s\n' "${allowed_compose_env_mappings[@]}"
 fi
 if [[ "${#added_migrations[@]}" -gt 0 ]]; then
   printf 'New additive migrations:\n'
