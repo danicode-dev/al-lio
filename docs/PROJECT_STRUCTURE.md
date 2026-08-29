@@ -7,14 +7,17 @@
 - `src/lib/`: authentication, repositories, domain services and integrations.
 - `src/middleware.ts`: protected-route and session boundary.
 - `public/`: static assets served by Next.js.
+- `tests/`: Node test-runner suites; see `tests/README.md`.
 
 ## Data and persistence
 
 - `infra/postgres/schema.sql`: immutable PostgreSQL baseline.
 - `infra/postgres/migrations/`: ordered, checksummed database changes.
-- `csv/`: reviewed import inputs and editorial working datasets.
-- `data/`: legacy news snapshots retained for controlled transition only;
-  production news is stored in PostgreSQL.
+- `csv/`: reviewed import inputs and editorial working datasets; see
+  `csv/fp-content/2026-2027/README.md`.
+- `data/`: hand-maintained JSON import sources (learning competencies and the
+  Work-tab company catalogues); see `data/README.md`. Nothing is written here
+  at runtime — delivered content lives in PostgreSQL.
 
 ## Operations
 
@@ -23,17 +26,21 @@
 - `infra/Caddyfile.example`: reverse-proxy example.
 - `infra/systemd/`: reviewed host-level service and timer units.
 - `scripts/deploy-production.sh`: guarded one-command routine VPS release.
-- `scripts/`: validation, import, migration, backup and smoke-test commands.
+- `scripts/`: validation, import, migration, backup and smoke-test commands;
+  see `scripts/README.md`.
 - `.env.example`: local configuration contract.
 - `.env.production.example`: production configuration contract.
 
 ## Documentation
 
 - `README.md`: public product and engineering entry point.
-- `docs/`: maintained project documentation.
-- `docs/AUTONOMOUS_PRODUCTION_DEPLOY.md`: owner-facing routine release guide.
+- `docs/README.md`: maintained-documentation index.
+- `docs/product/`, `docs/architecture/`, `docs/integrations/`, `docs/operations/`:
+  documentation grouped by area (product spec, system design, external
+  contracts and content governance, production operations).
 - `docs/architecture/decisions/`: accepted architecture decision records.
-- Root governance files: contribution, security, conduct, notice and licence.
+- `.github/`: contribution, security and conduct policies plus issue/PR
+  templates and workflows. Notice and licence stay at the repository root.
 
 ## Separate Radar repository
 

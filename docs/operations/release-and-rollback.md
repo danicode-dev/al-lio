@@ -26,12 +26,12 @@ A release is blocked unless all of the following are true:
 ## Controlled sequence
 
 Routine owner-approved web releases use
-[`../AUTONOMOUS_PRODUCTION_DEPLOY.md`](../AUTONOMOUS_PRODUCTION_DEPLOY.md). Its
+[`AUTONOMOUS_PRODUCTION_DEPLOY.md`](AUTONOMOUS_PRODUCTION_DEPLOY.md). Its
 versioned script enforces the applicable gates below and stops when the change
 requires this manual runbook instead.
 
 1. Complete [`release-records/TEMPLATE.md`](release-records/TEMPLATE.md) in a private evidence location.
-2. Follow [`../DEPLOY_VPS.md`](../DEPLOY_VPS.md) without skipping steps.
+2. Follow [`DEPLOY_VPS.md`](DEPLOY_VPS.md) without skipping steps.
 3. Replace only the approved release unit.
 4. Verify public health and readiness endpoints.
 5. Complete authenticated smoke tests without using real personal data.
@@ -49,7 +49,7 @@ Rollback rather than patching live when:
 - a migration rehearsal result differs from production evidence.
 
 Rollback steps and database-recovery constraints are authoritative in
-[`../DEPLOY_VPS.md`](../DEPLOY_VPS.md). Never invent a live fix under pressure.
+[`DEPLOY_VPS.md`](DEPLOY_VPS.md). Never invent a live fix under pressure.
 
 ## Versioning and tags
 

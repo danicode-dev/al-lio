@@ -69,6 +69,11 @@ failure does not invalidate AL-LIO-owned data.
 
 Legacy JSON news files are not a production source of truth.
 
+## Runtime reference
+
+- [`ARCHITECTURE_AND_STACK.md`](ARCHITECTURE_AND_STACK.md): the concise
+  runtime view (services, ports, processes and where each concern lives).
+
 ## Diagrams
 
 - [`diagrams/system-context.md`](diagrams/system-context.md): users, services and external systems.

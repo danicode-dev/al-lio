@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const deployScriptUrl = new URL("../scripts/deploy-production.sh", import.meta.url);
-const guideUrl = new URL("../docs/AUTONOMOUS_PRODUCTION_DEPLOY.md", import.meta.url);
+const guideUrl = new URL("../docs/operations/AUTONOMOUS_PRODUCTION_DEPLOY.md", import.meta.url);
 const dockerfileUrl = new URL("../infra/Dockerfile", import.meta.url);
 
 test("the production deploy command pins a reviewed forward-only main commit", async () => {
@@ -62,6 +62,9 @@ test("the command permits only reviewed additive web environment passthroughs in
   assert.match(source, /GOOGLE_IDENTITY_REDIRECT_URI/);
   assert.match(source, /RESEND_API_KEY/);
   assert.match(source, /RESEND_FROM_EMAIL/);
+  assert.ok(source.includes(
+    "'+      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}') key=\"AL_LIO_RADAR_V4_PROJECT_DESTINATIONS\" ;;",
+  ));
   assert.match(source, /awk '!\/\^--- \/ && !\/\^\\\+\\\+\\\+ \/ && \/\^\[\+-\]\//);
   assert.match(source, /\*\) return 1 ;;/);
   assert.match(source, /match_count.*-eq 1/);

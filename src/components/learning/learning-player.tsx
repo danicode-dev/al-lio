@@ -25,9 +25,15 @@ export function LearningPlayer({
   const [isPending, startTransition] = useTransition();
   const lastSavedRef = useRef(resource.last_position_seconds);
   const savingRef = useRef(false);
+  // An explicit "Ir al momento" (initialSeekSeconds) always wins and always
+  // seeks. Falling back to the saved position only makes sense once the
+  // student is past the first few seconds and has not finished the video.
+  const resumeSeconds = resource.status === "completed" || resource.last_position_seconds <= 5
+    ? 0
+    : resource.last_position_seconds;
   const { youtubeRef, playerContainerRef, playerReady, playerError, currentTime, duration, playerState, seekTo, retryPlayer } = useYouTubePlayer(
     resource.youtube_url,
-    initialSeekSeconds ?? (resource.status === "completed" ? 0 : resource.last_position_seconds),
+    initialSeekSeconds ?? resumeSeconds,
   );
 
   const persist = useCallback(async (nextStatus: FpLearningStatus = "started", force = false) => {

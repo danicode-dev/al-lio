@@ -54,7 +54,7 @@ npm run ci
 ```
 
 Database, Radar or deployment changes also require their dedicated validators
-and the relevant rehearsal described in `docs/DEPLOY_VPS.md`.
+and the relevant rehearsal described in `docs/operations/DEPLOY_VPS.md`.
 
 ## Code expectations
 

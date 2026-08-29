@@ -119,6 +119,7 @@ validate_compose_web_env_additions() {
       '+      GOOGLE_IDENTITY_REDIRECT_URI: ${GOOGLE_IDENTITY_REDIRECT_URI:-}') key="GOOGLE_IDENTITY_REDIRECT_URI" ;;
       '+      RESEND_API_KEY: ${RESEND_API_KEY:-}') key="RESEND_API_KEY" ;;
       '+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}') key="RESEND_FROM_EMAIL" ;;
+      '+      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}') key="AL_LIO_RADAR_V4_PROJECT_DESTINATIONS" ;;
       *) return 1 ;;
     esac
 
@@ -208,7 +209,7 @@ on_exit() {
     if rollback_web; then
       printf 'Rollback completed: %s is healthy again.\n' "$previous_web_image" >&2
     else
-      printf 'CRITICAL: automatic web rollback did not become healthy. Follow docs/DEPLOY_VPS.md.\n' >&2
+      printf 'CRITICAL: automatic web rollback did not become healthy. Follow docs/operations/DEPLOY_VPS.md.\n' >&2
     fi
   fi
 
@@ -312,12 +313,12 @@ blocked_runtime_changes="$(git -C "$repository_dir" diff --name-only "$current_s
   infra/Dockerfile data/learning-competencies.json scripts/import-learning-competencies.mjs)"
 if [[ -n "$blocked_runtime_changes" ]]; then
   printf '%s\n' "$blocked_runtime_changes" >&2
-  fail "This release changes infrastructure or an operator-managed catalogue. Follow docs/DEPLOY_VPS.md manually."
+  fail "This release changes infrastructure or an operator-managed catalogue. Follow docs/operations/DEPLOY_VPS.md manually."
 fi
 
 if ! git -C "$repository_dir" diff --quiet "$current_sha" "$release_sha" -- "$COMPOSE_FILE"; then
   validate_compose_web_env_additions ||
-    fail "Docker Compose changed outside the allowlisted web environment passthroughs. Follow docs/DEPLOY_VPS.md manually."
+    fail "Docker Compose changed outside the allowlisted web environment passthroughs. Follow docs/operations/DEPLOY_VPS.md manually."
 fi
 
 migration_changes="$(git -C "$repository_dir" diff --name-status "$current_sha" "$release_sha" -- infra/postgres/migrations)"
