@@ -18,9 +18,11 @@ import {
   getRequiredCompetenciesForItems,
   getCourseAptitudesForItems,
   getLearningItemsForCompetencies,
+  getPreparationResourcesForCompetencies,
   getUserContentStatesForItems,
   getUserCompetencyStatesForSkills,
   type CompetencyLearningItem,
+  type PreparationResource,
 } from "@/lib/db/repositories/fp_catalog";
 
 export const FP_APTITUDE_GATED_TYPES = new Set(["hackathon", "evento", "reto", "convocatoria_practicas"]);
@@ -106,6 +108,9 @@ export const getGlobalStore = cache(async () => {
   const learningItemsByCompetency = profile.cycle_code
     ? await getLearningItemsForCompetencies(requiredCompetencyIds, profile.cycle_code)
     : new Map();
+  const preparationResourcesByCompetency = profile.cycle_code
+    ? await getPreparationResourcesForCompetencies(userId, requiredCompetencyIds, profile.cycle_code)
+    : new Map<string, PreparationResource[]>();
   const learningVideoUrls = [...new Set(
     [...learningItemsByCompetency.values()]
       .flat()
@@ -209,6 +214,7 @@ export const getGlobalStore = cache(async () => {
         created_at: iso(competency.created_at),
         updated_at: iso(competency.updated_at),
         completed: userCompetencyStates.has(competency.id),
+        completion_method: userCompetencyStates.get(competency.id)?.completion_method,
         learningItems: (learningItemsByCompetency.get(competency.id) ?? []).map((learningItem: CompetencyLearningItem) => ({
           ...learningItem,
           internal_learning_slug: learningItem.video_url
@@ -216,6 +222,31 @@ export const getGlobalStore = cache(async () => {
             : null,
           user_status: learningItemStatusById.get(learningItem.id) ?? null,
         })),
+        preparationResources: (preparationResourcesByCompetency.get(competency.id) ?? []).flatMap((resource) => {
+          if (!resource.provider_resource_id || !resource.deep_link || !resource.source_verified_at) return [];
+          return [{
+            id: resource.id,
+            slug: resource.slug,
+            title: resource.title,
+            description: resource.description,
+            provider: resource.channel_name ?? resource.provider,
+            resource_type: resource.resource_type,
+            provider_resource_id: resource.provider_resource_id,
+            canonical_url: resource.canonical_url,
+            deep_link: resource.deep_link,
+            language: resource.language,
+            duration_seconds: resource.duration_seconds,
+            role: resource.role,
+            coverage_percent: resource.coverage_percent,
+            mapping_rationale: resource.mapping_rationale,
+            source_verified_at: iso(resource.source_verified_at),
+            resource_revision: resource.resource_revision,
+            user_status: resource.user_status,
+            completion_method: resource.completion_method,
+            last_position_seconds: resource.last_position_seconds,
+            saved_duration_seconds: resource.saved_duration_seconds,
+          }];
+        }),
       })),
       courseAptitudes: (courseAptitudesByItem.get(item.id) ?? []).map((aptitude) => ({
         id: aptitude.id,

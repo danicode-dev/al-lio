@@ -94,7 +94,8 @@ const EXPECTED_TABLES = [
   "radar_projector_events", "radar_ingest_events",
   "legacy_opportunity_migration_audit",
   "fp_learning_competencies", "fp_learning_resources", "fp_learning_competency_resources",
-  "fp_user_learning_state", "fp_learning_notes",
+  "fp_user_learning_state", "fp_learning_notes", "fp_learning_resource_revisions",
+  "fp_skill_learning_resources", "fp_learning_coverage_gaps", "radar_learning_deliveries",
 ];
 
 const EXPECTED_INDEXES = [
@@ -116,6 +117,8 @@ const EXPECTED_INDEXES = [
   "fp_learning_competencies_cycle_idx",
   "fp_user_learning_state_user_idx",
   "fp_learning_notes_user_resource_idx",
+  "fp_learning_resources_provider_identity_uidx",
+  "fp_skill_learning_resources_primary_uidx",
   "bloc_notes_user_source_unique_idx",
 ];
 
@@ -311,6 +314,83 @@ try {
     ? ok("learning notes are backfilled into one safe, exportable Bloc note")
     : fail("learning notes were not backfilled into Bloc correctly");
 
+  console.log("\n── Canonical preparation resources ──");
+  const preparationSkillId = `sandbox-preparation-${Date.now()}`;
+  const preparationResourceId = `sandbox-youtube-abcdefghijk`;
+  const alternativeResourceId = `sandbox-youtube-lmnopqrstuv`;
+  await client.query(`INSERT INTO public.fp_skills (id, titulo) VALUES ($1, 'Java sandbox')`, [preparationSkillId]);
+  await client.query(
+    `INSERT INTO public.fp_cycle_skills (cycle_code, skill_id, orden_global, etapa)
+     VALUES ('DAW', $1, 999, '2_aplicacion')`,
+    [preparationSkillId],
+  );
+  for (const [resourceId, providerId] of [
+    [preparationResourceId, "abcdefghijk"],
+    [alternativeResourceId, "lmnopqrstuv"],
+  ]) {
+    await client.query(
+      `INSERT INTO public.fp_learning_resources (
+         id, slug, title, description, provider, language, level, youtube_url,
+         review_status, reviewed_at, reviewed_by, review_reason, resource_type,
+         provider_resource_id, canonical_url, deep_link, channel_id, channel_name,
+         publication_state, availability_state, source_kind, source_verified_at
+       ) VALUES (
+         $1, $1, 'Java verificado', 'Recurso exacto de Java', 'Canal oficial',
+         'es', 'inicial', 'https://www.youtube.com/watch?v=' || $2,
+         'approved', current_date, 'sandbox', 'Exact curriculum mapping',
+         'youtube_video', $2, 'https://www.youtube.com/watch?v=' || $2,
+         '/aprende/' || $1, 'UC-sandbox', 'Canal oficial', 'approved',
+         'available', 'manual_review', now()
+       )`,
+      [resourceId, providerId],
+    );
+  }
+  await client.query(
+    `INSERT INTO public.fp_skill_learning_resources (
+       cycle_code, skill_id, resource_id, role, mapping_rationale,
+       publication_state, source_kind, verified_at
+     ) VALUES ('DAW', $1, $2, 'primary', 'Exact Java curriculum coverage',
+       'approved', 'manual_review', now())`,
+    [preparationSkillId, preparationResourceId],
+  );
+  ok("approved preparation resource requires an exact canonical identity and cycle/skill mapping");
+
+  await client.query(
+    `INSERT INTO public.fp_user_learning_state (
+       user_id, resource_id, status, last_position_seconds, completion_method
+     ) VALUES ($1, $2, 'started', 120, null)`,
+    [userId, preparationResourceId],
+  );
+  let duplicatePrimaryRejected = false;
+  try {
+    await client.query(
+      `INSERT INTO public.fp_skill_learning_resources (
+         cycle_code, skill_id, resource_id, role, mapping_rationale,
+         publication_state, source_kind, verified_at
+       ) VALUES ('DAW', $1, $2, 'primary', 'Second exact primary mapping',
+         'approved', 'manual_review', now())`,
+      [preparationSkillId, alternativeResourceId],
+    );
+  } catch (err) {
+    duplicatePrimaryRejected = err.code === "23505";
+  }
+  duplicatePrimaryRejected
+    ? ok("unique approved primary is enforced per cycle and skill")
+    : fail("a second approved primary was accepted for the same cycle and skill");
+
+  await client.query(
+    `UPDATE public.fp_learning_resources SET publication_state='retired' WHERE id=$1`,
+    [preparationResourceId],
+  );
+  const preservedPreparationProgress = await client.query(
+    `SELECT count(*)::int AS count FROM public.fp_user_learning_state
+     WHERE user_id=$1 AND resource_id=$2 AND last_position_seconds=120`,
+    [userId, preparationResourceId],
+  );
+  preservedPreparationProgress.rows[0].count === 1
+    ? ok("retiring a resource preserves the student's stable progress row")
+    : fail("resource retirement removed or rewrote student progress");
+
   const deliveryId = randomUUID();
   await client.query(
     `INSERT INTO public.radar_deliveries (delivery_id, schema_version, payload_hash, item_count)
@@ -443,6 +523,8 @@ try {
   console.log("\n── Limpieza ──");
   await client.query(`DELETE FROM public.users WHERE id = $1`, [userId]);
   await client.query(`DELETE FROM public.fp_learning_resources WHERE id = $1`, [learningResourceId]);
+  await client.query(`DELETE FROM public.fp_skills WHERE id = $1`, [preparationSkillId]);
+  await client.query(`DELETE FROM public.fp_learning_resources WHERE id = ANY($1)`, [[preparationResourceId, alternativeResourceId]]);
   await client.query(`DELETE FROM public.radar_items WHERE id = $1`, [radarItemId]);
   await client.query(`DELETE FROM public.radar_deliveries WHERE delivery_id = $1`, [deliveryId]);
   await client.query(`DELETE FROM public.radar_deliveries WHERE delivery_id = $1`, [v4DeliveryId]);

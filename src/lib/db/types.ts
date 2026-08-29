@@ -196,6 +196,10 @@ export interface DbFpResourceNote {
 export type FpLearningRequirement = "essential" | "recommended";
 export type FpLearningLevel = "inicial" | "intermedio" | "avanzado";
 export type FpLearningStatus = "started" | "completed";
+export type FpLearningCompletionMethod = "observed" | "self_declared" | "legacy_unspecified";
+export type FpLearningResourceType = "youtube_video" | "youtube_playlist" | "internal_course" | "internal_lesson";
+export type FpLearningResourceRole = "primary" | "alternative" | "extension";
+export type FpLearningAvailability = "unknown" | "available" | "unavailable" | "restricted";
 
 export interface DbFpLearningCompetency {
   id: string;
@@ -218,12 +222,27 @@ export interface DbFpLearningResource {
   provider: string;
   language: "es";
   level: FpLearningLevel;
-  youtube_url: string;
+  youtube_url: string | null;
   duration_seconds: number | null;
   review_status: "approved";
   reviewed_at: string;
   reviewed_by: string;
   review_reason: string;
+  resource_type: FpLearningResourceType;
+  provider_resource_id: string | null;
+  canonical_url: string | null;
+  deep_link: string | null;
+  channel_id: string | null;
+  channel_name: string | null;
+  publication_state: "candidate_reverification" | "approved" | "rejected" | "retired";
+  availability_state: FpLearningAvailability;
+  source_kind: "radar" | "manual_review" | "legacy_import" | "internal_catalogue";
+  source_ref: string | null;
+  source_verified_at: string | null;
+  resource_revision: number;
+  radar_revision: number | null;
+  supersedes_resource_id: string | null;
+  provenance: Record<string, unknown>;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -237,6 +256,9 @@ export interface DbFpUserLearningState {
   duration_seconds: number | null;
   started_at: string;
   completed_at: string | null;
+  completion_method: FpLearningCompletionMethod | null;
+  last_observed_at: string | null;
+  progress_revision: number;
   updated_at: string;
 }
 
@@ -281,6 +303,8 @@ export interface DbFpUserCompetencyState {
   user_id: string;
   skill_id: string;
   completed_at: string;
+  completion_method: "self_declared" | "resource_observed" | "legacy_unspecified";
+  evidence_resource_id: string | null;
   created_at: string;
   updated_at: string;
 }
