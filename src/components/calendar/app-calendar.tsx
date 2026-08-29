@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -106,54 +106,65 @@ export function TaskCalendar({ events: localEvents }: { events: CalendarEvent[] 
 
   return (
     <div ref={calendarRef} className={cn("relative", agendaOpen && "z-20")}>
-      <CalendarHeader
-        month={month}
-        compact
-        controlsRef={newEventRef}
-        onPrevious={() => { setMonth(addMonths(month, -1)); setAgendaOpen(false); }}
-        onNext={() => { setMonth(addMonths(month, 1)); setAgendaOpen(false); }}
-        onCreate={() => { setAgendaOpen(false); setNewEventOpen((open) => !open); }}
-      >
-        {newEventOpen && (
-          <NewEventDialog
-            defaultDate={defaultEventDate}
-            onClose={() => setNewEventOpen(false)}
-            onCreated={() => setCalendarRefresh((value) => value + 1)}
-          />
-        )}
-      </CalendarHeader>
-
-      <div className="grid gap-3">
-        <CalendarMonthGrid month={month} eventsByDay={eventsByDay} selectedDay={selectedDay} onSelectDay={selectDay} variant="compact" />
-        <button
-          type="button"
-          onClick={() => setAgendaOpen((open) => !open)}
-          className="flex h-8 items-center justify-between rounded-lg border border-[#ece7dc] bg-[#fcfbf8] px-2.5 text-xs font-semibold text-[#5f5a52] transition hover:border-[#e4cdbf] hover:bg-[#fff8f4]"
-          aria-expanded={agendaOpen}
+      <div className="relative">
+        <CalendarHeader
+          month={month}
+          compact
+          controlsRef={newEventRef}
+          onPrevious={() => { setMonth(addMonths(month, -1)); setAgendaOpen(false); }}
+          onNext={() => { setMonth(addMonths(month, 1)); setAgendaOpen(false); }}
+          onCreate={() => { setAgendaOpen(false); setNewEventOpen((open) => !open); }}
+          agendaSlot={
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className={cn(
+                "relative ml-0.5 h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]",
+                agendaOpen && "bg-[#fff0e9] text-[#e15d2d]",
+              )}
+              onClick={() => { setNewEventOpen(false); setAgendaOpen((open) => !open); }}
+              aria-label="Agenda del día"
+              aria-expanded={agendaOpen}
+              title="Agenda del día"
+            >
+              <CalendarClock className="h-3.5 w-3.5" />
+              {selectedEvents.length > 0 && !agendaOpen && (
+                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-[#e15d2d] ring-2 ring-white" aria-hidden="true" />
+              )}
+            </Button>
+          }
         >
-          <span>{selectedEvents.length ? `${selectedEvents.length} pendiente${selectedEvents.length === 1 ? "" : "s"}` : "Agenda del día"}</span>
-          <ChevronDown className={cn("h-3.5 w-3.5 text-[#e15d2d] transition-transform", agendaOpen && "rotate-180")} />
-        </button>
+          {newEventOpen && (
+            <NewEventDialog
+              defaultDate={defaultEventDate}
+              onClose={() => setNewEventOpen(false)}
+              onCreated={() => setCalendarRefresh((value) => value + 1)}
+            />
+          )}
+        </CalendarHeader>
+
+        {agendaOpen && (
+          <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-xl border border-[#e4dfd5] bg-white p-3 shadow-[0_16px_34px_rgba(37,30,20,0.16)]">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold">{formatDayTitle(selectedDay)}</h3>
+              {selectedEvents.length > 0 && <Badge className="bg-[#fff0e9] text-[#c6491d] hover:bg-[#fff0e9]">{selectedEvents.length}</Badge>}
+            </div>
+            {selectedEvents.length > 0 ? (
+              <div className="max-h-44 space-y-2 overflow-y-auto overscroll-contain pr-1">
+                {selectedEvents.map((event) => <CalendarAgendaRow key={`${event.type}-${event.id}`} event={event} />)}
+              </div>
+            ) : (
+              <div className="rounded-lg bg-[#fcfbf8] px-3 py-4 text-center">
+                <p className="text-sm font-semibold text-[#333029]">Sin pendientes este día</p>
+                <p className="mt-1 text-xs text-[#777269]">Las tareas sin fecha no se añaden al calendario.</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {agendaOpen && (
-        <div className="absolute left-0 right-0 top-full z-30 mt-2 rounded-xl border border-[#e4dfd5] bg-white p-3 shadow-[0_16px_34px_rgba(37,30,20,0.16)]">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold">{formatDayTitle(selectedDay)}</h3>
-            {selectedEvents.length > 0 && <Badge className="bg-[#fff0e9] text-[#c6491d] hover:bg-[#fff0e9]">{selectedEvents.length}</Badge>}
-          </div>
-          {selectedEvents.length > 0 ? (
-            <div className="max-h-44 space-y-2 overflow-y-auto overscroll-contain pr-1">
-              {selectedEvents.map((event) => <CalendarAgendaRow key={`${event.type}-${event.id}`} event={event} />)}
-            </div>
-          ) : (
-            <div className="rounded-lg bg-[#fcfbf8] px-3 py-4 text-center">
-              <p className="text-sm font-semibold text-[#333029]">Sin pendientes este día</p>
-              <p className="mt-1 text-xs text-[#777269]">Las tareas sin fecha no se añaden al calendario.</p>
-            </div>
-          )}
-        </div>
-      )}
+      <CalendarMonthGrid month={month} eventsByDay={eventsByDay} selectedDay={selectedDay} onSelectDay={selectDay} variant="compact" />
     </div>
   );
 }
@@ -285,6 +296,9 @@ type CalendarHeaderProps = {
   onPrevious: () => void;
   onNext: () => void;
   onCreate?: () => void;
+  // The day-agenda toggle for the compact widget: it belongs with the other
+  // controls (month arrows, create) rather than as a lone bar under the grid.
+  agendaSlot?: React.ReactNode;
   // The Google Calendar connection indicator - rendered inline with
   // Nuevo evento (full variant only) so a student sees whether the event
   // they're about to create will sync, right where they create it.
@@ -292,7 +306,7 @@ type CalendarHeaderProps = {
   children?: React.ReactNode;
 };
 
-function CalendarHeader({ month, compact = false, controlsRef, onPrevious, onNext, onCreate, statusSlot, children }: CalendarHeaderProps) {
+function CalendarHeader({ month, compact = false, controlsRef, onPrevious, onNext, onCreate, agendaSlot, statusSlot, children }: CalendarHeaderProps) {
   if (compact) {
     return (
       <div className="mb-3 flex items-center justify-between gap-2">
@@ -303,6 +317,7 @@ function CalendarHeader({ month, compact = false, controlsRef, onPrevious, onNex
         <div ref={controlsRef} className="relative flex shrink-0 items-center gap-0.5">
           <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={onPrevious} aria-label="Mes anterior"><ChevronLeft className="h-3.5 w-3.5" /></Button>
           <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={onNext} aria-label="Mes siguiente"><ChevronRight className="h-3.5 w-3.5" /></Button>
+          {agendaSlot}
           {onCreate && <Button type="button" size="icon" variant="ghost" className="ml-0.5 h-7 w-7 rounded-lg bg-[#fff0e9] text-[#e15d2d] hover:bg-[#fbe2d6] hover:text-[#c6491d]" onClick={onCreate} aria-label="Crear evento"><Plus className="h-3.5 w-3.5" /></Button>}
           {children}
         </div>
