@@ -33,6 +33,7 @@ External-service contracts and the governance rules for imported content.
 - [`integrations/AL_LIO_RADAR_INTEGRATION.md`](integrations/AL_LIO_RADAR_INTEGRATION.md): application-side Radar contract and ownership boundary.
 - [`integrations/VERIFIED_NEWS_DETAILS.md`](integrations/VERIFIED_NEWS_DETAILS.md): verified v4 news list/detail contract.
 - [`integrations/PREPARATION_RESOURCES.md`](integrations/PREPARATION_RESOURCES.md): exact learning-resource mappings, private readiness progress and Radar handoff.
+- [`integrations/VERIFIED_JOB_CATALOGUE.md`](integrations/VERIFIED_JOB_CATALOGUE.md): verified public vacancies, private application state and Radar rollout boundary.
 - [`integrations/LEARNING_SOURCE_GOVERNANCE.md`](integrations/LEARNING_SOURCE_GOVERNANCE.md): acceptance and withdrawal rules for learning resources.
 - [`integrations/COMPANY_CATALOGUE_GOVERNANCE.md`](integrations/COMPANY_CATALOGUE_GOVERNANCE.md): dataset format, source policy and import steps for the Work tab's company catalogue (DEV/AF/MP/TSAF).
 - [`integrations/SEED_HACKATHONS.md`](integrations/SEED_HACKATHONS.md): reference dataset for initial hackathon imports.

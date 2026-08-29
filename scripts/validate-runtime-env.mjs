@@ -83,7 +83,7 @@ if (learningIngestFlag && learningIngestFlag !== "true" && learningIngestFlag !=
 
 commaSeparatedEnum(
   "AL_LIO_RADAR_V4_PROJECT_DESTINATIONS",
-  new Set(["news", "course", "event"]),
+  new Set(["news", "course", "event", "job"]),
 );
 
 integer("PG_POOL_MAX", 1, 50);

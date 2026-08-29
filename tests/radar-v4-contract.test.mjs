@@ -6,6 +6,8 @@ import test from "node:test";
 import {
   RADAR_MAX_BATCH_ITEMS,
   RADAR_SUPPORTED_SCHEMA_VERSIONS,
+  RADAR_V4_JOB_FIELDS,
+  radarV4ValueHash,
   radarDeliverySchema,
 } from "../src/lib/radar/contract.ts";
 import {
@@ -19,6 +21,88 @@ const fixtures = join(process.cwd(), "tests", "fixtures", "radar-v4");
 
 function fixture(name) {
   return JSON.parse(readFileSync(join(fixtures, name), "utf8"));
+}
+
+function verifiedJobDelivery() {
+  const delivery = fixture("partial-v4.json");
+  const item = delivery.items[0];
+  item.classification = {
+    ...item.classification,
+    destination: "job",
+    opportunityType: "vacancy",
+    kind: "vacancy",
+    skills: ["Java", "Spring"],
+    matchReasons: ["rule:daw-java-spring", "keyword:java", "keyword:spring"],
+  };
+  const genericFacts = {
+    title: "Desarrollador Java Spring junior",
+    summaryShort: "Vacante junior para desarrollar aplicaciones Java con Spring.",
+    organizer: "Empresa Ejemplo",
+    provider: "Empresa Ejemplo",
+    registrationDeadline: "2026-09-20T21:59:00.000Z",
+    registrationUrl: "https://jobs.example/vacancies/123/apply",
+    sourceLifecycleStatus: "registration_open",
+  };
+  for (const [field, value] of Object.entries(genericFacts)) {
+    item.facts[field] = value;
+    item.factStates[`facts.${field}`] = "verified";
+    item.evidence = item.evidence.filter((entry) => entry.fieldPath !== `facts.${field}`);
+    item.evidence.push({
+      fieldPath: `facts.${field}`,
+      origin: "authoritative_source",
+      kind: "source_page",
+      url: "https://jobs.example/vacancies/123",
+      observedAt: "2026-08-29T08:00:00.000Z",
+      valueHash: radarV4ValueHash(value),
+      authorityRank: 100,
+    });
+  }
+  const facts = {
+    employer: "Empresa Ejemplo",
+    sourceVacancyId: "vacancy-123",
+    applicationUrl: genericFacts.registrationUrl,
+    lifecycle: "open",
+    applicationDeadline: genericFacts.registrationDeadline,
+    country: "España",
+    autonomousCommunity: "Andalucía",
+    province: "Granada",
+    municipality: "Granada",
+    workplaceMode: "hybrid",
+    contractType: null,
+    workingTime: null,
+    schedule: null,
+    salaryMinMinor: null,
+    salaryMaxMinor: null,
+    salaryCurrency: null,
+    salaryPeriod: null,
+    minimumEducation: null,
+    experienceRequirements: null,
+    languages: [],
+    otherEligibility: [],
+    sourcePublishedAt: "2026-08-28T07:00:00.000Z",
+    sourceUpdatedAt: null,
+    firstSeenAt: "2026-08-29T08:00:00.000Z",
+    lastSeenAt: "2026-08-29T08:00:00.000Z",
+    verifiedAt: "2026-08-29T08:00:00.000Z",
+  };
+  const factStates = {};
+  const evidence = [];
+  for (const field of RADAR_V4_JOB_FIELDS) {
+    const value = facts[field];
+    const present = value !== null && (!Array.isArray(value) || value.length > 0);
+    factStates[`job.${field}`] = present ? "verified" : "not_stated";
+    if (present) evidence.push({
+      fieldPath: `job.${field}`,
+      origin: "authoritative_source",
+      kind: "source_page",
+      url: "https://jobs.example/vacancies/123",
+      observedAt: facts.verifiedAt,
+      valueHash: radarV4ValueHash(value),
+      authorityRank: 100,
+    });
+  }
+  item.job = { facts, factStates, evidence };
+  return delivery;
 }
 
 test("the same protected receiver accepts strict v3 and complete or partial v4", () => {
@@ -49,6 +133,20 @@ test("v4 rejects present facts without value-matching field evidence", () => {
 test("v4 is strict and rejects transport fields that were not versioned", () => {
   const delivery = fixture("partial-v4.json");
   delivery.items[0].userState = "started";
+  assert.equal(radarDeliverySchema.safeParse(delivery).success, false);
+});
+
+test("v4 accepts a strict verified job without private student state", () => {
+  const delivery = verifiedJobDelivery();
+  assert.equal(radarDeliverySchema.safeParse(delivery).success, true);
+  assert.doesNotMatch(JSON.stringify(delivery.items[0].job), /userId|notes|cv|applicationStatus/i);
+});
+
+test("v4 rejects a job whose generic action URL diverges from its typed vacancy facts", () => {
+  const delivery = verifiedJobDelivery();
+  delivery.items[0].facts.registrationUrl = "https://jobs.example/vacancies/different/apply";
+  const evidence = delivery.items[0].evidence.find((entry) => entry.fieldPath === "facts.registrationUrl");
+  evidence.valueHash = radarV4ValueHash(delivery.items[0].facts.registrationUrl);
   assert.equal(radarDeliverySchema.safeParse(delivery).success, false);
 });
 
@@ -164,7 +262,8 @@ test("only explicit verified removal can clear a known fact", () => {
 test("v4 projection is disabled by default and invalid flags fail closed", () => {
   assert.deepEqual([...radarV4ProjectionDestinations("")], []);
   assert.deepEqual([...radarV4ProjectionDestinations("news,course")], ["news", "course"]);
-  assert.throws(() => radarV4ProjectionDestinations("job"), /Unsupported/);
+  assert.deepEqual([...radarV4ProjectionDestinations("job")], ["job"]);
+  assert.throws(() => radarV4ProjectionDestinations("unknown"), /Unsupported/);
 });
 
 test("source lifecycle is not confused with user state or internal priority", () => {
@@ -178,6 +277,32 @@ test("compatibility projection reuses the legacy UUID and never mutates student 
   assert.match(repository, /WHERE radar_semantic_key = \$1 LIMIT 1/);
   assert.match(repository, /UPDATE public\.fp_content_items SET[\s\S]+WHERE id = \$20/);
   assert.doesNotMatch(repository, /(UPDATE|DELETE FROM|INSERT INTO) public\.fp_user_content_state/);
+});
+
+test("job discovery projects global facts and never creates private application state", () => {
+  const repository = readFileSync(join(process.cwd(), "src", "lib", "db", "repositories", "radar-v4.ts"), "utf8");
+  assert.match(repository, /upsertVerifiedJob/);
+  assert.match(repository, /radar_verified_jobs/);
+  assert.doesNotMatch(repository, /(UPDATE|DELETE FROM|INSERT INTO) public\.job_applications/);
+});
+
+test("verified job reads and direct actions are authenticated, cycle-scoped and user-owned", () => {
+  const repository = readFileSync(join(process.cwd(), "src", "lib", "jobs", "repository.ts"), "utf8");
+  const listRoute = readFileSync(join(process.cwd(), "src", "app", "api", "verified-jobs", "route.ts"), "utf8");
+  const actionRoute = readFileSync(join(process.cwd(), "src", "app", "api", "verified-jobs", "[id]", "route.ts"), "utf8");
+  assert.match(listRoute, /tryGetCurrentUserId/);
+  assert.match(actionRoute, /tryGetCurrentUserId/);
+  assert.match(repository, /application\.user_id = \$1/);
+  assert.match(repository, /target\.target_value = \$3/);
+  assert.match(repository, /ON CONFLICT \(user_id, canonical_entity_id\)/);
+  assert.match(repository, /job\.lifecycle = 'open'/);
+});
+
+test("the Work UI preserves manual applications but does not expose legacy scrape-to-application sync", () => {
+  const source = readFileSync(join(process.cwd(), "src", "components", "guest-app.tsx"), "utf8");
+  assert.match(source, /\["candidaturas", "Candidaturas"\]/);
+  assert.match(source, /Añadir candidatura manual/);
+  assert.doesNotMatch(source, /Sincronizar radar|onClick=\{syncRadar\}/);
 });
 
 test("identity corrections resolve through auditable canonical aliases", () => {

@@ -93,6 +93,7 @@ const EXPECTED_TABLES = [
   "radar_content_identity_aliases", "radar_delivery_revisions", "radar_content_conflicts",
   "radar_projector_events", "radar_ingest_events",
   "legacy_opportunity_migration_audit",
+  "radar_verified_jobs", "radar_job_field_evidence",
   "fp_learning_competencies", "fp_learning_resources", "fp_learning_competency_resources",
   "fp_user_learning_state", "fp_learning_notes", "fp_learning_resource_revisions",
   "fp_skill_learning_resources", "fp_learning_coverage_gaps", "radar_learning_deliveries",
@@ -114,6 +115,8 @@ const EXPECTED_INDEXES = [
   "radar_content_field_evidence_field_idx",
   "radar_content_targets_lookup_idx",
   "legacy_opportunity_audit_source_key_uidx",
+  "radar_verified_jobs_active_idx", "radar_job_field_evidence_revision_idx",
+  "job_applications_user_occurrence_uidx", "job_applications_user_entity_uidx",
   "fp_learning_competencies_cycle_idx",
   "fp_user_learning_state_user_idx",
   "fp_learning_notes_user_resource_idx",
@@ -519,6 +522,109 @@ try {
     ? ok("userState rejects a source-lifecycle value")
     : fail("userState accepted a source-lifecycle value");
 
+  console.log("\n── Verified jobs and private application state ──");
+  const jobEntityKey = randomBytes(32).toString("hex");
+  const jobOccurrenceKey = randomBytes(32).toString("hex");
+  const jobFingerprint = randomBytes(32).toString("hex");
+  const jobEntityResult = await client.query(
+    `INSERT INTO public.radar_content_entities (
+       entity_key, destination, opportunity_type, title, organizer, provider,
+       first_seen_at, last_verified_at
+     ) VALUES ($1, 'job', 'vacancy', 'Java junior sandbox', 'Empresa sandbox',
+       'Empresa sandbox', now(), now()) RETURNING id`,
+    [jobEntityKey],
+  );
+  const jobEntityId = jobEntityResult.rows[0].id;
+  const jobOccurrenceResult = await client.query(
+    `INSERT INTO public.radar_content_occurrences (
+       entity_id, source_id, source_name, external_id, occurrence_key,
+       canonical_url, primary_evidence_url, trust_tier, source_verified_at,
+       current_revision, material_fingerprint, publication_decision,
+       source_lifecycle_status, ranking_priority, title, summary_short,
+       organizer, provider
+     ) VALUES (
+       $1, 'sandbox-jobs', 'Sandbox jobs', 'vacancy-1', $2,
+       'https://jobs.example.test/vacancies/1',
+       'https://jobs.example.test/vacancies/1', 'first_party', now(), 1,
+       $3, 'accepted', 'registration_open', 80, 'Java junior sandbox',
+       'Vacante verificada de sandbox', 'Empresa sandbox', 'Empresa sandbox'
+     ) RETURNING id`,
+    [jobEntityId, jobOccurrenceKey, jobFingerprint],
+  );
+  const jobOccurrenceId = jobOccurrenceResult.rows[0].id;
+  const jobRevisionResult = await client.query(
+    `INSERT INTO public.radar_content_revisions (
+       occurrence_id, revision, material_fingerprint, publication_decision,
+       ranking_priority, payload_snapshot
+     ) VALUES ($1, 1, $2, 'accepted', 80, '{"schemaVersion":4,"destination":"job"}'::jsonb)
+     RETURNING id`,
+    [jobOccurrenceId, jobFingerprint],
+  );
+  const jobRevisionId = jobRevisionResult.rows[0].id;
+  await client.query(
+    `INSERT INTO public.radar_content_targets (revision_id, target_type, target_value)
+     VALUES ($1, 'cycle', 'DAW'), ($1, 'skill', 'Java')`,
+    [jobRevisionId],
+  );
+  await client.query(
+    `INSERT INTO public.radar_verified_jobs (
+       occurrence_id, current_revision_id, employer, source_vacancy_id,
+       application_url, lifecycle, province, workplace_mode, languages,
+       other_eligibility, first_seen_at, last_seen_at, verified_at
+     ) VALUES (
+       $1, $2, 'Empresa sandbox', 'vacancy-1',
+       'https://jobs.example.test/vacancies/1/apply', 'open', 'Granada',
+       'hybrid', array['Español'], '{}', now(), now(), now()
+     )`,
+    [jobOccurrenceId, jobRevisionId],
+  );
+  await client.query(
+    `INSERT INTO public.radar_job_field_evidence (
+       revision_id, field_path, origin, evidence_kind, evidence_url,
+       observed_at, value_hash, authority_rank
+     ) VALUES ($1, 'job.employer', 'source', 'source_page',
+       'https://jobs.example.test/vacancies/1', now(), $2, 80)`,
+    [jobRevisionId, randomBytes(32).toString("hex")],
+  );
+  ok("global verified vacancy and field evidence insert without student data");
+
+  await client.query(
+    `INSERT INTO public.job_applications (
+       user_id, canonical_entity_id, canonical_occurrence_id, company_name,
+       company_url, job_title, job_url, source, status, is_saved
+     ) VALUES ($1, $2, $3, 'Empresa sandbox',
+       'https://jobs.example.test/vacancies/1', 'Java junior sandbox',
+       'https://jobs.example.test/vacancies/1/apply', 'verified_radar',
+       'nueva', true)`,
+    [userId, jobEntityId, jobOccurrenceId],
+  );
+  let duplicatePrivateStateRejected = false;
+  try {
+    await client.query(
+      `INSERT INTO public.job_applications (
+         user_id, canonical_entity_id, canonical_occurrence_id, company_name,
+         company_url, job_title, source
+       ) VALUES ($1, $2, $3, 'Empresa sandbox',
+         'https://jobs.example.test/vacancies/1', 'Java junior sandbox', 'verified_radar')`,
+      [userId, jobEntityId, jobOccurrenceId],
+    );
+  } catch (err) {
+    duplicatePrivateStateRejected = err.code === "23505";
+  }
+  duplicatePrivateStateRejected
+    ? ok("one user has one private state row per canonical vacancy entity")
+    : fail("duplicate private state was accepted for one user and canonical vacancy");
+
+  await client.query(`UPDATE public.radar_verified_jobs SET lifecycle='closed' WHERE occurrence_id=$1`, [jobOccurrenceId]);
+  const preservedJobHistory = await client.query(
+    `SELECT count(*)::int AS count FROM public.job_applications
+     WHERE user_id=$1 AND canonical_entity_id=$2`,
+    [userId, jobEntityId],
+  );
+  preservedJobHistory.rows[0].count === 1
+    ? ok("closing a global vacancy preserves private application history")
+    : fail("closing a vacancy removed private application history");
+
   // ── Limpiar datos de prueba ────────────────────────────────────────────────
   console.log("\n── Limpieza ──");
   await client.query(`DELETE FROM public.users WHERE id = $1`, [userId]);
@@ -531,6 +637,8 @@ try {
   await client.query(`DELETE FROM public.radar_content_occurrences WHERE id = $1`, [occurrenceId]);
   await client.query(`DELETE FROM public.radar_content_entities WHERE id = $1`, [entityId]);
   await client.query(`DELETE FROM public.fp_content_items WHERE id = $1`, [v4StateContentId]);
+  await client.query(`DELETE FROM public.radar_content_occurrences WHERE id = $1`, [jobOccurrenceId]);
+  await client.query(`DELETE FROM public.radar_content_entities WHERE id = $1`, [jobEntityId]);
   ok("datos de prueba eliminados (CASCADE en tablas dependientes)");
 
 } catch (err) {

@@ -77,7 +77,7 @@ export function resolveRadarV4Fact(input: {
 }
 
 export function radarV4ProjectionDestinations(raw = process.env.AL_LIO_RADAR_V4_PROJECT_DESTINATIONS ?? "") {
-  const allowed = new Set<RadarV4Destination>(["news", "course", "event"]);
+  const allowed = new Set<RadarV4Destination>(["news", "course", "event", "job"]);
   const destinations = new Set<RadarV4Destination>();
   for (const token of raw.split(",").map((value) => value.trim()).filter(Boolean)) {
     if (!allowed.has(token as RadarV4Destination)) {
