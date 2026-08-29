@@ -131,7 +131,7 @@ if (existsSync(dockerignorePath)) {
 
 const compose = readFileSync(join(root, "infra", "docker-compose.prod.yml"), "utf8");
 const dockerfile = readFileSync(join(root, "infra", "Dockerfile"), "utf8");
-const deployRunbook = readFileSync(join(root, "docs", "DEPLOY_VPS.md"), "utf8");
+const deployRunbook = readFileSync(join(root, "docs", "operations", "DEPLOY_VPS.md"), "utf8");
 const webService = compose.split("  al_lio_migrator:")[0];
 check("el contenedor web no recibe DATABASE_MIGRATION_URL", !/^\s+DATABASE_MIGRATION_URL:/m.test(webService));
 check("las credenciales admin solo viven en el perfil ops", compose.includes('profiles: ["ops"]') && compose.includes("DATABASE_MIGRATION_URL:"));

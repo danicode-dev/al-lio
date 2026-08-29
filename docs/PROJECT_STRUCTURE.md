@@ -30,10 +30,13 @@
 ## Documentation
 
 - `README.md`: public product and engineering entry point.
-- `docs/`: maintained project documentation.
-- `docs/AUTONOMOUS_PRODUCTION_DEPLOY.md`: owner-facing routine release guide.
+- `docs/README.md`: maintained-documentation index.
+- `docs/product/`, `docs/architecture/`, `docs/integrations/`, `docs/operations/`:
+  documentation grouped by area (product spec, system design, external
+  contracts and content governance, production operations).
 - `docs/architecture/decisions/`: accepted architecture decision records.
-- Root governance files: contribution, security, conduct, notice and licence.
+- `.github/`: contribution, security and conduct policies plus issue/PR
+  templates and workflows. Notice and licence stay at the repository root.
 
 ## Separate Radar repository
 

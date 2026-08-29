@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const deployScriptUrl = new URL("../scripts/deploy-production.sh", import.meta.url);
-const guideUrl = new URL("../docs/AUTONOMOUS_PRODUCTION_DEPLOY.md", import.meta.url);
+const guideUrl = new URL("../docs/operations/AUTONOMOUS_PRODUCTION_DEPLOY.md", import.meta.url);
 const dockerfileUrl = new URL("../infra/Dockerfile", import.meta.url);
 
 test("the production deploy command pins a reviewed forward-only main commit", async () => {

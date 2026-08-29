@@ -36,6 +36,7 @@ Capture only after final visual approval:
 ## Manual approval gate
 
 Screenshots cannot be finalized automatically because they require the owner's
-visual approval and access to a safe, current environment. The owner must verify
-each frame against [`../FINAL_REVIEW_CHECKLIST.md`](../FINAL_REVIEW_CHECKLIST.md)
-before publication.
+visual approval and access to a safe, current environment. Before publication
+the owner must confirm every frame uses fictional data only, matches the
+currently deployed application, and contains no personal or credential
+material, following the demo dataset rules above.
