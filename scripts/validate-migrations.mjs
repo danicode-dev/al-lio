@@ -106,6 +106,23 @@ if (radarV4Migration) {
   );
 }
 
+const trustworthyCatalogueMigration = migrations.find((migration) => migration.version === "0013_trustworthy_opportunity_catalogue");
+check("trustworthy opportunity migration exists", Boolean(trustworthyCatalogueMigration));
+if (trustworthyCatalogueMigration) {
+  check(
+    "legacy rows have an auditable classification instead of implicit publication",
+    trustworthyCatalogueMigration.sql.includes("legacy_opportunity_migration_audit")
+      && trustworthyCatalogueMigration.sql.includes("candidate_reverification")
+      && trustworthyCatalogueMigration.sql.includes("source_only")
+      && trustworthyCatalogueMigration.sql.includes("rejected_unverifiable"),
+  );
+  check(
+    "verified legacy rows require a canonical occurrence",
+    trustworthyCatalogueMigration.sql.includes("legacy_opportunity_verified_target_check")
+      && trustworthyCatalogueMigration.sql.includes("canonical_occurrence_id is not null"),
+  );
+}
+
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 check("postgres:migrate usa el runner versionado", packageJson.scripts?.["postgres:migrate"] === "node scripts/postgres/migrate.mjs");
 check("existe importador versionado de competencias", packageJson.scripts?.["import:learning-competencies"] === "node scripts/import-learning-competencies.mjs");

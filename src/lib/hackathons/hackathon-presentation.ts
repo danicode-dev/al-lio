@@ -107,31 +107,34 @@ export function techOpportunityToHackathon(item: TechOpportunity): Hackathon {
 }
 
 export function fpItemToHackathon(item: FpCatalogItem): Hackathon {
+  const canonical = item.canonical?.destination === "event" ? item.canonical : undefined;
   return {
     id: `fp-${item.id_slug}`,
     id_slug: item.id_slug,
     categoria: item.type,
-    name: item.title,
-    organizer: item.entity ?? undefined,
-    province: item.province ?? undefined,
-    city: item.location ?? undefined,
-    type: item.type,
-    modalidad: item.delivery_mode ?? undefined,
-    localidad: item.location ?? undefined,
-    status: fpUserStatusToHackathonStatus(item.user_status) ?? normalizeHackathonStatus(item.status),
+    name: canonical?.title ?? item.title,
+    organizer: canonical?.organizer ?? canonical?.provider ?? item.entity ?? undefined,
+    province: canonical?.province ?? item.province ?? undefined,
+    city: canonical?.municipality ?? item.location ?? undefined,
+    type: canonical?.opportunityType ?? item.type,
+    modalidad: canonical?.attendanceMode ?? item.delivery_mode ?? undefined,
+    localidad: canonical?.venue ?? canonical?.municipality ?? item.location ?? undefined,
+    status: canonical ? (fpUserStatusToHackathonStatus(item.user_status) ?? "pendiente") : (fpUserStatusToHackathonStatus(item.user_status) ?? normalizeHackathonStatus(item.status)),
     priority: (item.priority.toLowerCase() as Hackathon["priority"]),
-    start_at: item.start_date ?? "",
-    end_at: item.end_date ?? "",
-    registration_deadline_at: "",
-    certificacion_o_premio: item.certification ?? undefined,
+    start_at: canonical?.startsAt ?? item.start_date ?? "",
+    end_at: canonical?.endsAt ?? item.end_date ?? "",
+    registration_deadline_at: canonical?.registrationDeadline ?? "",
+    certificacion_o_premio: canonical?.certification ?? canonical?.prize ?? item.certification ?? undefined,
     practicas_empresa: item.practices === "si",
     tags: item.tags ?? undefined,
-    url: item.source_url ?? undefined,
-    description: item.description ?? undefined,
+    url: canonical?.registrationUrl ?? canonical?.canonicalUrl ?? item.source_url ?? undefined,
+    description: canonical?.aboutSummary ?? canonical?.summaryExpanded ?? canonical?.summaryShort ?? item.description ?? undefined,
     notes: fpItemNotes(item),
     sourceTable: "fp_content_items",
     requiredCompetencies: item.requiredCompetencies,
     is_favorite: item.is_favorite ?? false,
+    canonical,
+    user_status: item.user_status,
     created_at: item.created_at,
   };
 }
@@ -209,9 +212,18 @@ export type HackathonPresentation = {
   registrationDeadline?: string;
   location?: string;
   modality?: string;
-  priority?: Hackathon["priority"];
   description?: string;
   sourceUrl?: string;
+  certification?: string;
+  prize?: string;
+  price?: string;
+  lifecycle?: string;
+  otherEligibility: string[];
+  audience: string[];
+  requirements: string[];
+  skillsTested: string[];
+  preparationTips: string[];
+  verifiedAt?: string;
   isFavorite: boolean;
   canToggleFavorite: boolean;
 };
@@ -222,20 +234,37 @@ function nonEmpty(value: string | undefined | null): string | undefined {
 }
 
 export function getHackathonPresentation(item: Hackathon): HackathonPresentation {
+  const canonical = item.canonical?.destination === "event" ? item.canonical : undefined;
+  const price = canonical?.priceState === "free"
+    ? "Gratis"
+    : canonical?.priceState === "paid" && canonical.priceAmountMinor !== undefined && canonical.priceCurrency
+      ? new Intl.NumberFormat("es-ES", { style: "currency", currency: canonical.priceCurrency }).format(canonical.priceAmountMinor / 100)
+      : undefined;
   return {
     id: item.id,
-    title: nonEmpty(item.name) ?? "Evento sin titulo",
-    organizer: nonEmpty(item.organizer),
-    type: nonEmpty(item.type),
+    title: canonical?.title ?? nonEmpty(item.name) ?? "Evento o reto",
+    organizer: canonical?.organizer ?? canonical?.provider ?? nonEmpty(item.organizer),
+    type: canonical?.opportunityType ?? nonEmpty(item.type),
     status: item.status,
-    startDate: nonEmpty(item.start_at),
-    endDate: nonEmpty(item.end_at),
-    registrationDeadline: nonEmpty(item.inscripcion_hasta) ?? nonEmpty(item.registration_deadline_at),
-    location: [nonEmpty(item.localidad ?? item.city), nonEmpty(item.province)].filter(Boolean).join(" / ") || undefined,
-    modality: nonEmpty(item.modalidad),
-    priority: item.priority,
-    description: nonEmpty(hackathonPublicDescription(item)),
-    sourceUrl: nonEmpty(item.url),
+    startDate: canonical?.startsAt ?? nonEmpty(item.start_at),
+    endDate: canonical?.endsAt ?? nonEmpty(item.end_at),
+    registrationDeadline: canonical?.registrationDeadline ?? nonEmpty(item.inscripcion_hasta) ?? nonEmpty(item.registration_deadline_at),
+    location: canonical
+      ? [canonical.venue ?? canonical.municipality, canonical.province].filter(Boolean).join(" / ") || undefined
+      : [nonEmpty(item.localidad ?? item.city), nonEmpty(item.province)].filter(Boolean).join(" / ") || undefined,
+    modality: canonical?.attendanceMode ?? nonEmpty(item.modalidad),
+    description: canonical?.aboutSummary ?? canonical?.summaryExpanded ?? canonical?.summaryShort ?? nonEmpty(hackathonPublicDescription(item)),
+    sourceUrl: canonical?.registrationUrl ?? canonical?.canonicalUrl ?? nonEmpty(item.url),
+    certification: canonical?.certification,
+    prize: canonical?.prize,
+    price,
+    lifecycle: canonical?.sourceLifecycleStatus,
+    otherEligibility: canonical?.otherEligibility ?? [],
+    audience: canonical?.audience ?? [],
+    requirements: canonical?.requirements ?? [],
+    skillsTested: canonical?.skillsTested ?? [],
+    preparationTips: canonical?.preparationTips ?? [],
+    verifiedAt: canonical?.sourceVerifiedAt,
     isFavorite: !!item.is_favorite,
     canToggleFavorite: canToggleHackathonFavorite(item),
   };

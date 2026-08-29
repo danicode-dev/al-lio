@@ -14,18 +14,25 @@ export type CoursePresentation = {
   id: string;
   title: string;
   provider?: string;
+  type?: string;
   startDate?: string;
   endDate?: string;
   location?: string;
   modality?: string;
-  level?: string;
+  courseDifficulty?: string;
+  minimumEducation?: string;
+  otherEligibility: string[];
+  credentialLevel?: string;
   duration?: string;
   certification?: string;
-  requirements?: string;
-  priority?: string;
+  requirements: string[];
+  learningOutcomes: string[];
+  price?: string;
+  lifecycle?: string;
   status: Course["status"];
   description?: string;
   sourceUrl?: string;
+  verifiedAt?: string;
 };
 
 function nonEmpty(value: string | undefined | null): string | undefined {
@@ -34,29 +41,39 @@ function nonEmpty(value: string | undefined | null): string | undefined {
 }
 
 export function getCoursePresentation(course: Course): CoursePresentation {
-  const hours = typeof course.horas_totales === "number" && course.horas_totales > 0 ? course.horas_totales : undefined;
-  // formato is the primary source; if it is empty, recover an explicit
-  // "Nivel N" mentioned in the certification or requirements text (common
-  // in real FP catalogue rows that leave `formato` blank).
-  const levelText = nonEmpty(course.formato);
-  const levelMatch = /\bnivel\s*([123])\b/i.exec(`${course.certificacion_tipo ?? ""} ${course.requisitos_resumen ?? ""}`);
-  const level = levelText ?? (levelMatch ? `Nivel ${levelMatch[1]}` : undefined);
+  const canonical = course.canonical?.destination === "course" ? course.canonical : undefined;
+  const hours = canonical?.durationHours
+    ?? (typeof course.horas_totales === "number" && course.horas_totales > 0 ? course.horas_totales : undefined);
+  const amount = canonical?.priceState === "free"
+    ? "Gratis"
+    : canonical?.priceState === "paid" && canonical.priceAmountMinor !== undefined && canonical.priceCurrency
+      ? new Intl.NumberFormat("es-ES", { style: "currency", currency: canonical.priceCurrency }).format(canonical.priceAmountMinor / 100)
+      : nonEmpty(typeof course.price === "string" ? course.price : course.coste);
   return {
     id: course.id,
-    title: nonEmpty(course.title) ?? "Curso sin titulo",
-    provider: nonEmpty(course.entidad) ?? nonEmpty(course.platform),
-    startDate: nonEmpty(course.fecha_inicio) ?? nonEmpty(course.start_at),
-    endDate: nonEmpty(course.fecha_fin) ?? nonEmpty(course.deadline_at),
-    location: [nonEmpty(course.localidad), nonEmpty(course.provincia)].filter(Boolean).join(" / ") || undefined,
-    modality: nonEmpty(course.modalidad),
-    level,
-    duration: hours ? `aprox. ${hours} h` : undefined,
-    certification: nonEmpty(course.certificacion_tipo),
-    requirements: nonEmpty(course.requisitos_resumen),
-    priority: nonEmpty(course.prioridad),
+    title: canonical?.title ?? nonEmpty(course.title) ?? "Curso",
+    provider: canonical?.provider ?? canonical?.organizer ?? nonEmpty(course.entidad) ?? nonEmpty(course.platform),
+    type: canonical?.opportunityType ?? nonEmpty(course.category),
+    startDate: canonical?.startsAt ?? nonEmpty(course.fecha_inicio) ?? nonEmpty(course.start_at),
+    endDate: canonical?.endsAt ?? nonEmpty(course.fecha_fin) ?? nonEmpty(course.deadline_at),
+    location: canonical
+      ? [canonical.venue ?? canonical.municipality, canonical.province].filter(Boolean).join(" / ") || undefined
+      : [nonEmpty(course.localidad), nonEmpty(course.provincia)].filter(Boolean).join(" / ") || undefined,
+    modality: canonical?.attendanceMode ?? nonEmpty(course.modalidad),
+    courseDifficulty: canonical?.courseDifficulty,
+    minimumEducation: canonical?.minimumEducation,
+    otherEligibility: canonical?.otherEligibility ?? [],
+    credentialLevel: canonical?.credentialLevel,
+    duration: hours ? `${hours} h` : undefined,
+    certification: canonical?.certification ?? nonEmpty(course.certificacion_tipo),
+    requirements: canonical?.requirements ?? (nonEmpty(course.requisitos_resumen) ? [course.requisitos_resumen!.trim()] : []),
+    learningOutcomes: canonical?.learningOutcomes ?? [],
+    price: amount,
+    lifecycle: canonical?.sourceLifecycleStatus,
     status: course.status,
-    description: nonEmpty(course.requisitos_resumen),
-    sourceUrl: nonEmpty(course.fuente_url) ?? nonEmpty(course.url),
+    description: canonical?.aboutSummary ?? canonical?.summaryExpanded ?? canonical?.summaryShort,
+    sourceUrl: canonical?.registrationUrl ?? canonical?.canonicalUrl ?? nonEmpty(course.fuente_url) ?? nonEmpty(course.url),
+    verifiedAt: canonical?.sourceVerifiedAt,
   };
 }
 
@@ -161,36 +178,39 @@ export function techOpportunityToCourse(item: TechOpportunity): Course {
 }
 
 export function fpItemToCourse(item: FpCatalogItem): Course {
+  const canonical = item.canonical?.destination === "course" ? item.canonical : undefined;
   return {
     id: `fp-${item.id_slug}`,
     id_slug: item.id_slug,
-    title: item.title,
-    platform: item.entity ?? undefined,
-    url: item.source_url ?? undefined,
+    title: canonical?.title ?? item.title,
+    platform: canonical?.provider ?? canonical?.organizer ?? item.entity ?? undefined,
+    url: canonical?.registrationUrl ?? canonical?.canonicalUrl ?? item.source_url ?? undefined,
     price: item.cost ?? undefined,
-    category: item.type,
-    start_at: item.start_date ?? "",
-    deadline_at: item.end_date ?? "",
-    status: fpUserStatusToCourseStatus(item.user_status) ?? normalizeCourseStatus(item.status),
-    entidad: item.entity ?? undefined,
-    area: item.type,
-    modalidad: item.delivery_mode ?? undefined,
-    localidad: item.location ?? undefined,
-    provincia: item.province ?? undefined,
-    certificacion_tipo: item.certification ?? undefined,
+    category: canonical?.opportunityType ?? item.type,
+    start_at: canonical?.startsAt ?? item.start_date ?? "",
+    deadline_at: canonical?.endsAt ?? item.end_date ?? "",
+    status: canonical ? (fpUserStatusToCourseStatus(item.user_status) ?? "pendiente") : (fpUserStatusToCourseStatus(item.user_status) ?? normalizeCourseStatus(item.status)),
+    entidad: canonical?.provider ?? canonical?.organizer ?? item.entity ?? undefined,
+    area: canonical?.opportunityType ?? item.type,
+    modalidad: canonical?.attendanceMode ?? item.delivery_mode ?? undefined,
+    localidad: canonical?.venue ?? canonical?.municipality ?? item.location ?? undefined,
+    provincia: canonical?.province ?? item.province ?? undefined,
+    certificacion_tipo: canonical?.certification ?? item.certification ?? undefined,
     practicas_empresa: item.practices === "si",
-    fecha_inicio: item.start_date ?? undefined,
-    fecha_fin: item.end_date ?? undefined,
-    estado: item.status ?? undefined,
+    fecha_inicio: canonical?.startsAt ?? item.start_date ?? undefined,
+    fecha_fin: canonical?.endsAt ?? item.end_date ?? undefined,
+    estado: canonical?.sourceLifecycleStatus ?? item.status ?? undefined,
     coste: item.cost ?? undefined,
-    requisitos_resumen: item.description ?? undefined,
+    requisitos_resumen: canonical?.requirements.join("; ") || item.description || undefined,
     prioridad: item.priority,
     tags: item.tags ?? undefined,
-    fuente_url: item.source_url ?? undefined,
+    fuente_url: canonical?.registrationUrl ?? canonical?.canonicalUrl ?? item.source_url ?? undefined,
     notes: fpItemNotes(item),
     sourceTable: "fp_content_items",
     is_favorite: item.is_favorite ?? false,
     aptitudes: item.courseAptitudes,
+    canonical,
+    user_status: item.user_status,
     created_at: item.created_at,
   };
 }

@@ -82,7 +82,9 @@ export const getGlobalStore = cache(async () => {
   // cycle-scoped fp_content_items, so a TSAF/AF/MP student never sees a DAW
   // course. Event/hackathon items from the same table stay visible to all.
   const techOpportunitiesForCycle =
-    profile.cycle_group === "DEV"
+    process.env.AL_LIO_VERIFIED_OPPORTUNITIES_ONLY?.trim().toLowerCase() === "true"
+      ? []
+      : profile.cycle_group === "DEV"
       ? techOpportunities
       : (techOpportunities as Array<{ categoria?: string | null }>).filter(
           (item) => String(item.categoria ?? "").trim().toLowerCase() !== "curso",
@@ -158,6 +160,49 @@ export const getGlobalStore = cache(async () => {
       last_reviewed_at: ymd(item.last_reviewed_at),
       created_at: iso(item.created_at),
       updated_at: iso(item.updated_at),
+      canonical: item.canonical_occurrence_id && item.canonical_destination && item.canonical_title && item.canonical_url
+        ? {
+            occurrenceId: item.canonical_occurrence_id,
+            destination: item.canonical_destination as "course" | "event",
+            opportunityType: item.canonical_opportunity_type ?? item.type,
+            title: item.canonical_title,
+            summaryShort: item.canonical_summary_short ?? undefined,
+            summaryExpanded: item.canonical_summary_expanded ?? undefined,
+            aboutSummary: item.canonical_about_summary ?? undefined,
+            organizer: item.canonical_organizer ?? undefined,
+            provider: item.canonical_provider ?? undefined,
+            canonicalUrl: item.canonical_url,
+            registrationUrl: item.canonical_registration_url ?? undefined,
+            startsAt: iso(item.canonical_starts_at) || undefined,
+            endsAt: iso(item.canonical_ends_at) || undefined,
+            registrationOpensAt: iso(item.canonical_registration_opens_at) || undefined,
+            registrationDeadline: iso(item.canonical_registration_deadline) || undefined,
+            attendanceMode: item.canonical_attendance_mode ?? undefined,
+            country: item.canonical_country ?? undefined,
+            autonomousCommunity: item.canonical_autonomous_community ?? undefined,
+            province: item.canonical_province ?? undefined,
+            municipality: item.canonical_municipality ?? undefined,
+            venue: item.canonical_venue ?? undefined,
+            address: item.canonical_address ?? undefined,
+            durationHours: item.canonical_duration_hours ?? undefined,
+            courseDifficulty: item.canonical_course_difficulty ?? undefined,
+            minimumEducation: item.canonical_minimum_education ?? undefined,
+            otherEligibility: item.canonical_other_eligibility ?? [],
+            credentialLevel: item.canonical_credential_level ?? undefined,
+            priceState: item.canonical_price_state ?? undefined,
+            priceAmountMinor: item.canonical_price_amount_minor ?? undefined,
+            priceCurrency: item.canonical_price_currency ?? undefined,
+            certification: item.canonical_certification ?? undefined,
+            prize: item.canonical_prize ?? undefined,
+            requirements: item.canonical_requirements ?? [],
+            audience: item.canonical_audience ?? [],
+            learningOutcomes: item.canonical_learning_outcomes ?? [],
+            skillsTested: item.canonical_skills_tested ?? [],
+            preparationTips: item.canonical_preparation_tips ?? [],
+            sourceLifecycleStatus: item.canonical_source_lifecycle_status ?? undefined,
+            sourceVerifiedAt: iso(item.canonical_source_verified_at),
+          }
+        : undefined,
       requiredCompetencies: (requiredCompetenciesByItem.get(item.id) ?? []).map((competency) => ({
         ...competency,
         ultima_revision: ymd(competency.ultima_revision),
