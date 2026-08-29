@@ -123,6 +123,36 @@ if (trustworthyCatalogueMigration) {
   );
 }
 
+const preparationResourcesMigration = migrations.find((migration) => migration.version === "0014_canonical_preparation_resources");
+check("canonical preparation-resource migration exists", Boolean(preparationResourcesMigration));
+if (preparationResourcesMigration) {
+  check(
+    "preparation resources reuse stable learning identities and canonical FP skills",
+    preparationResourcesMigration.sql.includes("alter table public.fp_learning_resources")
+      && preparationResourcesMigration.sql.includes("fp_skill_learning_resources")
+      && preparationResourcesMigration.sql.includes("references public.fp_cycle_skills"),
+  );
+  check(
+    "approved resources require exact identity, availability and verification",
+    preparationResourcesMigration.sql.includes("fp_learning_resources_exact_identity_check")
+      && preparationResourcesMigration.sql.includes("provider_resource_id")
+      && preparationResourcesMigration.sql.includes("source_verified_at")
+      && preparationResourcesMigration.sql.includes("availability_state = 'available'")
+      && preparationResourcesMigration.sql.includes("canonical_url = 'https://www.youtube.com/watch?v=' || provider_resource_id"),
+  );
+  check(
+    "legacy resources remain candidates and user progress is preserved with honest evidence",
+    preparationResourcesMigration.sql.includes("candidate_reverification")
+      && preparationResourcesMigration.sql.includes("legacy_unspecified")
+      && preparationResourcesMigration.sql.includes("completion_method"),
+  );
+  check(
+    "coverage gaps and revision history are explicit",
+    preparationResourcesMigration.sql.includes("fp_learning_coverage_gaps")
+      && preparationResourcesMigration.sql.includes("fp_learning_resource_revisions"),
+  );
+}
+
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 check("postgres:migrate usa el runner versionado", packageJson.scripts?.["postgres:migrate"] === "node scripts/postgres/migrate.mjs");
 check("existe importador versionado de competencias", packageJson.scripts?.["import:learning-competencies"] === "node scripts/import-learning-competencies.mjs");

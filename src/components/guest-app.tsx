@@ -45,7 +45,7 @@ import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplin
 import { SPANISH_PROVINCES } from "@/lib/deeplinks/spanish-provinces";
 import { getQuickSearchesAction, saveQuickSearchAction, type SavedQuickSearch } from "@/lib/work/actions";
 import { isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
-import { isSafeHttpUrl, selectAptitudeVideos } from "@/lib/fp/event-cta";
+import { isSafeHttpUrl } from "@/lib/fp/event-cta";
 import {
   getCoursePresentation,
   isFpCourseLike,
@@ -3026,9 +3026,23 @@ function isCompetencyDone(competency: RequiredCompetency): boolean {
   return !!competency.completed;
 }
 
-function hackathonAptitudeProgress(item: Hackathon): { done: number; total: number } {
-  const obligatorias = (item.requiredCompetencies ?? []).filter((c) => c.obligatoria_para_item);
-  return { done: obligatorias.filter(isCompetencyDone).length, total: obligatorias.length };
+function hackathonAptitudeProgress(item: Hackathon) {
+  const competencies = item.requiredCompetencies ?? [];
+  const required = competencies.filter((competency) => competency.obligatoria_para_item);
+  const recommended = competencies.filter((competency) => !competency.obligatoria_para_item);
+  const resources = [...new Map(
+    competencies.flatMap((competency) => competency.preparationResources ?? []).map((resource) => [resource.id, resource]),
+  ).values()];
+  return {
+    done: required.filter(isCompetencyDone).length,
+    total: required.length,
+    requiredDone: required.filter(isCompetencyDone).length,
+    requiredTotal: required.length,
+    recommendedDone: recommended.filter(isCompetencyDone).length,
+    recommendedTotal: recommended.length,
+    resourcesStarted: resources.filter((resource) => resource.user_status === "started").length,
+    resourcesCompleted: resources.filter((resource) => resource.user_status === "completed").length,
+  };
 }
 
 function hackathonStatusPillClass(status: Hackathon["status"]): string {
@@ -3050,18 +3064,9 @@ function hackathonStatusPillClass(status: Hackathon["status"]): string {
 // competing ones for the same information.
 function RequirementRow({ competency, actions }: { competency: RequiredCompetency; actions: ReturnTypeActions }) {
   const done = isCompetencyDone(competency);
-  const internalCourses = selectAptitudeVideos(competency.learningItems)
-    .flatMap((learningItem) => learningItem.internal_learning_slug
-      ? [{ ...learningItem, internal_learning_slug: learningItem.internal_learning_slug }]
-      : [])
-    .filter((learningItem, index, items) => items.findIndex((candidate) => candidate.internal_learning_slug === learningItem.internal_learning_slug) === index);
-  const internalCourseIds = new Set(internalCourses.map((learningItem) => learningItem.id));
-  const referenceTitles = [...new Set(
-    competency.learningItems
-      .filter((learningItem) => !internalCourseIds.has(learningItem.id))
-      .map((learningItem) => learningItem.title.trim())
-      .filter(Boolean),
-  )].slice(0, 2);
+  const resources = competency.preparationResources ?? [];
+  const roleLabel = { primary: "Principal", alternative: "Alternativa", extension: "Ampliación" } as const;
+  const statusLabel = { started: "En curso", completed: "Completado" } as const;
 
   return (
     <div className="rounded-2xl border border-[#ece7dc] p-3.5">
@@ -3077,18 +3082,50 @@ function RequirementRow({ competency, actions }: { competency: RequiredCompetenc
             </span>
           </div>
           {competency.descripcion && <p className="mt-1.5 text-xs leading-5 text-[#4b4740]">{competency.descripcion}</p>}
-          <div className="al-modal-req-actions mt-2">
-            {internalCourses.map((learningItem) => (
-              <Link key={learningItem.id} href={`/aprende/${encodeURIComponent(learningItem.internal_learning_slug)}`} className="al-modal-req-btn al-modal-req-btn-video">
-                <Youtube className="h-3 w-3" />{learningItem.title}
-              </Link>
-            ))}
-            {referenceTitles.length > 0 && <EmptyText>Otros recursos: {referenceTitles.join(" · ")}</EmptyText>}
-            {internalCourses.length === 0 && referenceTitles.length === 0 && <EmptyText>Sin curso interno disponible todavía.</EmptyText>}
+          <div className="mt-3 space-y-2">
+            {resources.map((resource) => {
+              const watchedPercent = resource.saved_duration_seconds && resource.last_position_seconds > 0
+                ? Math.min(100, Math.round((resource.last_position_seconds / resource.saved_duration_seconds) * 100))
+                : null;
+              return (
+                <div key={resource.id} className="rounded-xl border border-[#ece7dc] bg-[#faf8f4] p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={cn("al-modal-step-badge", resource.role === "primary" ? "al-modal-step-badge-oblig" : "al-modal-step-badge-reco")}>{roleLabel[resource.role]}</span>
+                        <span className="text-[10.5px] font-semibold text-[#6b6f72]">{resource.provider}</span>
+                      </div>
+                      <p className="mt-1.5 text-[12.5px] font-bold text-[#22201c]">{resource.title}</p>
+                    </div>
+                    <span className="rounded-full bg-white px-2 py-1 text-[10.5px] font-semibold text-[#4b4740]">
+                      {resource.user_status ? statusLabel[resource.user_status] : "Sin empezar"}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-[11.5px] leading-5 text-[#6b6f72]">{resource.mapping_rationale}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] text-[#8a857c]">
+                    {resource.duration_seconds && <span>{Math.max(1, Math.round(resource.duration_seconds / 60))} min</span>}
+                    <span>Verificado {formatDateLabel(resource.source_verified_at)}</span>
+                    {watchedPercent !== null && <span>Visto {watchedPercent}%</span>}
+                    {resource.user_status === "completed" && resource.completion_method === "self_declared" && <span>Declarado por ti</span>}
+                  </div>
+                  <Link href={resource.deep_link} className="al-modal-req-btn al-modal-req-btn-video mt-2">
+                    {resource.resource_type.startsWith("youtube") ? <Youtube className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}
+                    {resource.user_status === "started" ? "Continuar recurso" : resource.user_status === "completed" ? "Revisar recurso" : "Abrir recurso"}
+                  </Link>
+                </div>
+              );
+            })}
+            {resources.length === 0 && (
+              <div className="rounded-xl border border-dashed border-[#ded8cc] bg-[#faf8f4] px-3 py-2.5">
+                <p className="text-[11.5px] font-semibold text-[#6b6f72]">Aún no hay un recurso verificado para esta aptitud.</p>
+                <p className="mt-0.5 text-[10.5px] leading-4 text-[#9a958a]">La carencia queda registrada para buscar una opción fiable; no mostraremos un enlace genérico.</p>
+              </div>
+            )}
           </div>
           {done ? (
             <span className="al-modal-mark-done al-modal-mark-done-active mt-3">
-              <CheckCircle2 className="h-3.5 w-3.5" />Marcado como hecho
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              {competency.completion_method === "resource_observed" ? "Completado con evidencia" : "Marcado como hecho"}
             </span>
           ) : (
             <button type="button" className="al-modal-mark-done mt-3" onClick={() => actions.markCompetencyCompleted(competency.id)}>
@@ -3265,8 +3302,13 @@ export function HackathonDetailView({ id }: { id: string }) {
           {requirements.length > 0 && (
             <CatalogPanel title="Recursos para prepararte">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[12.5px] leading-5 text-[#6b6f72]">Cada aptitud muestra únicamente cursos internos o referencias ya vinculadas en el catálogo.</p>
-                {progress.total > 0 && <span className="text-xs font-semibold text-[#9a958a]">{progress.done}/{progress.total} completadas</span>}
+                <p className="text-[12.5px] leading-5 text-[#6b6f72]">Cada aptitud muestra sólo recursos exactos, disponibles y verificados para tu ciclo.</p>
+                {(progress.requiredTotal > 0 || progress.recommendedTotal > 0) && (
+                  <span className="shrink-0 text-right text-[10.5px] font-semibold leading-4 text-[#9a958a]">
+                    Obligatorias {progress.requiredDone}/{progress.requiredTotal}<br />
+                    Recomendadas {progress.recommendedDone}/{progress.recommendedTotal}
+                  </span>
+                )}
               </div>
               <div className="space-y-3">
                 {requirements.map((competency) => (
@@ -3296,12 +3338,15 @@ export function HackathonDetailView({ id }: { id: string }) {
             {progress.total > 0 && (
               <div className="rounded-xl bg-[#faf8f4] p-3">
                 <div className="flex items-center justify-between gap-2 text-[11.5px] font-semibold text-[#4b4740]">
-                  <span>Tu preparación</span>
+                  <span>Tu avance de preparación</span>
                   <span>{progress.done}/{progress.total}</span>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#eee7dc]">
                   <div className="h-full rounded-full bg-[#1f7a4d] transition-[width]" style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }} />
                 </div>
+                <p className="mt-2 text-[10.5px] leading-4 text-[#8a857c]">
+                  Recursos: {progress.resourcesCompleted} completados · {progress.resourcesStarted} en curso. Este indicador organiza tu preparación; no evalúa tu nivel.
+                </p>
               </div>
             )}
             <div className="flex flex-col gap-2 pt-1">

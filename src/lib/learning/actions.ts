@@ -32,6 +32,7 @@ export async function saveLearningProgressAction(
   positionSeconds: number,
   durationSeconds: number | null,
   status: FpLearningStatus = "started",
+  completionMethod: "observed" | "self_declared" | null = null,
 ): Promise<{ error: string | null; positionSeconds: number | null; status: FpLearningStatus | null }> {
   const session = await getValidatedSession();
   if (!session) redirect("/login");
@@ -44,6 +45,9 @@ export async function saveLearningProgressAction(
   if (status !== "started" && status !== "completed") {
     return { error: "status_invalid", positionSeconds: null, status: null };
   }
+  if (status === "completed" && completionMethod !== "observed" && completionMethod !== "self_declared") {
+    return { error: "completion_method_invalid", positionSeconds: null, status: null };
+  }
 
   const resource = await getAuthorizedResource(session.uid, resourceSlug);
   if (!resource) return { error: "resource_not_found", positionSeconds: null, status: null };
@@ -53,6 +57,7 @@ export async function saveLearningProgressAction(
       status,
       lastPositionSeconds: status === "completed" ? 0 : safePosition,
       durationSeconds: safeDuration,
+      completionMethod: status === "completed" ? completionMethod : null,
     });
     if (status === "completed") {
       revalidatePath("/roadmap");

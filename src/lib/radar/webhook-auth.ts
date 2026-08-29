@@ -6,7 +6,12 @@ export type RadarWebhookAuthResult =
   | { ok: true; deliveryId: string; timestamp: string; schemaVersion: number }
   | { ok: false; status: 400 | 401; error: string };
 
-export function verifyRadarWebhook(request: Request, rawBody: string, now = new Date()): RadarWebhookAuthResult {
+export function verifyRadarWebhook(
+  request: Request,
+  rawBody: string,
+  now = new Date(),
+  supportedSchemaVersions: readonly number[] = RADAR_SUPPORTED_SCHEMA_VERSIONS,
+): RadarWebhookAuthResult {
   const secret = process.env.AL_LIO_RADAR_WEBHOOK_SECRET;
   if (!secret || secret.length < 32) {
     throw new Error("AL_LIO_RADAR_WEBHOOK_SECRET is not configured securely");
@@ -18,7 +23,7 @@ export function verifyRadarWebhook(request: Request, rawBody: string, now = new 
   const schemaVersion = request.headers.get("x-al-lio-schema-version") ?? "";
 
   const parsedSchemaVersion = Number(schemaVersion);
-  if (!RADAR_SUPPORTED_SCHEMA_VERSIONS.some((version) => version === parsedSchemaVersion)) {
+  if (!supportedSchemaVersions.some((version) => version === parsedSchemaVersion)) {
     return { ok: false, status: 400, error: "unsupported schema version" };
   }
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(deliveryId)) {

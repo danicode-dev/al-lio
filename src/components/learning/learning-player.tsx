@@ -56,7 +56,7 @@ export function LearningPlayer({
     if (playerState === 1) void persist("started");
     if (playerState === 2) void persist("started", true);
     if (playerState === 0 && status !== "completed") {
-      void saveLearningProgressAction(resource.slug, 0, duration > 0 ? Math.floor(duration) : resource.duration_seconds, "completed").then((result) => {
+      void saveLearningProgressAction(resource.slug, 0, duration > 0 ? Math.floor(duration) : resource.duration_seconds, "completed", "observed").then((result) => {
         if (!result.error && result.status) setStatus(result.status);
       });
     }
@@ -89,7 +89,7 @@ export function LearningPlayer({
 
   function handleComplete() {
     startTransition(async () => {
-      const result = await saveLearningProgressAction(resource.slug, 0, duration > 0 ? Math.floor(duration) : resource.duration_seconds, "completed");
+      const result = await saveLearningProgressAction(resource.slug, 0, duration > 0 ? Math.floor(duration) : resource.duration_seconds, "completed", "self_declared");
       if (result.error || !result.status) {
         toast.error("No se pudo guardar el progreso.");
         return;
@@ -101,7 +101,7 @@ export function LearningPlayer({
 
   return (
     <div className="mx-auto max-w-7xl">
-      <Link href={`/roadmap/${encodeURIComponent(resource.competency_slug)}`} className="inline-flex items-center gap-2 text-sm font-bold text-[#6b6f72] hover:text-[#111111]">
+      <Link href={resource.back_href} className="inline-flex items-center gap-2 text-sm font-bold text-[#6b6f72] hover:text-[#111111]">
         <ArrowLeft className="h-4 w-4" /> Volver a {resource.competency_title}
       </Link>
 

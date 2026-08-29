@@ -7,6 +7,7 @@ import type {
   DbFpLearningResource,
   DbFpUserLearningState,
   FpCycleCode,
+  FpLearningCompletionMethod,
   FpLearningStatus,
 } from "@/lib/db/types";
 
@@ -19,6 +20,7 @@ export type LearningCompetencySummary = DbFpLearningCompetency & {
 
 export type LearningResourceWithState = DbFpLearningResource & {
   status: FpLearningStatus | null;
+  completion_method: FpLearningCompletionMethod | null;
   last_position_seconds: number;
   saved_duration_seconds: number | null;
   completed_at: string | null;
@@ -32,6 +34,7 @@ export type LearningResourceDetail = LearningResourceWithState & {
   competency_slug: string;
   competency_title: string;
   cycle_code: FpCycleCode;
+  back_href: string;
 };
 
 type InternalLearningTargetRow = {
@@ -87,18 +90,37 @@ export async function getLearningCompetencyForCycle(userId: string, cycleCode: F
 
 export async function getLearningResourceForCycle(userId: string, cycleCode: FpCycleCode, slug: string): Promise<LearningResourceDetail | null> {
   const result = await query<LearningResourceDetail>(
-    `SELECT resource.*, competency.slug as competency_slug, competency.title as competency_title,
-       competency.cycle_code, state.status,
-       coalesce(state.last_position_seconds, 0)::int as last_position_seconds,
-       state.duration_seconds as saved_duration_seconds,
-       state.completed_at
-     FROM public.fp_learning_resources resource
-     JOIN public.fp_learning_competency_resources link ON link.resource_id=resource.id
-     JOIN public.fp_learning_competencies competency ON competency.id=link.competency_id
-     LEFT JOIN public.fp_user_learning_state state ON state.resource_id=resource.id AND state.user_id=$1
-     WHERE resource.slug=$2 AND competency.cycle_code=$3
-       AND resource.is_active=true AND competency.is_active=true AND resource.language='es'
-     ORDER BY competency.sort_order, link.sort_order
+    `SELECT candidate.* FROM (
+       SELECT resource.*, competency.slug as competency_slug, competency.title as competency_title,
+         competency.cycle_code, state.status, state.completion_method,
+         coalesce(state.last_position_seconds, 0)::int as last_position_seconds,
+         state.duration_seconds as saved_duration_seconds, state.completed_at,
+         '/roadmap/' || competency.slug as back_href, 0 as access_priority,
+         competency.sort_order, link.sort_order as resource_sort_order
+       FROM public.fp_learning_resources resource
+       JOIN public.fp_learning_competency_resources link ON link.resource_id=resource.id
+       JOIN public.fp_learning_competencies competency ON competency.id=link.competency_id
+       LEFT JOIN public.fp_user_learning_state state ON state.resource_id=resource.id AND state.user_id=$1
+       WHERE resource.slug=$2 AND competency.cycle_code=$3
+         AND resource.is_active=true AND competency.is_active=true AND resource.language='es'
+       UNION ALL
+       SELECT resource.*, skill.id as competency_slug, skill.titulo as competency_title,
+         mapping.cycle_code, state.status, state.completion_method,
+         coalesce(state.last_position_seconds, 0)::int as last_position_seconds,
+         state.duration_seconds as saved_duration_seconds, state.completed_at,
+         '/roadmap' as back_href, 1 as access_priority,
+         mapping.sort_order, mapping.sort_order as resource_sort_order
+       FROM public.fp_learning_resources resource
+       JOIN public.fp_skill_learning_resources mapping ON mapping.resource_id=resource.id
+       JOIN public.fp_skills skill ON skill.id=mapping.skill_id
+       LEFT JOIN public.fp_user_learning_state state ON state.resource_id=resource.id AND state.user_id=$1
+       WHERE resource.slug=$2 AND mapping.cycle_code=$3
+         AND mapping.publication_state='approved'
+         AND resource.publication_state='approved'
+         AND resource.availability_state='available'
+         AND resource.is_active=true AND resource.language='es'
+     ) candidate
+     ORDER BY candidate.access_priority, candidate.sort_order, candidate.resource_sort_order
      LIMIT 1`,
     [userId, slug, cycleCode],
   );
@@ -166,19 +188,26 @@ export async function addLearningNoteToBloc(
 
     await client.query(
       `INSERT INTO public.fp_user_learning_state
-         (user_id, resource_id, status, last_position_seconds, duration_seconds, completed_at)
-       VALUES ($1,$2,$3,$4,$5,case when $3='completed' then now() else null end)
+         (user_id, resource_id, status, last_position_seconds, duration_seconds,
+          completed_at, completion_method, last_observed_at)
+       VALUES ($1,$2,$3,$4,$5,case when $3='completed' then now() else null end,
+          case when $3='completed' then $6 else null end,
+          case when $4 > 0 then now() else null end)
        ON CONFLICT (user_id, resource_id) DO UPDATE SET
          status=excluded.status,
          last_position_seconds=excluded.last_position_seconds,
          duration_seconds=coalesce(excluded.duration_seconds, fp_user_learning_state.duration_seconds),
-         completed_at=case when excluded.status='completed' then coalesce(fp_user_learning_state.completed_at, now()) else null end`,
+         completed_at=case when excluded.status='completed' then coalesce(fp_user_learning_state.completed_at, now()) else null end,
+         completion_method=case when excluded.status='completed' then coalesce(fp_user_learning_state.completion_method, excluded.completion_method) else fp_user_learning_state.completion_method end,
+         last_observed_at=case when excluded.last_position_seconds > 0 then now() else fp_user_learning_state.last_observed_at end,
+         progress_revision=fp_user_learning_state.progress_revision + 1`,
       [
         userId,
         resource.id,
         resource.status === "completed" ? "completed" : "started",
         timestampSeconds,
         resource.saved_duration_seconds,
+        resource.completion_method,
       ],
     );
 
@@ -221,19 +250,30 @@ function formatLearningTimestamp(seconds: number): string {
 export async function upsertLearningProgress(
   userId: string,
   resourceId: string,
-  input: { status: FpLearningStatus; lastPositionSeconds: number; durationSeconds: number | null },
+  input: {
+    status: FpLearningStatus;
+    lastPositionSeconds: number;
+    durationSeconds: number | null;
+    completionMethod: Exclude<FpLearningCompletionMethod, "legacy_unspecified"> | null;
+  },
 ): Promise<DbFpUserLearningState> {
   const result = await query<DbFpUserLearningState>(
     `INSERT INTO public.fp_user_learning_state
-       (user_id, resource_id, status, last_position_seconds, duration_seconds, completed_at)
-     VALUES ($1,$2,$3,$4,$5,case when $3='completed' then now() else null end)
+       (user_id, resource_id, status, last_position_seconds, duration_seconds,
+        completed_at, completion_method, last_observed_at)
+     VALUES ($1,$2,$3,$4,$5,case when $3='completed' then now() else null end,
+        case when $3='completed' then $6 else null end,
+        case when $4 > 0 then now() else null end)
      ON CONFLICT (user_id, resource_id) DO UPDATE SET
        status=excluded.status,
        last_position_seconds=excluded.last_position_seconds,
        duration_seconds=coalesce(excluded.duration_seconds, fp_user_learning_state.duration_seconds),
-       completed_at=case when excluded.status='completed' then coalesce(fp_user_learning_state.completed_at, now()) else null end
+       completed_at=case when excluded.status='completed' then coalesce(fp_user_learning_state.completed_at, now()) else null end,
+       completion_method=case when excluded.status='completed' then excluded.completion_method else fp_user_learning_state.completion_method end,
+       last_observed_at=case when excluded.last_position_seconds > 0 then now() else fp_user_learning_state.last_observed_at end,
+       progress_revision=fp_user_learning_state.progress_revision + 1
      RETURNING *`,
-    [userId, resourceId, input.status, input.lastPositionSeconds, input.durationSeconds],
+    [userId, resourceId, input.status, input.lastPositionSeconds, input.durationSeconds, input.completionMethod],
   );
   return result.rows[0];
 }
