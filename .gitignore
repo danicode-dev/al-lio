@@ -30,5 +30,3 @@ _archive/
 
 # migration artifacts — local export/import data, never committed
 migration-artifacts/
-
-# news cache — committed so Vercel has initial data; update with npm run sync:news
