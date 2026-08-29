@@ -1,7 +1,11 @@
 # Operations handbook
 
 This handbook defines the operational evidence required to run AL-LIO safely.
-It supplements the executable deployment sequence in [`../DEPLOY_VPS.md`](../DEPLOY_VPS.md); it does not replace it.
+It supplements the executable deployment sequence in [`DEPLOY_VPS.md`](DEPLOY_VPS.md); it does not replace it.
+
+The production release and readiness documents also live in this folder:
+[`DEPLOY_VPS.md`](DEPLOY_VPS.md), [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md)
+and [`DELIVERY_STATUS.md`](DELIVERY_STATUS.md) (the first-tagged-release snapshot).
 
 ## Operating principles
 
@@ -14,13 +18,14 @@ It supplements the executable deployment sequence in [`../DEPLOY_VPS.md`](../DEP
 
 ## Maintained runbooks
 
-- [`../GITHUB_PRODUCTION_DEPLOY.md`](../GITHUB_PRODUCTION_DEPLOY.md): automatic post-merge release path and one-time GitHub/VPS configuration.
-- [`../AUTONOMOUS_PRODUCTION_DEPLOY.md`](../AUTONOMOUS_PRODUCTION_DEPLOY.md): routine owner-operated release command and stop conditions.
+- [`GITHUB_PRODUCTION_DEPLOY.md`](GITHUB_PRODUCTION_DEPLOY.md): automatic post-merge release path and one-time GitHub/VPS configuration.
+- [`AUTONOMOUS_PRODUCTION_DEPLOY.md`](AUTONOMOUS_PRODUCTION_DEPLOY.md): routine owner-operated release command and stop conditions.
 - [`monitoring.md`](monitoring.md): health signals, alert ownership, and incident triage.
 - [`backup-and-recovery.md`](backup-and-recovery.md): backup boundaries and restore evidence.
 - [`release-and-rollback.md`](release-and-rollback.md): release approval and recovery decisions.
 - [`release-records/TEMPLATE.md`](release-records/TEMPLATE.md): evidence template for every production change.
-- [`../FINAL_REVIEW_CHECKLIST.md`](../FINAL_REVIEW_CHECKLIST.md): owner-facing final review order.
+- [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md): repository capabilities versus per-release gates.
+- [`FINAL_REVIEW_CHECKLIST.md`](FINAL_REVIEW_CHECKLIST.md): owner-facing final review order.
 
 ## Repository versus operator responsibilities
 

@@ -42,7 +42,7 @@ try {
     console.error("\nBASE DE DATOS EXISTENTE SIN HISTORIAL DE MIGRACIONES.");
     console.error(`Tablas detectadas: ${applicationTables.join(", ")}`);
     console.error("No se ha modificado la base de datos.");
-    console.error("Primero crea un dump, restaura una copia y ejecuta la auditoría de baseline descrita en docs/DEPLOY_VPS.md.\n");
+    console.error("Primero crea un dump, restaura una copia y ejecuta la auditoría de baseline descrita en docs/operations/DEPLOY_VPS.md.\n");
     process.exitCode = 2;
   } else if (statusOnly) {
     await printStatus(client, hasMigrationTable, migrations);

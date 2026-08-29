@@ -28,7 +28,7 @@ Before a database migration or risky production change:
 6. Record checksums and restoration evidence in the private release record.
 7. Resume only after every step succeeds.
 
-Exact commands and service names remain in [`../DEPLOY_VPS.md`](../DEPLOY_VPS.md)
+Exact commands and service names remain in [`DEPLOY_VPS.md`](DEPLOY_VPS.md)
 so they are maintained in one place.
 
 ## Recovery decision

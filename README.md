@@ -7,7 +7,7 @@ It combines planning, vocational-skills learning, curated opportunities,
 cycle-specific news and progress tracking in one Spanish-language product for
 Higher Vocational Education students.
 
-[Live application](https://al-lio.danielcode.dev) · [Documentation](docs/README.md) · [VPS runbook](docs/DEPLOY_VPS.md)
+[Live application](https://al-lio.danielcode.dev) · [Documentation](docs/README.md) · [VPS runbook](docs/operations/DEPLOY_VPS.md)
 
 > The product interface and educational content are intentionally in Spanish.
 > Source code, technical documentation and engineering collaboration use
@@ -104,7 +104,7 @@ docs/       maintained product and engineering documentation
 AL-LIO Radar remains a separate repository and process so that source
 collection cannot gain direct access to student data or the application
 database. Its application boundary is documented in
-[`docs/AL_LIO_RADAR_INTEGRATION.md`](docs/AL_LIO_RADAR_INTEGRATION.md); the
+[`docs/integrations/AL_LIO_RADAR_INTEGRATION.md`](docs/integrations/AL_LIO_RADAR_INTEGRATION.md); the
 repository link will be published after Radar completes its public-release
 safety checklist.
 
@@ -166,7 +166,7 @@ npm run postgres:setup
 
 An existing database without migration history is rejected. Baseline adoption
 is an explicit recovery operation and must only follow a verified backup and a
-successful rehearsal. See [`docs/DEPLOY_VPS.md`](docs/DEPLOY_VPS.md).
+successful rehearsal. See [`docs/operations/DEPLOY_VPS.md`](docs/operations/DEPLOY_VPS.md).
 
 ## Verification
 
@@ -195,7 +195,7 @@ Caddy. Images are identified by reviewed Git commit SHAs. Database changes use
 the dedicated migrator profile; normal application startup never applies
 migrations implicitly.
 
-Use the controlled procedure in [`docs/DEPLOY_VPS.md`](docs/DEPLOY_VPS.md).
+Use the controlled procedure in [`docs/operations/DEPLOY_VPS.md`](docs/operations/DEPLOY_VPS.md).
 Do not deploy from an uncommitted working tree and do not rebuild Radar or
 PostgreSQL for a web-only release.
 

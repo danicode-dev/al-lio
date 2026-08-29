@@ -118,9 +118,9 @@ for (const file of productionFiles) {
   check(`${file}: no aidraft_* service/network names`, !hasAidraftService);
 }
 
-console.log("\n-- docs/DEPLOY_VPS.md --");
-const runbook = read("docs/DEPLOY_VPS.md");
-check("active VPS runbook exists", existsSync(join(root, "docs/DEPLOY_VPS.md")));
+console.log("\n-- docs/operations/DEPLOY_VPS.md --");
+const runbook = read("docs/operations/DEPLOY_VPS.md");
+check("active VPS runbook exists", existsSync(join(root, "docs/operations/DEPLOY_VPS.md")));
 check("runbook uses production compose file", runbook.includes("infra/docker-compose.prod.yml"));
 check("runbook loads real .env with --env-file", runbook.includes("--env-file .env"));
 check(

@@ -37,5 +37,5 @@ Capture only after final visual approval:
 
 Screenshots cannot be finalized automatically because they require the owner's
 visual approval and access to a safe, current environment. The owner must verify
-each frame against [`../FINAL_REVIEW_CHECKLIST.md`](../FINAL_REVIEW_CHECKLIST.md)
+each frame against [`../operations/FINAL_REVIEW_CHECKLIST.md`](../operations/FINAL_REVIEW_CHECKLIST.md)
 before publication.

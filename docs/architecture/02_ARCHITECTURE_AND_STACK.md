@@ -1,7 +1,8 @@
 # Architecture and stack
 
 This document is the concise runtime reference. Detailed boundaries, diagrams
-and decision records live in [`architecture/`](architecture/README.md).
+and decision records live alongside this file in [`README.md`](README.md) and
+[`decisions/`](decisions/README.md).
 
 ## Runtime
 

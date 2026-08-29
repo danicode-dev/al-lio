@@ -62,7 +62,7 @@ operational or presentation work:
 The first release tag records the reviewed repository state. The deployed web
 runtime SHA, preserved service images, verification evidence and rollback
 reference are recorded in
-[`operations/release-records/v0.1.0.md`](operations/release-records/v0.1.0.md).
+[`release-records/v0.1.0.md`](release-records/v0.1.0.md).
 
 No repository document contains production credentials, reusable demo
 passwords, OAuth tokens, webhook secrets or personal student data.
