@@ -206,7 +206,7 @@ architecture, integration, source-governance and operations documents.
 
 ## Security
 
-Please read [`SECURITY.md`](SECURITY.md) before reporting a vulnerability. Do
+Please read [`SECURITY.md`](.github/SECURITY.md) before reporting a vulnerability. Do
 not disclose secrets, OAuth tokens, personal data or exploitable details in a
 public issue.
 
