@@ -40,6 +40,13 @@ type CompletedTask = {
   completed_at?: string;
 };
 
+// The compact calendar widget's controls use the same neutral icon button as
+// the rest of the dashboard cards (see dashboard-focus-carousel), instead of
+// a bespoke ghost Button, so the whole dashboard reads as one set.
+const COMPACT_ICON_BUTTON_BASE = "grid h-8 w-8 place-items-center rounded-lg border transition";
+const COMPACT_ICON_BUTTON_IDLE = "border-[#ece7dc] text-[#6b6f72] hover:border-[#d7cfc2] hover:text-[#111111]";
+const COMPACT_ICON_BUTTON = `${COMPACT_ICON_BUTTON_BASE} ${COMPACT_ICON_BUTTON_IDLE}`;
+
 const googleEventsCache = new Map<string, GoogleCalendarEvent[]>();
 
 export async function loadGoogleCalendarRange(start: string, end: string, force = false) {
@@ -115,24 +122,23 @@ export function TaskCalendar({ events: localEvents }: { events: CalendarEvent[] 
           onNext={() => { setMonth(addMonths(month, 1)); setAgendaOpen(false); }}
           onCreate={() => { setAgendaOpen(false); setNewEventOpen((open) => !open); }}
           agendaSlot={
-            <Button
+            <button
               type="button"
-              size="icon"
-              variant="ghost"
               className={cn(
-                "relative ml-0.5 h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]",
-                agendaOpen && "bg-[#fff0e9] text-[#e15d2d]",
+                "relative",
+                COMPACT_ICON_BUTTON_BASE,
+                agendaOpen ? "border-[#d7cfc2] bg-[#fdf1eb] text-[#c6491d]" : COMPACT_ICON_BUTTON_IDLE,
               )}
               onClick={() => { setNewEventOpen(false); setAgendaOpen((open) => !open); }}
               aria-label="Agenda del día"
               aria-expanded={agendaOpen}
               title="Agenda del día"
             >
-              <CalendarClock className="h-3.5 w-3.5" />
+              <CalendarClock className="h-4 w-4" />
               {selectedEvents.length > 0 && !agendaOpen && (
                 <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-[#e15d2d] ring-2 ring-white" aria-hidden="true" />
               )}
-            </Button>
+            </button>
           }
         >
           {newEventOpen && (
@@ -314,11 +320,11 @@ function CalendarHeader({ month, compact = false, controlsRef, onPrevious, onNex
           <h2 className="text-sm font-extrabold text-[#111111]">Calendario</h2>
           <p className="mt-0.5 truncate text-xs text-[#777269]">{monthTitle(month)}</p>
         </div>
-        <div ref={controlsRef} className="relative flex shrink-0 items-center gap-0.5">
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={onPrevious} aria-label="Mes anterior"><ChevronLeft className="h-3.5 w-3.5" /></Button>
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-[#6b6f72] hover:bg-[#fff0e9] hover:text-[#e15d2d]" onClick={onNext} aria-label="Mes siguiente"><ChevronRight className="h-3.5 w-3.5" /></Button>
+        <div ref={controlsRef} className="relative flex shrink-0 items-center gap-1">
+          <button type="button" className={COMPACT_ICON_BUTTON} onClick={onPrevious} aria-label="Mes anterior"><ChevronLeft className="h-4 w-4" /></button>
+          <button type="button" className={COMPACT_ICON_BUTTON} onClick={onNext} aria-label="Mes siguiente"><ChevronRight className="h-4 w-4" /></button>
           {agendaSlot}
-          {onCreate && <Button type="button" size="icon" variant="ghost" className="ml-0.5 h-7 w-7 rounded-lg bg-[#fff0e9] text-[#e15d2d] hover:bg-[#fbe2d6] hover:text-[#c6491d]" onClick={onCreate} aria-label="Crear evento"><Plus className="h-3.5 w-3.5" /></Button>}
+          {onCreate && <button type="button" className="al-action-soft grid h-8 w-8 place-items-center rounded-lg transition" onClick={onCreate} aria-label="Crear evento"><Plus className="h-4 w-4" /></button>}
           {children}
         </div>
       </div>
