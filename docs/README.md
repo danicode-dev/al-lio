@@ -15,13 +15,13 @@ subfolders below.
 
 ## `product/`
 
-- [`product/01_PRODUCT_SPEC.md`](product/01_PRODUCT_SPEC.md): users, outcomes, scope and known limits.
+- [`product/PRODUCT_SPEC.md`](product/PRODUCT_SPEC.md): users, outcomes, scope and known limits.
 - [`product/demo-and-screenshots.md`](product/demo-and-screenshots.md): safe public demo and visual-evidence protocol.
 
 ## `architecture/`
 
 - [`architecture/README.md`](architecture/README.md): system boundaries and diagrams.
-- [`architecture/02_ARCHITECTURE_AND_STACK.md`](architecture/02_ARCHITECTURE_AND_STACK.md): concise runtime reference.
+- [`architecture/ARCHITECTURE_AND_STACK.md`](architecture/ARCHITECTURE_AND_STACK.md): concise runtime reference.
 - [`architecture/decisions/README.md`](architecture/decisions/README.md): accepted engineering decisions.
 
 ## `integrations/`
@@ -29,12 +29,12 @@ subfolders below.
 External-service contracts and the governance rules for imported content.
 
 - [`integrations/README.md`](integrations/README.md): index for this area.
-- [`integrations/03_INTEGRATIONS_AND_DEEPLINKS.md`](integrations/03_INTEGRATIONS_AND_DEEPLINKS.md): Google, job-platform and deep-link policy.
+- [`integrations/INTEGRATIONS_AND_DEEPLINKS.md`](integrations/INTEGRATIONS_AND_DEEPLINKS.md): Google, job-platform and deep-link policy.
 - [`integrations/AL_LIO_RADAR_INTEGRATION.md`](integrations/AL_LIO_RADAR_INTEGRATION.md): application-side Radar contract and ownership boundary.
 - [`integrations/VERIFIED_NEWS_DETAILS.md`](integrations/VERIFIED_NEWS_DETAILS.md): verified v4 news list/detail contract.
 - [`integrations/LEARNING_SOURCE_GOVERNANCE.md`](integrations/LEARNING_SOURCE_GOVERNANCE.md): acceptance and withdrawal rules for learning resources.
 - [`integrations/COMPANY_CATALOGUE_GOVERNANCE.md`](integrations/COMPANY_CATALOGUE_GOVERNANCE.md): dataset format, source policy and import steps for the Work tab's company catalogue (DEV/AF/MP/TSAF).
-- [`integrations/04_SEED_HACKATHONS.md`](integrations/04_SEED_HACKATHONS.md): reference dataset for initial hackathon imports.
+- [`integrations/SEED_HACKATHONS.md`](integrations/SEED_HACKATHONS.md): reference dataset for initial hackathon imports.
 
 ## `operations/`
 
@@ -45,8 +45,7 @@ Everything about releasing and running the production deployment.
 - [`operations/AUTONOMOUS_PRODUCTION_DEPLOY.md`](operations/AUTONOMOUS_PRODUCTION_DEPLOY.md): owner-facing one-command routine release guide.
 - [`operations/DEPLOY_VPS.md`](operations/DEPLOY_VPS.md): controlled VPS deployment, backup, smoke test and rollback.
 - [`operations/PRODUCTION_READINESS.md`](operations/PRODUCTION_READINESS.md): repository capabilities and per-release gates.
-- [`operations/FINAL_REVIEW_CHECKLIST.md`](operations/FINAL_REVIEW_CHECKLIST.md): ordered owner review before merge and production.
-- [`operations/DELIVERY_STATUS.md`](operations/DELIVERY_STATUS.md): completed repository work and remaining manual gates for the first tagged release.
+- [`operations/release-records/`](operations/release-records/TEMPLATE.md): evidence recorded for each production change.
 
 ## Documentation policy
 

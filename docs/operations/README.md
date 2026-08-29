@@ -4,8 +4,8 @@ This handbook defines the operational evidence required to run AL-LIO safely.
 It supplements the executable deployment sequence in [`DEPLOY_VPS.md`](DEPLOY_VPS.md); it does not replace it.
 
 The production release and readiness documents also live in this folder:
-[`DEPLOY_VPS.md`](DEPLOY_VPS.md), [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md)
-and [`DELIVERY_STATUS.md`](DELIVERY_STATUS.md) (the first-tagged-release snapshot).
+[`DEPLOY_VPS.md`](DEPLOY_VPS.md), [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md),
+and the per-release evidence under [`release-records/`](release-records/TEMPLATE.md).
 
 ## Operating principles
 
@@ -25,7 +25,6 @@ and [`DELIVERY_STATUS.md`](DELIVERY_STATUS.md) (the first-tagged-release snapsho
 - [`release-and-rollback.md`](release-and-rollback.md): release approval and recovery decisions.
 - [`release-records/TEMPLATE.md`](release-records/TEMPLATE.md): evidence template for every production change.
 - [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md): repository capabilities versus per-release gates.
-- [`FINAL_REVIEW_CHECKLIST.md`](FINAL_REVIEW_CHECKLIST.md): owner-facing final review order.
 
 ## Repository versus operator responsibilities
 

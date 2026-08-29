@@ -13,7 +13,7 @@ authoritative. A document here explains *why* a boundary or rule exists.
 
 ## Documents
 
-- [`03_INTEGRATIONS_AND_DEEPLINKS.md`](03_INTEGRATIONS_AND_DEEPLINKS.md): the
+- [`INTEGRATIONS_AND_DEEPLINKS.md`](INTEGRATIONS_AND_DEEPLINKS.md): the
   narrowest-reliable-integration policy for Google, job platforms and outbound
   deep links.
 - [`AL_LIO_RADAR_INTEGRATION.md`](AL_LIO_RADAR_INTEGRATION.md): the
@@ -25,5 +25,5 @@ authoritative. A document here explains *why* a boundary or rule exists.
   learning resource becomes visible and when it is withdrawn.
 - [`COMPANY_CATALOGUE_GOVERNANCE.md`](COMPANY_CATALOGUE_GOVERNANCE.md): dataset
   format, source policy and import steps for the Work tab company catalogue.
-- [`04_SEED_HACKATHONS.md`](04_SEED_HACKATHONS.md): the reviewed starter
+- [`SEED_HACKATHONS.md`](SEED_HACKATHONS.md): the reviewed starter
   dataset for the Hackathons area. Editorial reference, not a live feed.

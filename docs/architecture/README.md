@@ -71,7 +71,7 @@ Legacy JSON news files are not a production source of truth.
 
 ## Runtime reference
 
-- [`02_ARCHITECTURE_AND_STACK.md`](02_ARCHITECTURE_AND_STACK.md): the concise
+- [`ARCHITECTURE_AND_STACK.md`](ARCHITECTURE_AND_STACK.md): the concise
   runtime view (services, ports, processes and where each concern lives).
 
 ## Diagrams
