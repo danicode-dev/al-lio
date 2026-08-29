@@ -143,6 +143,21 @@ if (verifiedJobsMigration) {
   );
 }
 
+const legacyNewsWithdrawalMigration = migrations.find(
+  (migration) => migration.version === "0016_legacy_radar_news_withdrawals",
+);
+check("legacy Radar news withdrawal migration exists", Boolean(legacyNewsWithdrawalMigration));
+if (legacyNewsWithdrawalMigration) {
+  check(
+    "legacy withdrawals preserve rows and require an audit",
+    legacyNewsWithdrawalMigration.sql.includes("withdrawn_at")
+      && legacyNewsWithdrawalMigration.sql.includes("withdrawn_by")
+      && legacyNewsWithdrawalMigration.sql.includes("withdrawal_reason")
+      && legacyNewsWithdrawalMigration.sql.includes("radar_items_withdrawal_audit_required")
+      && !/delete\s+from|drop\s+table|truncate\s+table/i.test(legacyNewsWithdrawalMigration.sql),
+  );
+}
+
 const preparationResourcesMigration = migrations.find((migration) => migration.version === "0014_canonical_preparation_resources");
 check("canonical preparation-resource migration exists", Boolean(preparationResourcesMigration));
 if (preparationResourcesMigration) {

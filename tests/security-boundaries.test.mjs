@@ -291,6 +291,26 @@ test("rejected legacy Radar news stay outside every user-facing read and mutatio
   );
 });
 
+test("audited legacy Radar withdrawals hide content without deleting rows or private state", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/radar.ts", import.meta.url), "utf8");
+  const migration = await readFile(
+    new URL("../infra/postgres/migrations/0016_legacy_radar_news_withdrawals.sql", import.meta.url),
+    "utf8",
+  );
+  const withdrawalBoundaries = source.match(/item\.withdrawn_at IS NULL/g) ?? [];
+
+  assert.equal(
+    withdrawalBoundaries.length,
+    4,
+    "list, statistics, status mutation and detail queries must all exclude withdrawn news",
+  );
+  assert.match(migration, /add column if not exists withdrawn_at timestamptz/);
+  assert.match(migration, /radar_items_withdrawal_audit_required/);
+  assert.match(migration, /withdrawn_by/);
+  assert.match(migration, /withdrawal_reason/);
+  assert.doesNotMatch(migration, /delete\s+from|drop\s+table|truncate\s+table/i);
+});
+
 test("News cards route into the internal detail page, never straight to the source, and never inject raw HTML", async () => {
   const source = await readFile(new URL("../src/components/noticias/noticias-view.tsx", import.meta.url), "utf8");
 
