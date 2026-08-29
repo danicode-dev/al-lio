@@ -13,6 +13,7 @@ import {
   radarV4ProjectionDestinations,
   resolveRadarV4Fact,
 } from "../src/lib/radar/v4-projection.ts";
+import { radarLearningDeliverySchema } from "../src/lib/radar/learning-contract.ts";
 
 const fixtures = join(process.cwd(), "tests", "fixtures", "radar-v4");
 
@@ -76,6 +77,48 @@ test("batch limits remain unchanged", () => {
   const delivery = fixture("partial-v4.json");
   delivery.items = Array.from({ length: RADAR_MAX_BATCH_ITEMS + 1 }, () => delivery.items[0]);
   assert.equal(radarDeliverySchema.safeParse(delivery).success, false);
+});
+
+const learningDelivery = () => ({
+  schemaVersion: 1,
+  deliveryId: "b63f5b3a-bd75-4cee-ae0b-b8fb6d30aa49",
+  resources: [{
+    resource: {
+      provider: "youtube",
+      externalId: "abcdefghijk",
+      canonicalUrl: "https://www.youtube.com/watch?v=abcdefghijk",
+      channelId: "UC-official",
+      channelName: "Official academy",
+      title: "Curso de Java",
+      description: "Fundamentos y orientación a objetos",
+      language: "es",
+      durationSeconds: 3600,
+      availability: "available",
+      verifiedAt: "2026-08-29T08:00:00.000Z",
+      revision: 1,
+    },
+    mappings: [{
+      cycleCode: "DAW",
+      competencyKey: "java-fundamentals",
+      role: "primary",
+      coveragePercent: 90,
+      selectionReasons: ["Exact Java and object-oriented programming coverage"],
+    }],
+  }],
+});
+
+test("learning handoff accepts exact verified resources and rejects generic or mismatched targets", () => {
+  assert.equal(radarLearningDeliverySchema.safeParse(learningDelivery()).success, true);
+  const generic = learningDelivery();
+  generic.resources[0].resource.canonicalUrl = "https://www.youtube.com/results?search_query=java";
+  assert.equal(radarLearningDeliverySchema.safeParse(generic).success, false);
+});
+
+test("learning handoff is strict and cannot carry student progress", () => {
+  const delivery = learningDelivery();
+  delivery.resources[0].resource.userId = "student-1";
+  delivery.resources[0].resource.completed = true;
+  assert.equal(radarLearningDeliverySchema.safeParse(delivery).success, false);
 });
 
 test("missing extraction never erases the last-known-good fact", () => {

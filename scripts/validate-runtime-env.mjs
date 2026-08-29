@@ -76,6 +76,11 @@ if (verifiedOpportunitiesFlag && verifiedOpportunitiesFlag !== "true" && verifie
   errors.push("AL_LIO_VERIFIED_OPPORTUNITIES_ONLY debe ser true o false");
 }
 
+const learningIngestFlag = process.env.AL_LIO_RADAR_LEARNING_INGEST_ENABLED?.trim().toLowerCase();
+if (learningIngestFlag && learningIngestFlag !== "true" && learningIngestFlag !== "false") {
+  errors.push("AL_LIO_RADAR_LEARNING_INGEST_ENABLED debe ser true o false");
+}
+
 commaSeparatedEnum(
   "AL_LIO_RADAR_V4_PROJECT_DESTINATIONS",
   new Set(["news", "course", "event"]),

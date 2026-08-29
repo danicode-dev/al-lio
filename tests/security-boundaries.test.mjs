@@ -981,15 +981,15 @@ test("the Eventos redirect resolver never depends on fp_user_competency_state - 
 // removed along with it - see "the requirements section never constructs a
 // /ruta/ URL" below for the equivalent guard against the inline replacement.
 
-test("A competency shows at most two non-clickable legacy references (issue #96)", async () => {
+test("A competency never renders legacy free-text references as preparation resources (issue #96, issue #202)", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const componentStart = guestAppSource.indexOf("function RequirementRow(");
   const componentEnd = guestAppSource.indexOf("export function HackathonDetailView", componentStart);
   assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the RequirementRow component");
   const componentSource = guestAppSource.slice(componentStart, componentEnd);
 
-  assert.match(componentSource, /const referenceTitles = \[\.\.\.new Set\([\s\S]*\)\]\.slice\(0, 2\);/);
-  assert.doesNotMatch(componentSource, /href=\{learningItem\.source_url\}|target="_blank"/);
+  assert.match(componentSource, /competency\.preparationResources \?\? \[\]/);
+  assert.doesNotMatch(componentSource, /referenceTitles|learningItem\.source_url|target="_blank"/);
 });
 
 // --- issue #95: event lifecycle (preparation, featured rotation, Realizado) ---
@@ -1565,23 +1565,82 @@ test("event catalogue cards keep the official URL in the validated detail action
   assert.doesNotMatch(source, /Entrar al hackat[oó]n/);
 });
 
-test("each aptitude links only to exact internal courses and keeps legacy references as short text", async () => {
+test("each aptitude renders only canonical approved preparation resources and explicit gaps", async () => {
   const guestAppSource = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const componentStart = guestAppSource.indexOf("function RequirementRow(");
   const componentEnd = guestAppSource.indexOf("export function HackathonDetailView", componentStart);
   assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the RequirementRow component");
   const componentSource = guestAppSource.slice(componentStart, componentEnd);
 
-  assert.match(componentSource, /const internalCourses = selectAptitudeVideos\(competency\.learningItems\)/);
-  assert.doesNotMatch(componentSource, /\.find\(\(li\) => li\.video_url\)/, "must never collapse several real videos into one arbitrary pick");
+  assert.match(componentSource, /const resources = competency\.preparationResources \?\? \[\]/);
+  assert.doesNotMatch(componentSource, /selectAptitudeVideos|competency\.learningItems/, "legacy free-text/video joins must not feed the preparation UI");
   assert.match(
     componentSource,
-    /\{internalCourses\.map\(\(learningItem\) => \(\s*<Link key=\{learningItem\.id\} href=\{`\/aprende\/\$\{encodeURIComponent\(learningItem\.internal_learning_slug\)\}`\}/,
-    "the aptitude CTA must stay inside AL-LIO's learning player",
+    /<Link href=\{resource\.deep_link\}/,
+    "the aptitude CTA must use the exact approved deep link",
   );
-  assert.doesNotMatch(componentSource, /href=\{learningItem\.video_url\}|target="_blank"/);
-  assert.match(componentSource, /Otros recursos: \{referenceTitles\.join\(" · "\)\}/);
-  assert.match(componentSource, /Sin curso interno disponible todavía\./);
+  assert.doesNotMatch(componentSource, /href=\{resource\.canonical_url\}|target="_blank"/);
+  assert.match(componentSource, /resource\.mapping_rationale/);
+  assert.match(componentSource, /Verificado \{formatDateLabel\(resource\.source_verified_at\)\}/);
+  assert.match(componentSource, /Aún no hay un recurso verificado para esta aptitud\./);
+  assert.match(componentSource, /no mostraremos un enlace genérico\./);
+});
+
+test("preparation resources require canonical approval and join progress only for the authenticated user", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
+  const start = source.indexOf("export async function getPreparationResourcesForCompetencies");
+  const end = source.indexOf("\n// Return only resources", start);
+  assert.ok(start > -1 && end > start, "could not locate canonical preparation-resource query");
+  const querySource = source.slice(start, end);
+  assert.match(querySource, /state\.user_id = \$1/);
+  assert.match(querySource, /mapping\.cycle_code = \$3/);
+  assert.match(querySource, /mapping\.publication_state = 'approved'/);
+  assert.match(querySource, /resource\.publication_state = 'approved'/);
+  assert.match(querySource, /resource\.availability_state = 'available'/);
+  assert.match(querySource, /resource\.deep_link IS NOT NULL/);
+  assert.doesNotMatch(querySource, /fp_content_items|video_url/, "legacy candidate links must not leak into the canonical query");
+});
+
+test("manual competency and resource completion stay distinct from observed player completion", async () => {
+  const [catalogSource, learningSource, actionsSource, playerSource] = await Promise.all([
+    readFile(new URL("../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/lib/db/repositories/learning.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/lib/learning/actions.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/learning/learning-player.tsx", import.meta.url), "utf8"),
+  ]);
+  const completionStart = catalogSource.indexOf("export async function markUserCompetencyCompleted");
+  const completionSource = catalogSource.slice(completionStart);
+  assert.match(completionSource, /VALUES \(\$1, \$2, 'self_declared', null\)/);
+  assert.match(actionsSource, /completionMethod: "observed" \| "self_declared" \| null/);
+  assert.match(playerSource, /"completed", "observed"/);
+  assert.match(playerSource, /"completed", "self_declared"/);
+  assert.match(learningSource, /then excluded\.completion_method/);
+  assert.match(learningSource, /last_observed_at/);
+  assert.doesNotMatch(learningSource, /status='completed'.*Abrir/s);
+});
+
+test("the learning player authorizes canonical skill mappings without reopening legacy candidates", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/learning.ts", import.meta.url), "utf8");
+  const start = source.indexOf("export async function getLearningResourceForCycle");
+  const end = source.indexOf("export async function getInternalLearningTargetsForVideoUrls", start);
+  const querySource = source.slice(start, end);
+  assert.match(querySource, /fp_skill_learning_resources/);
+  assert.match(querySource, /mapping\.cycle_code=\$3/);
+  assert.match(querySource, /mapping\.publication_state='approved'/);
+  assert.match(querySource, /resource\.publication_state='approved'/);
+  assert.match(querySource, /resource\.availability_state='available'/);
+});
+
+test("the learning Radar receiver is independently disabled and accepts no public user state", async () => {
+  const [routeSource, contractSource] = await Promise.all([
+    readFile(new URL("../src/app/api/radar/v1/learning/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/lib/radar/learning-contract.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(routeSource, /AL_LIO_RADAR_LEARNING_INGEST_ENABLED/);
+  assert.match(routeSource, /verifyRadarWebhook\(request, rawBody/);
+  assert.match(routeSource, /RadarLearningDeliveryConflictError/);
+  assert.doesNotMatch(contractSource, /userId|user_id|watchProgress|completedAt/);
+  assert.match(contractSource, /canonicalUrl must identify the exact externalId/);
 });
 
 test("the learning player embeds YouTube without offering an external YouTube exit", async () => {
@@ -3173,16 +3232,17 @@ test("HackathonDetailView never renders item.notes directly and uses the canonic
   assert.doesNotMatch(fnSource, /\{item\.notes\}/, "notes must never be interpolated directly into the page");
 });
 
-test("Each inline requirement's learning links are deduped by internal_learning_slug, and an honest fallback replaces fabricated recommendations when nothing is grounded (owner-reported follow-up to #135)", async () => {
+test("Each inline requirement consumes the bounded canonical resource query and keeps an honest coverage gap (issues #135 and #202)", async () => {
   const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
   const fnStart = source.indexOf("function RequirementRow(");
   const fnEnd = source.indexOf("export function HackathonDetailView");
   const fnSource = source.slice(fnStart, fnEnd);
 
-  assert.match(fnSource, /selectAptitudeVideos\(competency\.learningItems\)/, "must reuse the same safe-video selector the old CompetencyRequirement used, not a new unfiltered pass over every learning item");
-  assert.match(fnSource, /items\.findIndex\(\(candidate\) => candidate\.internal_learning_slug === learningItem\.internal_learning_slug\) === index\)/, "must dedupe by internal_learning_slug");
-  assert.match(fnSource, /internalCourses\.length === 0 && referenceTitles\.length === 0 && <EmptyText>Sin curso interno disponible todavía\.<\/EmptyText>/, "an honest empty state, not a fabricated recommendation, when this specific requirement has nothing grounded");
-  assert.match(fnSource, /const referenceTitles = \[\.\.\.new Set\([\s\S]*?\)\]\.slice\(0, 2\);/, "legacy references without an internal course stay capped, same as before");
+  assert.match(fnSource, /const resources = competency\.preparationResources \?\? \[\]/);
+  assert.match(fnSource, /resources\.map\(\(resource\) =>/);
+  assert.match(fnSource, /resources\.length === 0/);
+  assert.match(fnSource, /La carencia queda registrada para buscar una opción fiable/);
+  assert.doesNotMatch(fnSource, /learningItems|referenceTitles|video_url/, "the canonical UI must not fall back to legacy candidates");
 });
 
 test("The detail view's official source link is gated by isSafeHttpUrl, same as the card and hero (issue #135)", async () => {

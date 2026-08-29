@@ -5,6 +5,7 @@ import type {
   DbCanonicalOpportunityFacts,
   DbFpCycle,
   DbFpCycleSkill,
+  DbFpLearningResource,
   DbFpSkill,
   DbFpUserCompetencyState,
   DbFpUserContentState,
@@ -13,6 +14,9 @@ import type {
   FpCycleCode,
   FpCycleGroup,
   FpItemCompetencyRelation,
+  FpLearningCompletionMethod,
+  FpLearningResourceRole,
+  FpLearningStatus,
 } from "@/lib/db/types";
 
 export type FpCatalogContentRow = DbFpContentItem & DbCanonicalOpportunityFacts & {
@@ -279,6 +283,64 @@ export type CompetencyLearningItem = {
   tipo_relacion: FpItemCompetencyRelation;
 };
 
+export type PreparationResource = DbFpLearningResource & {
+  skill_id: string;
+  role: FpLearningResourceRole;
+  coverage_percent: number | null;
+  mapping_rationale: string;
+  mapping_verified_at: string;
+  user_status: FpLearningStatus | null;
+  completion_method: FpLearningCompletionMethod | null;
+  last_position_seconds: number;
+  saved_duration_seconds: number | null;
+};
+
+/**
+ * Exact, approved preparation resources only. Legacy fp_content_items videos
+ * and candidate mappings never enter this query. User progress is joined with
+ * the authenticated user ID supplied by the server-side store loader.
+ */
+export async function getPreparationResourcesForCompetencies(
+  userId: string,
+  skillIds: string[],
+  cycleCode: FpCycleCode,
+  perSkillLimit = 3,
+): Promise<Map<string, PreparationResource[]>> {
+  const map = new Map<string, PreparationResource[]>();
+  if (skillIds.length === 0) return map;
+
+  const res = await query<PreparationResource>(
+    `SELECT mapping.skill_id, resource.*, mapping.role, mapping.coverage_percent,
+            mapping.mapping_rationale, mapping.verified_at as mapping_verified_at,
+            state.status as user_status, state.completion_method,
+            coalesce(state.last_position_seconds, 0)::int as last_position_seconds,
+            state.duration_seconds as saved_duration_seconds
+     FROM public.fp_skill_learning_resources mapping
+     INNER JOIN public.fp_learning_resources resource ON resource.id = mapping.resource_id
+     LEFT JOIN public.fp_user_learning_state state
+       ON state.resource_id = resource.id AND state.user_id = $1
+     WHERE mapping.skill_id = ANY($2)
+       AND mapping.cycle_code = $3
+       AND mapping.publication_state = 'approved'
+       AND resource.publication_state = 'approved'
+       AND resource.availability_state = 'available'
+       AND resource.is_active = true
+       AND resource.language = 'es'
+       AND resource.deep_link IS NOT NULL
+     ORDER BY mapping.skill_id,
+       case mapping.role when 'primary' then 0 when 'alternative' then 1 else 2 end,
+       mapping.sort_order, resource.title`,
+    [userId, skillIds, cycleCode],
+  );
+
+  for (const row of res.rows) {
+    const resources = map.get(row.skill_id) ?? [];
+    if (resources.length < perSkillLimit) resources.push(row);
+    map.set(row.skill_id, resources);
+  }
+  return map;
+}
+
 // Return only resources that teach the skill (tipo_relacion = 'ensena'). Items
 // that require it ('requiere') or demonstrate it ('demuestra') do not belong in
 // the student's "resources for learning this" list.
@@ -434,21 +496,26 @@ export async function getCycleSkillById(cycleCode: FpCycleCode, skillId: string)
   return res.rows[0] ?? null;
 }
 
-export async function getUserCompetencyStatesForSkills(userId: string, skillIds: string[]): Promise<Set<string>> {
-  if (skillIds.length === 0) return new Set();
+export async function getUserCompetencyStatesForSkills(
+  userId: string,
+  skillIds: string[],
+): Promise<Map<string, DbFpUserCompetencyState>> {
+  if (skillIds.length === 0) return new Map();
 
-  const res = await query<{ skill_id: string }>(
-    `SELECT skill_id FROM public.fp_user_competency_state WHERE user_id = $1 AND skill_id = ANY($2)`,
+  const res = await query<DbFpUserCompetencyState>(
+    `SELECT * FROM public.fp_user_competency_state WHERE user_id = $1 AND skill_id = ANY($2)`,
     [userId, skillIds]
   );
-  return new Set(res.rows.map((row) => row.skill_id));
+  return new Map(res.rows.map((row) => [row.skill_id, row]));
 }
 
 export async function markUserCompetencyCompleted(userId: string, skillId: string): Promise<DbFpUserCompetencyState> {
   const res = await query<DbFpUserCompetencyState>(
-    `INSERT INTO public.fp_user_competency_state (user_id, skill_id)
-     VALUES ($1, $2)
-     ON CONFLICT (user_id, skill_id) DO UPDATE SET updated_at = now()
+    `INSERT INTO public.fp_user_competency_state (user_id, skill_id, completion_method, evidence_resource_id)
+     VALUES ($1, $2, 'self_declared', null)
+     ON CONFLICT (user_id, skill_id) DO UPDATE SET
+       completed_at = now(), completion_method = 'self_declared',
+       evidence_resource_id = null, updated_at = now()
      RETURNING *`,
     [userId, skillId]
   );

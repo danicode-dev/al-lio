@@ -151,6 +151,29 @@ export type RequiredCompetencyLearningItem = {
   user_status?: string | null;
 };
 
+export type RequiredCompetencyPreparationResource = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  provider: string;
+  resource_type: "youtube_video" | "youtube_playlist" | "internal_course" | "internal_lesson";
+  provider_resource_id: string;
+  canonical_url: string | null;
+  deep_link: string;
+  language: "es";
+  duration_seconds: number | null;
+  role: "primary" | "alternative" | "extension";
+  coverage_percent: number | null;
+  mapping_rationale: string;
+  source_verified_at: string;
+  resource_revision: number;
+  user_status: "started" | "completed" | null;
+  completion_method: "observed" | "self_declared" | "legacy_unspecified" | null;
+  last_position_seconds: number;
+  saved_duration_seconds: number | null;
+};
+
 // Canonical skill required by a hackathon or event. The same skill can be
 // linked from several cycles, so stage and target-level information belongs to
 // the cycle relationship rather than the skill itself.
@@ -163,9 +186,11 @@ export type RequiredCompetency = {
   obligatoria_para_item: boolean;
   orden_preparacion?: number;
   learningItems: RequiredCompetencyLearningItem[];
+  preparationResources: RequiredCompetencyPreparationResource[];
   // Explicit per-user completion (issue #96), independent of whether any
   // learningItems exist or are individually completed.
   completed?: boolean;
+  completion_method?: "self_declared" | "resource_observed" | "legacy_unspecified";
 };
 
 export type FpCatalogItem = {
