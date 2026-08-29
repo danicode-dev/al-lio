@@ -4,10 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
-  BookmarkCheck,
-  CheckCircle2,
   ChevronLeft,
   ExternalLink,
+  Heart,
   Plus,
   RefreshCw,
   Search,
@@ -245,7 +244,9 @@ export function NewsDetailView({ id }: { id: string }) {
         {item.publishedAt && <span>Publicada · {formatDate(item.publishedAt)}</span>}
         {item.sourceUpdatedAt && <span>Actualizada · {formatDate(item.sourceUpdatedAt)}</span>}
         {item.verifiedAt && <span>Verificada · {formatDate(item.verifiedAt)}</span>}
-        {item.province && <span>{item.province}</span>}
+        {(item.locality || item.province) && (
+          <span>{[item.locality, item.province].filter(Boolean).join(", ")}</span>
+        )}
         <span>{item.sourceName}</span>
       </div>
 
@@ -319,13 +320,10 @@ export function NewsDetailView({ id }: { id: string }) {
                 type="button"
                 onClick={() => void saveItem()}
                 disabled={item.status === "saved" || saving}
-                className="al-catalog-action"
+                aria-pressed={item.status === "saved"}
+                className={cn("al-catalog-action", item.status === "saved" && "al-catalog-action-soft")}
               >
-                {item.status === "saved" ? (
-                  <CheckCircle2 className="h-3.5 w-3.5 text-[#1f7a4d]" />
-                ) : (
-                  <BookmarkCheck className="h-3.5 w-3.5" />
-                )}
+                <Heart className="h-3.5 w-3.5" fill={item.status === "saved" ? "currentColor" : "none"} />
                 {item.status === "saved" ? "Guardada" : "Guardar"}
               </button>
               <button type="button" onClick={createTask} disabled={taskCreated} className="al-catalog-action">
