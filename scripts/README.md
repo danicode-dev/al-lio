@@ -65,7 +65,6 @@ connect to a database or to production.
 | `deploy-production.sh` | — | Runs on the VPS. Pins a reviewed forward-only `main` SHA, backs up, deploys, smoke-tests, can roll back. |
 | `github-actions-deploy-entrypoint.sh` | — | Entry point the deploy workflow calls over SSH. |
 | `validate-production-deploy-readiness.mjs` | `validate:production-deploy`, `validate:deploy` | Static pre-deploy readiness checks against repo files and runbooks. |
-| `validate-deploy-readiness.mjs` | — | Deprecated shim; forwards to `validate-production-deploy-readiness.mjs`. |
 
 ## Database integrity
 
