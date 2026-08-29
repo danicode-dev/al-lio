@@ -2,10 +2,24 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, BookmarkCheck, CheckCircle2, ExternalLink, RefreshCw, Search } from "lucide-react";
+import {
+  AlertTriangle,
+  BookmarkCheck,
+  CheckCircle2,
+  ChevronLeft,
+  ExternalLink,
+  Plus,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { NewsItem } from "@/lib/news/types";
+import { PageHeader } from "@/components/page-header";
+import { StudentHeaderActions } from "@/components/student-header-actions";
+import { CatalogNextLink, CatalogPanel } from "@/components/catalog/catalog-card";
+import { useStore } from "@/components/guest-store";
 import {
   EmptyState,
   KIND_LABELS,
@@ -13,6 +27,7 @@ import {
   formatDate,
   formatModule,
   formatTopic,
+  newsHeroImage,
 } from "@/components/noticias/noticias-view";
 
 type DetailResponse = { item: NewsItem; nextItem: NewsItem | null };
@@ -25,9 +40,40 @@ type ViewState =
   | { status: "profile-incomplete" }
   | { status: "error" };
 
+// News reads as an article, not as an operational record: the same catalogue
+// shell as Courses and Events (breadcrumb -> PageHeader -> [reading column,
+// sidebar] -> next item), but the main column is a narrow measure with an
+// editorial serif headline and the supporting blocks sit inline in the
+// reading flow instead of a three-column grid.
+const ARTICLE_STYLES = `
+  .al-news-title { font-family: Georgia, "Times New Roman", serif; font-weight: 500; letter-spacing: -0.01em; }
+  .al-news-article { max-width: 680px; }
+  .al-news-kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 12px; color: #9a958a; }
+  .al-news-trust { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 3px 9px; font-size: 11px; font-weight: 700; }
+  .al-news-trust-official { background: #e7f5ee; color: #1f7a4d; }
+  .al-news-trust-plain { background: #f3ece1; color: #6b6f72; }
+  .al-news-lead { font-family: Georgia, "Times New Roman", serif; font-size: 16.5px; line-height: 1.7; color: #4b4740; }
+  .al-news-body { font-size: 14.5px; line-height: 1.78; color: #333029; white-space: pre-wrap; }
+  .al-news-callout { border-radius: 12px; padding: 14px 16px; }
+  .al-news-callout-label { margin: 0 0 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .al-news-callout-facts { background: #fff8f4; border: 1px solid #f0d9cd; }
+  .al-news-callout-facts .al-news-callout-label { color: #b94720; }
+  .al-news-callout-why { background: #f0f7f3; border: 1px solid #d7e8df; }
+  .al-news-callout-why .al-news-callout-label { color: #1f7a4d; }
+  .al-news-facts-list { margin: 0; padding-left: 16px; font-size: 13px; line-height: 1.65; color: #4b4740; }
+  .al-news-facts-list li { margin-top: 4px; }
+  .al-news-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .al-news-chip { border-radius: 6px; padding: 3px 8px; font-size: 11px; }
+  .al-news-chip-topic { background: #f3ece1; color: #6b6f72; }
+  .al-news-chip-module { background: #eef4f1; color: #1f6a4c; }
+  .al-news-actions { display: flex; flex-direction: column; gap: 8px; }
+`;
+
 export function NewsDetailView({ id }: { id: string }) {
+  const { actions } = useStore();
   const [state, setState] = useState<ViewState>({ status: "loading" });
   const [saving, setSaving] = useState(false);
+  const [taskCreated, setTaskCreated] = useState(false);
 
   const load = useCallback(async () => {
     setState({ status: "loading" });
@@ -76,6 +122,18 @@ export function NewsDetailView({ id }: { id: string }) {
     } finally {
       setSaving(false);
     }
+  }
+
+  function createTask() {
+    if (state.status !== "loaded" || taskCreated) return;
+    const title = state.data.item.title;
+    void actions
+      .addTask({ title: `Revisar: ${title}`, status: "pendiente", priority: "media", description: "Noticia" })
+      .then(() => {
+        setTaskCreated(true);
+        toast.success("Tarea creada");
+      })
+      .catch(() => toast.error("No se pudo crear la tarea"));
   }
 
   if (state.status === "loading") {
@@ -156,118 +214,158 @@ export function NewsDetailView({ id }: { id: string }) {
   }
 
   const { item, nextItem } = state.data;
-  const summary = (item.summaryExpanded ?? item.summaryShort ?? item.description)?.trim();
+  const isOfficial = item.trustTier === "official" || item.trustTier === "institutional";
+  const short = item.summaryShort?.trim() || undefined;
+  const long = item.summaryExpanded?.trim() || item.description?.trim() || undefined;
+  const lead = short && long && short !== long ? short : undefined;
+  const body = long ?? short;
   const hasSource = Boolean(item.url && item.url.trim());
+  const hasTags = item.topics.length > 0 || item.moduleCodes.length > 0;
 
   return (
     <div className="space-y-5">
+      <style>{ARTICLE_STYLES}</style>
       <BackLink />
 
-      <article className="space-y-4 rounded-2xl border border-[#e6e1d8] bg-white p-5 shadow-[0_8px_20px_rgba(17,17,17,0.04)] sm:p-6">
-        <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold">
-          <span className="text-[#6b6f72]">{item.sourceName}</span>
-          <span
-            className={cn(
-              "rounded-full px-2 py-0.5",
-              item.trustTier === "official" || item.trustTier === "institutional"
-                ? "bg-[#e7f5ee] text-[#1f7a4d]"
-                : "bg-[#f3ece1] text-[#6b6f72]",
-            )}
-          >
-            {TRUST_LABELS[item.trustTier]}
-          </span>
-          <span className="rounded-full bg-[#fbe7dd] px-2 py-0.5 text-[#c94f21]">{KIND_LABELS[item.kind]}</span>
-          {item.status === "saved" && (
-            <span className="rounded-full bg-[#fdf1dd] px-2 py-0.5 text-[#9a6418]">Guardada</span>
+      <PageHeader
+        eyebrow={KIND_LABELS[item.kind]}
+        title={<span className="al-news-title">{item.title}</span>}
+        actions={
+          <div className="hidden md:flex md:items-center md:gap-2">
+            <StudentHeaderActions />
+          </div>
+        }
+      />
+
+      <div className="al-news-kicker">
+        <span className={cn("al-news-trust", isOfficial ? "al-news-trust-official" : "al-news-trust-plain")}>
+          <ShieldCheck className="h-3.5 w-3.5" />
+          {TRUST_LABELS[item.trustTier]}
+        </span>
+        {item.publishedAt && <span>Publicada · {formatDate(item.publishedAt)}</span>}
+        {item.sourceUpdatedAt && <span>Actualizada · {formatDate(item.sourceUpdatedAt)}</span>}
+        {item.verifiedAt && <span>Verificada · {formatDate(item.verifiedAt)}</span>}
+        {item.province && <span>{item.province}</span>}
+        <span>{item.sourceName}</span>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_252px]">
+        <article className="al-news-article min-w-0 space-y-4">
+          <div className="al-catalog-hero-media">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={newsHeroImage(item)} alt="" />
+          </div>
+
+          {lead && <p className="al-news-lead">{lead}</p>}
+          {body ? (
+            <p className="al-news-body">{body}</p>
+          ) : (
+            !item.keyFacts.length && (
+              <p className="al-news-body text-[#6b6f72]">
+                Todavía estamos recopilando el detalle de esta noticia. Abre la fuente original para el texto completo.
+              </p>
+            )
           )}
-        </div>
 
-        <h1 className="text-xl font-semibold leading-6 text-[#111111] sm:text-2xl">{item.title}</h1>
+          {item.keyFacts.length > 0 && (
+            <section aria-labelledby="news-key-facts" className="al-news-callout al-news-callout-facts">
+              <p id="news-key-facts" className="al-news-callout-label">Datos confirmados</p>
+              <ul className="al-news-facts-list">
+                {item.keyFacts.map((fact) => (
+                  <li key={fact}>{fact}</li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-        {(item.publishedAt || item.sourceUpdatedAt || item.verifiedAt || item.province) && (
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#9a958a]">
-            {item.publishedAt && <span>Publicada · {formatDate(item.publishedAt)}</span>}
-            {item.sourceUpdatedAt && <span>Actualizada · {formatDate(item.sourceUpdatedAt)}</span>}
-            {item.verifiedAt && <span>Verificada · {formatDate(item.verifiedAt)}</span>}
-            {item.province && <span>{item.province}</span>}
-          </div>
-        )}
+          {item.whyRelevant && (
+            <aside className="al-news-callout al-news-callout-why">
+              <p className="al-news-callout-label">Por qué puede interesarte</p>
+              <p className="text-sm leading-6 text-[#3a4a42]">{item.whyRelevant}</p>
+            </aside>
+          )}
+        </article>
 
-        {summary && <p className="text-sm leading-6 text-[#333029]">{summary}</p>}
+        <aside className="space-y-4">
+          <CatalogPanel>
+            <div>
+              <p className="al-catalog-info-k">Fuente</p>
+              <p className="al-catalog-info-v">{item.sourceName}</p>
+              <p className="mt-1 text-[11.5px] leading-5 text-[#6b6f72]">
+                {isOfficial ? "Publicación oficial verificada por Radar." : "Fuente verificada por Radar."}
+              </p>
+            </div>
 
-        {item.keyFacts.length > 0 && (
-          <section aria-labelledby="news-key-facts" className="rounded-xl border border-[#ece7dc] bg-[#faf8f3] p-4">
-            <h2 id="news-key-facts" className="text-sm font-bold text-[#333029]">Datos confirmados</h2>
-            <ul className="mt-2 space-y-1.5 text-sm leading-5 text-[#454139]">
-              {item.keyFacts.map((fact) => <li key={fact}>• {fact}</li>)}
-            </ul>
-          </section>
-        )}
-
-        {item.whyRelevant && (
-          <aside className="rounded-xl border border-[#dceae4] bg-[#f3f8f5] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#1f7a4d]">Por qué puede interesarte</p>
-            <p className="mt-1 text-sm leading-6 text-[#333029]">{item.whyRelevant}</p>
-          </aside>
-        )}
-
-        {(item.topics.length > 0 || item.moduleCodes.length > 0) && (
-          <div className="flex flex-wrap gap-1.5">
-            {item.topics.map((topic) => (
-              <span key={topic} className="rounded-md bg-[#f3ece1] px-2 py-1 text-[10px] text-[#6b6f72]">
-                #{formatTopic(topic)}
-              </span>
-            ))}
-            {item.moduleCodes.map((moduleCode) => (
-              <span key={moduleCode} className="rounded-md bg-[#eef4f1] px-2 py-1 text-[10px] text-[#1f6a4c]">
-                {formatModule(moduleCode)}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="flex flex-col gap-2 border-t border-[#f0ece2] pt-4 sm:flex-row sm:items-center">
-          {hasSource ? (
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="al-action-soft inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition"
-            >
-              Leer noticia original
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => void saveItem()}
-            disabled={item.status === "saved" || saving}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#ece7dc] bg-white px-5 text-sm font-semibold text-[#333029] transition hover:border-[#efb79f] hover:text-[#c94f21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D] focus-visible:ring-offset-2 disabled:opacity-60"
-          >
-            {item.status === "saved" ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 text-[#1f7a4d]" /> Guardada
-              </>
-            ) : (
-              <>
-                <BookmarkCheck className="h-4 w-4" /> Guardar
-              </>
+            {item.expiresAt && (
+              <div>
+                <p className="al-catalog-info-k">Disponible hasta</p>
+                <p className="al-catalog-info-v">{formatDate(item.expiresAt)}</p>
+              </div>
             )}
-          </button>
-        </div>
-      </article>
 
-      {nextItem && (
-        <div className="space-y-2">
-          <h2 className="text-sm font-bold text-[#333029]">Siguiente noticia para tu ciclo</h2>
-          <Link
-            href={`/noticias/${nextItem.id}`}
-            className="block rounded-xl border border-[#ece7dc] bg-white p-3 text-xs font-semibold leading-5 text-[#333029] transition hover:border-[#efb79f] hover:text-[#c94f21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]"
-          >
-            {nextItem.title}
-          </Link>
-        </div>
-      )}
+            <div className="al-news-actions">
+              {hasSource && (
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="al-catalog-action al-catalog-action-solid"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Leer noticia original
+                </a>
+              )}
+              <button
+                type="button"
+                onClick={() => void saveItem()}
+                disabled={item.status === "saved" || saving}
+                className="al-catalog-action"
+              >
+                {item.status === "saved" ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-[#1f7a4d]" />
+                ) : (
+                  <BookmarkCheck className="h-3.5 w-3.5" />
+                )}
+                {item.status === "saved" ? "Guardada" : "Guardar"}
+              </button>
+              <button type="button" onClick={createTask} disabled={taskCreated} className="al-catalog-action">
+                <Plus className="h-3.5 w-3.5" />
+                {taskCreated ? "Tarea creada" : "Crear tarea"}
+              </button>
+            </div>
+
+            {hasTags && (
+              <div>
+                <p className="al-catalog-info-k">Temas y módulos</p>
+                <div className="al-news-chips mt-1.5">
+                  {item.topics.map((topic) => (
+                    <span key={topic} className="al-news-chip al-news-chip-topic">
+                      #{formatTopic(topic)}
+                    </span>
+                  ))}
+                  {item.moduleCodes.map((moduleCode) => (
+                    <span key={moduleCode} className="al-news-chip al-news-chip-module">
+                      {formatModule(moduleCode)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CatalogPanel>
+
+          {nextItem && (
+            <CatalogPanel>
+              <p className="al-catalog-side-title">Siguiente noticia para tu ciclo</p>
+              <CatalogNextLink
+                href={`/noticias/${encodeURIComponent(nextItem.id)}`}
+                title={nextItem.title}
+                meta={nextItem.sourceName}
+                actionLabel="Ver noticia"
+              />
+            </CatalogPanel>
+          )}
+        </aside>
+      </div>
     </div>
   );
 }
@@ -276,9 +374,9 @@ function BackLink() {
   return (
     <Link
       href="/noticias"
-      className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#6b6f72] hover:text-[#c94f21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]"
+      className="inline-flex items-center gap-1 text-xs font-semibold text-[#6b6f72] transition hover:text-[#c94f21] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]"
     >
-      <ArrowLeft className="h-3.5 w-3.5" />
+      <ChevronLeft className="h-3.5 w-3.5" />
       Volver a Noticias
     </Link>
   );

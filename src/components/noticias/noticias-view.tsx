@@ -385,7 +385,7 @@ const CYCLE_HERO_FAMILY: Record<FpCycleCode, keyof typeof NEWS_HERO_POOL> = {
 // share it. An item with no target cycle - which the database forbids -
 // falls back to the neutral placeholder rather than to someone else's
 // artwork.
-function newsHeroImage(item: NewsItem): string {
+export function newsHeroImage(item: NewsItem): string {
   const cycle = item.targetCycleCodes[0];
   const family = cycle ? CYCLE_HERO_FAMILY[cycle] : undefined;
   if (!family) return "/assets/noticias/noticia-hero-placeholder.svg";
