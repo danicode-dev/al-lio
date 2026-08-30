@@ -17,6 +17,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { SidebarAccountMenu } from "@/components/auth/user-menu";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_KEY = "al-lio.sidebar.collapsed.v1";
@@ -54,15 +55,15 @@ const NAV_GROUPS = [
 
 type AppSidebarProps = {
   userName?: string;
+  userEmail?: string;
   defaultCollapsed?: boolean;
   hasPersistedPreference?: boolean;
 };
 
-export function AppSidebar({ userName, defaultCollapsed = false, hasPersistedPreference = false }: AppSidebarProps) {
+export function AppSidebar({ userName, userEmail, defaultCollapsed = false, hasPersistedPreference = false }: AppSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const displayName = userName?.trim() || "Estudiante";
-  const initials = getInitials(displayName);
 
   useEffect(() => {
     if (hasPersistedPreference) return;
@@ -197,30 +198,7 @@ export function AppSidebar({ userName, defaultCollapsed = false, hasPersistedPre
       </nav>
 
       <div className="mt-auto shrink-0 border-t border-[#e9e3d8] p-3">
-        <Link
-          href="/profile"
-          aria-current={isSidebarRouteActive(pathname, "/profile") ? "page" : undefined}
-          aria-label={collapsed ? `Ver perfil de ${displayName}` : undefined}
-          className={cn(
-            "group relative flex items-center rounded-2xl outline-none transition-[background-color,color,box-shadow] duration-200 before:absolute before:left-0 before:top-1/2 before:h-7 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-transparent hover:bg-[#f8f5ef] active:bg-[#f2eee7] focus-visible:ring-2 focus-visible:ring-[#e15d2d]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffefa] motion-reduce:transition-none",
-            collapsed ? "mx-auto h-12 w-12 justify-center" : "min-h-[62px] gap-3 px-2.5 py-2",
-            isSidebarRouteActive(pathname, "/profile") && "bg-[#fdf0ea] before:bg-[#e15d2d]",
-          )}
-        >
-          <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#efc3b1] bg-[#fbe7dd] text-xs font-black tracking-[0.04em] text-[#b94720] shadow-[0_3px_10px_rgba(17,17,17,0.04)]">
-            {initials}
-            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#fffefa] bg-[#2c8b63]" aria-hidden="true" />
-          </span>
-          {!collapsed && (
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-extrabold text-[#25282d]">{displayName}</span>
-              <span className="mt-0.5 flex items-center gap-1 text-xs font-medium text-[#777b82]">
-                Ver perfil <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-              </span>
-            </span>
-          )}
-          {collapsed && <SidebarTooltip label="Perfil" />}
-        </Link>
+        <SidebarAccountMenu name={displayName} email={userEmail} collapsed={collapsed} />
       </div>
     </aside>
   );
@@ -239,17 +217,6 @@ function SidebarTooltip({ label }: { label: string }) {
 
 function isSidebarRouteActive(pathname: string, href: string) {
   return pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
-}
-
-function getInitials(name: string) {
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toLocaleUpperCase("es-ES"))
-    .join("");
-
-  return initials || "AL";
 }
 
 function persistSidebarPreference(collapsed: boolean) {

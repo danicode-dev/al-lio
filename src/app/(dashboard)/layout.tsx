@@ -36,6 +36,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex min-h-[100dvh] bg-background">
         <AppSidebar
           userName={store.userName}
+          userEmail={store.userEmail}
           defaultCollapsed={sidebarPreference?.value === "true"}
           hasPersistedPreference={Boolean(sidebarPreference)}
         />

@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  ArrowRight,
   BookOpen,
   Briefcase,
   CalendarDays,
@@ -15,13 +14,14 @@ import {
   Menu,
   Newspaper,
   SlidersHorizontal,
-  UserRound,
   X,
   type LucideIcon,
 } from "lucide-react";
 import { forwardRef, useEffect, useId, useRef, useState, type ReactNode } from "react";
 
+import { MobileAccountMenu } from "@/components/auth/user-menu";
 import { StudentHeaderActions } from "@/components/student-header-actions";
+import { useStore } from "@/components/guest-store";
 import { cn } from "@/lib/utils";
 
 // The same three groups the sidebar uses, under the same headings. They used
@@ -52,6 +52,7 @@ const menuTriggerClass =
 
 export function MobileHeaderNavigation() {
   const pathname = usePathname();
+  const { store } = useStore();
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const menuRootRef = useRef<HTMLDivElement>(null);
@@ -189,19 +190,11 @@ export function MobileHeaderNavigation() {
                   </div>
 
                   <div className="mt-3 border-t border-[#e9e3d8] pt-3">
-                    <Link
-                      href="/profile"
-                      onClick={() => setOpen(false)}
-                      aria-current={isMobileRouteActive(pathname, "/profile") ? "page" : undefined}
-                      className={cn(
-                        "flex min-h-12 items-center gap-3 rounded-xl px-3 text-sm font-bold text-[#27292d] outline-none transition-colors duration-200 hover:bg-[#f8f4ee] active:bg-[#f2ede5] focus-visible:ring-2 focus-visible:ring-[#e15d2d]/35 motion-reduce:transition-none",
-                        isMobileRouteActive(pathname, "/profile") && "bg-[#fdf0ea] text-[#cf4f24]",
-                      )}
-                    >
-                      <UserRound className="h-5 w-5" strokeWidth={1.8} aria-hidden="true" />
-                      <span className="flex-1">Mi perfil</span>
-                      <ArrowRight className="h-5 w-5" strokeWidth={1.8} aria-hidden="true" />
-                    </Link>
+                    <MobileAccountMenu
+                      name={store.userName?.trim() || "Estudiante"}
+                      email={store.userEmail}
+                      onNavigate={() => setOpen(false)}
+                    />
                   </div>
                 </nav>
               </>
