@@ -5,13 +5,28 @@ import { ChevronDown, Clock, Filter, GitBranch, Lock, RefreshCw, ShieldCheck, Ta
 import { EcosystemDiagram } from "@/components/landing/ecosystem-diagram";
 import { LANDING_MODULES } from "@/components/landing/modules";
 
+// Graphite primary, hairline ghost secondary: terracotta stays an accent
+// (the mark, the diagram) rather than a loud button fill.
 const primaryBtn =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#E15D2D] bg-[#E15D2D] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#cf5323] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]/40 focus-visible:ring-offset-2";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#17150f] bg-[#17150f] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#2c2721] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17150f]/25 focus-visible:ring-offset-2";
 const ghostBtn =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#DDD7CE] bg-transparent px-5 text-sm font-semibold text-[#17150f] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]/30";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#d8cfc0] bg-transparent px-5 text-sm font-semibold text-[#17150f] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17150f]/15";
 const eyebrow = "text-[12px] font-bold uppercase tracking-[0.16em] text-[#b94720]";
 const secTitle = "font-[family-name:var(--font-barlow)] font-extrabold tracking-[-0.01em]";
 const shell = "mx-auto max-w-[1120px] px-6 sm:px-12";
+
+function LogoMark({ className }: { className?: string }) {
+  return (
+    <Image
+      src="/assets/al_lio_logo_horizontal.png"
+      alt="AL-LÍO"
+      width={2172}
+      height={724}
+      priority
+      className={className}
+    />
+  );
+}
 
 // Public marketing page served at "/" for signed-out visitors (an
 // authenticated visitor is redirected to the dashboard in the route). The
@@ -28,10 +43,7 @@ export function MarketingLanding() {
       `}</style>
 
       <header className={`${shell} flex h-[76px] items-center justify-between`}>
-        <div className="flex items-center gap-2.5">
-          <Image src="/assets/al_lio_symbol_transparent.png" alt="" width={24} height={23} priority />
-          <span className="font-[family-name:var(--font-barlow)] text-[17px] font-black tracking-[0.02em]">AL&nbsp;LÍO</span>
-        </div>
+        <LogoMark className="h-7 w-auto sm:h-8" />
         <nav className="flex items-center gap-3">
           <Link href="/login" className={`${ghostBtn} hidden sm:inline-flex`}>Iniciar sesión</Link>
           <Link href="/register" className={primaryBtn}>Crear cuenta</Link>
@@ -53,7 +65,7 @@ export function MarketingLanding() {
             </p>
             <a
               href="#panel"
-              className="mt-10 inline-flex h-14 items-center justify-center gap-2.5 rounded-full border border-[#E15D2D] bg-[#E15D2D] px-8 text-[15px] font-semibold text-white transition-colors hover:bg-[#cf5323] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]/40 focus-visible:ring-offset-2"
+              className="mt-10 inline-flex h-14 items-center justify-center gap-2.5 rounded-full border border-[#17150f] bg-[#17150f] px-8 text-[15px] font-semibold text-white transition-colors hover:bg-[#2c2721] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17150f]/25 focus-visible:ring-offset-2"
             >
               Ver cómo funciona
               <ChevronDown className="h-5 w-5" aria-hidden="true" />
@@ -139,10 +151,7 @@ export function MarketingLanding() {
 
       <footer className="border-t border-[#E8E1D2]">
         <div className={`${shell} flex flex-wrap items-center justify-between gap-4 py-7 text-[12px]`}>
-          <div className="flex items-center gap-2">
-            <Image src="/assets/al_lio_symbol_transparent.png" alt="" width={22} height={21} />
-            <span className="font-[family-name:var(--font-barlow)] text-[15px] font-black tracking-[0.02em]">AL&nbsp;LÍO</span>
-          </div>
+          <LogoMark className="h-6 w-auto" />
           <p className="text-[#77726a]">
             Proyecto ganador del <span className="font-semibold text-[#55514a]">Aircury Summer of Code</span> · 2026
           </p>

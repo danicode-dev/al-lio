@@ -122,18 +122,15 @@ export function EcosystemDiagram() {
           ))}
         </div>
 
-        <div ref={hubRef} className="flex flex-col items-center gap-2.5">
+        <div ref={hubRef} className="flex items-center justify-center">
           <Image
             src="/assets/al_lio_icon_black.png"
-            alt=""
+            alt="AL-LÍO"
             width={156}
             height={156}
             priority
             className="h-16 w-16 rounded-[18px] shadow-[0_20px_44px_rgba(17,17,17,0.22)] sm:h-[152px] sm:w-[152px] sm:rounded-[28px]"
           />
-          <span className="font-[family-name:var(--font-barlow)] text-[13px] font-black tracking-[0.05em] text-[#17150f] sm:text-[16px]">
-            AL-LÍO
-          </span>
         </div>
 
         <div className="flex flex-col items-end gap-3 sm:gap-6">
