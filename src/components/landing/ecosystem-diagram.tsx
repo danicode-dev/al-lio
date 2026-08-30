@@ -147,15 +147,12 @@ export function EcosystemDiagram() {
     <div ref={stageRef} className="relative mx-auto max-w-[900px]" aria-label="Los módulos de AL-LÍO conectados">
       <style>{`
         @keyframes al-eco-grow { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
-        @keyframes al-eco-pulse { 0% { opacity: 0; } 10% { opacity: 1; } 92% { opacity: 1; } 100% { opacity: 0; } }
         .al-eco-active { stroke-dasharray: 1; stroke-dashoffset: 1; animation: al-eco-grow ${DRAW_S}s ease-in-out forwards; }
-        .al-eco-dot { animation: al-eco-pulse ${DRAW_S}s linear forwards; }
         .al-eco-hub p { text-shadow: 0 0 6px #F6F1E6, 0 0 6px #F6F1E6, 0 0 12px #F6F1E6, 0 1px 0 #F6F1E6; }
         .al-eco-hub { opacity: 0; transition: opacity 0.25s; }
         .al-eco-hub[data-show="true"] { opacity: 1; }
         @media (prefers-reduced-motion: reduce) {
           .al-eco-active { animation: none; stroke-dashoffset: 0; }
-          .al-eco-dot { display: none; }
           .al-eco-hub { display: none; }
         }
       `}</style>
@@ -196,22 +193,6 @@ export function EcosystemDiagram() {
             strokeWidth="3"
             strokeLinecap="round"
           />
-        )}
-
-        {/* A dot rides the tip of the growing line. */}
-        {growingPath && (
-          <circle key={`dot-${seq.cycle}-${seq.active}`} className="al-eco-dot" r="4" fill="#2c2620">
-            <animateMotion
-              dur={`${DRAW_S}s`}
-              begin="0s"
-              fill="freeze"
-              keyPoints="0;1"
-              keyTimes="0;1"
-              calcMode="spline"
-              keySplines="0.42 0 0.58 1"
-              path={growingPath.d}
-            />
-          </circle>
         )}
       </svg>
 
