@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Términos" };
 
 export default function TerminosPage() {
   return (
-    <LegalPage title="Términos de uso" updated="agosto de 2026">
+    <LegalPage title="Términos de uso">
       <p>
         Al usar AL-LÍO aceptas estos términos. Es un proyecto educativo sin ánimo de lucro; no es un producto comercial y se
         ofrece tal cual, sin garantías.

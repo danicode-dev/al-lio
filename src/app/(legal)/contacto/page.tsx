@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Contacto" };
 
 export default function ContactoPage() {
   return (
-    <LegalPage title="Contacto" updated="agosto de 2026">
+    <LegalPage title="Contacto">
       <p>¿Dudas, fallos o ideas? Nos ayuda todo.</p>
 
       <h2>El proyecto</h2>

@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Accesibilidad" };
 
 export default function AccesibilidadPage() {
   return (
-    <LegalPage title="Accesibilidad" updated="agosto de 2026">
+    <LegalPage title="Accesibilidad">
       <p>
         Queremos que AL-LÍO sea usable por todo el mundo. Nuestro objetivo es cumplir las pautas{" "}
         <a href="https://www.w3.org/WAI/WCAG21/quickref/" target="_blank" rel="noreferrer">WCAG 2.1 nivel AA</a>.

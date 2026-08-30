@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Privacidad" };
 
 export default function PrivacidadPage() {
   return (
-    <LegalPage title="Privacidad" updated="agosto de 2026">
+    <LegalPage title="Privacidad">
       <p>
         AL-LÍO es una plataforma para estudiantes de Formación Profesional. Tratamos los datos mínimos para que la herramienta
         funcione y no compartimos tu información con terceros con fines comerciales.

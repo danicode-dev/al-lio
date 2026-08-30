@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Cookies" };
 
 export default function CookiesPage() {
   return (
-    <LegalPage title="Política de cookies" updated="agosto de 2026">
+    <LegalPage title="Política de cookies">
       <p>
         AL-LÍO usa <strong>solo cookies técnicas necesarias</strong> para que la plataforma funcione. No hay cookies
         opcionales, ni analítica de terceros, ni publicidad, ni rastreo. Por eso no verás un panel de consentimiento con

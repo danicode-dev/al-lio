@@ -103,6 +103,7 @@ export function EcosystemDiagram() {
         @keyframes al-eco-pulse { 0% { opacity: 0; } 12% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
         .al-eco-trace { stroke-dasharray: 1; stroke-dashoffset: 1; animation: al-eco-draw 1.9s cubic-bezier(0.33, 1, 0.68, 1) forwards; }
         .al-eco-pulse { animation: al-eco-pulse 1.5s linear forwards; }
+        .al-eco-tip p { text-shadow: 0 0 6px #F6F1E6, 0 0 6px #F6F1E6, 0 0 12px #F6F1E6, 0 1px 0 #F6F1E6; }
         @media (prefers-reduced-motion: reduce) {
           .al-eco-trace { animation: none; stroke-dashoffset: 0; }
           .al-eco-pulse { display: none; }
@@ -225,19 +226,18 @@ function DiagramNode({
         <span className="text-left text-[11px] font-semibold leading-tight text-[#35322c] sm:text-[13px]">{module.label}</span>
       </button>
 
+      {/* Floating text, no card: the copy lifts off the background with a
+          soft cream halo instead of sitting inside a box. It sits in the gap
+          between the node and the hub, vertically centred on its node, so it
+          never lands on a neighbouring node. */}
       <div
         role="tooltip"
-        className={`pointer-events-none absolute bottom-[calc(100%+12px)] z-20 hidden w-[248px] translate-y-1 rounded-xl border border-[#ece4d5] bg-[#fffdf8] p-3.5 opacity-0 shadow-[0_18px_44px_rgba(90,60,25,0.16)] transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:block ${
-          align === "end" ? "right-0" : "left-0"
+        className={`al-eco-tip pointer-events-none absolute top-1/2 z-20 hidden w-[190px] -translate-y-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 lg:block ${
+          align === "end" ? "right-[calc(100%+16px)] text-right" : "left-[calc(100%+16px)] text-left"
         }`}
       >
-        <p className="text-[12.5px] font-semibold text-[#b94720]">{module.label}</p>
-        <p className="mt-1 text-[12px] leading-relaxed text-[#5b564c]">{module.description}</p>
-        <span
-          className={`absolute top-full -mt-[5px] h-2.5 w-2.5 rotate-45 border-b border-r border-[#ece4d5] bg-[#fffdf8] ${
-            align === "end" ? "right-5" : "left-5"
-          }`}
-        />
+        <p className="text-[13px] font-semibold text-[#b94720]">{module.label}</p>
+        <p className="mt-0.5 text-[12px] leading-relaxed text-[#6f6a5f]">{module.description}</p>
       </div>
     </div>
   );

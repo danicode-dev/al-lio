@@ -11,18 +11,16 @@ import { LandingFooter } from "@/components/landing/landing-footer";
 // Same warm cream and Barlow/Inter pairing as the landing.
 export function LegalPage({
   title,
-  updated,
   children,
 }: {
   title: string;
-  updated?: string;
   children: ReactNode;
 }) {
   return (
     <div className="min-h-screen bg-[#F6F1E6] text-[#17150f]">
       <header className="mx-auto flex h-[76px] max-w-[1120px] items-center justify-between px-6 sm:px-12">
         <Link href="/" aria-label="Volver al inicio">
-          <Image src="/assets/al_lio_logo_horizontal.png" alt="AL-LÍO" width={2172} height={724} className="h-7 w-auto" />
+          <Image src="/assets/al_lio_wordmark.png" alt="AL-LÍO" width={354} height={96} className="h-6 w-auto" />
         </Link>
         <Link href="/" className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#55514a] hover:text-[#17150f]">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -32,7 +30,6 @@ export function LegalPage({
 
       <main className="mx-auto max-w-[720px] px-6 py-16 sm:px-12">
         <h1 className="font-[family-name:var(--font-barlow)] text-[40px] font-extrabold leading-[1.05] tracking-[-0.02em]">{title}</h1>
-        {updated && <p className="mt-3 text-[13px] text-[#8a857c]">Última actualización: {updated}</p>}
         <div className="al-legal-prose mt-10 text-[15px] leading-[1.75] text-[#3f3a31]">{children}</div>
       </main>
 

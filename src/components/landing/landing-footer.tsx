@@ -10,7 +10,7 @@ export function LandingFooter() {
     <footer className="relative z-10 border-t border-[#E8E1D2]">
       <div className="mx-auto flex max-w-[1120px] flex-col gap-8 px-6 py-10 text-[12px] sm:px-12 md:flex-row md:items-start md:justify-between">
         <div className="max-w-[34ch]">
-          <Image src="/assets/al_lio_logo_horizontal.png" alt="AL-LÍO" width={2172} height={724} className="h-6 w-auto" />
+          <Image src="/assets/al_lio_wordmark.png" alt="AL-LÍO" width={354} height={96} className="h-5 w-auto" />
           <p className="mt-3 leading-relaxed text-[#77726a]">
             Proyecto desarrollado gracias a la beca Aircury Summer of Code 2026 de{" "}
             <a
@@ -40,8 +40,7 @@ export function LandingFooter() {
             <ul className="space-y-2 text-[#55514a]">
               <li><Link href="/#panel" className="hover:text-[#17150f]">Cómo funciona</Link></li>
               <li><Link href="/proyecto" className="hover:text-[#17150f]">El proyecto</Link></li>
-              <li><Link href="/login" className="hover:text-[#17150f]">Iniciar sesión</Link></li>
-              <li><Link href="/register" className="hover:text-[#17150f]">Crear cuenta</Link></li>
+              <li><Link href="/login" className="hover:text-[#17150f]">Entrar</Link></li>
             </ul>
           </div>
           <div>
