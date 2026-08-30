@@ -91,6 +91,25 @@ export async function getFpContentForProfile(
     filters.push(`(
       state.status in ('saved', 'started', 'completed')
       or canonical.source_lifecycle_status in ('announced', 'registration_open', 'ongoing', 'evergreen', 'postponed')
+      or (
+        entity.destination = 'course'
+        and canonical.source_lifecycle_status is null
+        and coalesce(
+          canonical.registration_deadline,
+          canonical.ends_at,
+          canonical.starts_at
+        ) >= now()
+      )
+      or (
+        entity.destination = 'event'
+        and canonical.source_lifecycle_status is null
+        and canonical.starts_at is not null
+        and coalesce(canonical.ends_at, canonical.starts_at) >= now()
+        and (
+          canonical.registration_deadline is null
+          or canonical.registration_deadline >= now()
+        )
+      )
     )`);
     filters.push(`(
       entity.destination <> 'event'

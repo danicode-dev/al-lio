@@ -305,6 +305,7 @@ export async function listRadarItemsForCycle(
     `item.destination = 'news'`,
     `item.kind IN ('news', 'legal')`,
     `item.review_status = 'approved'`,
+    `item.withdrawn_at IS NULL`,
   ];
 
   if (isSavedArchive) {
@@ -394,6 +395,7 @@ export async function getRadarStatsForCycle(userId: string, cycleCode: RadarCycl
        AND item.destination = 'news'
        AND item.kind IN ('news', 'legal')
        AND item.review_status = 'approved'
+       AND item.withdrawn_at IS NULL
       `,
     [userId, cycleCode],
   );
@@ -439,6 +441,7 @@ export async function setRadarItemStatus(
        AND item.destination = 'news'
        AND item.kind IN ('news', 'legal')
        AND item.review_status = 'approved'
+       AND item.withdrawn_at IS NULL
        AND (
          EXISTS (
            SELECT 1 FROM public.radar_item_user_states existing
@@ -499,6 +502,7 @@ export async function getRadarItemDetailForUser(
        AND item.destination = 'news'
        AND item.kind IN ('news', 'legal')
        AND item.review_status = 'approved'
+       AND item.withdrawn_at IS NULL
        AND (
          state.status = 'saved'
          OR (

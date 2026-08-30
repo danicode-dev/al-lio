@@ -20,11 +20,13 @@ test("production Compose passes the reviewed Radar controls with dormant default
     "WEB_DISCOVERY_ENABLED: ${AL_LIO_RADAR_WEB_DISCOVERY_ENABLED:-false}",
     "LEARNING_DISCOVERY_ENABLED: ${AL_LIO_RADAR_LEARNING_DISCOVERY_ENABLED:-false}",
     "YOUTUBE_WATCH_ENABLED: ${AL_LIO_RADAR_YOUTUBE_WATCH_ENABLED:-false}",
+    "LEARNING_DELIVERY_ENABLED: ${AL_LIO_RADAR_LEARNING_DELIVERY_ENABLED:-false}",
+    "YOUTUBE_API_KEY: ${AL_LIO_RADAR_YOUTUBE_API_KEY:-}",
     "JOB_RADAR_ENABLED: ${AL_LIO_RADAR_JOB_RADAR_ENABLED:-false}",
   ];
 
   for (const mapping of expected) assert.match(radar, new RegExp(mapping.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-  assert.doesNotMatch(radar, /OPENAI_API_KEY|YOUTUBE_API_KEY/);
+  assert.doesNotMatch(radar, /OPENAI_API_KEY/);
 });
 
 test("production examples remain dormant when the new variables are copied", async () => {
@@ -35,9 +37,10 @@ test("production examples remain dormant when the new variables are copied", asy
   assert.match(env, /^AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_ENABLED=false$/m);
   assert.match(env, /^AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_DESTINATIONS=news$/m);
   assert.match(env, /^AL_LIO_RADAR_AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON=\{\}$/m);
-  for (const flag of ["WEB_DISCOVERY", "LEARNING_DISCOVERY", "YOUTUBE_WATCH", "JOB_RADAR"]) {
+  for (const flag of ["WEB_DISCOVERY", "LEARNING_DISCOVERY", "YOUTUBE_WATCH", "LEARNING_DELIVERY", "JOB_RADAR"]) {
     assert.match(env, new RegExp(`^AL_LIO_RADAR_${flag}_ENABLED=false$`, "m"));
   }
+  assert.match(env, /^AL_LIO_RADAR_YOUTUBE_API_KEY=$/m);
 });
 
 test("the activation runbook authorizes only OpenWebinars for DAW and DAM", async () => {

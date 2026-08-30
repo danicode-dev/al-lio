@@ -63,6 +63,7 @@ connect to a database or to production.
 | Script | npm alias | Purpose |
 |---|---|---|
 | `deploy-production.sh` | — | Runs on the VPS. Pins a reviewed forward-only `main` SHA, backs up, deploys, smoke-tests, can roll back. |
+| `lib/compose-env-guard.sh` | — | Allows only structurally safe additive AL-LÍO/Radar service environment passthroughs during routine releases. |
 | `github-actions-deploy-entrypoint.sh` | — | Entry point the deploy workflow calls over SSH. |
 | `validate-production-deploy-readiness.mjs` | `validate:production-deploy`, `validate:deploy` | Static pre-deploy readiness checks against repo files and runbooks. |
 

@@ -291,6 +291,26 @@ test("rejected legacy Radar news stay outside every user-facing read and mutatio
   );
 });
 
+test("audited legacy Radar withdrawals hide content without deleting rows or private state", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/radar.ts", import.meta.url), "utf8");
+  const migration = await readFile(
+    new URL("../infra/postgres/migrations/0016_legacy_radar_news_withdrawals.sql", import.meta.url),
+    "utf8",
+  );
+  const withdrawalBoundaries = source.match(/item\.withdrawn_at IS NULL/g) ?? [];
+
+  assert.equal(
+    withdrawalBoundaries.length,
+    4,
+    "list, statistics, status mutation and detail queries must all exclude withdrawn news",
+  );
+  assert.match(migration, /add column if not exists withdrawn_at timestamptz/);
+  assert.match(migration, /radar_items_withdrawal_audit_required/);
+  assert.match(migration, /withdrawn_by/);
+  assert.match(migration, /withdrawal_reason/);
+  assert.doesNotMatch(migration, /delete\s+from|drop\s+table|truncate\s+table/i);
+});
+
 test("News cards route into the internal detail page, never straight to the source, and never inject raw HTML", async () => {
   const source = await readFile(new URL("../src/components/noticias/noticias-view.tsx", import.meta.url), "utf8");
 
@@ -2928,6 +2948,41 @@ test("verified opportunities mode reads accepted canonical course/event facts an
   assert.match(source, /canonical\.credential_level as canonical_credential_level/);
   assert.match(source, /canonical\.registration_url as canonical_registration_url/);
   assert.match(source, /state\.status in \('saved', 'started', 'completed'\)/, "saved student state keeps an item reachable while preserving lifecycle separation");
+});
+
+test("verified opportunities mode keeps a dated accepted course visible when the source does not state a lifecycle (issue #250)", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
+  assert.match(source, /entity\.destination = 'course'/);
+  assert.match(source, /canonical\.source_lifecycle_status is null/);
+  assert.match(
+    source,
+    /coalesce\(\s*canonical\.registration_deadline,\s*canonical\.ends_at,\s*canonical\.starts_at\s*\) >= now\(\)/,
+    "an unknown lifecycle remains absent and visibility is bounded by the verified registration or course date",
+  );
+  assert.match(
+    source,
+    /entity\.destination <> 'event'[\s\S]*canonical\.starts_at is not null/,
+    "events retain their separate stricter start/end-date boundary",
+  );
+});
+
+test("verified opportunities mode bounds lifecycle-null events by their explicit dates (issue #252)", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
+  assert.match(
+    source,
+    /entity\.destination = 'event'[\s\S]*canonical\.source_lifecycle_status is null[\s\S]*canonical\.starts_at is not null/,
+    "an event without a source lifecycle still requires an explicit start date",
+  );
+  assert.match(
+    source,
+    /entity\.destination = 'event'[\s\S]*coalesce\(canonical\.ends_at, canonical\.starts_at\) >= now\(\)/,
+    "an event without a source lifecycle cannot remain visible after its verified end date",
+  );
+  assert.match(
+    source,
+    /canonical\.registration_deadline is null\s*or canonical\.registration_deadline >= now\(\)/,
+    "a stated registration deadline must still be current, while a genuinely unstated deadline stays absent",
+  );
 });
 
 test("legacy opportunity migration is additive, auditable and cannot self-certify a CSV row as verified (issue #200)", async () => {
