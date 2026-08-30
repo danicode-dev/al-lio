@@ -32,17 +32,25 @@ export function EcosystemDiagram() {
       const stageRect = stage.getBoundingClientRect();
       if (stageRect.width === 0) return;
       const hubRect = hub.getBoundingClientRect();
-      const end = {
-        x: hubRect.left - stageRect.left + hubRect.width / 2,
-        y: hubRect.top - stageRect.top + hubRect.height / 2,
-      };
-      const next = LANDING_MODULES.flatMap((_, index) => {
+      const hubLeft = hubRect.left - stageRect.left;
+      const hubRight = hubRect.right - stageRect.left;
+      const hubTop = hubRect.top - stageRect.top;
+      // Spread the beam endpoints down each edge of the hub instead of
+      // piling every curve onto the exact centre, so they don't knot.
+      const perSide: Record<"left" | "right", number> = { left: 0, right: 0 };
+      const next = LANDING_MODULES.flatMap((module, index) => {
         const node = nodeRefs.current[index];
         if (!node) return [];
         const rect = node.getBoundingClientRect();
         const start = {
           x: rect.left - stageRect.left + rect.width / 2,
           y: rect.top - stageRect.top + rect.height / 2,
+        };
+        const sideIndex = perSide[module.side]++;
+        const spread = [0.22, 0.42, 0.58, 0.78][sideIndex] ?? 0.5;
+        const end = {
+          x: module.side === "left" ? hubLeft + 8 : hubRight - 8,
+          y: hubTop + hubRect.height * spread,
         };
         const midX = (start.x + end.x) / 2;
         return [{ d: `M ${start.x} ${start.y} C ${midX} ${start.y}, ${midX} ${end.y}, ${end.x} ${end.y}` }];
