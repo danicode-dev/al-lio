@@ -492,9 +492,10 @@ test("The merged store fetch loads every section with fail-soft handling (issue 
 });
 
 test("The desktop navigation provides the branded expanded sidebar and persistent collapsed rail (issue #178)", async () => {
-  const [sidebarSource, layoutSource] = await Promise.all([
+  const [sidebarSource, layoutSource, userMenuSource] = await Promise.all([
     readFile(new URL("../src/components/app-sidebar.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/auth/user-menu.tsx", import.meta.url), "utf8"),
   ]);
 
   for (const group of ["Principal", "Comunicación", "Aprendizaje"]) {
@@ -516,8 +517,15 @@ test("The desktop navigation provides the branded expanded sidebar and persisten
   assert.match(sidebarSource, /function SidebarTooltip/);
   assert.match(sidebarSource, /group-hover:visible[\s\S]*group-focus-visible:visible/);
   assert.match(sidebarSource, /pathname === href \|\| \(href !== "\/dashboard" && pathname\.startsWith\(`\$\{href\}\/`\)\)/);
-  assert.match(sidebarSource, /href="\/profile"[\s\S]*\{initials\}[\s\S]*Ver perfil/);
+  // The sidebar footer delegates identity to the shared account menu, which
+  // is the one place a student reaches their profile or signs out - a
+  // deliberate two-step menu, never a standalone logout nav item.
+  assert.match(sidebarSource, /<SidebarAccountMenu\b/);
   assert.match(sidebarSource, /className="mt-auto shrink-0 border-t/);
+  assert.match(userMenuSource, /href="\/profile"[\s\S]*Ver perfil/);
+  assert.match(userMenuSource, /initialsOf\(/);
+  assert.match(userMenuSource, /action=\{signOut\}[\s\S]*Cerrar sesión/);
+  assert.match(userMenuSource, /role="menuitem"/);
 
   assert.doesNotMatch(sidebarSource, /signOut|LogOut|Settings|Administración|Cerrar sesión/, "logout and administration must not remain standalone desktop navigation items");
   assert.match(layoutSource, /userName=\{store\.userName\}/);
@@ -549,8 +557,15 @@ test("The mobile header menu replaces the bottom navigation without changing the
   assert.match(mobileSource, /className="mr-2\.5"/, "navigation must be visibly separated from the action cluster");
   assert.match(mobileSource, /open && "border-\[#efb49c\] bg-\[#fdf0ea\] text-\[#d65327\]"/, "the open menu trigger must keep a clear terracotta state");
 
+  // /profile is reached through the shared account menu at the foot of the
+  // sheet (issue #256), which also carries the deliberate two-step sign-out.
+  assert.match(mobileSource, /<MobileAccountMenu[\s\S]*onNavigate=\{\(\) => setOpen\(false\)\}/);
   for (const route of ["/dashboard", "/roadmap", "/tasks", "/bloc", "/noticias", "/work", "/courses", "/hackathons", "/calendar", "/profile"]) {
-    assert.ok(mobileSource.includes(`href: "${route}"`) || mobileSource.includes(`href="${route}"`), `missing mobile navigation route: ${route}`);
+    const reachable =
+      mobileSource.includes(`href: "${route}"`) ||
+      mobileSource.includes(`href="${route}"`) ||
+      (route === "/profile" && /<MobileAccountMenu/.test(mobileSource));
+    assert.ok(reachable, `missing mobile navigation route: ${route}`);
   }
   // The sheet repeats the sidebar's own three groups, under the same
   // headings, so the app is not organised one way on a phone and another way
@@ -2069,14 +2084,8 @@ test("globals.css's --primary and --ring are the brand terracotta, not the defau
   }
 });
 
-test("the surviving #81/daily-alerts hardcoded terracotta overrides read the fixed --primary token instead of a second, parallel hex value (issue #82, bottom navigation retired by issue #182)", async () => {
-  const [morePage, dailyAlerts] = await Promise.all([
-    readFile(new URL("../src/app/(dashboard)/more/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../src/components/daily-alerts.tsx", import.meta.url), "utf8"),
-  ]);
-
-  assert.match(morePage, /text-primary/);
-  assert.doesNotMatch(morePage, /text-\[#E15D2D\]/i);
+test("the surviving #81/daily-alerts hardcoded terracotta overrides read the fixed --primary token instead of a second, parallel hex value (issue #82, bottom navigation retired by issue #182, /more retired by issue #256)", async () => {
+  const dailyAlerts = await readFile(new URL("../src/components/daily-alerts.tsx", import.meta.url), "utf8");
 
   assert.doesNotMatch(dailyAlerts, /#E15D2D|#e15d2d|#c94f21/, "no hardcoded terracotta hex should remain once the token itself carries the brand color");
   assert.match(dailyAlerts, /text-primary"/);
@@ -2089,16 +2098,7 @@ test("the surviving #81/daily-alerts hardcoded terracotta overrides read the fix
   // not missed. See docs/architecture/decisions or the PR for the exact
   // rationale (Tailwind's bg-primary/N opacity modifier does not reproduce
   // #FBE7DD exactly).
-  for (const source of [morePage, dailyAlerts]) {
-    assert.match(source, /#FBE7DD|#fbe7dd/i, "the light-tint badge background is expected to remain hardcoded");
-  }
-});
-
-test("the Mas page's intentional multi-color per-section grid is untouched by the primary token fix (issue #82)", async () => {
-  const source = await readFile(new URL("../src/app/(dashboard)/more/page.tsx", import.meta.url), "utf8");
-  for (const color of ["teal", "cyan", "indigo", "violet", "emerald", "orange", "fuchsia", "rose", "amber"]) {
-    assert.match(source, new RegExp(`bg-${color}-50`), `expected the deliberate ${color} section card color to remain`);
-  }
+  assert.match(dailyAlerts, /#FBE7DD|#fbe7dd/i, "the light-tint badge background is expected to remain hardcoded");
 });
 
 test("UI primitives keep the brand focus token while the default Button consumes the shared quiet action treatment (issues #82 and #166)", async () => {

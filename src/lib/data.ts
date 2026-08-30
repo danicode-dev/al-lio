@@ -139,6 +139,7 @@ export const getGlobalStore = cache(async () => {
   return {
     version: 2 as const,
     userName,
+    userEmail: session.email,
     tasks: serializeTasks(tasks),
     opportunities: opportunities.map((o) => ({
       ...o,

@@ -15,7 +15,6 @@ const privatePathPrefixes = [
   "/settings",
   "/bloc",
   "/noticias",
-  "/more",
   "/ruta",
   "/roadmap",
 ];
@@ -63,7 +62,6 @@ export const config = {
     "/settings/:path*",
     "/bloc/:path*",
     "/noticias/:path*",
-    "/more/:path*",
     "/ruta/:path*",
     "/roadmap/:path*",
     "/login",
