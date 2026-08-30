@@ -8,16 +8,19 @@ import { LANDING_MODULES } from "@/components/landing/modules";
 type BeamPath = { d: string };
 
 // "Everything connects to AL-LÍO": eight module nodes down the sides, the
-// app mark in the centre, and animated SVG beams recomputed from the real
-// node geometry (ResizeObserver). The same layout renders at every width -
-// smaller on a phone - so the connected picture reads the same there. On
-// desktop each node also reveals its one-line description on hover/focus;
-// the landing page repeats those lines as a plain list below for touch.
+// app mark in the centre, and SVG beams recomputed from the real node
+// geometry (ResizeObserver). The beams trace themselves in once when the
+// section scrolls into view, then a slow glowing dot loops along each. The
+// same layout renders at every width - smaller on a phone - so the picture
+// reads the same there. On desktop each node reveals its one-line
+// description on hover/focus; the page repeats those lines as a list below
+// for touch.
 export function EcosystemDiagram() {
   const stageRef = useRef<HTMLDivElement>(null);
   const hubRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [paths, setPaths] = useState<BeamPath[]>([]);
+  const [inView, setInView] = useState(false);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -51,9 +54,22 @@ export function EcosystemDiagram() {
     observer.observe(stage);
     observer.observe(hub);
     nodeRefs.current.forEach((node) => node && observer.observe(node));
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(stage);
+
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
+      io.disconnect();
     };
   }, []);
 
@@ -63,10 +79,12 @@ export function EcosystemDiagram() {
   return (
     <div ref={stageRef} className="relative mx-auto max-w-[1120px]" aria-label="Los módulos de AL-LÍO conectados">
       <style>{`
-        @keyframes al-eco-flow { to { stroke-dashoffset: -520; } }
-        .al-eco-flow { stroke-dasharray: 110 300; animation: al-eco-flow 3.2s linear infinite; }
+        @keyframes al-eco-draw { to { stroke-dashoffset: 0; } }
+        @keyframes al-eco-fade { to { opacity: 1; } }
+        .al-eco-trace { stroke-dasharray: 1; stroke-dashoffset: 1; animation: al-eco-draw 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        .al-eco-dot { opacity: 0; animation: al-eco-fade 0.6s ease-out 1.2s forwards; }
         @media (prefers-reduced-motion: reduce) {
-          .al-eco-flow { animation: none; stroke-dasharray: none; opacity: 0.7; }
+          .al-eco-trace { animation: none; stroke-dashoffset: 0; }
           .al-eco-dot { display: none; }
         }
       `}</style>
@@ -74,38 +92,49 @@ export function EcosystemDiagram() {
       <svg className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible" aria-hidden="true">
         <defs>
           <linearGradient id="al-eco-gradient" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#e15d2d" stopOpacity="0.35" />
+            <stop offset="0" stopColor="#e15d2d" stopOpacity="0.4" />
             <stop offset="0.5" stopColor="#e15d2d" />
             <stop offset="1" stopColor="#e9a23b" />
           </linearGradient>
           <filter id="al-eco-glow" x="-120%" y="-120%" width="340%" height="340%">
-            <feGaussianBlur stdDeviation="2.4" result="b" />
+            <feGaussianBlur stdDeviation="2.6" result="b" />
             <feMerge>
               <feMergeNode in="b" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
         </defs>
+
+        {/* Faint structure, always visible so the layout is not empty on load. */}
         {paths.map((path, index) => (
-          <path key={`base-${index}`} d={path.d} fill="none" stroke="#d8c9ac" strokeWidth="2.4" strokeLinecap="round" />
+          <path key={`base-${index}`} d={path.d} fill="none" stroke="#e0d2b8" strokeWidth="1.6" strokeLinecap="round" />
         ))}
-        {paths.map((path, index) => (
-          <path
-            key={`flow-${index}`}
-            className="al-eco-flow"
-            d={path.d}
-            fill="none"
-            stroke="url(#al-eco-gradient)"
-            strokeWidth="3.4"
-            strokeLinecap="round"
-            style={{ animationDelay: `${index * -0.4}s` }}
-          />
-        ))}
-        {paths.map((path, index) => (
-          <circle key={`dot-${index}`} className="al-eco-dot" r="4.4" fill={index % 2 === 0 ? "#E15D2D" : "#E9A23B"} filter="url(#al-eco-glow)">
-            <animateMotion dur={`${3.8 + (index % 3) * 0.35}s`} begin={`${index * -0.55}s`} repeatCount="indefinite" path={path.d} />
-          </circle>
-        ))}
+
+        {/* Trace-on: each terracotta beam draws itself once when in view. */}
+        {inView &&
+          paths.map((path, index) => (
+            <path
+              key={`trace-${index}`}
+              className="al-eco-trace"
+              d={path.d}
+              pathLength={1}
+              fill="none"
+              stroke="url(#al-eco-gradient)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              style={{ animationDelay: `${index * 0.09}s` }}
+            />
+          ))}
+
+        {/* Then a slow glowing dot loops along every other beam. */}
+        {inView &&
+          paths.map((path, index) =>
+            index % 2 === 0 ? (
+              <circle key={`dot-${index}`} className="al-eco-dot" r="4" fill={index % 4 === 0 ? "#E15D2D" : "#E9A23B"} filter="url(#al-eco-glow)">
+                <animateMotion dur="6s" begin={`${1.2 + index * 0.2}s`} repeatCount="indefinite" path={path.d} />
+              </circle>
+            ) : null,
+          )}
       </svg>
 
       <div className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:h-[460px] sm:gap-8 xl:gap-16">
@@ -171,15 +200,21 @@ function DiagramNode({
         </span>
         <span className="text-left text-[11px] font-semibold leading-tight text-[#35322c] sm:text-[13px]">{module.label}</span>
       </button>
-      <span
+
+      <div
         role="tooltip"
-        className={`pointer-events-none absolute bottom-[calc(100%+10px)] z-20 hidden w-[240px] rounded-[10px] bg-[#17150f] px-3 py-2.5 text-[11.5px] leading-snug text-[#efe9df] opacity-0 shadow-[0_14px_30px_rgba(17,17,17,0.22)] transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 lg:block ${
+        className={`pointer-events-none absolute bottom-[calc(100%+12px)] z-20 hidden w-[248px] translate-y-1 rounded-xl border border-[#ece4d5] bg-[#fffdf8] p-3.5 opacity-0 shadow-[0_18px_44px_rgba(90,60,25,0.16)] transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 lg:block ${
           align === "end" ? "right-0" : "left-0"
         }`}
       >
-        <span className="mb-0.5 block text-[12px] font-semibold text-white">{module.label}</span>
-        {module.description}
-      </span>
+        <p className="text-[12.5px] font-semibold text-[#b94720]">{module.label}</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-[#5b564c]">{module.description}</p>
+        <span
+          className={`absolute top-full -mt-[5px] h-2.5 w-2.5 rotate-45 border-b border-r border-[#ece4d5] bg-[#fffdf8] ${
+            align === "end" ? "right-5" : "left-5"
+          }`}
+        />
+      </div>
     </div>
   );
 }
