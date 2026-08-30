@@ -21,6 +21,7 @@ export function EcosystemDiagram() {
   const nodeRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [paths, setPaths] = useState<BeamPath[]>([]);
   const [inView, setInView] = useState(false);
+  const [pulse, setPulse] = useState(0);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -73,6 +74,17 @@ export function EcosystemDiagram() {
     };
   }, []);
 
+  // After the beams have traced in, a single soft light travels one beam
+  // at a time, cycling round the ring of modules - calm and deliberate,
+  // not eight dots at once. Held back entirely when the visitor asked for
+  // reduced motion.
+  useEffect(() => {
+    if (!inView || paths.length === 0) return;
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(() => setPulse((current) => (current + 1) % paths.length), 2100);
+    return () => window.clearInterval(id);
+  }, [inView, paths.length]);
+
   const left = LANDING_MODULES.map((module, index) => ({ module, index })).filter(({ module }) => module.side === "left");
   const right = LANDING_MODULES.map((module, index) => ({ module, index })).filter(({ module }) => module.side === "right");
 
@@ -80,12 +92,17 @@ export function EcosystemDiagram() {
     <div ref={stageRef} className="relative mx-auto max-w-[1120px]" aria-label="Los módulos de AL-LÍO conectados">
       <style>{`
         @keyframes al-eco-draw { to { stroke-dashoffset: 0; } }
-        @keyframes al-eco-fade { to { opacity: 1; } }
-        .al-eco-trace { stroke-dasharray: 1; stroke-dashoffset: 1; animation: al-eco-draw 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-        .al-eco-dot { opacity: 0; animation: al-eco-fade 0.6s ease-out 1.2s forwards; }
+        @keyframes al-eco-pulse {
+          0% { opacity: 0; transform: scale(0.6); }
+          14% { opacity: 1; transform: scale(1); }
+          86% { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(0.6); }
+        }
+        .al-eco-trace { stroke-dasharray: 1; stroke-dashoffset: 1; animation: al-eco-draw 1.9s cubic-bezier(0.33, 1, 0.68, 1) forwards; }
+        .al-eco-pulse { animation: al-eco-pulse 1.7s ease-in-out both; }
         @media (prefers-reduced-motion: reduce) {
           .al-eco-trace { animation: none; stroke-dashoffset: 0; }
-          .al-eco-dot { display: none; }
+          .al-eco-pulse { display: none; }
         }
       `}</style>
 
@@ -122,19 +139,16 @@ export function EcosystemDiagram() {
               stroke="url(#al-eco-gradient)"
               strokeWidth="3"
               strokeLinecap="round"
-              style={{ animationDelay: `${index * 0.09}s` }}
+              style={{ animationDelay: `${index * 0.12}s` }}
             />
           ))}
 
-        {/* Then a slow glowing dot loops along every other beam. */}
-        {inView &&
-          paths.map((path, index) =>
-            index % 2 === 0 ? (
-              <circle key={`dot-${index}`} className="al-eco-dot" r="4" fill={index % 4 === 0 ? "#E15D2D" : "#E9A23B"} filter="url(#al-eco-glow)">
-                <animateMotion dur="6s" begin={`${1.2 + index * 0.2}s`} repeatCount="indefinite" path={path.d} />
-              </circle>
-            ) : null,
-          )}
+        {/* One soft light travelling a single beam at a time, round the ring. */}
+        {inView && paths[pulse] && (
+          <circle key={pulse} className="al-eco-pulse" r="4.2" fill="#E15D2D" filter="url(#al-eco-glow)">
+            <animateMotion dur="1.5s" begin="0s" fill="freeze" keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines="0.4 0 0.2 1" path={paths[pulse].d} />
+          </circle>
+        )}
       </svg>
 
       <div className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:h-[460px] sm:gap-8 xl:gap-16">
@@ -151,7 +165,11 @@ export function EcosystemDiagram() {
           ))}
         </div>
 
-        <div ref={hubRef} className="flex items-center justify-center">
+        <div ref={hubRef} className="relative flex items-center justify-center">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute -z-10 h-[240px] w-[240px] rounded-full bg-[radial-gradient(circle,rgba(225,93,45,0.22),transparent_68%)] blur-lg"
+          />
           <Image
             src="/assets/al_lio_icon_black.png"
             alt="AL-LÍO"

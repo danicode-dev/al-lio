@@ -36,12 +36,27 @@ function LogoMark({ className }: { className?: string }) {
 // product screenshots.
 export function MarketingLanding() {
   return (
-    <div className="min-h-screen bg-[#F6F1E6] text-[#17150f]">
+    <div className="relative min-h-screen bg-[#F6F1E6] text-[#17150f]">
       <style>{`
         html { scroll-behavior: smooth; }
         @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
       `}</style>
 
+      {/* Faint dot grid + paper grain so the cream has some body. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-0 opacity-60 [background-image:radial-gradient(#00000008_1px,transparent_1px)] [background-size:24px_24px]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-0 opacity-[0.04] mix-blend-multiply"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+        }}
+      />
+
+      <div className="relative z-10">
       <header className={`${shell} flex h-[76px] items-center justify-between`}>
         <LogoMark className="h-7 w-auto sm:h-8" />
         <nav className="flex items-center gap-3">
@@ -74,7 +89,7 @@ export function MarketingLanding() {
         </section>
 
         {/* Where the scroll cue lands: the connected diagram. */}
-        <section id="panel" className="scroll-mt-6 py-24 md:py-32">
+        <section id="panel" className="scroll-mt-6 border-y border-[#efe7d7] bg-[#FAF6EC] py-24 md:py-32">
           <div className={shell}>
             <div className="mx-auto max-w-[60ch] text-center">
               <h2 className={`${secTitle} text-[34px]`}>Un panel, todo conectado</h2>
@@ -162,6 +177,7 @@ export function MarketingLanding() {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }
