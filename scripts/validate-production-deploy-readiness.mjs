@@ -34,6 +34,7 @@ function read(path) {
 
 console.log("\n-- scripts/deploy-production.sh --");
 const deployScript = read("scripts/deploy-production.sh");
+const composeEnvGuard = read("scripts/lib/compose-env-guard.sh");
 check("guarded production deploy script exists", existsSync(join(root, "scripts/deploy-production.sh")));
 check("deploy script requires an exact full SHA", deployScript.includes("^[0-9a-f]{40}$"));
 check("deploy script accepts only commits reachable from main", deployScript.includes('merge-base --is-ancestor "$release_sha" origin/main'));
@@ -43,17 +44,17 @@ check("deploy script rehearses migrations in an isolated database", deployScript
 check("deploy script replaces only the web service", deployScript.includes("up -d --no-deps al_lio_web"));
 check("deploy script has an automatic web rollback", deployScript.includes("rollback_web"));
 check("deploy script never removes Compose volumes", !deployScript.includes("down -v") && !deployScript.includes("docker volume rm"));
+check("Compose environment guard exists", existsSync(join(root, "scripts/lib/compose-env-guard.sh")));
 check(
-  "deploy script narrowly allowlists reviewed additive service environment mappings",
+  "deploy script admits only structurally safe additive service environment mappings",
   deployScript.includes("validate_compose_env_additions")
-    && deployScript.includes("GOOGLE_IDENTITY_REDIRECT_URI")
-    && deployScript.includes("RESEND_API_KEY")
-    && deployScript.includes("RESEND_FROM_EMAIL")
-    && deployScript.includes("'+      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}') service=\"al_lio_web\"; key=\"AL_LIO_RADAR_V4_PROJECT_DESTINATIONS\" ;;")
-    && deployScript.includes("'+      AUTONOMOUS_PUBLICATION_ENABLED: ${AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_ENABLED:-false}') service=\"al_lio_radar\"; key=\"AUTONOMOUS_PUBLICATION_ENABLED\" ;;")
-    && deployScript.includes("'+      LEARNING_DELIVERY_ENABLED: ${AL_LIO_RADAR_LEARNING_DELIVERY_ENABLED:-false}') service=\"al_lio_radar\"; key=\"LEARNING_DELIVERY_ENABLED\" ;;")
-    && deployScript.includes("'+      YOUTUBE_API_KEY: ${AL_LIO_RADAR_YOUTUBE_API_KEY:-}') service=\"al_lio_radar\"; key=\"YOUTUBE_API_KEY\" ;;")
-    && read("infra/docker-compose.prod.yml").includes("      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}"),
+    && deployScript.includes("lib/compose-env-guard.sh")
+    && composeEnvGuard.includes("validate_new_environment_mapping")
+    && composeEnvGuard.includes("validate_unique_environment_keys")
+    && composeEnvGuard.includes('[[ "$line" == +* ]] || return 1')
+    && composeEnvGuard.includes("AL_LIO_RADAR_${key}")
+    && composeEnvGuard.includes("DISCOVERY_*")
+    && composeEnvGuard.includes("OPENAI_API_KEY"),
 );
 check("deploy script rejects every other Compose edit", deployScript.includes("Docker Compose changed outside the allowlisted service environment passthroughs"));
 

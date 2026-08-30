@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const deployScriptUrl = new URL("../scripts/deploy-production.sh", import.meta.url);
+const composeGuardUrl = new URL("../scripts/lib/compose-env-guard.sh", import.meta.url);
 const guideUrl = new URL("../docs/operations/AUTONOMOUS_PRODUCTION_DEPLOY.md", import.meta.url);
 const dockerfileUrl = new URL("../infra/Dockerfile", import.meta.url);
 
@@ -55,39 +56,21 @@ test("the Radar backup remains private and readable by the deploy user", async (
   assert.match(source, /chmod 600 "\/backup\/\$BACKUP_FILE"/);
 });
 
-test("the command permits only reviewed additive service environment passthroughs in Compose", async () => {
+test("the command permits only structurally safe additive service environment passthroughs in Compose", async () => {
   const source = await readFile(deployScriptUrl, "utf8");
+  const guard = await readFile(composeGuardUrl, "utf8");
 
   assert.match(source, /validate_compose_env_additions/);
-  assert.match(source, /GOOGLE_IDENTITY_REDIRECT_URI/);
-  assert.match(source, /RESEND_API_KEY/);
-  assert.match(source, /RESEND_FROM_EMAIL/);
-  assert.ok(source.includes(
-    "'+      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}') service=\"al_lio_web\"; key=\"AL_LIO_RADAR_V4_PROJECT_DESTINATIONS\" ;;",
-  ));
-  assert.ok(source.includes(
-    "'+      AL_LIO_VERIFIED_OPPORTUNITIES_ONLY: ${AL_LIO_VERIFIED_OPPORTUNITIES_ONLY:-false}') service=\"al_lio_web\"; key=\"AL_LIO_VERIFIED_OPPORTUNITIES_ONLY\" ;;",
-  ));
-  assert.ok(source.includes(
-    "'+      AL_LIO_RADAR_LEARNING_INGEST_ENABLED: ${AL_LIO_RADAR_LEARNING_INGEST_ENABLED:-false}') service=\"al_lio_web\"; key=\"AL_LIO_RADAR_LEARNING_INGEST_ENABLED\" ;;",
-  ));
-  assert.ok(source.includes(
-    "'+      AUTONOMOUS_PUBLICATION_ENABLED: ${AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_ENABLED:-false}') service=\"al_lio_radar\"; key=\"AUTONOMOUS_PUBLICATION_ENABLED\" ;;",
-  ));
-  assert.ok(source.includes(
-    "'+      AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON: ${AL_LIO_RADAR_AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON:-}') service=\"al_lio_radar\"; key=\"AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON\" ;;",
-  ));
-  assert.ok(source.includes(
-    "'+      LEARNING_DELIVERY_ENABLED: ${AL_LIO_RADAR_LEARNING_DELIVERY_ENABLED:-false}') service=\"al_lio_radar\"; key=\"LEARNING_DELIVERY_ENABLED\" ;;",
-  ));
-  assert.ok(source.includes(
-    "'+      YOUTUBE_API_KEY: ${AL_LIO_RADAR_YOUTUBE_API_KEY:-}') service=\"al_lio_radar\"; key=\"YOUTUBE_API_KEY\" ;;",
-  ));
-  assert.match(source, /target_radar_environment/);
-  assert.match(source, /allowed_compose_env_lines/);
-  assert.match(source, /awk '!\/\^--- \/ && !\/\^\\\+\\\+\\\+ \/ && \/\^\[\+-\]\//);
-  assert.match(source, /\*\) return 1 ;;/);
-  assert.match(source, /match_count.*-eq 1/);
+  assert.match(source, /source .*compose-env-guard\.sh/);
+  assert.match(guard, /validate_compose_env_additions/);
+  assert.match(guard, /validate_new_environment_mapping/);
+  assert.match(guard, /validate_unique_environment_keys/);
+  assert.match(guard, /\^AL_LIO_\[A-Z0-9_\]\+\$/);
+  assert.match(guard, /AL_LIO_RADAR_\$\{key\}/);
+  assert.match(guard, /DISCOVERY_\*/);
+  assert.match(guard, /OPENAI_API_KEY/);
+  assert.match(guard, /\[\[ "\$line" == \+\* \]\] \|\| return 1/);
+  assert.match(guard, /change_count.*addition_count/);
   assert.match(source, /Docker Compose changed outside the allowlisted service environment passthroughs/);
   assert.doesNotMatch(
     source,

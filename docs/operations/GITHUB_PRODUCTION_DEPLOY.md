@@ -113,8 +113,10 @@ Repeatedly dispatching the SHA already running is a safe health-checked no-op.
 - A failure after web replacement invokes the existing automatic rollback.
 - Infrastructure, Radar, operator-managed catalogue and non-additive migration
   changes stop and require [`DEPLOY_VPS.md`](DEPLOY_VPS.md). The only Compose
-  exception is an additive, explicitly allowlisted environment passthrough under
-  `al_lio_web`; any removal, relocation, duplicate or unrelated edit fails closed.
+  exception is a strictly additive, namespaced environment passthrough under
+  `al_lio_web` or `al_lio_radar`. The guard validates the service, target key,
+  host-variable namespace, default syntax, placement and uniqueness. Any removal,
+  modification, relocation, duplicate or unrelated edit fails closed.
 
 If a workflow reports `CRITICAL`, disable
 `PRODUCTION_AUTO_DEPLOY_ENABLED`, prevent further merges and follow the manual
