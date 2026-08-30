@@ -77,6 +77,12 @@ test("the command permits only reviewed additive service environment passthrough
   assert.ok(source.includes(
     "'+      AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON: ${AL_LIO_RADAR_AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON:-}') service=\"al_lio_radar\"; key=\"AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON\" ;;",
   ));
+  assert.ok(source.includes(
+    "'+      LEARNING_DELIVERY_ENABLED: ${AL_LIO_RADAR_LEARNING_DELIVERY_ENABLED:-false}') service=\"al_lio_radar\"; key=\"LEARNING_DELIVERY_ENABLED\" ;;",
+  ));
+  assert.ok(source.includes(
+    "'+      YOUTUBE_API_KEY: ${AL_LIO_RADAR_YOUTUBE_API_KEY:-}') service=\"al_lio_radar\"; key=\"YOUTUBE_API_KEY\" ;;",
+  ));
   assert.match(source, /target_radar_environment/);
   assert.match(source, /allowed_compose_env_lines/);
   assert.match(source, /awk '!\/\^--- \/ && !\/\^\\\+\\\+\\\+ \/ && \/\^\[\+-\]\//);
