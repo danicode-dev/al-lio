@@ -11,10 +11,12 @@ import { LANDING_MODULES } from "@/components/landing/modules";
 // introduce more families or weights:
 //   - Display (h1/h2 only): Barlow, weight 800  (var(--font-barlow))
 //   - Everything else:       Inter, 400/500/600/700  (the app default)
+// Colour: no pure black anywhere. Display text is warm ink (#2A2018) and
+// the one filled action is the app's terracotta (#E15D2D).
 const primaryBtn =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#17150f] bg-[#17150f] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#2c2721] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17150f]/25 focus-visible:ring-offset-2";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#E15D2D] bg-[#E15D2D] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#c94f24] hover:border-[#c94f24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]/30 focus-visible:ring-offset-2";
 const ghostBtn =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#d8cfc0] bg-transparent px-5 text-sm font-semibold text-[#17150f] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17150f]/15";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#d8cfc0] bg-transparent px-5 text-sm font-semibold text-[#2A2018] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A2018]/15";
 const eyebrow = "text-[12px] font-bold uppercase tracking-[0.16em] text-[#b94720]";
 const secTitle = "font-[family-name:var(--font-barlow)] font-extrabold tracking-[-0.01em]";
 const shell = "mx-auto max-w-[1120px] px-6 sm:px-12";
@@ -33,7 +35,7 @@ const CYCLES = [
 // screenshots, no bordered white cards - the copy sits on the cream.
 export function MarketingLanding() {
   return (
-    <div className="relative min-h-screen bg-[#F6F1E6] text-[#17150f]">
+    <div className="relative min-h-screen bg-[#F6F1E6] text-[#2A2018]">
       <style>{`
         html { scroll-behavior: smooth; }
         @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
@@ -60,7 +62,7 @@ export function MarketingLanding() {
             {/* Language switch: placeholder until the bilingual routing lands. */}
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#55514a] transition-colors hover:text-[#17150f]"
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#55514a] transition-colors hover:text-[#2A2018]"
               aria-label="Cambiar idioma"
             >
               <Globe className="h-4 w-4" aria-hidden="true" />
@@ -85,7 +87,7 @@ export function MarketingLanding() {
               </p>
               <a
                 href="#panel"
-                className="mt-10 inline-flex h-14 items-center justify-center gap-2.5 rounded-full border border-[#17150f] bg-[#17150f] px-8 text-[15px] font-semibold text-white transition-colors hover:bg-[#2c2721] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17150f]/25 focus-visible:ring-offset-2"
+                className="mt-10 inline-flex h-14 items-center justify-center gap-2.5 rounded-full border border-[#E15D2D] bg-[#E15D2D] px-8 text-[15px] font-semibold text-white transition-colors hover:bg-[#c94f24] hover:border-[#c94f24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]/30 focus-visible:ring-offset-2"
               >
                 Ver cómo funciona
                 <ChevronDown className="h-5 w-5" aria-hidden="true" />
@@ -106,8 +108,9 @@ export function MarketingLanding() {
                 <EcosystemDiagram />
               </div>
 
-              {/* The hover copy from the diagram, spelled out for touch. */}
-              <ul className="mx-auto mt-14 max-w-[560px] divide-y divide-[#e7ddca] lg:hidden">
+              {/* The hover copy from the diagram, spelled out where the
+                  side tooltips have no room (below xl). */}
+              <ul className="mx-auto mt-14 max-w-[560px] divide-y divide-[#e7ddca] xl:hidden">
                 {LANDING_MODULES.map((module) => {
                   const Icon = module.icon;
                   return (
@@ -136,15 +139,17 @@ export function MarketingLanding() {
                   Cada familia profesional recibe sus cursos, prácticas y eventos. Nada de un catálogo común.
                 </p>
               </div>
-              <div className="mt-12 grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Marked on one edge, not boxed: a terracotta rule down the
+                  left tells each family apart without a white card. */}
+              <div className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
                 {CYCLES.map((cycle) => {
                   const Icon = cycle.icon;
                   return (
-                    <div key={cycle.code}>
+                    <div key={cycle.code} className="border-l-2 border-[#E15D2D]/30 pl-4">
                       <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[#fbe7dd] text-[#E15D2D]">
                         <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
                       </span>
-                      <p className="mt-3.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[#9a958a]">{cycle.code}</p>
+                      <p className="mt-3.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[#b94720]">{cycle.code}</p>
                       <p className="mt-0.5 text-[14px] font-semibold text-[#35322c]">{cycle.name}</p>
                       <p className="mt-2 text-[12.5px] leading-relaxed text-[#77726a]">{cycle.line}</p>
                     </div>

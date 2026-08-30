@@ -97,7 +97,7 @@ export function EcosystemDiagram() {
   const right = LANDING_MODULES.map((module, index) => ({ module, index })).filter(({ module }) => module.side === "right");
 
   return (
-    <div ref={stageRef} className="relative mx-auto max-w-[1120px]" aria-label="Los módulos de AL-LÍO conectados">
+    <div ref={stageRef} className="relative mx-auto max-w-[900px]" aria-label="Los módulos de AL-LÍO conectados">
       <style>{`
         @keyframes al-eco-draw { to { stroke-dashoffset: 0; } }
         @keyframes al-eco-pulse { 0% { opacity: 0; } 12% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
@@ -227,13 +227,14 @@ function DiagramNode({
       </button>
 
       {/* Floating text, no card: the copy lifts off the background with a
-          soft cream halo instead of sitting inside a box. It sits in the gap
-          between the node and the hub, vertically centred on its node, so it
-          never lands on a neighbouring node. */}
+          soft cream halo instead of sitting inside a box. It opens outward
+          - away from the hub and the beams - centred on its node, in the
+          margin the narrowed stage leaves free. Shown only where that
+          margin exists (xl+); below that the page lists the same copy. */}
       <div
         role="tooltip"
-        className={`al-eco-tip pointer-events-none absolute top-1/2 z-20 hidden w-[190px] -translate-y-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 lg:block ${
-          align === "end" ? "right-[calc(100%+16px)] text-right" : "left-[calc(100%+16px)] text-left"
+        className={`al-eco-tip pointer-events-none absolute top-1/2 z-20 hidden w-[172px] -translate-y-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 xl:block ${
+          align === "end" ? "left-[calc(100%+14px)] text-left" : "right-[calc(100%+14px)] text-right"
         }`}
       >
         <p className="text-[13px] font-semibold text-[#b94720]">{module.label}</p>

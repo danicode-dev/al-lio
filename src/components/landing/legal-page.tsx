@@ -17,12 +17,12 @@ export function LegalPage({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#F6F1E6] text-[#17150f]">
+    <div className="min-h-screen bg-[#F6F1E6] text-[#2A2018]">
       <header className="mx-auto flex h-[76px] max-w-[1120px] items-center justify-between px-6 sm:px-12">
         <Link href="/" aria-label="Volver al inicio">
           <Image src="/assets/al_lio_wordmark.png" alt="AL-LÍO" width={354} height={96} className="h-6 w-auto" />
         </Link>
-        <Link href="/" className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#55514a] hover:text-[#17150f]">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#55514a] hover:text-[#2A2018]">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Inicio
         </Link>
@@ -37,12 +37,12 @@ export function LegalPage({
       <CookieNotice />
 
       <style>{`
-        .al-legal-prose h2 { font-family: var(--font-barlow); font-weight: 800; font-size: 20px; letter-spacing: -0.01em; color: #17150f; margin: 34px 0 10px; }
+        .al-legal-prose h2 { font-family: var(--font-barlow); font-weight: 800; font-size: 20px; letter-spacing: -0.01em; color: #2A2018; margin: 34px 0 10px; }
         .al-legal-prose p { margin: 0 0 14px; }
         .al-legal-prose ul { margin: 0 0 14px; padding-left: 20px; list-style: disc; }
         .al-legal-prose li { margin: 6px 0; }
         .al-legal-prose a { color: #b94720; text-decoration: underline; text-underline-offset: 2px; }
-        .al-legal-prose strong { font-weight: 600; color: #17150f; }
+        .al-legal-prose strong { font-weight: 600; color: #2A2018; }
       `}</style>
     </div>
   );

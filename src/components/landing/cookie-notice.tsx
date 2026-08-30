@@ -44,7 +44,7 @@ export function CookieNotice() {
         <button
           type="button"
           onClick={dismiss}
-          className="shrink-0 rounded-lg border border-[#17150f] bg-[#17150f] px-4 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-[#2c2721]"
+          className="shrink-0 rounded-lg border border-[#E15D2D] bg-[#E15D2D] px-4 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-[#c94f24]"
         >
           Entendido
         </button>

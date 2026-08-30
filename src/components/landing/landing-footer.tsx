@@ -17,7 +17,7 @@ export function LandingFooter() {
               href="https://www.aircury.es"
               target="_blank"
               rel="noreferrer"
-              className="font-semibold text-[#55514a] underline underline-offset-2 hover:text-[#17150f]"
+              className="font-semibold text-[#55514a] underline underline-offset-2 hover:text-[#2A2018]"
             >
               Aircury SL
             </a>
@@ -27,7 +27,7 @@ export function LandingFooter() {
             href="https://github.com/danielgarciaortega-dev/al-lio"
             target="_blank"
             rel="noreferrer"
-            className="mt-3 inline-flex items-center gap-1.5 text-[#55514a] hover:text-[#17150f]"
+            className="mt-3 inline-flex items-center gap-1.5 text-[#55514a] hover:text-[#2A2018]"
           >
             <Github className="h-3.5 w-3.5" aria-hidden="true" />
             Código abierto en GitHub · MIT
@@ -38,19 +38,19 @@ export function LandingFooter() {
           <div>
             <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9a958a]">Producto</p>
             <ul className="space-y-2 text-[#55514a]">
-              <li><Link href="/#panel" className="hover:text-[#17150f]">Cómo funciona</Link></li>
-              <li><Link href="/proyecto" className="hover:text-[#17150f]">El proyecto</Link></li>
-              <li><Link href="/login" className="hover:text-[#17150f]">Entrar</Link></li>
+              <li><Link href="/#panel" className="hover:text-[#2A2018]">Cómo funciona</Link></li>
+              <li><Link href="/proyecto" className="hover:text-[#2A2018]">El proyecto</Link></li>
+              <li><Link href="/login" className="hover:text-[#2A2018]">Entrar</Link></li>
             </ul>
           </div>
           <div>
             <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9a958a]">Legal</p>
             <ul className="space-y-2 text-[#55514a]">
-              <li><Link href="/privacidad" className="hover:text-[#17150f]">Privacidad</Link></li>
-              <li><Link href="/cookies" className="hover:text-[#17150f]">Cookies</Link></li>
-              <li><Link href="/terminos" className="hover:text-[#17150f]">Términos</Link></li>
-              <li><Link href="/accesibilidad" className="hover:text-[#17150f]">Accesibilidad</Link></li>
-              <li><Link href="/contacto" className="hover:text-[#17150f]">Contacto</Link></li>
+              <li><Link href="/privacidad" className="hover:text-[#2A2018]">Privacidad</Link></li>
+              <li><Link href="/cookies" className="hover:text-[#2A2018]">Cookies</Link></li>
+              <li><Link href="/terminos" className="hover:text-[#2A2018]">Términos</Link></li>
+              <li><Link href="/accesibilidad" className="hover:text-[#2A2018]">Accesibilidad</Link></li>
+              <li><Link href="/contacto" className="hover:text-[#2A2018]">Contacto</Link></li>
             </ul>
           </div>
         </div>
