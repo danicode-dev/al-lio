@@ -41,12 +41,6 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
   return (
     <>
       <style>{`
-        :root {
-          --alio-terracotta: #E15D2D;
-          --alio-graphite: #111111;
-          --alio-cream: #F6F1E6;
-        }
-
         @keyframes al-fadeUp {
           from { opacity: 0; transform: translateY(14px); }
           to   { opacity: 1; transform: translateY(0); }
@@ -65,7 +59,7 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           align-items: center;
           justify-content: center;
           padding: 40px 20px 72px;
-          background: var(--alio-cream);
+          background: #F6F1E6;
           isolation: isolate;
         }
 
@@ -118,11 +112,6 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           font-weight: 700;
           line-height: 1.2;
           color: #111111;
-          margin: 0 0 5px 0;
-        }
-        .al-card-sub {
-          font-size: 14px;
-          color: #6b6f72;
           margin: 0 0 24px 0;
         }
 
@@ -298,7 +287,6 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
 
         <main className="login-card">
           <h1 className="al-card-heading">Bienvenido de nuevo</h1>
-          <p className="al-card-sub">Enfoca. Actúa. Logra más.</p>
 
           {visibleError && (
             <div
