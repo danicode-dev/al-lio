@@ -2966,6 +2966,25 @@ test("verified opportunities mode keeps a dated accepted course visible when the
   );
 });
 
+test("verified opportunities mode bounds lifecycle-null events by their explicit dates (issue #252)", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
+  assert.match(
+    source,
+    /entity\.destination = 'event'[\s\S]*canonical\.source_lifecycle_status is null[\s\S]*canonical\.starts_at is not null/,
+    "an event without a source lifecycle still requires an explicit start date",
+  );
+  assert.match(
+    source,
+    /entity\.destination = 'event'[\s\S]*coalesce\(canonical\.ends_at, canonical\.starts_at\) >= now\(\)/,
+    "an event without a source lifecycle cannot remain visible after its verified end date",
+  );
+  assert.match(
+    source,
+    /canonical\.registration_deadline is null\s*or canonical\.registration_deadline >= now\(\)/,
+    "a stated registration deadline must still be current, while a genuinely unstated deadline stays absent",
+  );
+});
+
 test("legacy opportunity migration is additive, auditable and cannot self-certify a CSV row as verified (issue #200)", async () => {
   const [migration, reportText] = await Promise.all([
     readFile(new URL("../infra/postgres/migrations/0013_trustworthy_opportunity_catalogue.sql", import.meta.url), "utf8"),

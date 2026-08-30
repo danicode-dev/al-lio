@@ -100,6 +100,16 @@ export async function getFpContentForProfile(
           canonical.starts_at
         ) >= now()
       )
+      or (
+        entity.destination = 'event'
+        and canonical.source_lifecycle_status is null
+        and canonical.starts_at is not null
+        and coalesce(canonical.ends_at, canonical.starts_at) >= now()
+        and (
+          canonical.registration_deadline is null
+          or canonical.registration_deadline >= now()
+        )
+      )
     )`);
     filters.push(`(
       entity.destination <> 'event'
