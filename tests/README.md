@@ -41,6 +41,7 @@ Both styles appear in this suite on purpose.
 | `product-tour.test.mjs` | Onboarding tour state machine and step model. |
 | `radar-v4-contract.test.mjs` | Radar v4 delivery schema, supported schema versions, fact projection. |
 | `deploy-production-script.test.mjs` | `scripts/deploy-production.sh` pins a reviewed forward-only `main` commit. |
+| `compose-env-guard.test.mjs` | Routine deploys accept only additive namespaced web/Radar environment passthroughs and reject every material Compose change. |
 | `deploy-production-workflow.test.mjs` | `.github/workflows/deploy-production.yml` waits for post-merge CI. |
 | `fixtures/radar-v4/` | Sample delivery payloads (v3 strict, v4 complete/partial/conflicting) used by `radar-v4-contract`. |
 
