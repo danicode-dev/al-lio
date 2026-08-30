@@ -25,7 +25,7 @@ export const LANDING_MODULES: readonly LandingModule[] = [
   { label: "Tareas", side: "left", href: "/tasks", icon: CheckSquare, description: "Organiza entregas y pendientes en un tablero. Nada se te pasa." },
   { label: "Calendario", side: "left", href: "/calendar", icon: CalendarDays, description: "Clases, entregas y eventos en una vista. Se sincroniza con Google Calendar." },
   { label: "Cursos", side: "left", href: "/courses", icon: GraduationCap, description: "La formación de tu ciclo con tu progreso y lo que viene después." },
-  { label: "Bloc", side: "left", href: "/bloc", icon: BookOpen, description: "Notas y apuntes rápidos, siempre contigo. Exportables a PDF." },
+  { label: "Bloc", side: "left", href: "/bloc", icon: BookOpen, description: "Notas y apuntes rápidos, siempre contigo. Exportables a PDF, Word y TXT." },
   { label: "Eventos y retos", side: "right", href: "/hackathons", icon: Trophy, description: "Hackathons, charlas y convocatorias de tu sector, con fecha e inscripción." },
   { label: "Trabajo", side: "right", href: "/work", icon: Briefcase, description: "Prácticas y ofertas filtradas por tu familia profesional. Sigue tus candidaturas." },
   { label: "Noticias", side: "right", href: "/noticias", icon: Newspaper, description: "Actualidad de tu ciclo, verificada antes de llegar a tu panel." },
