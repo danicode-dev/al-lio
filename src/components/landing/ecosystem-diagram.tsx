@@ -16,12 +16,15 @@ type BeamPath = { d: string };
 // module chips are not interactive - the description always appears at the
 // hub. Held still for reduced motion (every beam shown static instead).
 const N = LANDING_MODULES.length;
-const STEP_MS = 2100;
-const DRAW_S = 1.35;
-const HOLD_MS = 1500;
+const DRAW_S = 1.35; // line-growth duration (kept - this is the speed that was liked)
+const DWELL_MS = 3200; // how long the arriving module's line stays open at the hub
+const HOLD_MS = 2200; // pause with everything connected before the loop restarts
 
-type Seq = { key: number; drawing: number; done: number; hub: number };
-const SEQ_IDLE: Seq = { key: 0, drawing: -1, done: 0, hub: -1 };
+// `active` is the module whose line is currently growing (-1 = none, e.g.
+// while the description is being read or during the end hold). `done` is
+// how many have connected. `cycle` bumps every loop so keys remount.
+type Seq = { cycle: number; active: number; done: number; hub: number };
+const SEQ_IDLE: Seq = { cycle: 0, active: -1, done: 0, hub: -1 };
 
 export function EcosystemDiagram() {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -90,52 +93,55 @@ export function EcosystemDiagram() {
     };
   }, []);
 
-  // Draw the beams one at a time: line grows -> arrives -> module goes
-  // green and its line opens at the hub -> next module -> ... -> hold -> loop.
+  // One beam at a time: it grows (DRAW_S) -> on arrival the module turns
+  // green and its line opens at the hub, held DWELL_MS to read -> next
+  // module -> ... -> everything connected, hold -> restart. The growing
+  // terracotta line is dropped the instant the module connects, so it can
+  // never linger half-drawn on top of the green one.
   useEffect(() => {
     if (!inView || paths.length === 0) return;
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let phase = 0;
+    let cycle = 0;
     let cancelled = false;
-    let drawTimer = 0;
-    let stepTimer = 0;
-    let k = 1;
+    let growTimer = 0;
+    let nextTimer = 0;
 
-    const startStep = () => {
+    const grow = () => {
       if (cancelled) return;
-      setSeq({ key: k++, drawing: phase, done: phase, hub: -1 });
-      drawTimer = window.setTimeout(() => {
+      setSeq({ cycle, active: phase, done: phase, hub: -1 });
+      growTimer = window.setTimeout(() => {
         if (cancelled) return;
-        setSeq({ key: k++, drawing: phase, done: phase + 1, hub: phase });
+        setSeq({ cycle, active: -1, done: phase + 1, hub: phase }); // connected
+        nextTimer = window.setTimeout(() => {
+          if (cancelled) return;
+          phase += 1;
+          if (phase >= N) {
+            nextTimer = window.setTimeout(() => {
+              cycle += 1;
+              phase = 0;
+              grow();
+            }, HOLD_MS);
+          } else {
+            grow();
+          }
+        }, DWELL_MS);
       }, DRAW_S * 1000);
-      stepTimer = window.setTimeout(() => {
-        if (cancelled) return;
-        phase += 1;
-        if (phase >= N) {
-          setSeq({ key: k++, drawing: -1, done: N, hub: N - 1 });
-          stepTimer = window.setTimeout(() => {
-            phase = 0;
-            startStep();
-          }, HOLD_MS);
-        } else {
-          startStep();
-        }
-      }, STEP_MS);
     };
 
-    startStep();
+    grow();
     return () => {
       cancelled = true;
-      window.clearTimeout(drawTimer);
-      window.clearTimeout(stepTimer);
+      window.clearTimeout(growTimer);
+      window.clearTimeout(nextTimer);
     };
   }, [inView, paths.length]);
 
   const left = LANDING_MODULES.map((module, index) => ({ module, index })).filter(({ module }) => module.side === "left");
   const right = LANDING_MODULES.map((module, index) => ({ module, index })).filter(({ module }) => module.side === "right");
   const hubModule = seq.hub >= 0 ? LANDING_MODULES[seq.hub] : null;
-  const drawingPath = seq.drawing >= 0 ? paths[seq.drawing] : undefined;
+  const growingPath = seq.active >= 0 ? paths[seq.active] : undefined;
 
   return (
     <div ref={stageRef} className="relative mx-auto max-w-[900px]" aria-label="Los módulos de AL-LÍO conectados">
@@ -157,7 +163,7 @@ export function EcosystemDiagram() {
       <svg className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible" aria-hidden="true">
         {/* Reduced motion / not yet started: show the whole structure static
             so the picture still reads as connected. */}
-        {(!inView || seq.drawing < 0) && seq.done === 0 &&
+        {(!inView || (seq.active < 0 && seq.done === 0)) &&
           paths.map((path, index) => (
             <path key={`static-${index}`} d={path.d} fill="none" stroke="#e0d2b8" strokeWidth="1.8" strokeLinecap="round" />
           ))}
@@ -177,12 +183,13 @@ export function EcosystemDiagram() {
           ) : null,
         )}
 
-        {/* The one beam currently growing, module -> hub. */}
-        {drawingPath && (
+        {/* The one beam currently growing, module -> hub. Keyed by cycle +
+            module so it only ever mounts once per pass. */}
+        {growingPath && (
           <path
-            key={`draw-${seq.key}`}
+            key={`grow-${seq.cycle}-${seq.active}`}
             className="al-eco-active"
-            d={drawingPath.d}
+            d={growingPath.d}
             pathLength={1}
             fill="none"
             stroke="#e15d2d"
@@ -192,8 +199,8 @@ export function EcosystemDiagram() {
         )}
 
         {/* A dot rides the tip of the growing line. */}
-        {drawingPath && (
-          <circle key={`dot-${seq.key}`} className="al-eco-dot" r="4" fill="#2c2620">
+        {growingPath && (
+          <circle key={`dot-${seq.cycle}-${seq.active}`} className="al-eco-dot" r="4" fill="#2c2620">
             <animateMotion
               dur={`${DRAW_S}s`}
               begin="0s"
@@ -202,7 +209,7 @@ export function EcosystemDiagram() {
               keyTimes="0;1"
               calcMode="spline"
               keySplines="0.42 0 0.58 1"
-              path={drawingPath.d}
+              path={growingPath.d}
             />
           </circle>
         )}
@@ -225,12 +232,12 @@ export function EcosystemDiagram() {
         <div ref={hubRef} className="relative flex items-center justify-center">
           {/* The arriving module's line, opened above the mark. */}
           <div
-            className="al-eco-hub pointer-events-none absolute bottom-[calc(100%+14px)] left-1/2 hidden w-[220px] -translate-x-1/2 text-center sm:block"
+            className="al-eco-hub pointer-events-none absolute bottom-[calc(100%+16px)] left-1/2 hidden w-[280px] -translate-x-1/2 text-center sm:block"
             data-show={hubModule ? "true" : "false"}
             aria-hidden="true"
           >
-            <p className="text-[13.5px] font-semibold text-[#b94720]">{hubModule?.label ?? ""}</p>
-            <p className="mt-0.5 text-[12.5px] leading-relaxed text-[#6f6a5f]">{hubModule?.description ?? ""}</p>
+            <p className="text-[17px] font-bold text-[#b94720]">{hubModule?.label ?? ""}</p>
+            <p className="mt-1 text-[14px] leading-relaxed text-[#5f5a50]">{hubModule?.description ?? ""}</p>
           </div>
 
           <span
