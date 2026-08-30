@@ -168,7 +168,16 @@ export function MarketingLanding() {
         <div className={`${shell} flex flex-wrap items-center justify-between gap-4 py-7 text-[12px]`}>
           <LogoMark className="h-6 w-auto" />
           <p className="text-[#77726a]">
-            Proyecto ganador del <span className="font-semibold text-[#55514a]">Aircury Summer of Code</span> · 2026
+            Proyecto desarrollado gracias a la beca Aircury Summer of Code 2026 de{" "}
+            <a
+              href="https://www.aircury.es"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-[#55514a] underline underline-offset-2 hover:text-[#17150f]"
+            >
+              Aircury SL
+            </a>
+            .
           </p>
           <div className="flex gap-4 text-[#8a857c]">
             <Link href="/login">Iniciar sesión</Link>

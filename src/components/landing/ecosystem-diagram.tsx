@@ -100,14 +100,9 @@ export function EcosystemDiagram() {
     <div ref={stageRef} className="relative mx-auto max-w-[1120px]" aria-label="Los módulos de AL-LÍO conectados">
       <style>{`
         @keyframes al-eco-draw { to { stroke-dashoffset: 0; } }
-        @keyframes al-eco-pulse {
-          0% { opacity: 0; transform: scale(0.6); }
-          14% { opacity: 1; transform: scale(1); }
-          86% { opacity: 1; transform: scale(1); }
-          100% { opacity: 0; transform: scale(0.6); }
-        }
+        @keyframes al-eco-pulse { 0% { opacity: 0; } 12% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
         .al-eco-trace { stroke-dasharray: 1; stroke-dashoffset: 1; animation: al-eco-draw 1.9s cubic-bezier(0.33, 1, 0.68, 1) forwards; }
-        .al-eco-pulse { animation: al-eco-pulse 1.7s ease-in-out both; }
+        .al-eco-pulse { animation: al-eco-pulse 1.5s linear forwards; }
         @media (prefers-reduced-motion: reduce) {
           .al-eco-trace { animation: none; stroke-dashoffset: 0; }
           .al-eco-pulse { display: none; }
@@ -121,13 +116,6 @@ export function EcosystemDiagram() {
             <stop offset="0.5" stopColor="#e15d2d" />
             <stop offset="1" stopColor="#e9a23b" />
           </linearGradient>
-          <filter id="al-eco-glow" x="-120%" y="-120%" width="340%" height="340%">
-            <feGaussianBlur stdDeviation="2.6" result="b" />
-            <feMerge>
-              <feMergeNode in="b" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
         {/* Faint structure, always visible so the layout is not empty on load. */}
@@ -151,10 +139,20 @@ export function EcosystemDiagram() {
             />
           ))}
 
-        {/* One soft light travelling a single beam at a time, round the ring. */}
+        {/* One ink dot travels a single beam at a time, round the ring in
+            order (Tareas, Calendario, ...). Terracotta stays on the logo. */}
         {inView && paths[pulse] && (
-          <circle key={pulse} className="al-eco-pulse" r="4.2" fill="#E15D2D" filter="url(#al-eco-glow)">
-            <animateMotion dur="1.5s" begin="0s" fill="freeze" keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines="0.4 0 0.2 1" path={paths[pulse].d} />
+          <circle key={pulse} className="al-eco-pulse" r="4" fill="#2c2620">
+            <animateMotion
+              dur="1.5s"
+              begin="0s"
+              fill="freeze"
+              keyPoints="0;1"
+              keyTimes="0;1"
+              calcMode="spline"
+              keySplines="0.4 0 0.2 1"
+              path={paths[pulse].d}
+            />
           </circle>
         )}
       </svg>
