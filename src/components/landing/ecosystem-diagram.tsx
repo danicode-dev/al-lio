@@ -99,7 +99,7 @@ function DesktopDiagram() {
   const right = LANDING_MODULES.map((module, index) => ({ module, index })).filter(({ module }) => module.side === "right");
 
   return (
-    <div ref={stageRef} className="relative mx-auto hidden max-w-[1040px] lg:block" aria-label="Los módulos de AL-LÍO conectados">
+    <div ref={stageRef} className="relative mx-auto hidden max-w-[1120px] lg:block" aria-label="Los módulos de AL-LÍO conectados">
       <svg className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible" aria-hidden="true">
         <defs>
           <linearGradient id="al-eco-gradient" x1="0" y1="0" x2="1" y2="0">
@@ -132,8 +132,8 @@ function DesktopDiagram() {
         )}
       </svg>
 
-      <div className="relative z-10 grid h-[420px] grid-cols-[1fr_auto_1fr] items-center gap-28">
-        <div className="flex flex-col gap-5">
+      <div className="relative z-10 grid h-[460px] grid-cols-[1fr_auto_1fr] items-center gap-8 xl:gap-16">
+        <div className="flex flex-col items-start gap-6">
           {left.map(({ module, index }) => (
             <DiagramNode
               key={module.label}
@@ -146,9 +146,9 @@ function DesktopDiagram() {
           ))}
         </div>
         <div ref={hubRef}>
-          <Hub size={132} caption />
+          <Hub size={156} caption />
         </div>
-        <div className="flex flex-col items-end gap-5">
+        <div className="flex flex-col items-end gap-6">
           {right.map(({ module, index }) => (
             <DiagramNode
               key={module.label}

@@ -60,16 +60,16 @@ export function MarketingLanding() {
           </div>
         </section>
 
-        {/* Second screen: the connected diagram, vertically centred too. */}
-        <section id="panel" className="flex min-h-screen scroll-mt-6 flex-col justify-center py-24">
+        {/* Where the scroll cue lands: the connected diagram. */}
+        <section id="panel" className="scroll-mt-6 py-24 md:py-32">
           <div className={shell}>
-            <div className="mx-auto max-w-[52ch] text-center">
-              <h2 className={`${secTitle} text-[32px]`}>Un panel, todo conectado</h2>
-              <p className="mt-3 text-[15px] leading-relaxed text-[#6b6f72]">
-                Cada área habla con las demás. Pasa el ratón por un módulo para ver qué hace.
+            <div className="mx-auto max-w-[60ch] text-center">
+              <h2 className={`${secTitle} text-[34px]`}>Un panel, todo conectado</h2>
+              <p className="mx-auto mt-3 max-w-[54ch] text-[15px] leading-relaxed text-[#6b6f72]">
+                Cada área habla con las demás. Pasa el ratón por un módulo y te dice qué hace.
               </p>
             </div>
-            <div className="mt-14">
+            <div className="mt-16">
               <EcosystemDiagram />
             </div>
           </div>
