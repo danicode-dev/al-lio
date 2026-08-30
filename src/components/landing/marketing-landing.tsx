@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Award, ChevronDown, Clock, Filter, HeartHandshake, Lock, RefreshCw, Target } from "lucide-react";
+import { ChevronDown, Clock, Filter, GitBranch, Lock, RefreshCw, ShieldCheck, Target } from "lucide-react";
 
 import { EcosystemDiagram } from "@/components/landing/ecosystem-diagram";
+import { LANDING_MODULES } from "@/components/landing/modules";
 
 const primaryBtn =
   "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#E15D2D] bg-[#E15D2D] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#cf5323] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]/40 focus-visible:ring-offset-2";
@@ -72,6 +73,24 @@ export function MarketingLanding() {
             <div className="mt-16">
               <EcosystemDiagram />
             </div>
+
+            {/* The hover copy from the diagram, spelled out for touch. */}
+            <ul className="mx-auto mt-14 grid max-w-[560px] gap-3 lg:hidden">
+              {LANDING_MODULES.map((module) => {
+                const Icon = module.icon;
+                return (
+                  <li key={module.label} className="flex gap-3 rounded-2xl border border-[#EBE4D6] bg-white p-4">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#fbe7dd] text-[#E15D2D]">
+                      <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="text-[14px] font-semibold text-[#35322c]">{module.label}</p>
+                      <p className="mt-1 text-[12.5px] leading-relaxed text-[#77726a]">{module.description}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </section>
 
@@ -101,18 +120,18 @@ export function MarketingLanding() {
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(225,93,45,0.5),transparent)]" aria-hidden="true" />
           <div className={`${shell} relative grid gap-12 py-28 md:grid-cols-[0.85fr_1.15fr] md:gap-20`}>
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#c77a53]">Por qué así</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#c77a53]">El proyecto</p>
               <h2 className="mt-3.5 max-w-[16ch] font-[family-name:var(--font-barlow)] text-[32px] font-extrabold leading-[1.14] text-[#f1eee9]">
                 Una herramienta para el curso, no un feed
               </h2>
               <p className="mt-4 max-w-[40ch] text-[14px] leading-[1.85] text-[#93999b]">
-                Nació en el Aircury Summer of Code para resolver un problema real de estudiantes de FP: demasiadas apps, demasiado ruido.
+                AL-LÍO responde a un problema concreto de la Formación Profesional: la información y las tareas del curso repartidas en demasiados sitios.
               </p>
             </div>
             <div>
-              <BandRow icon={Award} title="Proyecto ganador" body="Aircury Summer of Code 2026. Hecho por y para estudiantes de FP." />
+              <BandRow icon={ShieldCheck} title="Contenido con criterio" body="Fuentes verificadas y filtradas antes de aparecer en tu panel." />
               <BandRow icon={Lock} title="Sin anuncios ni terceros" body="No hay seguimiento externo. Tu actividad no se comparte ni se vende." />
-              <BandRow icon={HeartHandshake} title="Se sigue construyendo" body="En uso real, con mejoras cada semana a partir de lo que pedís." />
+              <BandRow icon={GitBranch} title="Desarrollo continuo" body="En uso real, con mejoras basadas en cómo se usa la plataforma." />
             </div>
           </div>
         </section>
@@ -150,7 +169,7 @@ function FlowRow({ icon: Icon, title, body }: { icon: typeof Filter; title: stri
   );
 }
 
-function BandRow({ icon: Icon, title, body }: { icon: typeof Award; title: string; body: string }) {
+function BandRow({ icon: Icon, title, body }: { icon: typeof ShieldCheck; title: string; body: string }) {
   return (
     <div className="grid grid-cols-[24px_1fr] gap-4 border-t border-white/10 py-4 first:border-t-0 first:pt-0">
       <Icon className="mt-0.5 h-[17px] w-[17px] text-[#cdd3d4]" aria-hidden="true" />
