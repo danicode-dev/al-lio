@@ -85,7 +85,7 @@ export function MarketingLanding() {
               <div className="mx-auto max-w-[60ch] text-center">
                 <h2 className={`${secTitle} text-[36px]`}>Un panel, todo conectado</h2>
                 <p className="mx-auto mt-3 max-w-[54ch] text-[16px] leading-relaxed text-[#6b6f72]">
-                  Cada área habla con las demás. Pasa el ratón por un módulo y te dice qué hace.
+                  Cada área se conecta con AL-LÍO y te cuenta qué aporta.
                 </p>
               </div>
               <div className="mt-16">
