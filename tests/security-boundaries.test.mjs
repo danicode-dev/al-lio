@@ -2950,6 +2950,22 @@ test("verified opportunities mode reads accepted canonical course/event facts an
   assert.match(source, /state\.status in \('saved', 'started', 'completed'\)/, "saved student state keeps an item reachable while preserving lifecycle separation");
 });
 
+test("verified opportunities mode keeps a dated accepted course visible when the source does not state a lifecycle (issue #250)", async () => {
+  const source = await readFile(new URL("../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
+  assert.match(source, /entity\.destination = 'course'/);
+  assert.match(source, /canonical\.source_lifecycle_status is null/);
+  assert.match(
+    source,
+    /coalesce\(\s*canonical\.registration_deadline,\s*canonical\.ends_at,\s*canonical\.starts_at\s*\) >= now\(\)/,
+    "an unknown lifecycle remains absent and visibility is bounded by the verified registration or course date",
+  );
+  assert.match(
+    source,
+    /entity\.destination <> 'event'[\s\S]*canonical\.starts_at is not null/,
+    "events retain their separate stricter start/end-date boundary",
+  );
+});
+
 test("legacy opportunity migration is additive, auditable and cannot self-certify a CSV row as verified (issue #200)", async () => {
   const [migration, reportText] = await Promise.all([
     readFile(new URL("../infra/postgres/migrations/0013_trustworthy_opportunity_catalogue.sql", import.meta.url), "utf8"),
