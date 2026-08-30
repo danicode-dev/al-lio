@@ -37,7 +37,7 @@ export function MarketingLanding() {
             <span className="font-[family-name:var(--font-barlow)] text-[17px] font-black tracking-[0.02em]">AL&nbsp;LÍO</span>
           </div>
           <nav className="flex items-center gap-3">
-            <Link href="/login" className={ghostBtn}>Iniciar sesión</Link>
+            <Link href="/login" className={`${ghostBtn} hidden sm:inline-flex`}>Iniciar sesión</Link>
             <Link href="/register" className={primaryBtn}>Crear cuenta</Link>
           </nav>
         </header>
@@ -49,7 +49,8 @@ export function MarketingLanding() {
           <div className="relative mx-auto max-w-[1080px] px-6 pb-16 pt-24 text-center sm:px-12">
             <p className={eyebrow}>Plataforma para estudiantes de FP</p>
             <h1 className="mx-auto mt-4 max-w-[16ch] font-[family-name:var(--font-barlow)] text-[44px] font-extrabold leading-[1.03] tracking-[-0.025em] sm:text-[64px]">
-              Enfoca. Actúa. <span className="text-[#E15D2D]">Logra más.</span>
+              Enfoca. Actúa.<br />
+              <span className="text-[#E15D2D]">Logra más.</span>
             </h1>
             <p className="mx-auto mt-5 max-w-[40ch] text-[16px] leading-relaxed text-[#55514a]">
               Tu curso en un panel: tareas, prácticas, cursos, eventos y calendario, con noticias y convocatorias de tu ciclo revisadas cada día.
