@@ -1,10 +1,8 @@
-import Image from "next/image";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { CookieNotice } from "@/components/landing/cookie-notice";
 import { LandingFooter } from "@/components/landing/landing-footer";
+import { LandingHeader } from "@/components/landing/landing-header";
 
 // Shell for every static page linked from the landing footer. Not a flat
 // column: a kicker + large Barlow title, an optional lead / side note laid
@@ -26,24 +24,16 @@ export function LegalPage({
 }) {
   return (
     <div className="min-h-screen bg-[#F6F1E6] text-[#2A2018]">
-      <header className="mx-auto flex h-[80px] max-w-[1040px] items-center justify-between px-6 sm:px-12">
-        <Link href="/" aria-label="Volver al inicio">
-          <Image src="/assets/al_lio_wordmark.png" alt="AL-LÍO" width={354} height={96} className="h-7 w-auto" />
-        </Link>
-        <Link href="/" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#55514a] hover:text-[#2A2018]">
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Inicio
-        </Link>
-      </header>
+      <LandingHeader />
 
-      <main className="mx-auto max-w-[1040px] px-6 py-16 sm:px-12 sm:py-20">
+      <main className="mx-auto max-w-[1120px] px-6 py-16 sm:px-12 sm:py-20">
         <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-[#b94720]">{kicker ?? "AL-LÍO"}</p>
         <h1 className="mt-4 max-w-[16ch] font-[family-name:var(--font-barlow)] text-[44px] font-extrabold leading-[1.04] tracking-[-0.02em] sm:text-[56px]">
           {title}
         </h1>
 
         {(lead || aside) && (
-          <div className="mt-10 grid gap-x-16 gap-y-10 border-b border-[#e4dbc8] pb-12 lg:grid-cols-[1.35fr_1fr]">
+          <div className="mt-10 grid max-w-[920px] gap-x-16 gap-y-10 border-b border-[#e4dbc8] pb-12 lg:grid-cols-[1.3fr_1fr]">
             <div>
               {lead && <p className="text-[19px] leading-[1.6] text-[#4a443b]">{lead}</p>}
             </div>

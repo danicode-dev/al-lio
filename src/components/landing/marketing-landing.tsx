@@ -1,20 +1,19 @@
-import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Globe } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 import { CookieNotice } from "@/components/landing/cookie-notice";
 import { EcosystemDiagram } from "@/components/landing/ecosystem-diagram";
 import { LandingFooter } from "@/components/landing/landing-footer";
+import { LandingHeader } from "@/components/landing/landing-header";
 import { LANDING_MODULES } from "@/components/landing/modules";
 
 // Type system for the whole landing and its legal pages, fixed - do not
 // introduce more families or weights:
 //   - Display (h1/h2 only): Barlow, weight 800  (var(--font-barlow))
 //   - Everything else:       Inter, 400/500/600/700  (the app default)
-// Colour: no pure black anywhere. Display text is warm ink (#2A2018) and
-// the one filled action is the app's terracotta (#E15D2D).
-const primaryBtn =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#E15D2D] bg-[#E15D2D] px-5 text-[15px] font-semibold text-white transition-colors hover:bg-[#c94f24] hover:border-[#c94f24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]/30 focus-visible:ring-offset-2";
+// Colour: no pure black anywhere. Section headings are warm ink (#2A2018),
+// the hero headline is a lighter warm brown (#5b4636), and the one filled
+// action is the app's terracotta (#E15D2D).
 const ghostBtn =
   "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#d8cfc0] bg-transparent px-5 text-[15px] font-semibold text-[#2A2018] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A2018]/15";
 const eyebrow = "text-[13px] font-bold uppercase tracking-[0.16em] text-[#b94720]";
@@ -56,29 +55,14 @@ export function MarketingLanding() {
       />
 
       <div className="relative z-10">
-        <header className={`${shell} flex h-[80px] items-center justify-between`}>
-          <Image src="/assets/al_lio_wordmark.png" alt="AL-LÍO" width={354} height={96} priority className="h-7 w-auto sm:h-8" />
-          <nav className="flex items-center gap-4 sm:gap-5">
-            {/* Language switch: placeholder until the bilingual routing lands. */}
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#55514a] transition-colors hover:text-[#2A2018]"
-              aria-label="Cambiar idioma"
-            >
-              <Globe className="h-4 w-4" aria-hidden="true" />
-              ES
-              <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-            <Link href="/login" className={primaryBtn}>Entrar</Link>
-          </nav>
-        </header>
+        <LandingHeader />
 
         <main>
           {/* First screen: slogan + a single scroll cue, vertically centred. */}
           <section className="relative flex min-h-[calc(100svh-80px)] items-center overflow-hidden">
             <div className={`${shell} relative w-full pb-20 text-center`}>
               <p className={eyebrow}>Plataforma para estudiantes de FP</p>
-              <h1 className="mx-auto mt-5 max-w-[18ch] font-[family-name:var(--font-barlow)] text-[50px] font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-[78px]">
+              <h1 className="mx-auto mt-5 max-w-[18ch] font-[family-name:var(--font-barlow)] text-[50px] font-extrabold leading-[1.02] tracking-[-0.03em] text-[#5b4636] sm:text-[78px]">
                 Enfoca. Actúa.<br />
                 Logra más.
               </h1>
