@@ -13,15 +13,10 @@ export function GoogleLoginButton({ className }: { className?: string }) {
   return (
     <a
       href="/api/auth/google/start?next=/dashboard"
-      className={[
-        "flex w-full items-center justify-center gap-2 rounded-lg border text-sm font-medium transition-colors",
-        "h-11 border-[#232323] bg-[#141414] text-white hover:bg-[#1a1a1a]",
-        "md:border-[#DDD7CE] md:bg-white md:text-[#111111] md:hover:bg-[#f5f0e8]",
-        className,
-      ].filter(Boolean).join(" ")}
+      className={["flex w-full items-center justify-center gap-2", className].filter(Boolean).join(" ")}
     >
       <GoogleIcon />
-      Google
+      Continuar con Google
     </a>
   );
 }
