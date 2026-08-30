@@ -137,6 +137,8 @@ validate_compose_env_additions() {
       '+      WEB_DISCOVERY_ENABLED: ${AL_LIO_RADAR_WEB_DISCOVERY_ENABLED:-false}') service="al_lio_radar"; key="WEB_DISCOVERY_ENABLED" ;;
       '+      LEARNING_DISCOVERY_ENABLED: ${AL_LIO_RADAR_LEARNING_DISCOVERY_ENABLED:-false}') service="al_lio_radar"; key="LEARNING_DISCOVERY_ENABLED" ;;
       '+      YOUTUBE_WATCH_ENABLED: ${AL_LIO_RADAR_YOUTUBE_WATCH_ENABLED:-false}') service="al_lio_radar"; key="YOUTUBE_WATCH_ENABLED" ;;
+      '+      LEARNING_DELIVERY_ENABLED: ${AL_LIO_RADAR_LEARNING_DELIVERY_ENABLED:-false}') service="al_lio_radar"; key="LEARNING_DELIVERY_ENABLED" ;;
+      '+      YOUTUBE_API_KEY: ${AL_LIO_RADAR_YOUTUBE_API_KEY:-}') service="al_lio_radar"; key="YOUTUBE_API_KEY" ;;
       '+      JOB_RADAR_ENABLED: ${AL_LIO_RADAR_JOB_RADAR_ENABLED:-false}') service="al_lio_radar"; key="JOB_RADAR_ENABLED" ;;
       *) return 1 ;;
     esac

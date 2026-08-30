@@ -51,6 +51,8 @@ check(
     && deployScript.includes("RESEND_FROM_EMAIL")
     && deployScript.includes("'+      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}') service=\"al_lio_web\"; key=\"AL_LIO_RADAR_V4_PROJECT_DESTINATIONS\" ;;")
     && deployScript.includes("'+      AUTONOMOUS_PUBLICATION_ENABLED: ${AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_ENABLED:-false}') service=\"al_lio_radar\"; key=\"AUTONOMOUS_PUBLICATION_ENABLED\" ;;")
+    && deployScript.includes("'+      LEARNING_DELIVERY_ENABLED: ${AL_LIO_RADAR_LEARNING_DELIVERY_ENABLED:-false}') service=\"al_lio_radar\"; key=\"LEARNING_DELIVERY_ENABLED\" ;;")
+    && deployScript.includes("'+      YOUTUBE_API_KEY: ${AL_LIO_RADAR_YOUTUBE_API_KEY:-}') service=\"al_lio_radar\"; key=\"YOUTUBE_API_KEY\" ;;")
     && read("infra/docker-compose.prod.yml").includes("      AL_LIO_RADAR_V4_PROJECT_DESTINATIONS: ${AL_LIO_RADAR_V4_PROJECT_DESTINATIONS:-}"),
 );
 check("deploy script rejects every other Compose edit", deployScript.includes("Docker Compose changed outside the allowlisted service environment passthroughs"));
@@ -114,6 +116,10 @@ check("documents dormant Radar publication defaults", [
   "AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_ENABLED=false",
   "AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_DESTINATIONS=news",
   "AL_LIO_RADAR_AUTONOMOUS_NEWS_SOURCE_CYCLE_MATRIX_JSON={}",
+].every((entry) => envExample.includes(entry)));
+check("documents dormant learning delivery and an empty YouTube credential", [
+  "AL_LIO_RADAR_LEARNING_DELIVERY_ENABLED=false",
+  "AL_LIO_RADAR_YOUTUBE_API_KEY=",
 ].every((entry) => envExample.includes(entry)));
 check("does not contain aidraft BASE_URL", !envExample.includes("BASE_URL=https://aidraft"));
 check("does not contain real Supabase anon key", !(/NEXT_PUBLIC_SUPABASE_ANON_KEY=ey[A-Za-z0-9]/.test(envExample)));

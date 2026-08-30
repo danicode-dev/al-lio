@@ -54,6 +54,13 @@ does not make candidates visible: Radar may send only already-approved,
 available resources, and AL-LÍO still rejects unknown skills or conflicting
 revisions.
 
+Radar has a second independent publication switch,
+`AL_LIO_RADAR_LEARNING_DELIVERY_ENABLED=false`, and receives the official API
+credential only through the private `AL_LIO_RADAR_YOUTUBE_API_KEY` production
+variable. Keep discovery, WATCH, Radar delivery and AL-LÍO ingest false until
+the exact channel, video and canonical cycle/skill pair for the canary are
+reviewed. Never commit the API key or print it in health/deployment evidence.
+
 ## Student progress and readiness
 
 Opening a resource does not complete it. Embedded-player updates can record

@@ -95,8 +95,12 @@ check(
 );
 check(
   "Compose keeps unrelated Radar capabilities independently disabled",
-  ["WEB_DISCOVERY", "LEARNING_DISCOVERY", "YOUTUBE_WATCH", "JOB_RADAR"].every((capability) =>
+  ["WEB_DISCOVERY", "LEARNING_DISCOVERY", "YOUTUBE_WATCH", "LEARNING_DELIVERY", "JOB_RADAR"].every((capability) =>
     radarService.includes(`${capability}_ENABLED: \${AL_LIO_RADAR_${capability}_ENABLED:-false}`)),
+);
+check(
+  "Compose passes the optional YouTube credential without a committed default",
+  radarService.includes("YOUTUBE_API_KEY: ${AL_LIO_RADAR_YOUTUBE_API_KEY:-}"),
 );
 
 if (errors > 0) {
