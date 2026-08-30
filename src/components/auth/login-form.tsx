@@ -86,7 +86,7 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           left: 40px;
         }
         .login-brand-tl img {
-          width: 132px;
+          width: 40px;
           height: auto;
           display: block;
         }
@@ -269,12 +269,12 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
         @media (max-width: 560px) {
           .login-page { padding: 24px 16px 64px; }
           .login-brand-tl { top: 24px; left: 24px; }
-          .login-brand-tl img { width: 116px; }
+          .login-brand-tl img { width: 34px; }
           .login-card {
             border: none;
             box-shadow: none;
             background: transparent;
-            padding: 96px 6px 24px;
+            padding: 78px 6px 24px;
           }
           .login-card::before { display: none; }
         }
@@ -287,18 +287,18 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
       <div className="login-page">
         <div className="login-brand-tl">
           <Image
-            src="/assets/al_lio_logo_horizontal_transparent.png"
+            src="/assets/al_lio_symbol_transparent.png"
             alt="AL LÍO"
-            width={615}
-            height={214}
-            style={{ width: 132, height: "auto" }}
+            width={197}
+            height={185}
+            style={{ width: 40, height: "auto" }}
             priority
           />
         </div>
 
         <main className="login-card">
           <h1 className="al-card-heading">Bienvenido de nuevo</h1>
-          <p className="al-card-sub">Enfoca, actúa, logra más.</p>
+          <p className="al-card-sub">Enfoca. Actúa. Logra más.</p>
 
           {visibleError && (
             <div
