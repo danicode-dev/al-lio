@@ -12,10 +12,11 @@ export default function PrivacidadPage() {
       lead="AL-LÍO es una plataforma para estudiantes de Formación Profesional. Tratamos los datos mínimos para que la herramienta funcione y no compartimos tu información con terceros con fines comerciales."
       aside={
         <>
-          <p className="al-aside-title">En una frase</p>
+          <p className="al-aside-title">Qué no hacemos</p>
           <p>
-            No hacemos perfiles publicitarios ni cedemos datos a anunciantes. Google entra solo si eliges iniciar sesión o
-            sincronizar tu calendario con esa cuenta.
+            No vendemos ni cedemos tus datos con fines comerciales, no hacemos perfiles publicitarios y no hay analítica de
+            terceros, publicidad ni redes sociales embebidas. Google entra solo si eliges iniciar sesión o sincronizar tu
+            calendario con esa cuenta.
           </p>
         </>
       }
