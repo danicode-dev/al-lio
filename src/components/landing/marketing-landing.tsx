@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Code2, Dumbbell, Globe, Landmark, Megaphone } from "lucide-react";
+import { ChevronDown, Globe } from "lucide-react";
 
 import { CookieNotice } from "@/components/landing/cookie-notice";
 import { EcosystemDiagram } from "@/components/landing/ecosystem-diagram";
@@ -14,18 +14,18 @@ import { LANDING_MODULES } from "@/components/landing/modules";
 // Colour: no pure black anywhere. Display text is warm ink (#2A2018) and
 // the one filled action is the app's terracotta (#E15D2D).
 const primaryBtn =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#E15D2D] bg-[#E15D2D] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#c94f24] hover:border-[#c94f24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]/30 focus-visible:ring-offset-2";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#E15D2D] bg-[#E15D2D] px-5 text-[15px] font-semibold text-white transition-colors hover:bg-[#c94f24] hover:border-[#c94f24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]/30 focus-visible:ring-offset-2";
 const ghostBtn =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#d8cfc0] bg-transparent px-5 text-sm font-semibold text-[#2A2018] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A2018]/15";
-const eyebrow = "text-[12px] font-bold uppercase tracking-[0.16em] text-[#b94720]";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#d8cfc0] bg-transparent px-5 text-[15px] font-semibold text-[#2A2018] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A2018]/15";
+const eyebrow = "text-[13px] font-bold uppercase tracking-[0.16em] text-[#b94720]";
 const secTitle = "font-[family-name:var(--font-barlow)] font-extrabold tracking-[-0.01em]";
 const shell = "mx-auto max-w-[1120px] px-6 sm:px-12";
 
 const CYCLES = [
-  { code: "DAW · DAM", name: "Desarrollo", icon: Code2, line: "Tecnología, hackathons y ofertas de desarrollo web y multiplataforma." },
-  { code: "AF", name: "Administración y Finanzas", icon: Landmark, line: "Gestión, prácticas y convocatorias del ámbito administrativo." },
-  { code: "MP", name: "Marketing y Publicidad", icon: Megaphone, line: "Comunicación, eventos y ofertas del sector del marketing." },
-  { code: "TSAF", name: "Actividades Físico-deportivas", icon: Dumbbell, line: "Formación y salidas profesionales del ámbito deportivo." },
+  { code: "DAW · DAM", name: "Desarrollo", line: "Tecnología, hackathons y ofertas de desarrollo web y multiplataforma." },
+  { code: "AF", name: "Administración y Finanzas", line: "Gestión, prácticas y convocatorias del ámbito administrativo." },
+  { code: "MP", name: "Marketing y Publicidad", line: "Comunicación, eventos y ofertas del sector del marketing." },
+  { code: "TSAF", name: "Actividades Físico-deportivas", line: "Formación y salidas profesionales del ámbito deportivo." },
 ] as const;
 
 // Public marketing page served at "/" for signed-out visitors (an
@@ -56,13 +56,13 @@ export function MarketingLanding() {
       />
 
       <div className="relative z-10">
-        <header className={`${shell} flex h-[76px] items-center justify-between`}>
-          <Image src="/assets/al_lio_wordmark.png" alt="AL-LÍO" width={354} height={96} priority className="h-6 w-auto sm:h-7" />
+        <header className={`${shell} flex h-[80px] items-center justify-between`}>
+          <Image src="/assets/al_lio_wordmark.png" alt="AL-LÍO" width={354} height={96} priority className="h-7 w-auto sm:h-8" />
           <nav className="flex items-center gap-4 sm:gap-5">
             {/* Language switch: placeholder until the bilingual routing lands. */}
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#55514a] transition-colors hover:text-[#2A2018]"
+              className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#55514a] transition-colors hover:text-[#2A2018]"
               aria-label="Cambiar idioma"
             >
               <Globe className="h-4 w-4" aria-hidden="true" />
@@ -75,19 +75,19 @@ export function MarketingLanding() {
 
         <main>
           {/* First screen: slogan + a single scroll cue, vertically centred. */}
-          <section className="relative flex min-h-[calc(100svh-76px)] items-center overflow-hidden">
+          <section className="relative flex min-h-[calc(100svh-80px)] items-center overflow-hidden">
             <div className={`${shell} relative w-full pb-20 text-center`}>
               <p className={eyebrow}>Plataforma para estudiantes de FP</p>
-              <h1 className="mx-auto mt-5 max-w-[18ch] font-[family-name:var(--font-barlow)] text-[48px] font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-[76px]">
+              <h1 className="mx-auto mt-5 max-w-[18ch] font-[family-name:var(--font-barlow)] text-[50px] font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-[78px]">
                 Enfoca. Actúa.<br />
                 Logra más.
               </h1>
-              <p className="mx-auto mt-6 max-w-[46ch] text-[17px] leading-relaxed text-[#55514a]">
+              <p className="mx-auto mt-6 max-w-[46ch] text-[18px] leading-relaxed text-[#55514a]">
                 Tu curso en un panel: tareas, prácticas, cursos, eventos y calendario, con noticias y convocatorias de tu ciclo revisadas cada día.
               </p>
               <a
                 href="#panel"
-                className="mt-10 inline-flex h-14 items-center justify-center gap-2.5 rounded-full border border-[#E15D2D] bg-[#E15D2D] px-8 text-[15px] font-semibold text-white transition-colors hover:bg-[#c94f24] hover:border-[#c94f24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]/30 focus-visible:ring-offset-2"
+                className="mt-10 inline-flex h-14 items-center justify-center gap-2.5 rounded-full border border-[#E15D2D] bg-[#E15D2D] px-8 text-[16px] font-semibold text-white transition-colors hover:bg-[#c94f24] hover:border-[#c94f24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]/30 focus-visible:ring-offset-2"
               >
                 Ver cómo funciona
                 <ChevronDown className="h-5 w-5" aria-hidden="true" />
@@ -99,8 +99,8 @@ export function MarketingLanding() {
           <section id="panel" className="scroll-mt-6 border-y border-[#e7ddca] py-24 md:py-32">
             <div className={shell}>
               <div className="mx-auto max-w-[60ch] text-center">
-                <h2 className={`${secTitle} text-[34px]`}>Un panel, todo conectado</h2>
-                <p className="mx-auto mt-3 max-w-[54ch] text-[15px] leading-relaxed text-[#6b6f72]">
+                <h2 className={`${secTitle} text-[36px]`}>Un panel, todo conectado</h2>
+                <p className="mx-auto mt-3 max-w-[54ch] text-[16px] leading-relaxed text-[#6b6f72]">
                   Cada área habla con las demás. Pasa el ratón por un módulo y te dice qué hace.
                 </p>
               </div>
@@ -114,13 +114,13 @@ export function MarketingLanding() {
                 {LANDING_MODULES.map((module) => {
                   const Icon = module.icon;
                   return (
-                    <li key={module.label} className="flex gap-3 py-4 first:pt-0 last:pb-0">
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[#fbe7dd] text-[#E15D2D]">
-                        <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+                    <li key={module.label} className="flex gap-3.5 py-4 first:pt-0 last:pb-0">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[11px] bg-[#fbe7dd] text-[#E15D2D]">
+                        <Icon className="h-5 w-5" aria-hidden="true" />
                       </span>
                       <div>
-                        <p className="text-[14px] font-semibold text-[#35322c]">{module.label}</p>
-                        <p className="mt-1 text-[12.5px] leading-relaxed text-[#77726a]">{module.description}</p>
+                        <p className="text-[15px] font-semibold text-[#35322c]">{module.label}</p>
+                        <p className="mt-1 text-[13.5px] leading-relaxed text-[#77726a]">{module.description}</p>
                       </div>
                     </li>
                   );
@@ -134,29 +134,23 @@ export function MarketingLanding() {
             <div className={`${shell} py-24 md:py-28`}>
               <div className="max-w-[46ch]">
                 <p className={eyebrow}>Para tu ciclo</p>
-                <h2 className={`${secTitle} mt-3 text-[30px] sm:text-[32px]`}>Lo que ves depende de lo que estudias</h2>
-                <p className="mt-4 text-[15px] leading-relaxed text-[#55514a]">
+                <h2 className={`${secTitle} mt-3 text-[32px] sm:text-[34px]`}>Lo que ves depende de lo que estudias</h2>
+                <p className="mt-4 text-[16px] leading-relaxed text-[#55514a]">
                   Cada familia profesional recibe sus cursos, prácticas y eventos. Nada de un catálogo común.
                 </p>
               </div>
               {/* Marked on one edge, not boxed: a terracotta rule down the
                   left tells each family apart without a white card. */}
-              <div className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-                {CYCLES.map((cycle) => {
-                  const Icon = cycle.icon;
-                  return (
-                    <div key={cycle.code} className="border-l-2 border-[#E15D2D]/30 pl-4">
-                      <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[#fbe7dd] text-[#E15D2D]">
-                        <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
-                      </span>
-                      <p className="mt-3.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[#b94720]">{cycle.code}</p>
-                      <p className="mt-0.5 text-[14px] font-semibold text-[#35322c]">{cycle.name}</p>
-                      <p className="mt-2 text-[12.5px] leading-relaxed text-[#77726a]">{cycle.line}</p>
-                    </div>
-                  );
-                })}
+              <div className="mt-14 grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+                {CYCLES.map((cycle) => (
+                  <div key={cycle.code} className="border-l-2 border-[#E15D2D]/35 pl-5">
+                    <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#b94720]">{cycle.code}</p>
+                    <p className="mt-1.5 text-[16px] font-semibold text-[#35322c]">{cycle.name}</p>
+                    <p className="mt-2 text-[14px] leading-relaxed text-[#77726a]">{cycle.line}</p>
+                  </div>
+                ))}
               </div>
-              <div className="mt-12">
+              <div className="mt-14">
                 <Link href="/proyecto" className={`${ghostBtn} h-12 px-6`}>Sobre el proyecto</Link>
               </div>
             </div>

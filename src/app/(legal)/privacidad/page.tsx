@@ -6,12 +6,20 @@ export const metadata: Metadata = { title: "Privacidad" };
 
 export default function PrivacidadPage() {
   return (
-    <LegalPage title="Privacidad">
-      <p>
-        AL-LÍO es una plataforma para estudiantes de Formación Profesional. Tratamos los datos mínimos para que la herramienta
-        funcione y no compartimos tu información con terceros con fines comerciales.
-      </p>
-
+    <LegalPage
+      title="Privacidad"
+      kicker="Protección de datos"
+      lead="AL-LÍO es una plataforma para estudiantes de Formación Profesional. Tratamos los datos mínimos para que la herramienta funcione y no compartimos tu información con terceros con fines comerciales."
+      aside={
+        <>
+          <p className="al-aside-title">En una frase</p>
+          <p>
+            No hacemos perfiles publicitarios ni cedemos datos a anunciantes. Google entra solo si eliges iniciar sesión o
+            sincronizar tu calendario con esa cuenta.
+          </p>
+        </>
+      }
+    >
       <h2>Qué datos guardamos</h2>
       <ul>
         <li>Tu correo electrónico y, si te registras con Google, tu nombre público.</li>
@@ -23,7 +31,7 @@ export default function PrivacidadPage() {
       <h2>Para qué los usamos</h2>
       <p>
         Únicamente para prestar el servicio: identificarte, mostrarte lo que corresponde a tu ciclo, guardar tu trabajo y
-        mantener la sesión iniciada. No hacemos perfiles publicitarios ni cedemos datos a anunciantes.
+        mantener la sesión iniciada.
       </p>
 
       <h2>Base legal</h2>

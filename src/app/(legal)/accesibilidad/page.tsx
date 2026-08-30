@@ -6,12 +6,24 @@ export const metadata: Metadata = { title: "Accesibilidad" };
 
 export default function AccesibilidadPage() {
   return (
-    <LegalPage title="Accesibilidad">
-      <p>
-        Queremos que AL-LÍO sea usable por todo el mundo. Nuestro objetivo es cumplir las pautas{" "}
-        <a href="https://www.w3.org/WAI/WCAG21/quickref/" target="_blank" rel="noreferrer">WCAG 2.1 nivel AA</a>.
-      </p>
-
+    <LegalPage
+      title="Accesibilidad"
+      kicker="Compromiso"
+      lead={
+        <>
+          Queremos que AL-LÍO sea usable por todo el mundo. Nuestro objetivo es cumplir las pautas{" "}
+          <a href="https://www.w3.org/WAI/WCAG21/quickref/" target="_blank" rel="noreferrer">WCAG 2.1 nivel AA</a>.
+        </>
+      }
+      aside={
+        <>
+          <p className="al-aside-title">¿Has encontrado una barrera?</p>
+          <p>
+            Escríbenos a <strong>[correo del proyecto]</strong> indicando la página y el problema. Lo priorizamos.
+          </p>
+        </>
+      }
+    >
       <h2>Qué tenemos en cuenta</h2>
       <ul>
         <li>Navegación completa con teclado y foco visible.</li>
@@ -25,11 +37,6 @@ export default function AccesibilidadPage() {
       <p>
         Es un proyecto en desarrollo continuo y puede haber partes que aún no cumplan del todo. Si encuentras una barrera,
         cuéntanoslo y lo priorizamos.
-      </p>
-
-      <h2>Contacto</h2>
-      <p>
-        Escríbenos a <strong>[correo del proyecto]</strong> indicando la página y el problema que has encontrado.
       </p>
     </LegalPage>
   );

@@ -223,7 +223,7 @@ function DiagramNode({
         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-[8px] bg-[#fbe7dd] text-[#E15D2D] sm:h-8 sm:w-8 sm:rounded-[9px]">
           <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
         </span>
-        <span className="text-left text-[11px] font-semibold leading-tight text-[#35322c] sm:text-[13px]">{module.label}</span>
+        <span className="text-left text-[12px] font-semibold leading-tight text-[#35322c] sm:text-[13.5px]">{module.label}</span>
       </button>
 
       {/* Floating text, no card: the copy lifts off the background with a
@@ -233,12 +233,12 @@ function DiagramNode({
           margin exists (xl+); below that the page lists the same copy. */}
       <div
         role="tooltip"
-        className={`al-eco-tip pointer-events-none absolute top-1/2 z-20 hidden w-[172px] -translate-y-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 xl:block ${
+        className={`al-eco-tip pointer-events-none absolute top-1/2 z-20 hidden w-[184px] -translate-y-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 xl:block ${
           align === "end" ? "left-[calc(100%+14px)] text-left" : "right-[calc(100%+14px)] text-right"
         }`}
       >
-        <p className="text-[13px] font-semibold text-[#b94720]">{module.label}</p>
-        <p className="mt-0.5 text-[12px] leading-relaxed text-[#6f6a5f]">{module.description}</p>
+        <p className="text-[13.5px] font-semibold text-[#b94720]">{module.label}</p>
+        <p className="mt-0.5 text-[12.5px] leading-relaxed text-[#6f6a5f]">{module.description}</p>
       </div>
     </div>
   );

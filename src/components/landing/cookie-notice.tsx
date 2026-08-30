@@ -33,7 +33,7 @@ export function CookieNotice() {
 
   return (
     <div className="fixed inset-x-3 bottom-3 z-50 sm:inset-x-auto sm:left-6 sm:max-w-[420px]">
-      <div className="flex flex-col gap-3 rounded-2xl border border-[#e6ddcc] bg-[#fffdf8] p-4 text-[12.5px] leading-relaxed text-[#55514a] shadow-[0_18px_44px_rgba(90,60,25,0.16)] sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 rounded-2xl border border-[#e6ddcc] bg-[#fffdf8] p-4 text-[13.5px] leading-relaxed text-[#55514a] shadow-[0_18px_44px_rgba(90,60,25,0.16)] sm:flex-row sm:items-center">
         <p className="flex-1">
           Solo usamos cookies técnicas necesarias para funcionar. Sin analítica, sin publicidad, sin rastreo.{" "}
           <Link href="/cookies" className="font-semibold text-[#b94720] underline underline-offset-2">
@@ -44,7 +44,7 @@ export function CookieNotice() {
         <button
           type="button"
           onClick={dismiss}
-          className="shrink-0 rounded-lg border border-[#E15D2D] bg-[#E15D2D] px-4 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-[#c94f24]"
+          className="shrink-0 rounded-lg border border-[#E15D2D] bg-[#E15D2D] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#c94f24]"
         >
           Entendido
         </button>

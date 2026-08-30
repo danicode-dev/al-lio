@@ -6,12 +6,21 @@ export const metadata: Metadata = { title: "Términos" };
 
 export default function TerminosPage() {
   return (
-    <LegalPage title="Términos de uso">
-      <p>
-        Al usar AL-LÍO aceptas estos términos. Es un proyecto educativo sin ánimo de lucro; no es un producto comercial y se
-        ofrece tal cual, sin garantías.
-      </p>
-
+    <LegalPage
+      title="Términos de uso"
+      kicker="Condiciones"
+      lead="Al usar AL-LÍO aceptas estos términos. Es un proyecto educativo sin ánimo de lucro: no es un producto comercial y se ofrece tal cual, sin garantías."
+      aside={
+        <>
+          <p className="al-aside-title">Código abierto</p>
+          <p>
+            El código se publica bajo <strong>licencia MIT</strong> en{" "}
+            <a href="https://github.com/danielgarciaortega-dev/al-lio" target="_blank" rel="noreferrer">GitHub</a>. Puedes
+            usarlo, modificarlo y distribuirlo según esa licencia.
+          </p>
+        </>
+      }
+    >
       <h2>Uso de la plataforma</h2>
       <ul>
         <li>Está pensada para estudiantes de Formación Profesional y su organización académica.</li>
@@ -29,13 +38,6 @@ export default function TerminosPage() {
       <p>
         Las noticias, cursos y eventos que se muestran proceden de fuentes públicas y de sector. Enlazamos a la fuente
         original; su contenido pertenece a sus autores.
-      </p>
-
-      <h2>Código abierto</h2>
-      <p>
-        El código de AL-LÍO se publica como software libre bajo <strong>licencia MIT</strong> en{" "}
-        <a href="https://github.com/danielgarciaortega-dev/al-lio" target="_blank" rel="noreferrer">GitHub</a>. Puedes usarlo,
-        modificarlo y distribuirlo según esa licencia.
       </p>
 
       <h2>Crédito</h2>

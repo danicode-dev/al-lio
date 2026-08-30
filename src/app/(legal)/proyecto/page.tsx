@@ -6,12 +6,21 @@ export const metadata: Metadata = { title: "El proyecto" };
 
 export default function ProyectoPage() {
   return (
-    <LegalPage title="El proyecto">
-      <p>
-        AL-LÍO responde a un problema concreto de la Formación Profesional: la información y las tareas del curso repartidas
-        en demasiados sitios. Es una herramienta para el curso, no un feed más.
-      </p>
-
+    <LegalPage
+      title="El proyecto"
+      kicker="Sobre AL-LÍO"
+      lead="AL-LÍO responde a un problema concreto de la Formación Profesional: la información y las tareas del curso repartidas en demasiados sitios. Es una herramienta para el curso, no un feed más."
+      aside={
+        <>
+          <p className="al-aside-title">Código abierto</p>
+          <p>
+            Publicado bajo licencia <strong>MIT</strong> en{" "}
+            <a href="https://github.com/danielgarciaortega-dev/al-lio" target="_blank" rel="noreferrer">GitHub</a>, escrito en
+            inglés y en funcionamiento al menos hasta agosto de 2027.
+          </p>
+        </>
+      }
+    >
       <h2>Cómo está pensado</h2>
       <ul>
         <li><strong>Contenido con criterio</strong> — noticias, cursos y eventos pasan un control de fuente y relevancia antes de aparecer en tu panel.</li>
@@ -19,13 +28,6 @@ export default function ProyectoPage() {
         <li><strong>Sin anuncios ni terceros</strong> — no hay seguimiento externo; tu actividad no se comparte ni se vende.</li>
         <li><strong>Desarrollo continuo</strong> — en uso real, con mejoras basadas en cómo se usa la plataforma.</li>
       </ul>
-
-      <h2>Código abierto</h2>
-      <p>
-        El código se publica como software libre bajo licencia <strong>MIT</strong> en{" "}
-        <a href="https://github.com/danielgarciaortega-dev/al-lio" target="_blank" rel="noreferrer">GitHub</a>. Está escrito
-        en inglés y se mantendrá en funcionamiento al menos hasta agosto de 2027.
-      </p>
 
       <h2>Beca y crédito</h2>
       <p>
