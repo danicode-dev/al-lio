@@ -147,10 +147,11 @@ FIGURE_CATALOG = {
 FIGURE_PLACEMENTS = {
     "02": {None: ["VE-01A"]},
     "04": {
-        "4.1 Entrada y personalización": ["VE-02"],
-        "4.2 Panel y planificación personal": ["VE-03", "VE-06"],
-        "4.3 Competencias y aprendizaje": ["VE-05"],
-        "4.4 Información y oportunidades": ["VE-08"],
+        "4.1 Entrada, onboarding y personalización": ["VE-02"],
+        "4.2 Panel y siguiente acción": ["VE-03"],
+        "4.3 Tareas y calendario": ["VE-06"],
+        "4.5 Competencias y aprendizaje": ["VE-05"],
+        "4.8 Trabajo, empresas y candidaturas": ["VE-08"],
     },
     "05": {None: ["VE-10"]},
     "08": {None: ["VE-07"]},
