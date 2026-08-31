@@ -68,6 +68,7 @@ check("production workflow deploys the triggering SHA", deployWorkflow.includes(
 check("production workflow has an explicit activation switch", deployWorkflow.includes("PRODUCTION_AUTO_DEPLOY_ENABLED == 'true'"));
 check("production workflow serializes without cancelling a release", deployWorkflow.includes("group: al-lio-production") && deployWorkflow.includes("cancel-in-progress: false"));
 check("production workflow uses the protected environment", deployWorkflow.includes("name: Production"));
+check("production workflow links to al-lio.app", deployWorkflow.includes("url: https://al-lio.app"));
 check("production SSH verifies a pinned host key", deployWorkflow.includes("StrictHostKeyChecking=yes") && deployWorkflow.includes("PRODUCTION_SSH_KNOWN_HOSTS") && !deployWorkflow.includes("ssh-keyscan"));
 check("production SSH key invokes only the deploy operation", deployWorkflow.includes('"deploy $RELEASE_SHA"'));
 check("forced deploy entrypoint validates SSH_ORIGINAL_COMMAND", deployEntrypoint.includes("SSH_ORIGINAL_COMMAND") && deployEntrypoint.includes("^deploy[[:space:]]([0-9a-f]{40})$"));
@@ -94,7 +95,9 @@ check("does not use aidraft_internal", !compose.includes("aidraft_internal"));
 console.log("\n-- infra/Caddyfile.example --");
 const caddy = read("infra/Caddyfile.example");
 check("Caddyfile.example exists", existsSync(join(root, "infra/Caddyfile.example")));
-check("contains al-lio.danielcode.dev", caddy.includes("al-lio.danielcode.dev"));
+check("contains primary al-lio.app host", caddy.includes("al-lio.app {"));
+check("keeps the previous host for Radar compatibility", caddy.includes("al-lio.danielcode.dev {") && caddy.includes("path /api/radar/*"));
+check("redirects previous-host browser traffic to al-lio.app", caddy.includes("redir https://al-lio.app{uri} 308"));
 check("reverse_proxy points to al_lio_web:3000", caddy.includes("al_lio_web:3000"));
 check("does not contain aidraft.danielcode.dev", !caddy.includes("aidraft.danielcode.dev"));
 check("does not contain aidraft_web", !caddy.includes("aidraft_web"));
@@ -102,10 +105,11 @@ check("does not contain aidraft_web", !caddy.includes("aidraft_web"));
 console.log("\n-- .env.production.example --");
 const envExample = read(".env.production.example");
 check(".env.production.example exists", existsSync(join(root, ".env.production.example")));
-check("BASE_URL is al-lio.danielcode.dev", envExample.includes("BASE_URL=https://al-lio.danielcode.dev"));
+check("BASE_URL is al-lio.app", envExample.includes("BASE_URL=https://al-lio.app"));
 check(
-  "GOOGLE_REDIRECT_URI is al-lio.danielcode.dev",
-  envExample.includes("al-lio.danielcode.dev/api/google/calendar/callback"),
+  "Google redirect URIs use al-lio.app",
+  envExample.includes("GOOGLE_IDENTITY_REDIRECT_URI=https://al-lio.app/api/auth/google/callback")
+    && envExample.includes("GOOGLE_REDIRECT_URI=https://al-lio.app/api/google/calendar/callback"),
 );
 check("DATABASE_URL points to al_lio_postgres", envExample.includes("@al_lio_postgres:5432/al_lio"));
 check("DATABASE_URL uses restricted al_lio_app role", envExample.includes("DATABASE_URL=postgresql://al_lio_app:"));
@@ -158,12 +162,36 @@ check("runbook uses internal al_lio_web healthcheck", runbook.includes("docker e
 check("runbook validates database readiness", runbook.includes("/api/ready"));
 check(
   "runbook validates public JSON health response",
-  runbook.includes("curl -fsS https://al-lio.danielcode.dev/api/health"),
+  runbook.includes("curl -fsS https://al-lio.app/api/health"),
 );
 check(
   "runbook documents immutable image rollback",
   runbook.includes("AL_LIO_IMAGE_TAG") && runbook.includes("Application rollback"),
 );
+
+console.log("\n-- docs/operations/PRIMARY_DOMAIN_MIGRATION.md --");
+const domainMigration = read("docs/operations/PRIMARY_DOMAIN_MIGRATION.md");
+check("primary-domain migration runbook exists", existsSync(join(root, "docs/operations/PRIMARY_DOMAIN_MIGRATION.md")));
+check("domain migration requires both new Google callbacks", [
+  "https://al-lio.app/api/auth/google/callback",
+  "https://al-lio.app/api/google/calendar/callback",
+].every((entry) => domainMigration.includes(entry)));
+check("domain migration uses a separate web candidate", domainMigration.includes("al_lio_web_domain_candidate"));
+check("domain migration recreates only web without dependencies", domainMigration.includes("up -d --no-deps --force-recreate al_lio_web"));
+check("domain migration preserves the Radar compatibility route", domainMigration.includes("/api/radar/*"));
+check("domain migration documents graceful Caddy reload", domainMigration.includes("caddy reload"));
+check("domain migration prohibits PostgreSQL and Radar replacement", [
+  "Do not stop, restart, recreate, or reconfigure PostgreSQL.",
+  "Do not stop, restart, recreate, or reconfigure Radar.",
+].every((entry) => domainMigration.includes(entry)));
+
+console.log("\n-- Public primary-domain metadata --");
+const rootLayout = read("src/app/layout.tsx");
+const packageJson = read("package.json");
+const rootReadme = read("README.md");
+check("Next.js metadata uses al-lio.app", rootLayout.includes('metadataBase: new URL("https://al-lio.app")'));
+check("package homepage uses al-lio.app", packageJson.includes('"homepage": "https://al-lio.app"'));
+check("README links to al-lio.app", rootReadme.includes("[Live application](https://al-lio.app)"));
 
 console.log("\n-- Git staged safety --");
 let staged = "";

@@ -1,7 +1,11 @@
 # Controlled VPS deployment
 
-This runbook updates `https://al-lio.danielcode.dev` without applying database
+This runbook updates `https://al-lio.app` without applying database
 changes blindly or replacing unrelated healthy services.
+
+The one-time cutover from the previous production host is documented in
+[`PRIMARY_DOMAIN_MIGRATION.md`](PRIMARY_DOMAIN_MIGRATION.md). Do not treat that
+OAuth and reverse-proxy transition as a routine release.
 
 ## Safety principles
 
@@ -20,7 +24,7 @@ changes blindly or replacing unrelated healthy services.
 - Docker Engine and Docker Compose;
 - external Docker network `danicode_web`;
 - Caddy attached to `danicode_web`;
-- working DNS and TLS for `al-lio.danielcode.dev`;
+- working DNS and TLS for `al-lio.app`;
 - repositories at `/srv/danicode/projects/al-lio` and
   `/srv/danicode/projects/al-lio-radar`;
 - enough free space for the current and candidate images plus restore data;
@@ -98,9 +102,9 @@ DATABASE_MIGRATION_URL=postgresql://al_lio:<admin-password>@al_lio_postgres:5432
 POSTGRES_PASSWORD=<admin-password>
 SESSION_SECRET=<at-least-32-characters>
 GOOGLE_TOKEN_ENCRYPTION_KEY=<at-least-32-characters>
-BASE_URL=https://al-lio.danielcode.dev
-GOOGLE_IDENTITY_REDIRECT_URI=https://al-lio.danielcode.dev/api/auth/google/callback
-GOOGLE_REDIRECT_URI=https://al-lio.danielcode.dev/api/google/calendar/callback
+BASE_URL=https://al-lio.app
+GOOGLE_IDENTITY_REDIRECT_URI=https://al-lio.app/api/auth/google/callback
+GOOGLE_REDIRECT_URI=https://al-lio.app/api/google/calendar/callback
 RESEND_API_KEY=<resend-api-key>
 RESEND_FROM_EMAIL=<verified-sender-address>
 AL_LIO_IMAGE_TAG=<reviewed-sha>
@@ -144,7 +148,7 @@ docker volume inspect al_lio_postgres_data
 docker volume inspect al_lio_radar_data 2>/dev/null || true
 df -h
 free -h
-curl -fsS https://al-lio.danielcode.dev/api/health
+curl -fsS https://al-lio.app/api/health
 ```
 
 ```bash
@@ -289,8 +293,8 @@ docker compose -f infra/docker-compose.prod.yml --env-file .env ps
 docker logs --tail=100 al_lio_web
 docker exec al_lio_web wget -qO- http://127.0.0.1:3000/api/health
 docker exec al_lio_web wget -qO- http://127.0.0.1:3000/api/ready
-curl -fsS https://al-lio.danielcode.dev/api/health
-curl -fsS https://al-lio.danielcode.dev/api/ready
+curl -fsS https://al-lio.app/api/health
+curl -fsS https://al-lio.app/api/ready
 ```
 
 Only after both web checks succeed, start or replace Radar if this release
@@ -356,7 +360,7 @@ the rollback window. Restore the previous `AL_LIO_IMAGE_TAG`, then:
 
 ```bash
 docker compose -f infra/docker-compose.prod.yml --env-file .env up -d --no-deps al_lio_web
-curl -fsS https://al-lio.danielcode.dev/api/ready
+curl -fsS https://al-lio.app/api/ready
 ```
 
 Do not run automatic down migrations during an incident.
