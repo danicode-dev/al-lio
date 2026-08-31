@@ -8,7 +8,7 @@ the owner still has to supply.
 
 Every automated result in this document was executed against the working
 documentation baseline `ccaa3f2` (the tip of the evidence-register branch), not
-against the later delivery candidate. Such results remain labelled **working
+against the later frozen delivery release. Such results remain labelled **working
 baseline** and must never be cited as final evidence. Separate final CI,
 deployment and public endpoint observations for
 `1e516ead8f69d60a263718c20d59b97c9618c97a` are recorded in
@@ -217,7 +217,7 @@ historically executed the full
 `npm run ci` chain on merged changes (see section 6.3, historical evidence
 only).
 
-## 3. Evidence collected from or still required for the delivery candidate
+## 3. Evidence collected from or still required for the frozen delivery release
 
 The exact-SHA CI, guarded deployment, web image and public health/readiness
 observations have now been collected. The remaining rows require final metric

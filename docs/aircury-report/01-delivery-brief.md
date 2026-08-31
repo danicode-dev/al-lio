@@ -1,9 +1,9 @@
 # Technical report delivery brief
 
 This brief records decisions confirmed by the project owner for the Aircury
-Summer of Code 2026 technical report and the immutable delivery candidate
+Summer of Code 2026 technical report and the immutable delivery release
 selected after pull request #312. It separates the reporting snapshot from
-later product maintenance and from the remaining owner-approval gates.
+later product maintenance and remaining evidence-collection work.
 
 ## Confirmed decisions
 
@@ -20,14 +20,14 @@ later product maintenance and from the remaining owner-approval gates.
 | Canonical production application | <https://al-lio.app> |
 | Public project contact | `hola@al-lio.app` |
 | Screenshots | Captured later by the owner in one dedicated session; not captured during the report-preparation issues |
-| Author display | `Daniel García Ortega` proposed from the public project metadata; final owner approval required |
+| Author display | `Daniel García Ortega` |
 
 The Gmail recipient and any private delivery-thread details stay outside the
 public repository.
 
 ## Reporting snapshot and continuing support
 
-The owner selected the merge of pull request #312 as the application candidate
+The owner selected the merge of pull request #312 as the application release
 for the report. That merge closes the reviewed Google Calendar credential
 ownership boundary and is the exact commit deployed by the guarded production
 workflow.
@@ -48,9 +48,9 @@ the version described by the report. The operating and support commitment
 continues through at least 31 August 2027.
 
 The existing `v0.1.0` release is historical and must not be cited as the final
-report version. The dedicated tag and GitHub release proposed below will point
-to the already deployed #312 merge commit after the owner approves this
-baseline and completes the authenticated production smoke test.
+report version. The dedicated `aircury-2026-delivery` tag and GitHub release
+point to the already deployed #312 merge commit. This is the durable report
+reference and must not be moved when later support releases are published.
 
 ## Programme commitments
 
@@ -67,14 +67,14 @@ The report must explain the operating and support plan through the required
 date. A working endpoint on the delivery date is evidence of current operation,
 not evidence that the future maintenance commitment has already been met.
 
-## Delivery candidate and verification record
+## Delivery release and verification record
 
 Times below use both UTC and Europe/Madrid (CEST, UTC+02:00). Public endpoint
 observations were made after the automated production deployment completed.
 
-| Field | Reviewed value |
+| Field | Final value |
 |---|---|
-| Proposed GitHub release and tag | `aircury-2026-delivery`; create only after owner approval |
+| GitHub release and tag | [`aircury-2026-delivery`](https://github.com/danielgarciaortega-dev/al-lio/releases/tag/aircury-2026-delivery), published 31 August 2026 at 17:13:11 CEST |
 | AL-LIO commit SHA | `1e516ead8f69d60a263718c20d59b97c9618c97a` |
 | Source change closing the candidate | PR #312, merged 31 August 2026 at 16:42:41 CEST |
 | Deployed web image | `al-lio-web:1e516ead8f69d60a263718c20d59b97c9618c97a` |
@@ -86,28 +86,30 @@ observations were made after the automated production deployment completed.
 | Readiness observation | HTTP 200; `{"ok":true,"app":"al-lio","database":"ready"}` |
 | Unauthenticated Radar boundary | `/api/job-radar` returned HTTP 401 |
 | Final automated-check run | CI run `33404234578` passed for the exact AL-LIO SHA; CodeQL run `33404234583` passed |
-| Final owner-approved smoke test | Pending owner review; no browser or screenshot substitute was performed |
-| Author display name | `Daniel García Ortega`; pending owner approval |
+| Authenticated production smoke test | Not performed in issue #295; transfer to the final-release evidence issue without representing it as complete |
+| Author display name | `Daniel García Ortega`; owner-approved through the #295 review and release instruction |
 
 The Radar image reference comes from the last public production release record.
 The #312 deployment was web-only and its successful deployment record confirms
 that the existing Radar container was preserved and remained running. The
-owner should compare `al-lio-radar:6111ad0` with the private production image
-inventory before publishing the final tag. Radar's newer `main` commits are not
-claimed as deployed merely because they exist in its repository.
+owner accepted `al-lio-radar:6111ad0` as the report reference through the #295
+review. Radar's newer `main` commits are not claimed as deployed merely because
+they exist in its repository.
 
-## Approval gates
+## Completion boundary
 
-The snapshot becomes the final report release when the owner:
+The owner approved the author name, delivery SHA, Radar reference and release
+tag by merging PR #313 and instructing publication of the #295 release. The tag
+resolves to the exact deployed application commit.
 
-1. confirms the author display name;
-2. confirms the Radar image against the private production inventory;
-3. completes and approves the authenticated production smoke test;
-4. approves creation of `aircury-2026-delivery` at the exact AL-LIO SHA above.
+An authenticated, cycle-based smoke test remains necessary evidence for
+`QAL-002`, but it is not silently inferred from the version freeze or public
+health probes. It will be collected with the remaining final-release metrics
+in the next dedicated issue.
 
 Every downstream report document must use these final values once they are
-approved. Historical release values may appear only when explicitly labelled
-as historical evidence. The tag must never be moved after publication.
+updated. Historical release values may appear only when explicitly labelled as
+historical evidence. The tag must never be moved after publication.
 
 ## Report boundary
 

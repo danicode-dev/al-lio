@@ -31,7 +31,7 @@ programme material.
 
 | File | Purpose | Status |
 |---|---|---|
-| [`01-delivery-brief.md`](01-delivery-brief.md) | Owner-confirmed delivery decisions and immutable delivery candidate | Active; owner approval gates pending |
+| [`01-delivery-brief.md`](01-delivery-brief.md) | Owner-confirmed delivery decisions and immutable delivery release | Frozen; remaining measurements are tracked separately |
 | [`02-evidence-register.md`](02-evidence-register.md) | Evidence model, metric provenance, collection commands and aggregate-query definitions | Active |
 | [`03-product-and-user-journeys.md`](03-product-and-user-journeys.md) | Delivered scope and student journeys | Active; final-release checks pending |
 | [`04-architecture-data-and-security.md`](04-architecture-data-and-security.md) | Architecture, governance, privacy and security | Active; final-release checks pending |
@@ -47,7 +47,7 @@ audit.
 ## Evidence workflow
 
 1. Record the proposed claim and collection method in the evidence register.
-2. Freeze the delivery candidate, production deployment and reporting cut-off; obtain the owner approvals recorded in `01-delivery-brief.md`.
+2. Use the frozen release, production deployment and reporting cut-off recorded in `01-delivery-brief.md`.
 3. Run the documented command or aggregate query against that exact boundary.
 4. Record the result, timestamp, collector and privacy classification.
 5. Verify the result independently against code, configuration or a second
