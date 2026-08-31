@@ -33,7 +33,10 @@ export async function sendTransactionalEmail(params: {
       text: params.text,
     });
     if (result.error) {
-      console.error("Resend rejected an email send", result.error.name);
+      // name + message only (e.g. "validation_error: The <domain> domain is
+      // not verified."), never the raw error object - the message is the
+      // one thing an operator needs and carries no request body or headers.
+      console.error(`Resend rejected an email send: ${result.error.name}: ${result.error.message}`);
       return { ok: false };
     }
     return { ok: true };

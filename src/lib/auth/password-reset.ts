@@ -19,6 +19,23 @@ const requestSchema = z.object({ email: z.string().trim().email().max(254) });
 export type PasswordResetRequestState = { submitted: boolean };
 const GENERIC_REQUEST_SUCCESS: PasswordResetRequestState = { submitted: true };
 
+type ResetRequestOutcome =
+  | "sent"
+  | "send_rejected"
+  | "skipped_no_account"
+  | "skipped_unconfirmed"
+  | "threw";
+
+// Structured and PII-free: no email address, no token, no link. Lets an
+// operator tell a deliberate silent no-op ("no account", "unconfirmed")
+// apart from a real delivery failure ("Resend rejected", "threw") without
+// weakening the enumeration-safe response the caller sees.
+function logResetRequestOutcome(outcome: ResetRequestOutcome, mode?: "reset" | "set"): void {
+  const line = `password_reset_request outcome=${outcome}${mode ? ` mode=${mode}` : ""}`;
+  if (outcome === "send_rejected" || outcome === "threw") console.error(line);
+  else console.info(line);
+}
+
 export async function requestPasswordResetAction(
   _previousState: PasswordResetRequestState,
   formData: FormData
@@ -37,18 +54,27 @@ export async function requestPasswordResetAction(
 
   try {
     const user = await getUserByEmail(email);
-    // Only a password account can meaningfully reset a password. Sending
-    // nothing for a Google-only account is intentional - and safe, since
-    // the response is identical either way.
-    if (user?.password_hash) {
+    // Any confirmed account is eligible. For an account that only ever
+    // signed in with Google (no password_hash yet) this link is a "set your
+    // first password" link: completing /restablecer runs
+    // resetPasswordAndRevokeSessions, which sets the hash. An unconfirmed
+    // account must finish registration through its own confirmation email,
+    // not here. No account or an unconfirmed one: send nothing. The caller's
+    // response is identical in every branch.
+    if (user?.email_confirmed_at) {
+      const mode = user.password_hash ? "reset" : "set";
       const rawToken = await issueAuthToken(user.id, "password_reset");
       const resetUrl = absoluteAppUrl(`/restablecer?token=${encodeURIComponent(rawToken)}`);
       const { subject, html, text } = passwordResetTemplate(email, resetUrl);
-      await sendTransactionalEmail({ to: email, subject, html, text });
+      const { ok } = await sendTransactionalEmail({ to: email, subject, html, text });
+      logResetRequestOutcome(ok ? "sent" : "send_rejected", mode);
+    } else {
+      logResetRequestOutcome(user ? "skipped_unconfirmed" : "skipped_no_account");
     }
   } catch {
     // Fall through to the same generic response - never surface a
     // different state for an internal failure than for "no such account".
+    logResetRequestOutcome("threw");
   }
 
   return GENERIC_REQUEST_SUCCESS;

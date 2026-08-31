@@ -86,16 +86,16 @@ test("registerAction is enumeration-safe: a new email, an existing unconfirmed e
   assert.doesNotMatch(actionSource, /return \{[^}]*submitted: true[^}]*\};(?!.*GENERIC_SUCCESS)/s, "no ad-hoc success object other than the shared GENERIC_SUCCESS constant");
 });
 
-test("requestPasswordResetAction only emails a password account, never a Google-only account, but returns the same generic response either way (issue #132)", async () => {
+test("requestPasswordResetAction emails any confirmed account - setting a first password for a Google-only one - and returns the same generic response for every branch (issue #132, issue #294)", async () => {
   const source = await readFile(new URL("../../../src/lib/auth/password-reset.ts", import.meta.url), "utf8");
   const fnStart = source.indexOf("export async function requestPasswordResetAction");
   const fnEnd = source.indexOf("\nconst resetSchema", fnStart);
   const fnSource = source.slice(fnStart, fnEnd);
 
-  assert.match(fnSource, /if \(user\?\.password_hash\) \{/, "a Google-only account (null password_hash) must not receive a reset email");
-  assert.match(fnSource, /return GENERIC_REQUEST_SUCCESS;/g);
+  assert.match(fnSource, /if \(user\?\.email_confirmed_at\) \{/, "eligibility is a confirmed email, so a Google-only account (null password_hash) gets a set-your-password link");
+  assert.doesNotMatch(fnSource, /if \(user\?\.password_hash\)/, "the presence of a prior password hash must no longer gate whether the email is sent");
   const returns = fnSource.match(/return GENERIC_REQUEST_SUCCESS;/g) ?? [];
-  assert.ok(returns.length >= 3, "malformed input, rate-limited, and both found/not-found branches must all funnel through the same generic return");
+  assert.ok(returns.length >= 3, "malformed input, rate-limited, and the found/unconfirmed/not-found branches must all funnel through the same generic return");
 });
 
 test("resetPasswordAction revokes prior sessions via resetPasswordAndRevokeSessions (not a plain password update) and immediately signs the user into a fresh session carrying the new stamp (issue #132)", async () => {
@@ -302,7 +302,7 @@ test("Owner-reported follow-up: sendTransactionalEmail requires a text alternati
 
   const templatesSource = await readFile(new URL("../../../src/lib/email/templates.ts", import.meta.url), "utf8");
   assert.match(templatesSource, /import \{ absolutePublicAssetUrl \} from "@\/lib\/auth\/app-url";/);
-  assert.match(templatesSource, /const logoUrl = absolutePublicAssetUrl\("\/assets\/al_lio_logo_horizontal_transparent\.png"\);/);
+  assert.match(templatesSource, /const logoUrl = absolutePublicAssetUrl\("\/assets\/al_lio_wordmark\.png"\);/);
 
   const appUrlSource = await readFile(new URL("../../../src/lib/auth/app-url.ts", import.meta.url), "utf8");
   assert.match(appUrlSource, /const base = process\.env\.PUBLIC_ASSET_BASE_URL \?\? process\.env\.BASE_URL \?\? "http:\/\/localhost:3000";/, "must fall back to BASE_URL when unset, so production needs no extra config for this to work");
