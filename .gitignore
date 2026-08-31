@@ -30,3 +30,11 @@ _archive/
 
 # migration artifacts — local export/import data, never committed
 migration-artifacts/
+
+# local generated artifacts and loose backups
+/output/
+/.*-artifacts/
+/al-lio-logo-loop-desktop.png
+*.dump
+*.dump.sha256
+*.age
