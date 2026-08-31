@@ -5,13 +5,15 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { readFeatureSource } from "../../helpers/feature-sources.mjs";
+
 import { isSafeHttpUrl } from "../../../src/lib/fp/event-cta.ts";
 
 import { fpItemToHackathon } from "../../../src/lib/hackathons/hackathon-presentation.ts";
 import { fpItemToCourse, getCoursePresentation, resolveCourseById } from "../../../src/lib/courses/course-presentation.ts";
 
 test("Course completion routes each origin through its own persistence path with rollback (issue #94)", async () => {
-  const storeSource = await readFile(new URL("../../../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const storeSource = await readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8");
   const completeCourseStart = storeSource.indexOf("completeCourse: async");
   const completeCourseEnd = storeSource.indexOf("addHackathon: async", completeCourseStart);
   assert.ok(completeCourseStart > -1 && completeCourseEnd > completeCourseStart, "could not locate the completeCourse action body");
@@ -67,7 +69,7 @@ test("fp course completion is per-user isolated and never mutates the shared cou
 
 test("Course cards reuse the shared catalogue anatomy, keep full labels reachable, and stay inside a grid capped at 3 columns (issue #94, issue #130, issue #160, issue #164)", async () => {
   const [guestAppSource, cardSource, globalStyles] = await Promise.all([
-    readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFeatureSource("work", "courses", "events"),
     readFile(new URL("../../../src/components/catalog/catalog-card.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/app/globals.css", import.meta.url), "utf8"),
   ]);
@@ -103,7 +105,7 @@ test("Course cards reuse the shared catalogue anatomy, keep full labels reachabl
 });
 
 test("The course source URL is only linked from the detail view, and gated by isSafeHttpUrl (issue #130, issue #160)", async () => {
-  const guestAppSource = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const guestAppSource = await readFeatureSource("courses", "events");
   // issue #160: the grid card no longer links out - Abrir moved to the detail panel.
   const cardStart = guestAppSource.indexOf('key={item.id} className="al-course-card"');
   const cardEnd = guestAppSource.indexOf("al-course-card-actions", cardStart);
@@ -118,7 +120,7 @@ test("The course source URL is only linked from the detail view, and gated by is
 
 test("Every course card offers Ver detalles, linking to the real internal /courses/[id] page - the old CourseDetailModal was retired outright, mirroring the hackathons detail route (owner-reported follow-up to #135/#120)", async () => {
   const [source, cardSource] = await Promise.all([
-    readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFeatureSource("work", "courses", "events"),
     readFile(new URL("../../../src/components/catalog/catalog-card.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(source, /detailHref=\{`\/courses\/\$\{encodeURIComponent\(item\.id\)\}`\}/, "the grid card must pass its real internal detail URL unconditionally");
@@ -137,7 +139,7 @@ test("Every course card offers Ver detalles, linking to the real internal /cours
 
 test("Courses and Events share the same quiet catalogue detail action instead of duplicating the solid orange CTA (issue #164)", async () => {
   const [guestAppSource, cardSource, globalStyles] = await Promise.all([
-    readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFeatureSource("courses", "events"),
     readFile(new URL("../../../src/components/catalog/catalog-card.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/app/globals.css", import.meta.url), "utf8"),
   ]);
@@ -161,10 +163,10 @@ test("Routine actions share the quiet terracotta treatment while semantic states
   const [globalStyles, button, guestApp, dailyAlerts, login, bloc, roadmap] = await Promise.all([
     readFile(new URL("../../../src/app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/ui/button.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFeatureSource("work", "courses", "events"),
     readFile(new URL("../../../src/components/daily-alerts.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/auth/login-form.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8"),
+    readFeatureSource("bloc"),
     readFile(new URL("../../../src/components/roadmap/roadmap-view.tsx", import.meta.url), "utf8"),
   ]);
 
@@ -201,7 +203,7 @@ test("Routine actions share the quiet terracotta treatment while semantic states
 });
 
 test("Course and event details use the same hero, information, three-column section, panel and next-item primitives (issue #164)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("courses", "events");
   const courseDetail = source.slice(source.indexOf("export function CourseDetailView"), source.indexOf("function Hackathons("));
   const eventDetail = source.slice(source.indexOf("export function HackathonDetailView"), source.indexOf("function LinksView"));
 
@@ -225,7 +227,7 @@ test("Course descriptions never fall back to raw import/moderation notes for any
   const presentationFnSource = source.slice(presentationFnStart, presentationFnEnd);
   assert.doesNotMatch(presentationFnSource, /\.notes|suggested_action/, "the public presentation model must never read Course.notes as a description source - fpItemToCourse elsewhere in this file legitimately builds the internal notes field, but getCoursePresentation must never touch it");
 
-  const guestAppSource = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const guestAppSource = await readFeatureSource("courses", "events");
   const courseFnStart = guestAppSource.indexOf("function Courses(");
   const courseFnEnd = guestAppSource.indexOf("function courseStatusPillClass");
   const courseFnSource = guestAppSource.slice(courseFnStart, courseFnEnd);
@@ -257,7 +259,7 @@ test("toggleCourseFavoriteAction is session-gated and redirects unauthenticated 
 });
 
 test("The toggleCourseFavorite store action applies an optimistic flip with rollback and an honest error toast on failure (issue #120)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8");
   const start = source.indexOf("toggleCourseFavorite: (id: string)");
   const end = source.indexOf("addHackathon: async (data: Omit<Hackathon");
   assert.ok(start !== -1 && end !== -1 && end > start, "toggleCourseFavorite must be its own dedicated action");
@@ -284,7 +286,7 @@ test("fpItemToCourse maps fp_user_content_state.is_favorite through to Course.is
 });
 
 test("The heart control appears in the course card and the detail page, both driven by the same canToggleCourseFavorite/toggleCourseFavoriteFor helpers (issue #120, extended by the owner-reported follow-up to #135)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("courses", "events");
   assert.match(source, /export function canToggleCourseFavorite\(item: Course\): boolean/);
   assert.match(source, /export function toggleCourseFavoriteFor\(item: Course, actions: ReturnTypeActions\)/);
   const heartSites = source.match(/toggleCourseFavoriteFor\((featuredCourse|item), actions\)/g) ?? [];
@@ -292,14 +294,14 @@ test("The heart control appears in the course card and the detail page, both dri
 });
 
 test("tech_opportunities-sourced courses are excluded from favoriting, mirroring the identical hackathon decision (issue #120)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("courses", "events");
   const fnStart = source.indexOf("function canToggleCourseFavorite");
   const fnSource = source.slice(fnStart, source.indexOf("function toggleCourseFavoriteFor"));
   assert.match(fnSource, /sourceTable === "tech_opportunities"\) return false/);
 });
 
 test("Favoriting a course is wired through a distinct action from completion/archival - completeCourse and updateCourse's callers never flip is_favorite as a side effect (issue #120)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8");
   const completeFnStart = source.indexOf("completeCourse: async (course: Course)");
   const completeFnEnd = source.indexOf("toggleCourseFavorite: (id: string)");
   const completeFn = source.slice(completeFnStart, completeFnEnd);
@@ -307,7 +309,7 @@ test("Favoriting a course is wired through a distinct action from completion/arc
 });
 
 test("Guardados is a real heart-driven filter tab in Courses, independent of and additional to Total/Empezados/Próx. inicio (issue #120)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("courses", "events");
   const coursesFnStart = source.indexOf("function Courses(");
   const coursesFnEnd = source.indexOf("function courseStatusPillClass");
   const fnSource = source.slice(coursesFnStart, coursesFnEnd);
@@ -334,7 +336,7 @@ test("CourseDetailPage resolves the item via the already user/cycle-scoped globa
 });
 
 test("CourseDetailView shows an honest not-found state with a way back when the id doesn't resolve, and never renders item.notes directly", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("courses", "events");
   const fnStart = source.indexOf("export function CourseDetailView");
   const fnEnd = source.indexOf("function Hackathons(");
   const fnSource = source.slice(fnStart, fnEnd);
@@ -347,7 +349,7 @@ test("CourseDetailView shows an honest not-found state with a way back when the 
 });
 
 test("The course detail page's official source link is gated by isSafeHttpUrl and the heart control reuses the exact shared dispatcher, same as the card", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("courses", "events");
   const fnStart = source.indexOf("export function CourseDetailView");
   const fnEnd = source.indexOf("function Hackathons(");
   const fnSource = source.slice(fnStart, fnEnd);
@@ -357,7 +359,7 @@ test("The course detail page's official source link is gated by isSafeHttpUrl an
 });
 
 test("Archivado and Guardado stay fully independent for courses: is_favorite never gates the Activos/Archivados split, and completing/archiving never touches is_favorite (confirms the existing #120 guarantee the owner asked to double check)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("courses", "events");
 
   const archivedFnStart = source.indexOf('function isCourseArchived(course: Pick<Course, "status">) {');
   const archivedFnEnd = source.indexOf("\n}", archivedFnStart);
@@ -370,7 +372,7 @@ test("Archivado and Guardado stay fully independent for courses: is_favorite nev
   const coursesFnSource = source.slice(coursesFnStart, coursesFnEnd);
   assert.match(coursesFnSource, /const guardados = useMemo\(\(\) => sorted\.filter\(\(c\) => c\.is_favorite\), \[sorted\]\);/, "Guardados is driven purely by is_favorite, independent of the Terminado-driven Archivados split");
 
-  const storeSource = await readFile(new URL("../../../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const storeSource = await readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8");
   const completeFnStart = storeSource.indexOf("completeCourse: async (course: Course)");
   const completeFnEnd = storeSource.indexOf("toggleCourseFavorite: (id: string)");
   const completeFn = storeSource.slice(completeFnStart, completeFnEnd);
@@ -378,7 +380,7 @@ test("Archivado and Guardado stay fully independent for courses: is_favorite nev
 });
 
 test("Cursos merges its stats and status tabs into one clickable row (Total / Empezados / Próx. inicio / Guardados); finished courses stay reachable via the Estado filter, and no 'Terminado'/'Archivados' tab survives", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("courses", "events");
   const coursesFnStart = source.indexOf("function Courses(");
   const coursesFnEnd = source.indexOf("function courseStatusPillClass");
   const fnSource = source.slice(coursesFnStart, coursesFnEnd);
@@ -398,7 +400,7 @@ test("Cursos merges its stats and status tabs into one clickable row (Total / Em
 
 test("Phones: Cursos / Eventos y retos pull the control strip up under the header so the featured card is not fully below the fold - a specificity-matched globals rule, not a plain class (owner-reported follow-up, issue #189)", async () => {
   const [guestApp, globalStyles] = await Promise.all([
-    readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readFeatureSource("courses", "events"),
     readFile(new URL("../../../src/app/globals.css", import.meta.url), "utf8"),
   ]);
 

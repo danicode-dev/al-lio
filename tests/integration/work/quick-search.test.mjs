@@ -8,7 +8,7 @@ import test from "node:test";
 import { SPANISH_PROVINCES } from "../../../src/lib/deeplinks/spanish-provinces.ts";
 
 test("QuickJobSearchCard no longer hardcodes an example search - the fields start genuinely empty, with a plain descriptive placeholder, not a fabricated example value (issue #123, owner-reported follow-up)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/work/client/work-feature.tsx", import.meta.url), "utf8");
   const cardStart = source.indexOf("const QuickJobSearchCard = memo(");
   const cardEnd = source.indexOf("\n});", cardStart);
   const cardSource = source.slice(cardStart, cardEnd);
@@ -21,7 +21,7 @@ test("QuickJobSearchCard no longer hardcodes an example search - the fields star
 });
 
 test("The quick-search card wires a real province combobox with type-ahead filtering and a dedicated remote switch (issue #123)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/work/client/work-feature.tsx", import.meta.url), "utf8");
 
   assert.match(source, /import \{ SPANISH_PROVINCES \} from "@\/lib\/deeplinks\/spanish-provinces";/);
   assert.match(source, /function ProvinceCombobox\(/);
@@ -36,7 +36,7 @@ test("The quick-search card wires a real province combobox with type-ahead filte
 });
 
 test("ProvinceCombobox shows its placeholder while disabled instead of a stale leftover province - verified live: toggling teletrabajo on while Granada was selected still displayed 'Granada' until this was fixed (issue #123)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/work/client/work-feature.tsx", import.meta.url), "utf8");
   const comboStart = source.indexOf("function ProvinceCombobox(");
   const comboEnd = source.indexOf("\nconst QuickJobSearchCard", comboStart);
   const comboSource = source.slice(comboStart, comboEnd);
@@ -45,7 +45,7 @@ test("ProvinceCombobox shows its placeholder while disabled instead of a stale l
 });
 
 test("Searching persists the platform's last query/location, and loading pre-fills it from the same source on the next visit (issue #123)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/work/client/work-feature.tsx", import.meta.url), "utf8");
 
   assert.match(source, /import \{ getQuickSearchesAction, saveQuickSearchAction, type SavedQuickSearch \} from "@\/lib\/work\/actions";/);
   assert.match(source, /getQuickSearchesAction\(\)\.then\(/, "Work() loads saved searches once, not per-card");
@@ -59,7 +59,7 @@ test("Searching persists the platform's last query/location, and loading pre-fil
 });
 
 test("The empty-keyword state cannot fire a search or a save - the Buscar action is genuinely disabled, not just visually dimmed (issue #123)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/work/client/work-feature.tsx", import.meta.url), "utf8");
   const cardStart = source.indexOf("const QuickJobSearchCard = memo(");
   const cardEnd = source.indexOf("\n});", cardStart);
   const cardSource = source.slice(cardStart, cardEnd);
@@ -80,7 +80,7 @@ test("src/lib/work/actions.ts is session-scoped, never redirects (it runs from b
 });
 
 test("Owner-reported follow-up: the gap between the Trabajo header and the Portales/Empresas tabs is tightened with an inline style, not a competing class, because Tailwind's space-y-6 sibling selector outranks a plain .al-work-tabs class rule", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/work/client/work-feature.tsx", import.meta.url), "utf8");
   const workStart = source.indexOf("function Work(");
   const workEnd = source.indexOf("\nconst workBrandCss", workStart);
   const workSource = source.slice(workStart, workEnd);

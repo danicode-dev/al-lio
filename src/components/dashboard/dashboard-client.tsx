@@ -2,7 +2,7 @@
 
 import { TaskCalendar } from "@/components/calendar/app-calendar";
 import { DashboardView } from "@/components/dashboard/dashboard-view";
-import { useStore } from "@/components/guest-store";
+import { useStore } from "@/shared/store/store-provider";
 import { getDashboardCalendarEvents } from "@/lib/dashboard/calendar-events";
 
 export function DashboardClient() {

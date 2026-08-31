@@ -2,9 +2,11 @@
 
 ## Application
 
-- `src/app/`: App Router routes, layouts and route handlers.
-- `src/components/`: React components and product views.
-- `src/lib/`: authentication, repositories, domain services and integrations.
+- `src/app/`: App Router routes, layouts, route handlers and route-level access control.
+- `src/features/`: named product features with explicit public entry points.
+- `src/shared/`: cross-feature UI composition and utilities with multiple consumers.
+- `src/components/`: established shared React components being adopted by features.
+- `src/lib/`: authentication, repositories, domain services, server actions and integrations.
 - `src/middleware.ts`: protected-route and session boundary.
 - `public/`: static assets served by Next.js.
 - `tests/`: Node test-runner suites; see `tests/README.md`.
@@ -68,3 +70,8 @@ New files must have one clear owner. Runtime code belongs in `src`, deployment
 material in `infra`, repeatable operator commands in `scripts`, reviewed import
 inputs in `csv` and maintained explanations in `docs`. Generated artifacts do
 not belong in the repository unless they are an intentional public asset.
+
+App Router pages compose features through `@/features/<feature>`. Product code
+must not introduce view-string routing shells or import another feature's
+internal `client`, `domain` or `server` directories. ADR-0007 defines the full
+dependency rule and `npm run check:boundaries` enforces it.

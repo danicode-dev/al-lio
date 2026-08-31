@@ -21,7 +21,7 @@ import { forwardRef, useEffect, useId, useRef, useState, type ReactNode } from "
 
 import { MobileAccountMenu } from "@/components/auth/user-menu";
 import { StudentHeaderActions } from "@/components/student-header-actions";
-import { useStore } from "@/components/guest-store";
+import { useStore } from "@/shared/store/store-provider";
 import { cn } from "@/lib/utils";
 
 // The same three groups the sidebar uses, under the same headings. They used

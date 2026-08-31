@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { AlarmClock, Bell, Plus, X } from "lucide-react";
 
-import { useStore } from "@/components/guest-store";
+import { useStore } from "@/shared/store/store-provider";
 import { QuickAdd } from "@/components/quick-add";
 import type { Store } from "@/components/store/types";
 import {

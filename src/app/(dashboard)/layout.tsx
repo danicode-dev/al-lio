@@ -1,6 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { getGlobalStore } from "@/lib/data";
-import { StoreProvider } from "@/components/guest-store";
+import { StoreProvider } from "@/shared/store/store-provider";
 import { DailyAlerts } from "@/components/daily-alerts";
 import { MobileHeaderNavigation } from "@/components/mobile-header-navigation";
 import { ProductTourShell } from "@/components/onboarding/tour/tour-provider";

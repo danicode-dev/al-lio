@@ -28,7 +28,7 @@ test("The Saved hub derives every section from the same live store the rest of t
   assert.match(source, /const savedCompanies = useMemo\(\(\) => store\.companies\.filter\(\(c\) => c\.is_favorite\), \[store\.companies\]\);/);
   assert.match(source, /getDisplayCourses\(store\.courses, store\.techOpportunities, store\.fpContent\)\.filter\(\(c\) => c\.is_favorite\)/, "courses must reuse the exact same merge function Cursos itself uses, not a second parallel implementation");
   assert.match(source, /getDisplayHackathons\(store\.hackathons, store\.techOpportunities, store\.fpContent\)\.filter\(\(h\) => h\.is_favorite\)/, "events must reuse the exact same merge function Eventos y retos itself uses");
-  assert.match(source, /from "@\/components\/guest-app"/, "getDisplayCourses/getDisplayHackathons must be imported, not redefined");
+  assert.match(source, /from "@\/features\/courses"/, "getDisplayCourses/getDisplayHackathons must be imported, not redefined");
 });
 
 test("Unsaving from the hub calls the exact same dispatchers as the origin modules, so all surfaces stay in sync with the same optimistic-update/rollback behavior (issue #136)", async () => {

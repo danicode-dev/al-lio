@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getGlobalStore } from "@/lib/data";
 import { resolveHackathonById } from "@/lib/hackathons/hackathon-presentation";
-import { HackathonDetailView } from "@/components/guest-app";
+import { HackathonDetailView } from "@/features/events";
 import type { Store } from "@/components/store/types";
 
 export default async function HackathonDetailPage({ params }: { params: Promise<{ id: string }> }) {

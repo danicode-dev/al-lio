@@ -77,14 +77,12 @@ export function getCoursePresentation(course: Course): CoursePresentation {
   };
 }
 
-// Extracted from guest-app.tsx (mirrors the identical extraction for
-// hackathons in issue #135's hackathon-presentation.ts) so the internal
+// Shared by the Courses feature and its internal detail route so the
 // detail route - a Server Component - can resolve and authorize a single
 // course by id using the exact same mapping/eligibility rules the client
 // card list already uses, instead of a second, potentially-drifting
-// implementation. guest-app.tsx still owns getDisplayCourses/
-// courseIdentityKey (list-only concerns with no server-side caller), and
-// imports the functions below rather than redefining them.
+// implementation. List-only display and identity concerns stay owned by the
+// Courses feature.
 
 // Duplicated (not imported) from hackathon-presentation.ts's identical
 // helpers: this module is loaded directly (relative, extensionless) by

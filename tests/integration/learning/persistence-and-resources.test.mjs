@@ -5,6 +5,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { readFeatureSource } from "../../helpers/feature-sources.mjs";
+
 import { isSafeHttpUrl, selectAptitudeVideos } from "../../../src/lib/fp/event-cta.ts";
 
 import { fpItemToCourse } from "../../../src/lib/courses/course-presentation.ts";
@@ -55,12 +57,12 @@ test("Competency completion is authorized against the caller's session and cycle
   assert.match(fnSource, /getAuthorizedSkill\(session\.uid, skillId\)/, "must resolve the skill scoped to the current session's user/cycle");
   assert.match(fnSource, /markUserCompetencyCompleted\(session\.uid, skillId\)/, "must write scoped to session.uid, not a caller-supplied id");
 
-  const guestAppSource = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const guestAppSource = await readFeatureSource("events", "courses");
   assert.match(guestAppSource, /return !!competency\.completed;/, "isCompetencyDone must read the explicit per-user competency record, not infer from resource status");
 });
 
 test("A competency with no linked learning item can still be marked complete (issue #96)", async () => {
-  const guestAppSource = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const guestAppSource = await readFeatureSource("events", "courses");
   const componentStart = guestAppSource.indexOf("function RequirementRow(");
   const componentEnd = guestAppSource.indexOf("export function HackathonDetailView", componentStart);
   assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the RequirementRow component");
@@ -72,7 +74,7 @@ test("A competency with no linked learning item can still be marked complete (is
 });
 
 test("markCompetencyCompleted optimistically completes and rolls back on failure (issue #96)", async () => {
-  const storeSource = await readFile(new URL("../../../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const storeSource = await readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8");
   const start = storeSource.indexOf("markCompetencyCompleted: (skillId: string) =>");
   const end = storeSource.indexOf("reset: () =>", start);
   assert.ok(start > -1 && end > start, "could not locate the markCompetencyCompleted action body");
@@ -104,7 +106,7 @@ test("the Eventos redirect resolver never depends on fp_user_competency_state - 
 });
 
 test("A competency never renders legacy free-text references as preparation resources (issue #96, issue #202)", async () => {
-  const guestAppSource = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const guestAppSource = await readFeatureSource("events", "courses");
   const componentStart = guestAppSource.indexOf("function RequirementRow(");
   const componentEnd = guestAppSource.indexOf("export function HackathonDetailView", componentStart);
   assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the RequirementRow component");
@@ -184,7 +186,7 @@ test("/roadmap/[modulo] never depended on, and still does not depend on, the ret
 });
 
 test("event catalogue cards keep the official URL in the validated detail action and never restore the retired /ruta screen (issue #112, issue #164)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("courses", "events");
 
   assert.doesNotMatch(source, /\/ruta\//, "no CTA anywhere in this file may construct a /ruta/ URL any more");
   const hackathonsStart = source.indexOf("function Hackathons(");
@@ -207,7 +209,7 @@ test("event catalogue cards keep the official URL in the validated detail action
 });
 
 test("each aptitude renders only canonical approved preparation resources and explicit gaps", async () => {
-  const guestAppSource = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const guestAppSource = await readFeatureSource("events", "courses");
   const componentStart = guestAppSource.indexOf("function RequirementRow(");
   const componentEnd = guestAppSource.indexOf("export function HackathonDetailView", componentStart);
   assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the RequirementRow component");
@@ -327,13 +329,13 @@ test("the global store loads course aptitudes and shares live completion state w
   assert.match(dataSource, /courseAptitudes: \(courseAptitudesByItem\.get\(item\.id\) \?\? \[\]\)\.map/);
   assert.match(dataSource, /completed: userCompetencyStates\.has\(aptitude\.id\)/);
 
-  const storeSource = await readFile(new URL("../../../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const storeSource = await readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8");
   assert.match(storeSource, /courseAptitudes: item\.courseAptitudes\?\.map/);
   assert.match(storeSource, /aptitude\.id === skillId \? \{ \.\.\.aptitude, completed \} : aptitude/);
 });
 
 test("CourseDetailView combines only canonical learning outcomes and reviewed aptitudes, omitting the section when neither exists (issue #160, issue #200)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("courses", "events");
   const fnStart = source.indexOf("export function CourseDetailView");
   const fnEnd = source.indexOf("function Hackathons(");
   const fnSource = source.slice(fnStart, fnEnd);

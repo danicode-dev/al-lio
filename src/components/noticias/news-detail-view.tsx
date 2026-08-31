@@ -18,7 +18,7 @@ import type { NewsItem } from "@/lib/news/types";
 import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import { CatalogNextLink, CatalogPanel } from "@/components/catalog/catalog-card";
-import { useStore } from "@/components/guest-store";
+import { useStore } from "@/shared/store/store-provider";
 import {
   EmptyState,
   KIND_LABELS,

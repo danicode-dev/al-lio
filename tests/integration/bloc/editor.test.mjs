@@ -5,6 +5,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { readFeatureSource } from "../../helpers/feature-sources.mjs";
+
 import { toIsoTimestamp } from "../../../src/lib/bloc/timestamps.ts";
 
 import { buildNoteExportHtml } from "../../../src/lib/bloc/note-export.ts";
@@ -16,7 +18,7 @@ test("Bloc's server boundary normalizes PostgreSQL timestamps before they reach 
 });
 
 test("Bloc's PDF export replaces the retired hand-rolled byte-level serializer with a raster-preserving jsPDF/html2canvas path (issue #128)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
   assert.doesNotMatch(source, /buildSimplePdf|toUtf16Hex|BaseFont \/Helvetica/, "the raw PDF byte serializer must be fully removed, not left dead in the file");
   assert.match(source, /import\("jspdf"\)/);
   assert.match(source, /import\("html2canvas"\)/);
@@ -26,7 +28,7 @@ test("Bloc's PDF export replaces the retired hand-rolled byte-level serializer w
 });
 
 test("Bloc's PDF export keeps the html2canvas source at the canvas origin instead of rasterizing blank off-screen pages (issue #128)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
   const start = source.indexOf("async function exportActivePdf");
   const end = source.indexOf("function exportActiveWord");
   assert.ok(start !== -1 && end !== -1 && end > start);
@@ -36,7 +38,7 @@ test("Bloc's PDF export keeps the html2canvas source at the canvas origin instea
 });
 
 test("Bloc's PDF export scales and slices the browser canvas inside the printable A4 bounds (issue #128)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
   const start = source.indexOf("async function exportActivePdf");
   const end = source.indexOf("function exportActiveWord");
   assert.ok(start !== -1 && end !== -1 && end > start);
@@ -48,7 +50,7 @@ test("Bloc's PDF export scales and slices the browser canvas inside the printabl
 });
 
 test("Bloc's PDF export only reports success after generation actually completes, and surfaces a distinct honest failure message otherwise (issue #128)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
   const start = source.indexOf("async function exportActivePdf");
   const end = source.indexOf("function exportActiveWord");
   assert.ok(start !== -1 && end !== -1 && end > start, "exportActivePdf should be an async function defined before exportActiveWord");
@@ -60,28 +62,28 @@ test("Bloc's PDF export only reports success after generation actually completes
 });
 
 test("Exportar sits in the editor's top-right action group next to the overflow menu, and the old footer export selector is gone (issue #128)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
   assert.match(source, /al-bloc-title-row[\s\S]*?<ExportMenu[\s\S]*?<NoteOverflowMenu/, "Exportar and the overflow menu should be siblings in the title row, in that order");
   assert.doesNotMatch(source, /al-bloc-export-select/, "the redundant desktop footer export <Select> must be removed");
   assert.match(source, /Palabras: \{wordCount\}[\s\S]{0,80}Caracteres: \{charCount\}/, "the footer should stay focused on autosave/document metrics");
 });
 
 test("the Bloc sidebar's trash link stays height-bounded and pinned from the tablet breakpoint up, not only at the wide desktop breakpoint (issue #128)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
   assert.match(source, /md:grid-cols-\[minmax\(0,1fr\)_300px\]/, "the two-column split should start at the same breakpoint the component treats as desktop (md, not xl)");
   assert.match(source, /@media \(min-width: 768px\) \{\s*\n\s*\.al-bloc-desktop-grid \{ height: clamp/, "the sidebar height clamp - which makes the notes list scroll internally and keeps Ver papelera pinned - must apply starting at the tablet breakpoint");
   assert.match(source, /al-bloc-trash-link \{ flex-shrink: 0/);
 });
 
 test("Ver papelera stays reachable from Todas, Recientes and Favoritas alike - it is rendered once, outside the per-tab note list, not duplicated per tab (issue #128)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
   const renderSites = source.match(/className="al-bloc-trash-link/g) ?? [];
   assert.equal(renderSites.length, 1, "the trash link must render exactly once (not duplicated per tab, not gated behind a tab check)");
   assert.doesNotMatch(source, /listTab === "favoritas"[\s\S]{0,400}al-bloc-trash-link/, "the trash link must not be nested inside favorites-only conditional rendering");
 });
 
 test("Bloc exposes one Word-like formatting surface per viewport and removes the redundant insert/link/image controls (issue #151)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
   const toolbarStart = source.indexOf("function BlocEditorToolbar");
   const toolbarEnd = source.indexOf("function MobileNoteCard");
   const toolbar = source.slice(toolbarStart, toolbarEnd);
@@ -99,7 +101,7 @@ test("Bloc exposes one Word-like formatting surface per viewport and removes the
 });
 
 test("Bloc uses a numeric px font-size control and visibly pressed Word-style B/I/U buttons (issue #151)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
   const toolbar = source.slice(source.indexOf("function BlocEditorToolbar"), source.indexOf("function MobileNoteCard"));
 
   assert.match(toolbar, /type="number"[\s\S]*?min="8"[\s\S]*?max="96"[\s\S]*?Tamaño de letra en píxeles/);
@@ -111,7 +113,7 @@ test("Bloc uses a numeric px font-size control and visibly pressed Word-style B/
 });
 
 test("Bloc formatting state is deterministic while browser selection events settle (issue #151 final review)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
 
   assert.match(source, /function editorFormatAfterCommand[\s\S]*?case "justifyLeft"[\s\S]*?alignment: "left"[\s\S]*?case "justifyCenter"[\s\S]*?alignment: "center"[\s\S]*?case "justifyRight"[\s\S]*?alignment: "right"[\s\S]*?case "justifyFull"[\s\S]*?alignment: "justify"/);
   assert.match(source, /editorFormatSyncBlockedUntilRef\.current = Date\.now\(\) \+ 150[\s\S]*?document\.execCommand\(command[\s\S]*?setEditorFormat\(\(current\) => editorFormatAfterCommand\(current, command\)\)/, "toolbar state must update from the requested command instead of a racing selectionchange event");
@@ -120,7 +122,7 @@ test("Bloc formatting state is deterministic while browser selection events sett
 });
 
 test("Bloc formatting works before the first character is typed and keeps that pending format until input (issue #151 follow-up)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
 
   assert.match(source, /range\.selectNodeContents\(editor\)[\s\S]*?range\.collapse\(false\)[\s\S]*?selection\.addRange\(range\)/, "an empty editor must receive a real caret before a formatting command runs");
   assert.match(source, /function recordEditorContent\(preserveEmptyFormatting = false\)[\s\S]*?isEmpty && \(preserveEmptyFormatting \|\| emptyEditorFormatPendingRef\.current\)[\s\S]*?emptyEditorFormatPendingRef\.current = true[\s\S]*?return/, "temporary formatting nodes must survive toolbar focus changes until the user types");
@@ -130,7 +132,7 @@ test("Bloc formatting works before the first character is typed and keeps that p
 });
 
 test("Bloc combines bullets and numbering and keeps text/highlight colors in the main toolbar (issue #151)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
   const toolbar = source.slice(source.indexOf("function BlocEditorToolbar"), source.indexOf("function MobileNoteCard"));
 
   assert.match(toolbar, /aria-label="Elegir entre viñetas o numeración"/);
@@ -141,8 +143,8 @@ test("Bloc combines bullets and numbering and keeps text/highlight colors in the
 });
 
 test("Bloc keeps delete controls visible without hover and compacts the mobile notes/editor workflow (issue #151)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
-  const guestApp = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
+  const blocFeature = await readFeatureSource("bloc");
   const mobileStart = source.indexOf("if (isMobile)");
   const desktopStart = source.indexOf('<div className="relative">', mobileStart);
   const mobile = source.slice(mobileStart, desktopStart);
@@ -158,12 +160,12 @@ test("Bloc keeps delete controls visible without hover and compacts the mobile n
   assert.match(source, /function MobileEditorFormatPanel[\s\S]*?Párrafo o título[\s\S]*?Tamaño de letra[\s\S]*?Alineación[\s\S]*?Listas[\s\S]*?Resaltado/);
   assert.match(mobile, /min-h-\[clamp\(220px,38dvh,420px\)\]/);
   assert.match(mobile, /al-bloc-mobile-status/);
-  assert.match(guestApp, /view === "bloc" \? "space-y-3 md:space-y-6"/);
-  assert.match(guestApp, /className=\{view === "bloc" \? "al-bloc-page-header"/);
+  assert.match(blocFeature, /<FeaturePage[\s\S]*compactHeader/);
+  assert.match(blocFeature, /title="Bloc de notas"/);
 });
 
 test("Bloc uses the app empty-state pattern and no longer advertises unsupported slash commands (issue #151 final pass)", async () => {
-  const source = await readFile(new URL("../../../src/components/bloc/bloc-notepad.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("bloc");
 
   assert.match(source, /Esta nota está vacía[\s\S]*?Empieza a escribir para guardar tus ideas\./);
   assert.doesNotMatch(source, /presiona '\/' para comandos|al-bloc-content-watermark/);

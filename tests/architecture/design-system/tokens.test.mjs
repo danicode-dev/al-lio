@@ -5,6 +5,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { readProductFeatureSources } from "../../helpers/feature-sources.mjs";
+
 test("globals.css's --primary and --ring are the brand terracotta, not the default shadcn blue (issue #82)", async () => {
   const css = await readFile(new URL("../../../src/app/globals.css", import.meta.url), "utf8");
 
@@ -50,18 +52,17 @@ test("the surviving #81/daily-alerts hardcoded terracotta overrides read the fix
 });
 
 test("UI primitives keep the brand focus token while the default Button consumes the shared quiet action treatment (issues #82 and #166)", async () => {
-  const [button, input, select, textarea, guestApp] = await Promise.all([
+  const [button, input, select, textarea, featureSources] = await Promise.all([
     readFile(new URL("../../../src/components/ui/button.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/ui/input.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/ui/select.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/ui/textarea.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readProductFeatureSources(),
   ]);
 
   assert.match(button, /variant === "default" && "al-action-soft"/);
   assert.match(input, /focus-visible:ring-ring/);
   assert.match(select, /focus-visible:ring-ring/);
   assert.match(textarea, /focus-visible:ring-ring/);
-  assert.match(guestApp, /ring-primary\/40/);
-  assert.match(guestApp, /al-action-soft-selected/);
+  assert.match(featureSources, /al-action-soft-selected/);
 });

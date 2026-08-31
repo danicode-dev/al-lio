@@ -3,8 +3,9 @@
 import { Component, type ReactNode, useMemo } from "react";
 import Link from "next/link";
 import { Building2, BookOpen, ExternalLink, Heart, Trophy, type LucideIcon } from "lucide-react";
-import { useStore } from "@/components/guest-store";
-import { canToggleCourseFavorite, getDisplayCourses, getDisplayHackathons, toggleCourseFavoriteFor } from "@/components/guest-app";
+import { useStore } from "@/shared/store/store-provider";
+import { canToggleCourseFavorite, getDisplayCourses, toggleCourseFavoriteFor } from "@/features/courses";
+import { getDisplayHackathons } from "@/features/events";
 import type { Course, Hackathon, ReturnTypeActions } from "@/components/store/types";
 import { getCoursePresentation } from "@/lib/courses/course-presentation";
 import { canToggleHackathonFavorite, getHackathonPresentation, toggleHackathonFavoriteFor } from "@/lib/hackathons/hackathon-presentation";

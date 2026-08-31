@@ -1,0 +1,33 @@
+import { readFile } from "node:fs/promises";
+
+const featureFiles = {
+  work: ["work/client/work-feature.tsx"],
+  tasks: ["tasks/client/tasks-view.tsx"],
+  courses: ["courses/client/courses-feature.tsx"],
+  events: ["events/client/events-feature.tsx"],
+  calendar: ["calendar/client/calendar-feature.tsx"],
+  resources: ["resources/client/sources-feature.tsx"],
+  settings: ["settings/client/settings-feature.tsx"],
+  bloc: [
+    "bloc/client/bloc-notepad.tsx",
+    "bloc/client/bloc-editor-toolbar.tsx",
+    "bloc/client/bloc-note-list.tsx",
+    "bloc/client/bloc-note-menus.tsx",
+    "bloc/client/bloc-editor-helpers.ts",
+    "bloc/client/bloc-export.ts",
+    "bloc/client/bloc-persistence.ts",
+    "bloc/client/bloc-types.ts",
+    "bloc/client/bloc-feature.tsx",
+  ],
+};
+
+export async function readFeatureSource(...features) {
+  const files = features.flatMap((feature) => featureFiles[feature] ?? []);
+  return (await Promise.all(
+    files.map((file) => readFile(new URL(`../../src/features/${file}`, import.meta.url), "utf8")),
+  )).join("\n\n");
+}
+
+export function readProductFeatureSources() {
+  return readFeatureSource("work", "tasks", "courses", "events", "calendar", "resources", "settings", "bloc");
+}

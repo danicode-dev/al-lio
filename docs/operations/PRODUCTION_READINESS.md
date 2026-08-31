@@ -63,7 +63,8 @@ Before inviting additional real users, verify and retain evidence for:
 ## Performance and maintainability backlog
 
 - Replace global dashboard loading with page-specific queries.
-- Continue extracting historical surfaces from `guest-app.tsx`.
+- Continue moving established shared infrastructure into explicit feature,
+  shared or server owners under ADR-0007.
 - Paginate large lists and remove `SELECT *` from hot paths.
 - Add explicit caching only for shared catalogues with controlled invalidation.
 - Measure slow PostgreSQL queries and route-level Web Vitals.

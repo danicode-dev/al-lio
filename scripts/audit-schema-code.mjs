@@ -17,8 +17,10 @@ function requireIncludes(file, content, expected) {
 }
 
 const schema = read("infra/postgres/schema.sql");
-const guestApp = read("src/components/guest-app.tsx");
-const guestStore = read("src/components/guest-store.tsx");
+const coursesFeature = read("src/features/courses/client/courses-feature.tsx");
+const eventsFeature = read("src/features/events/client/events-feature.tsx");
+const calendarFeature = read("src/features/calendar/client/calendar-feature.tsx");
+const guestStore = read("src/shared/store/store-provider.tsx");
 const storeTypes = read("src/components/store/types.ts");
 const actions = read("src/lib/actions.ts");
 
@@ -89,18 +91,19 @@ for (const column of ["cycle_code", "cycle_group", "academic_year", "interests",
 }
 
 requireIncludes("src/components/store/types.ts", storeTypes, 'export type TaskPriority = "alta" | "media" | "baja" | "critica"');
-requireIncludes("src/components/guest-store.tsx", guestStore, 'return normalized === "critica" ? "alta" : normalized');
-requireIncludes("src/components/guest-store.tsx", guestStore, "export function StoreProvider");
-requireIncludes("src/components/guest-store.tsx", guestStore, "export function useStore");
-requireIncludes("src/components/guest-app.tsx", guestApp, "getDisplayCourses(store.courses, store.techOpportunities, store.fpContent)");
-requireIncludes("src/components/guest-app.tsx", guestApp, "getDisplayHackathons(store.hackathons, store.techOpportunities, store.fpContent)");
-requireIncludes("src/components/guest-app.tsx", guestApp, "...store.techOpportunities.flatMap(techOpportunityToCalendarEvents)");
+requireIncludes("src/shared/store/store-provider.tsx", guestStore, 'return normalized === "critica" ? "alta" : normalized');
+requireIncludes("src/shared/store/store-provider.tsx", guestStore, "export function StoreProvider");
+requireIncludes("src/shared/store/store-provider.tsx", guestStore, "export function useStore");
+requireIncludes("src/features/courses/client/courses-feature.tsx", coursesFeature, "getDisplayCourses(store.courses, store.techOpportunities, store.fpContent)");
+requireIncludes("src/features/events/client/events-feature.tsx", eventsFeature, "getDisplayHackathons(store.hackathons, store.techOpportunities, store.fpContent)");
+requireIncludes("src/features/calendar/client/calendar-feature.tsx", calendarFeature, "...store.techOpportunities.flatMap(techOpportunityToCalendarEvents)");
 
-if (guestApp.includes("createContext") || guestApp.includes("function StoreProvider") || guestApp.includes("function useStore")) {
-  fail("src/components/guest-app.tsx no debe volver a definir el store autenticado");
+const featureSources = coursesFeature + eventsFeature + calendarFeature;
+if (featureSources.includes("createContext") || featureSources.includes("function StoreProvider") || featureSources.includes("function useStore")) {
+  fail("Las features no deben volver a definir el store autenticado");
 }
 
-if (actions.includes('revalidatePath("/dashboard")') || guestApp.includes('revalidatePath("/dashboard")')) {
+if (actions.includes('revalidatePath("/dashboard")') || featureSources.includes('revalidatePath("/dashboard")')) {
   fail('No debe existir revalidatePath("/dashboard"); rompe foco y refresca el layout completo');
 }
 

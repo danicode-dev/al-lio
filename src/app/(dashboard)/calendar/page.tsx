@@ -1,5 +1,5 @@
-import { StoredGuestApp } from "@/components/stored-guest-app";
+import { CalendarFeature } from "@/features/calendar";
 
 export default function CalendarPage() {
-  return <StoredGuestApp view="calendar" />;
+  return <CalendarFeature />;
 }

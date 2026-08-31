@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useStore } from "@/components/guest-store";
+import { useStore } from "@/shared/store/store-provider";
 import type { Store } from "@/components/store/types";
 
 // ── Types ─────────────────────────────────────────────────────────────────────

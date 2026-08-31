@@ -5,23 +5,25 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { readFeatureSource, readProductFeatureSources } from "../../helpers/feature-sources.mjs";
+
 test("The authenticated student tree owns exactly one store provider (issue #90)", async () => {
   const [guestAppSource, guestStoreSource, storedGuestAppSource, dashboardClientSource, layoutSource] = await Promise.all([
-    readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/guest-store.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/stored-guest-app.tsx", import.meta.url), "utf8"),
+    readProductFeatureSources(),
+    readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8"),
+    Promise.resolve(""),
     readFile(new URL("../../../src/components/dashboard/dashboard-client.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
   ]);
 
   // guest-app.tsx must not define its own context/provider/mutations anymore -
-  // it consumes the canonical one from guest-store.tsx.
+  // it consumes the canonical shared store provider.
   assert.doesNotMatch(guestAppSource, /createContext/);
   assert.doesNotMatch(guestAppSource, /export function StoreProvider/);
   assert.doesNotMatch(guestAppSource, /export function useStore/);
-  assert.match(guestAppSource, /import \{ useStore \} from "@\/components\/guest-store";/);
+  assert.match(guestAppSource, /import \{ useStore \} from "@\/shared\/store\/store-provider";/);
 
-  // guest-store.tsx is the sole canonical implementation.
+  // store-provider.tsx is the sole canonical implementation.
   assert.match(guestStoreSource, /export function StoreProvider/);
   assert.match(guestStoreSource, /export function useStore/);
 
@@ -102,8 +104,8 @@ test("The mobile header menu replaces the bottom navigation without changing the
     readFile(new URL("../../../src/components/mobile-header-navigation.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/student-header-actions.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8"),
+    readProductFeatureSources(),
+    readFile(new URL("../../../src/features/tasks/client/tasks-view.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(layoutSource, /<MobileHeaderNavigation \/>/);
@@ -154,7 +156,7 @@ test("Quick Add and Notifications form one shared header action group on mobile 
     readFile(new URL("../../../src/components/student-header-actions.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/mobile-header-navigation.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readProductFeatureSources(),
     readFile(new URL("../../../src/components/quick-add.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/dashboard/dashboard-client.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/dashboard/dashboard-greeting.tsx", import.meta.url), "utf8"),
@@ -199,7 +201,7 @@ test("Each page's own header mounts StudentHeaderActions exactly once for its de
   const files = [
     "../../../src/components/dashboard/dashboard-greeting.tsx",
     "../../../src/components/learning/competencies-view.tsx",
-    "../../../src/components/tasks/tasks-view.tsx",
+    "../../../src/features/tasks/client/tasks-view.tsx",
     "../../../src/components/noticias/noticias-view.tsx",
     "../../../src/components/profile/profile-form.tsx",
   ];
@@ -208,16 +210,16 @@ test("Each page's own header mounts StudentHeaderActions exactly once for its de
     const mounts = (source.match(/<StudentHeaderActions \/>/g) ?? []).length;
     assert.equal(mounts, 1, `${file} should mount StudentHeaderActions exactly once`);
   }
-  // guest-app.tsx mounts it six times by design: once inside the shared
-  // work/courses/hackathons/bloc header, once for the separately-composed
-  // Calendario header, twice inside HackathonDetailView (issue #135) and
-  // twice inside CourseDetailView (owner-reported follow-up) - each
-  // detail view's own PageHeader and its not-found fallback state,
-  // mutually exclusive at runtime but both present in the source as
-  // static JSX.
-  const guestApp = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
-  const guestAppMounts = (guestApp.match(/<StudentHeaderActions \/>/g) ?? []).length;
-  assert.equal(guestAppMounts, 6, "guest-app.tsx should mount StudentHeaderActions exactly six times: shared header + Calendario + two detail views' two branches each");
+  const [featurePage, calendar, courses, events] = await Promise.all([
+    readFile(new URL("../../../src/shared/ui/feature-page.tsx", import.meta.url), "utf8"),
+    readFeatureSource("calendar"),
+    readFeatureSource("courses"),
+    readFeatureSource("events"),
+  ]);
+  assert.equal((featurePage.match(/<StudentHeaderActions \/>/g) ?? []).length, 1, "the shared feature header owns one desktop action cluster");
+  assert.equal((calendar.match(/<StudentHeaderActions \/>/g) ?? []).length, 1, "Calendar owns one desktop action cluster");
+  assert.equal((courses.match(/<StudentHeaderActions \/>/g) ?? []).length, 2, "Course detail has mutually exclusive regular and not-found headers");
+  assert.equal((events.match(/<StudentHeaderActions \/>/g) ?? []).length, 2, "Event detail has mutually exclusive regular and not-found headers");
 });
 
 test("The notifications popover meets the accessibility requirements (issue #91)", async () => {
@@ -270,8 +272,7 @@ test("Every first-level authenticated route renders the shared PageHeader instea
   const routes = [
     { file: "../../../src/components/dashboard/dashboard-greeting.tsx", label: "Inicio" },
     { file: "../../../src/components/learning/competencies-view.tsx", label: "Competencias" },
-    { file: "../../../src/components/tasks/tasks-view.tsx", label: "Tareas" },
-    { file: "../../../src/components/guest-app.tsx", label: "Bloc de notas / Trabajo / Cursos / Eventos y retos (shared GuestApp header)" },
+    { file: "../../../src/features/tasks/client/tasks-view.tsx", label: "Tareas" },
     { file: "../../../src/components/noticias/noticias-view.tsx", label: "Noticias" },
     { file: "../../../src/components/calendar/app-calendar.tsx", label: "Calendario" },
     { file: "../../../src/components/profile/profile-form.tsx", label: "Perfil" },
@@ -281,16 +282,22 @@ test("Every first-level authenticated route renders the shared PageHeader instea
     assert.match(source, /from "@\/components\/page-header"/, `${route.label} must import the shared PageHeader`);
     assert.match(source, /<PageHeader/, `${route.label} must render PageHeader`);
   }
+
+  for (const feature of ["work", "courses", "events", "bloc"]) {
+    const source = await readFeatureSource(feature);
+    assert.match(source, /from "@\/shared\/ui\/feature-page"/);
+    assert.match(source, /<FeaturePage/);
+  }
 });
 
 test("GuestApp's shared header gives Trabajo, Cursos, Eventos y retos and Bloc de notas a real eyebrow and subtitle, not just a bare view-name h1 (issue #129)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
-  assert.match(source, /VIEW_HEADER_CONTENT/);
-  for (const view of ["work", "courses", "hackathons", "bloc"]) {
-    const re = new RegExp(`${view}: \\{ eyebrow: "[^"]+", title: "[^"]+", subtitle: "[^"]+" \\}`);
-    assert.match(source, re, `VIEW_HEADER_CONTENT must define a non-empty eyebrow/title/subtitle for "${view}"`);
+  for (const [feature, title] of [["work", "Trabajo"], ["courses", "Cursos"], ["events", "Eventos y retos"], ["bloc", "Bloc de notas"]]) {
+    const source = await readFeatureSource(feature);
+    assert.match(source, /<FeaturePage/);
+    assert.match(source, new RegExp(`title="${title}"`));
+    assert.match(source, /eyebrow="[^"]+"/);
+    assert.match(source, /subtitle="[^"]+"/);
   }
-  assert.match(source, /view !== "dashboard" && view !== "calendar" && headerContent/, "dashboard and calendar keep their own bespoke header, every other view gets the shared one");
 });
 
 test("Perfil's title switches from the Barlow display font to the shared Inter page header, and gains an eyebrow (issue #129)", async () => {
@@ -354,15 +361,15 @@ test("Nuevo evento and the Google Calendar status live in the calendar's own mon
   assert.match(calendarViewCall, /onCreate=\{\(\) => setNewEventOpen\(true\)\}/, "must reuse the exact same handler the old header button called, not a new one");
   assert.match(calendarViewCall, /statusSlot=\{calendarStatus\}/);
 
-  const guestApp = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const guestApp = await readProductFeatureSources();
   assert.match(guestApp, /headerActions=\{<StudentHeaderActions \/>\}/);
   assert.match(guestApp, /calendarStatus=\{<GoogleCalendarStatusControl \/>\}/);
 });
 
 test("GoogleCalendarStatusControl's connected/disconnected/loading states are visually distinct (green when connected, inviting when not) with unchanged underlying logic - same state variables, same effect, same disconnect handler (owner-reported follow-up)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readProductFeatureSources();
   const fnStart = source.indexOf("function GoogleCalendarStatusControl");
-  const fnEnd = source.indexOf("function TaskBoard");
+  const fnEnd = source.indexOf("function catalogCalendarHref", fnStart);
   const fn = source.slice(fnStart, fnEnd);
 
   // Logic untouched: same state, same effect endpoint, same disconnect call.
@@ -388,7 +395,7 @@ test("GoogleCalendarStatusControl's connected/disconnected/loading states are vi
 test("Calendar navigation, integration status and month cells fit mobile widths without changing the desktop month grid (issue #188)", async () => {
   const [calendar, guestApp] = await Promise.all([
     readFile(new URL("../../../src/components/calendar/app-calendar.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8"),
+    readProductFeatureSources(),
   ]);
 
   assert.match(calendar, /<div className="min-w-0 space-y-5 text-\[#111111\]">/);
@@ -402,7 +409,7 @@ test("Calendar navigation, integration status and month cells fit mobile widths 
   assert.match(calendar, /border-t border-\[#eee8de\] p-3 md:hidden[\s\S]*variant="compact"/);
 
   const statusStart = guestApp.indexOf("function GoogleCalendarStatusControl");
-  const statusEnd = guestApp.indexOf("function TaskBoard", statusStart);
+  const statusEnd = guestApp.indexOf("function catalogCalendarHref", statusStart);
   const status = guestApp.slice(statusStart, statusEnd);
   assert.match(status, /h-11 w-full min-w-0[\s\S]*sm:h-9 sm:w-auto/);
   assert.doesNotMatch(status, /whitespace-nowrap rounded-xl/, "Google Calendar labels must be allowed to fit before the desktop breakpoint");
@@ -412,8 +419,8 @@ test("Calendar events open a detail dialog on click and its action deep-links to
   const [calendar, events, guestApp, tasksView, tasksPage] = await Promise.all([
     readFile(new URL("../../../src/components/calendar/app-calendar.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/lib/dashboard/calendar-events.ts", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8"),
+    readProductFeatureSources(),
+    readFile(new URL("../../../src/features/tasks/client/tasks-view.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/app/(dashboard)/tasks/page.tsx", import.meta.url), "utf8"),
   ]);
 

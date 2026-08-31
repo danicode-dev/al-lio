@@ -4,7 +4,7 @@ import { FormEvent, KeyboardEvent, useEffect, useId, useMemo, useRef, useState }
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CalendarDays, Check, Circle, ListChecks, ListTodo, Pencil, Plus, Trash2, X } from "lucide-react";
 
-import { useStore } from "@/components/guest-store";
+import { useStore } from "@/shared/store/store-provider";
 import type { Store } from "@/components/store/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";

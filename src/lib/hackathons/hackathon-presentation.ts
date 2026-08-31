@@ -14,18 +14,16 @@ function fpUserStatusToHackathonStatus(userStatus?: string | null): Hackathon["s
   return undefined;
 }
 
-// Extracted from guest-app.tsx (issue #135) so the internal detail route -
-// a Server Component - can resolve and authorize a single item by id using
+// Shared by the Events feature and its internal detail route so the Server
+// Component can resolve and authorize a single item by id using
 // the exact same mapping/eligibility rules the client card list already
-// uses, instead of a second, potentially-drifting implementation. guest-app
-// still owns getDisplayHackathons/sortHackathonsForDisplay/identity-dedupe
-// (list-only concerns with no server-side caller), and imports the
-// functions below rather than redefining them.
+// uses, instead of a second, potentially-drifting implementation. List-only
+// display and identity concerns stay owned by the Events feature.
 
 // Strips combining diacritical marks (the NFD decomposition of accented
 // letters) after String.prototype.normalize("NFD"), so "según"/"segun" and
 // similar variants compare equal - mirrors the same normalize+strip idiom
-// used throughout guest-app.tsx for status/category text matching.
+// used throughout the Events feature for status/category text matching.
 const DIACRITICS_PATTERN = new RegExp(`[${String.fromCharCode(0x0300)}-${String.fromCharCode(0x036f)}]`, "g");
 
 const techHackathonCategories = new Set(["hackathon_reto"]);

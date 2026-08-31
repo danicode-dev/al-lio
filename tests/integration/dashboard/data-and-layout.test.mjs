@@ -18,7 +18,7 @@ test("insertDb enforces authorization and scopes every write to the current user
 });
 
 test("Quick Add course and event creation normalize empty optional fields to null and roll back on failure (issue #92)", async () => {
-  const storeSource = await readFile(new URL("../../../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const storeSource = await readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8");
 
   const addCourseSource = storeSource.slice(storeSource.indexOf("addCourse: async"), storeSource.indexOf("updateCourse: async"));
   for (const field of [
