@@ -1,0 +1,51 @@
+import type { Metadata } from "next";
+
+import { LegalPage } from "@/components/landing/legal-page";
+
+export const metadata: Metadata = { title: "Cookies", alternates: { canonical: "/cookies", languages: { es: "/cookies", en: "/en/cookies" } } };
+
+export default function CookiesPage() {
+  return (
+    <LegalPage
+      lang="es"
+      altHref="/en/cookies"
+      title="Política de cookies"
+      kicker="Cookies"
+      lead={
+        <>
+          AL-LÍO usa <strong>solo cookies técnicas necesarias</strong> para que la plataforma funcione. No hay cookies
+          opcionales, ni analítica de terceros, ni publicidad, ni rastreo.
+        </>
+      }
+      aside={
+        <>
+          <p className="al-aside-title">Sin panel de consentimiento</p>
+          <p>No hay nada que aceptar o rechazar: por eso no verás una ventana pidiéndote permiso para instalar cookies.</p>
+        </>
+      }
+    >
+      <h2>Qué cookies usamos</h2>
+      <ul>
+        <li>
+          <strong>Sesión</strong> — mantiene tu cuenta iniciada mientras usas la plataforma. Se borra al cerrar sesión o al
+          caducar.
+        </li>
+        <li>
+          <strong>Preferencia de interfaz</strong> — recuerda si tienes la barra lateral contraída. No identifica a nadie.
+        </li>
+      </ul>
+
+      <h2>Almacenamiento local</h2>
+      <p>
+        Guardamos algunas preferencias en el almacenamiento local de tu navegador (por ejemplo, que ya has visto el aviso de
+        cookies). Esta información no sale de tu dispositivo.
+      </p>
+
+      <h2>Cómo eliminarlas</h2>
+      <p>
+        Puedes borrar las cookies y el almacenamiento local desde los ajustes de tu navegador en cualquier momento. Si lo
+        haces, tendrás que volver a iniciar sesión.
+      </p>
+    </LegalPage>
+  );
+}
