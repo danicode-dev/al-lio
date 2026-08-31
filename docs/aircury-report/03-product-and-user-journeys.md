@@ -11,16 +11,16 @@ the product statement, the supported audience, the strongest user journey and
 the concise delivered-scope conclusions. File paths, test names and evidence
 IDs remain underneath the report as traceability.
 
-Current delivery candidate:
+Current frozen delivery release:
 
 - product code and deployed web image:
   `1e516ead8f69d60a263718c20d59b97c9618c97a`;
 - automated CI and production deployment: successful;
 - public health and readiness observation: successful at the evidence cut-off;
-- dedicated tag and authenticated owner smoke test: pending the approval gates
-  recorded in issue #295.
+- immutable tag: `aircury-2026-delivery`;
+- authenticated owner smoke test: pending collection under `QAL-002`.
 
-The candidate is frozen for report review, but a capability verified in the
+The release is frozen for report review, but a capability verified in the
 repository is not presented as an owner-verified production journey until the
 final authenticated smoke test passes.
 

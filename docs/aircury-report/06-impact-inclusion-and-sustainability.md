@@ -6,12 +6,12 @@ an explicit validation method and dated operating-cost inputs. It is an
 internal source for the final technical report, not a user study result or an
 economic audit.
 
-The delivery candidate is commit
+The frozen delivery release is commit
 `1e516ead8f69d60a263718c20d59b97c9618c97a`, deployed and publicly observed on
-31 August 2026. Its dedicated tag and authenticated owner smoke test remain
-approval gates in issue #295. Values that depend on participants, production
-content, invoices, provider prices or owner-operated controls remain `planned`
-until collected and approved.
+31 August 2026 under tag `aircury-2026-delivery`. Its authenticated owner smoke
+test remains pending under `QAL-002`. Values that depend on participants,
+production content, invoices, provider prices or owner-operated controls remain
+`planned` until collected and approved.
 
 ## 1. Programme criteria and claim discipline
 
