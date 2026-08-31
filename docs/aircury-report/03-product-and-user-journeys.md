@@ -11,16 +11,18 @@ the product statement, the supported audience, the strongest user journey and
 the concise delivered-scope conclusions. File paths, test names and evidence
 IDs remain underneath the report as traceability.
 
-Current working product baseline:
+Current delivery candidate:
 
-- product code: `7caebc77756cfb075f852b551c3c279ec04c6b04`;
-- evidence-document parent: `ccaa3f246505839055a9afff27d165a617aa49bb`;
-- final release tag, deployed web image and production verification: pending
-  the release freeze defined in issues #295 and #299.
+- product code and deployed web image:
+  `1e516ead8f69d60a263718c20d59b97c9618c97a`;
+- automated CI and production deployment: successful;
+- public health and readiness observation: successful at the evidence cut-off;
+- dedicated tag and authenticated owner smoke test: pending the approval gates
+  recorded in issue #295.
 
-All scope decisions in this file are provisional until that final release is
-frozen. A capability can be verified in the repository without yet being
-verified in the final production release.
+The candidate is frozen for report review, but a capability verified in the
+repository is not presented as an owner-verified production journey until the
+final authenticated smoke test passes.
 
 ## Status vocabulary
 

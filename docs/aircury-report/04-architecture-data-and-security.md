@@ -12,10 +12,12 @@ already frozen or that an operator-owned control has already been exercised.
 This document assigns stable architecture, security and governance evidence
 IDs, which are represented in the consolidated evidence register
 ([`02-evidence-register.md`](02-evidence-register.md)).
-Release-dependent values stay `planned` (`VER-004`, `OPS-001`, `OPS-003`).
+The delivery candidate and public production observation are recorded under
+`VER-004` and `OPS-001`. The private Radar image inventory confirmation under
+`OPS-003` and the authenticated owner smoke test remain approval gates.
 
 Diagrams and topology below reflect the maintained architecture reference. The
-final report must reconfirm them against the frozen release
+final report must reconfirm them against the approved delivery snapshot
 ([`01-delivery-brief.md`](01-delivery-brief.md)).
 
 ## 1. System context

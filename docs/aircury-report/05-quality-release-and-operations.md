@@ -8,11 +8,13 @@ the owner still has to supply.
 
 Every automated result in this document was executed against the working
 documentation baseline `ccaa3f2` (the tip of the evidence-register branch), not
-against a frozen release. Such results are labelled **working baseline** and
-must never be cited as **final evidence**. The date this document was written,
-31 August 2026, is a working-document date only; it is not the evidence
-cut-off. Release-dependent values stay `planned` and reference the evidence
-register ([`02-evidence-register.md`](02-evidence-register.md)).
+against the later delivery candidate. Such results remain labelled **working
+baseline** and must never be cited as final evidence. Separate final CI,
+deployment and public endpoint observations for
+`1e516ead8f69d60a263718c20d59b97c9618c97a` are recorded in
+[`01-delivery-brief.md`](01-delivery-brief.md) and evidence IDs `QAL-001`,
+`OPS-001` and `VER-004`. Owner-operated controls and the authenticated smoke
+test remain pending where labelled.
 
 ## 0. How this document is organised
 
@@ -215,11 +217,12 @@ historically executed the full
 `npm run ci` chain on merged changes (see section 6.3, historical evidence
 only).
 
-## 3. Evidence that requires the frozen delivery release
+## 3. Evidence collected from or still required for the delivery candidate
 
-None of the following can be produced now. Each is `planned` in the evidence
-register and is completed after the owner approves the final release and the
-production deployment, then freezes the evidence cut-off.
+The exact-SHA CI, guarded deployment, web image and public health/readiness
+observations have now been collected. The remaining rows require final metric
+collection, private production inventory or owner approval and must not be
+inferred from the successful deployment alone.
 
 | Evidence | Register ID | What must be recorded |
 |---|---|---|
