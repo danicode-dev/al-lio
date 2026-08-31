@@ -7,10 +7,12 @@ collection method are explicit.
 
 ## Current collection state
 
-The working documentation branch started from `origin/main` at
-`7caebc77756cfb075f852b551c3c279ec04c6b04`. This is a working reference, not
-the final report baseline. All release-dependent values remain `planned` until
-the final tag and production deployment are frozen.
+The delivery candidate is AL-LIO commit
+`1e516ead8f69d60a263718c20d59b97c9618c97a`, deployed as the matching web
+image and publicly observed on 31 August 2026. Exact-SHA CI, deployment,
+health and readiness evidence is recorded below. The dedicated tag, private
+Radar image confirmation, authenticated owner smoke test and remaining final
+metrics retain their explicit pending status until approved or collected.
 
 No production database contents, private user records or screenshots were
 collected for this issue.
@@ -125,8 +127,8 @@ These values do not depend on the future release tag.
 | `VER-001` | delivered | The canonical public repository is `danielgarciaortega-dev/al-lio` | GitHub repository and owner confirmation | public | verified |
 | `VER-002` | delivered | The canonical production URL is `https://al-lio.app` | Owner confirmation; final availability is rechecked under `OPS-001` | public | verified |
 | `VER-003` | delivered | The public project contact is `hola@al-lio.app` | README and owner confirmation | public | verified |
-| `VER-004` | planned | The report will cite one final immutable AL-LIO and Radar release baseline | `01-delivery-brief.md`; identifiers pending | public | planned |
-| `OPS-001` | planned | The final release is live and its database boundary is ready at the evidence cut-off | Final `/api/health` and `/api/ready` observations | public | planned |
+| `VER-004` | measured | The delivery candidate aligns one AL-LIO SHA and web image with the preserved Radar runtime and production cut-off | `01-delivery-brief.md`; CI and deployment runs for `1e516ead8f69d60a263718c20d59b97c9618c97a` | public | collected; tag, Radar inventory and owner smoke approval pending |
+| `OPS-001` | measured | The delivery candidate is live and its database boundary was ready at the evidence cut-off | `/api/health` and `/api/ready` observations at `2026-08-31T14:49:37Z`; deployment run `33404461730` | public | verified |
 | `OPS-002` | delivered | The project carries an operating commitment through at least 31 August 2027 | Supplied programme rules and `NOTICE.md` | public | verified |
 
 ## Report evidence catalogue
@@ -177,10 +179,10 @@ one meaning throughout documents `03`–`06`.
 | `ENG-004` | Applied schema migrations represented by the release | Ordered migration files included in final tag; production application status verified separately | Commands `C-ENG-004` plus migration status | measured | public | planned |
 | `ENG-005` | App Router pages and route handlers | Tracked `page.tsx` and `route.ts` files under `src/app` | Commands `C-ENG-005` | historical | public | planned |
 | `ENG-006` | Merged pull requests included in the release | PR merge commits reachable from the final tag; exclude closed-unmerged and later PRs | Commands `C-ENG-006` | historical | public | planned |
-| `QAL-001` | Final release passes the repository CI contract | Clean `npm ci` and `npm run ci` on final tag, matched to workflow evidence | Issue #299 | measured | public | planned |
+| `QAL-001` | Delivery candidate passes the repository CI contract | GitHub Actions CI on exact SHA `1e516ead8f69d60a263718c20d59b97c9618c97a`; run `33404234578` | Issue #295 and issue #299 | measured | public | verified |
 | `QAL-002` | Final owner smoke test covers all supported cycles | Agreed flow matrix using fictional accounts; no screenshots required for the result | Issue #299 | measured | aggregate-only | planned |
 | `QAL-003` | Successful main-branch CI gates the guarded production deployment path | Reviewed workflow and deployment guard | ADR-0006; deployment workflow/scripts; issues #298 and #299 | implemented | public | collected; final execution evidence remains `QAL-001` |
-| `OPS-003` | Immutable web, Radar and database image references | Final release record and production inventory | Issue #299 | planned | private-to-public-summary | planned |
+| `OPS-003` | Immutable web, Radar and database image references | Web image from deployment run `33404461730`; Radar image from the last public release record and preserved-container result; private inventory confirmation required | Issues #295 and #299 | measured | private-to-public-summary | collected; Radar inventory confirmation pending |
 | `OPS-004` | Backup, isolated restore and rollback readiness | Dated operational records; publish only status and timestamp | Issue #299 | measured | aggregate-only | planned |
 | `OPS-005` | Backup, isolated restore and image-rollback mechanisms are defined as release gates | Reviewed scripts, runbooks and release checks | ADR-0005; operations documentation; issues #298 and #299 | implemented | public | collected; exercised readiness remains `OPS-004` |
 | `IMP-001` | Student task completion and perceived relevance | Consented study with sample size, scenarios and limitations | Issue #300 | measured | aggregate-only | planned |
