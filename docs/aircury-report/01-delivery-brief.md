@@ -19,7 +19,7 @@ approved.
 | Canonical repository | <https://github.com/danielgarciaortega-dev/al-lio> |
 | Canonical production application | <https://al-lio.app> |
 | Public project contact | `hola@al-lio.app` |
-| Screenshots | Captured later by the owner in one dedicated session; never captured by Codex during the report issues |
+| Screenshots | Captured later by the owner in one dedicated session; not captured during the report-preparation issues |
 | Author display | Deferred until the final PDF is assembled |
 
 The Gmail recipient and any private delivery-thread details stay outside the

@@ -22,11 +22,14 @@ produced a measured social outcome.
 This section uses the evidence classes defined in
 [`02-evidence-register.md`](02-evidence-register.md):
 
-- **Delivered:** an implemented product or operating mechanism.
+- **Implemented:** present in the reviewed source baseline but not yet
+  reconfirmed as the frozen delivery release.
+- **Delivered:** present and verified in the frozen delivery release.
 - **Internally validated:** a result reproduced by the project team, without
   presenting it as independent user research.
 - **Measured:** a dated observation collected with a defined population and
   method.
+- **Estimated:** a dated calculation based on explicit inputs and assumptions.
 - **Expected:** a reasoned benefit that has not been measured with users.
 - **Planned:** evidence still to be collected from the frozen release, users,
   owner or providers.
@@ -279,17 +282,17 @@ responsibilities are active.
 
 ## 8. Evidence catalogue
 
-These IDs are stable within the report source. The final integration task must
-add new IDs to the consolidated register without renumbering them.
+These IDs are stable within the report source and are represented in the
+consolidated register without renumbering them.
 
 | Evidence ID | Claim | Class | Primary source or method | Publication boundary | Status |
 |---|---|---|---|---|---|
 | `IMP-001` | Student task completion, time, perceived relevance, clarity and ease | measured | Protocol in section 5; consented aggregate results | Aggregate only | Planned; no study result claimed |
-| `IMP-002` | Intended social benefit follows from reducing fragmented work into cycle-relevant next actions | expected | Product specification; `PRD-003`–`PRD-017`; impact model in section 2 | Public | Collected as reasoned expected impact |
-| `IMP-003` | Mobile, keyboard, focus, reduced-motion and semantic mechanisms exist, without claiming full accessibility conformance | internally validated mechanism | Shared UI source, accessibility statement and structural tests | Public summary | Collected; manual accessibility review pending |
-| `IMP-004` | Inclusion risks and unequal cycle coverage are explicitly assessed rather than hidden by a total | expected plus measured coverage | Risk register; `DAT-001`–`DAT-007` | Public summary/aggregate | Risk model collected; final coverage planned |
-| `ECO-001` | Current and projected operating cost through 31 August 2027 | measured or estimated | Dated invoices/provider prices and section 7 calculation method | Aggregate only | Planned owner input |
-| `ECO-002` | Maintenance responsibilities and provider fallbacks support continued operation | delivered plan plus owner-confirmed operation | Operations documentation and section 7.3 | Public summary | Mechanisms documented; owners and operating evidence planned |
+| `IMP-002` | Intended social benefit follows from reducing fragmented work into cycle-relevant next actions | expected | Product specification; `PRD-001`–`PRD-017`; impact model in section 2 | Public | Collected as reasoned expected impact |
+| `IMP-003` | Mobile, keyboard, focus, reduced-motion and semantic mechanisms exist, without claiming full accessibility conformance | internally validated | Shared UI source, accessibility statement and structural tests | Public summary | Collected; manual accessibility review pending |
+| `IMP-004` | Inclusion risks and unequal cycle coverage are explicitly assessed rather than hidden by a total | expected | Risk register; `DAT-001`–`DAT-007` | Public summary/aggregate | Risk model collected; final coverage planned |
+| `ECO-001` | Current and projected operating cost through 31 August 2027 | estimated | Dated invoices/provider prices and section 7 calculation method | Aggregate only | Planned owner input |
+| `ECO-002` | Maintenance responsibilities and provider fallbacks support continued operation | implemented | Operations documentation and section 7.3 | Public summary | Mechanisms documented; owners and operating evidence planned |
 
 ## 9. Extraction boundary for the final PDF
 
@@ -314,7 +317,7 @@ If no study is completed, say explicitly that impact is expected and has not
 been measured with users. A missing measurement must never be replaced by
 generic testimonials or internal team opinion.
 
-## Open items for owner and final integration
+## Open items for owner and final collection
 
 - Decide whether the privacy-safe validation protocol will be run. If not,
   retain only the `expected` impact claim.
@@ -325,7 +328,6 @@ generic testimonials or internal team opinion.
   #299; do not duplicate its final operational evidence here.
 - Collect per-cycle `DAT-*` values from the frozen release before describing
   content breadth or equity.
-- Add `IMP-003`, `IMP-004` and `ECO-002` to
-  [`02-evidence-register.md`](02-evidence-register.md) during final integration.
-- Change the report README status for this file only during the integration
-  task, avoiding conflicts with parallel documentation branches.
+- `IMP-003`, `IMP-004` and `ECO-002` are now represented in
+  [`02-evidence-register.md`](02-evidence-register.md); their remaining manual
+  and owner evidence stays pending as labelled.

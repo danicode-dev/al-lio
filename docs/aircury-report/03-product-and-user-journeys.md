@@ -397,7 +397,7 @@ not intended as headings or visible labels in the final PDF.
 | `PRD-003` | Onboarding, profile updates and product tour | `src/app/onboarding/`, `src/components/onboarding/`, `src/components/profile/profile-form.tsx` | `tests/integration/onboarding/`, `tests/unit/onboarding/product-tour.test.mjs` | Collected |
 | `PRD-004` | Five-cycle model and relevance boundary | `infra/postgres/schema.sql`, `src/lib/profile/onboarding-options.ts`, cycle-scoped repositories | `tests/integration/onboarding/`, learning/news/work integration tests | Collected; final active-cycle query pending |
 | `PRD-005` | Dashboard and Quick Add | `src/components/dashboard/`, `src/components/quick-add.tsx`, `src/lib/data.ts` | `tests/integration/dashboard/data-and-layout.test.mjs`, `tests/unit/dashboard/upcoming-feed.test.mjs` | Collected |
-| `PRD-006` | Competency roadmap and cycle progress | `src/components/roadmap/`, `src/lib/fp/roadmap.ts`, `src/lib/fp/roadmap-overview.ts` | `tests/integration/learning/persistence-and-resources.test.mjs` | Collected; one CRLF-sensitive source assertion is deferred to #299; final coverage query pending |
+| `PRD-006` | Competency roadmap and cycle progress | `src/components/roadmap/`, `src/lib/fp/roadmap.ts`, `src/lib/fp/roadmap-overview.ts` | `tests/integration/learning/persistence-and-resources.test.mjs` | Collected; CRLF portability correction tracked in #307; final coverage query pending |
 | `PRD-007` | Approved learning resources, player progress and notes | `src/components/learning/`, `src/features/learning/`, `src/app/(dashboard)/aprende/` | `tests/integration/learning/persistence-and-resources.test.mjs`, `tests/unit/learning/resource-selection.test.mjs` | Collected; final content coverage pending |
 | `PRD-008` | Private task lifecycle | `src/features/tasks/` | `tests/integration/tasks/workflows.test.mjs`, `tests/integration/dashboard/data-and-layout.test.mjs` | Collected |
 | `PRD-009` | Private Bloc notes, recovery and export | `src/features/bloc/`, `src/lib/bloc/` | `tests/integration/bloc/editor.test.mjs`, `tests/unit/bloc/notes.test.mjs` | Collected |
@@ -409,6 +409,7 @@ not intended as headings or visible labels in the final PDF.
 | `PRD-015` | Portal search, company catalogue and candidature tracker | `src/features/work/`, `src/app/api/job-radar/` | `tests/integration/work/`, `tests/unit/work/`, `tests/operations/importers/company-catalogue.test.mjs` | Collected |
 | `PRD-016` | Consolidated saved-content hub | `src/components/profile/saved-hub.tsx` | `tests/integration/profile/saved-hub.test.mjs` | Collected |
 | `PRD-017` | Shared desktop/mobile navigation hierarchy | `src/components/app-sidebar.tsx`, `src/components/mobile-header-navigation.tsx` | `tests/integration/navigation/app-shell.test.mjs`, `tests/unit/onboarding/product-tour.test.mjs` | Collected; owner smoke test pending |
+| `PRD-018` | Complete final-release student journey matrix | The nine-stage journey in this document | `QAL-002` owner smoke matrix | Planned until the frozen release is tested |
 
 ## PDF extraction guidance
 

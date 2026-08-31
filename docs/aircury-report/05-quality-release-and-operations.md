@@ -243,8 +243,8 @@ after the release is frozen, using purpose-built fictional accounts.
 
 - One clean fictional account per supported vocational cycle. The working
   baseline shows five cycle codes in the schema (`DAW`, `DAM`, `AF`, `MP`,
-  `TSAF`); the exact supported set and labels are confirmed by `Q-PRD-001` /
-  `PRD-003` at the frozen release, and the smoke test must cover every cycle
+  `TSAF`); the exact supported set and labels are confirmed by `Q-PRD-004` /
+  `PRD-004` at the frozen release, and the smoke test must cover every cycle
   that query returns.
 - For each account, exercise the agreed flow matrix: public entry and
   sign-in; onboarding and cycle selection; dashboard next actions; competency

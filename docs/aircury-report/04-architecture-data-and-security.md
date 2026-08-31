@@ -10,8 +10,8 @@ otherwise, and point to an architecture decision, executable configuration,
 test or release record. They do not prove that the final production release is
 already frozen or that an operator-owned control has already been exercised.
 This document assigns stable architecture, security and governance evidence
-IDs; the final integration task will add them to the consolidated evidence
-register ([`02-evidence-register.md`](02-evidence-register.md)).
+IDs, which are represented in the consolidated evidence register
+([`02-evidence-register.md`](02-evidence-register.md)).
 Release-dependent values stay `planned` (`VER-004`, `OPS-001`, `OPS-003`).
 
 Diagrams and topology below reflect the maintained architecture reference. The
@@ -341,23 +341,23 @@ in the reviewed source baseline; the final release must reconfirm them.
 `Source` is the primary executable or documentary reference. The IDs below are
 stable within this report source: `ARC-*` covers architecture boundaries,
 `SEC-*` covers security controls, and `GOV-*` covers content governance. The
-integration task must copy these IDs into the consolidated register without
-renumbering them. Existing `DAT-*`, `QAL-*`, `OPS-*` and `VER-*` IDs are reused
-where those issues own the measured or release-dependent evidence.
+consolidated register uses these IDs without renumbering them. Existing
+`DAT-*`, `QAL-*`, `OPS-*` and `VER-*` IDs are reused where those issues own the
+measured or release-dependent evidence.
 
 | Claim | Class | Source | Register ID |
 |---|---|---|---|
-| Explicit service trust boundaries with an internal-only database network and Radar excluded from it | implemented in reviewed source | `infra/docker-compose.prod.yml`; ADR-0002 | `ARC-001` |
-| Self-hosted PostgreSQL is the product source of truth with a restricted runtime role and a separate migration credential | implemented in reviewed source | ADR-0001; `infra/postgres/`; `infra/docker-compose.prod.yml` | `ARC-002` |
-| Signed, `HttpOnly`, `SameSite` session with database-backed stamp revocation | implemented in reviewed source | `src/lib/auth/session.ts`; `src/lib/auth/session-token.ts`; auth tests | `SEC-001` |
-| Single central onboarding gate on every private route | implemented in reviewed source | ADR-0007; `src/app/(dashboard)/layout.tsx`; `tests/integration/onboarding/gate.test.mjs` | `SEC-002` |
-| Server-side per-operation user scoping; no user id accepted from the request | implemented in reviewed source | ADR-0008; `src/features/*/server/`; `tests/architecture/features/boundaries.test.mjs` | `SEC-003` |
-| HMAC-SHA256 signed Radar webhook with replay window, schema-version enforcement, transactional ingest and delivery/item idempotency | implemented in reviewed source | ADR-0003; `src/lib/radar/webhook-auth.ts`; `src/app/api/radar/v1/ingest/route.ts`; Radar contract/signature tests | `SEC-004` |
-| Human approval required before any currently enabled source publishes; autonomous publication off by default | implemented in reviewed source | ADR-0003; `docs/integrations/`; `infra/docker-compose.prod.yml` | `GOV-001` |
-| Google identity and Calendar are separate and optional; Calendar credentials are encrypted in a browser cookie but are not fully application-session-bound | implemented with documented limitation | `src/lib/google/identity.ts`; `src/lib/google/calendar.ts`; Calendar tests | `SEC-005` |
-| Backup, isolated restore rehearsal and image-based rollback are defined release gates | delivered (mechanism); measured (evidence) | ADR-0005; `docs/operations/backup-and-recovery.md`; `docs/operations/release-and-rollback.md` | `OPS-004` (issue #299) |
-| Post-merge CI gates the guarded production deploy | implemented in reviewed source; execution evidence pending | ADR-0006; `docs/operations/AUTONOMOUS_PRODUCTION_DEPLOY.md` | `QAL-001` |
-| Per-cycle content governance: provenance, approval, expiry, withdrawal and server-side cycle filter | implemented (mechanism); measured (counts) | `docs/integrations/`; `infra/postgres/migrations/`; `Q-DAT-001`–`Q-DAT-007` | `GOV-002`; measured values `DAT-001`–`DAT-007` |
+| Explicit service trust boundaries with an internal-only database network and Radar excluded from it | implemented | `infra/docker-compose.prod.yml`; ADR-0002 | `ARC-001` |
+| Self-hosted PostgreSQL is the product source of truth with a restricted runtime role and a separate migration credential | implemented | ADR-0001; `infra/postgres/`; `infra/docker-compose.prod.yml` | `ARC-002` |
+| Signed, `HttpOnly`, `SameSite` session with database-backed stamp revocation | implemented | `src/lib/auth/session.ts`; `src/lib/auth/session-token.ts`; auth tests | `SEC-001` |
+| Single central onboarding gate on every private route | implemented | ADR-0007; `src/app/(dashboard)/layout.tsx`; `tests/integration/onboarding/gate.test.mjs` | `SEC-002` |
+| Server-side per-operation user scoping; no user id accepted from the request | implemented | ADR-0008; `src/features/*/server/`; `tests/architecture/features/boundaries.test.mjs` | `SEC-003` |
+| HMAC-SHA256 signed Radar webhook with replay window, schema-version enforcement, transactional ingest and delivery/item idempotency | implemented | ADR-0003; `src/lib/radar/webhook-auth.ts`; `src/app/api/radar/v1/ingest/route.ts`; Radar contract/signature tests | `SEC-004` |
+| Human approval required before any currently enabled source publishes; autonomous publication off by default | implemented | ADR-0003; `docs/integrations/`; `infra/docker-compose.prod.yml` | `GOV-001` |
+| Google identity and Calendar are separate and optional; Calendar credentials are encrypted in a browser cookie but are not fully application-session-bound | implemented | `src/lib/google/identity.ts`; `src/lib/google/calendar.ts`; Calendar tests | `SEC-005` |
+| Backup, isolated restore rehearsal and image-based rollback are defined release gates | implemented | ADR-0005; `docs/operations/backup-and-recovery.md`; `docs/operations/release-and-rollback.md` | `OPS-005`; measured `OPS-004` evidence pending in #299 |
+| Post-merge CI gates the guarded production deploy | implemented | ADR-0006; `docs/operations/AUTONOMOUS_PRODUCTION_DEPLOY.md` | `QAL-003`; measured `QAL-001` execution evidence pending |
+| Per-cycle content governance: provenance, approval, expiry, withdrawal and server-side cycle filter | implemented | `docs/integrations/`; `infra/postgres/migrations/`; `Q-DAT-001`–`Q-DAT-007` | `GOV-002`; measured values `DAT-001`–`DAT-007` pending |
 | One immutable AL-LIO and Radar release baseline for all identifiers | planned | `01-delivery-brief.md` | `VER-004` |
 | Final release live with a ready database boundary at the evidence cut-off | planned | `/api/health`, `/api/ready` | `OPS-001` |
 
@@ -381,14 +381,11 @@ claim-to-evidence table into the PDF. They remain internal traceability
 material. The report should describe what the controls achieve, not reproduce
 an audit procedure or expose unnecessary operational detail.
 
-## Open items for integration
+## Final-collection items
 
-- The `docs/aircury-report/README.md` "Documents" table still marks this file
-  as *Planned in issue #298*; the integration task (not this issue) should
-  flip it to *Active*.
-- The integration task must add `ARC-001`–`ARC-002`, `SEC-001`–`SEC-005` and
-  `GOV-001`–`GOV-002` to the consolidated evidence register without changing
-  their meaning or numbering.
+- `ARC-001`–`ARC-002`, `SEC-001`–`SEC-005` and `GOV-001`–`GOV-002` are now
+  represented in the consolidated evidence register with their original
+  meaning and numbering.
 - Release-dependent values (`VER-004`, `OPS-001`, `OPS-003`, `QAL-001`,
   `OPS-004`, all `DAT-*` counts) are completed by issues #299 and the
   final-compliance issue after the delivery release is frozen.
