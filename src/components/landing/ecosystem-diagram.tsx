@@ -52,26 +52,21 @@ export function EcosystemDiagram() {
         const node = nodeRefs.current[index];
         if (!node) return [];
         const rect = node.getBoundingClientRect();
-        // Anchor the beam to the node's hub-facing edge (where its icon
-        // sits), not the middle of the icon+label pair.
+        // Start the beam a few px clear of the node so it never touches the
+        // icon or the label.
         const start = {
-          x: (module.side === "left" ? rect.right - 12 : rect.left + 12) - stageRect.left,
+          x: (module.side === "left" ? rect.right + 8 : rect.left - 8) - stageRect.left,
           y: rect.top - stageRect.top + rect.height / 2,
         };
         const sideIndex = perSide[module.side]++;
-        // Fan the four beams per side over a span a bit taller than the hub
-        // so they stay in separate lanes right up to the mark.
-        const spread = [-0.05, 0.3, 0.7, 1.05][sideIndex] ?? 0.5;
+        // Spread the four endpoints evenly down the hub edge.
+        const spread = [0.16, 0.39, 0.61, 0.84][sideIndex] ?? 0.5;
         const end = {
           x: module.side === "left" ? hubLeft + 6 : hubRight - 6,
           y: hubTop + hubRect.height * spread,
         };
-        // Asymmetric control points: hold the node's own height for the
-        // first stretch, then swoop to the hub - keeps the curves apart.
-        const dx = end.x - start.x;
-        const c1x = start.x + dx * 0.42;
-        const c2x = start.x + dx * 0.86;
-        return [{ d: `M ${start.x} ${start.y} C ${c1x} ${start.y}, ${c2x} ${end.y}, ${end.x} ${end.y}` }];
+        const midX = (start.x + end.x) / 2;
+        return [{ d: `M ${start.x} ${start.y} C ${midX} ${start.y}, ${midX} ${end.y}, ${end.x} ${end.y}` }];
       });
       setPaths(next);
     };
@@ -154,15 +149,12 @@ export function EcosystemDiagram() {
     <div ref={stageRef} className="relative mx-auto max-w-[900px]" aria-label="Los módulos de AL-LÍO conectados">
       <style>{`
         @keyframes al-eco-grow { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
-        @keyframes al-eco-underline { from { width: 0; } to { width: 100%; } }
         .al-eco-active { stroke-dasharray: 1; stroke-dashoffset: 1; animation: al-eco-grow ${DRAW_S}s ease-in-out forwards; }
-        .al-eco-underline { animation: al-eco-underline ${DRAW_S}s ease-in-out forwards; }
         .al-eco-hub p { text-shadow: 0 0 6px #F7F3EC, 0 0 6px #F7F3EC, 0 0 12px #F7F3EC, 0 1px 0 #F7F3EC; }
         .al-eco-hub, .al-eco-hub-m { opacity: 0; transition: opacity 0.25s; }
         .al-eco-hub[data-show="true"], .al-eco-hub-m[data-show="true"] { opacity: 1; }
         @media (prefers-reduced-motion: reduce) {
           .al-eco-active { animation: none; stroke-dashoffset: 0; }
-          .al-eco-underline { animation: none; width: 0; }
           .al-eco-hub, .al-eco-hub-m { display: none; }
         }
       `}</style>
@@ -212,9 +204,7 @@ export function EcosystemDiagram() {
             <DiagramNode
               key={module.label}
               module={module}
-              side="left"
               done={inView && index < seq.done}
-              drawing={inView && seq.active === index}
               nodeRef={(node) => {
                 nodeRefs.current[index] = node;
               }}
@@ -252,9 +242,7 @@ export function EcosystemDiagram() {
             <DiagramNode
               key={module.label}
               module={module}
-              side="right"
               done={inView && index < seq.done}
-              drawing={inView && seq.active === index}
               nodeRef={(node) => {
                 nodeRefs.current[index] = node;
               }}
@@ -279,25 +267,16 @@ export function EcosystemDiagram() {
 
 function DiagramNode({
   module,
-  side,
   nodeRef,
   done,
-  drawing,
 }: {
   module: (typeof LANDING_MODULES)[number];
-  side: "left" | "right";
   nodeRef: (node: HTMLDivElement | null) => void;
   done: boolean;
-  drawing: boolean;
 }) {
   const Icon = module.icon;
   return (
-    <div
-      ref={nodeRef}
-      // No card: bare icon + label. The icon sits on the hub-facing side so
-      // the beam meets it.
-      className={`flex items-center gap-2.5 ${side === "left" ? "flex-row-reverse" : ""}`}
-    >
+    <div ref={nodeRef} className="flex items-center gap-2.5">
       <Icon
         className={`h-[19px] w-[19px] shrink-0 transition-colors duration-300 sm:h-[22px] sm:w-[22px] ${
           done ? "text-[#1F5B46]" : "text-[#7A736B]"
@@ -305,19 +284,11 @@ function DiagramNode({
         aria-hidden="true"
       />
       <span
-        className={`relative text-left text-[12.5px] font-semibold leading-tight transition-colors duration-300 sm:text-[14px] ${
+        className={`text-left text-[12.5px] font-semibold leading-tight transition-colors duration-300 sm:text-[14px] ${
           done ? "text-[#1F5B46]" : "text-[#2F2A24]"
         }`}
       >
         {module.label}
-        {/* Connection cue: a small underline that fills as the beam grows,
-            then stays as a solid green rule once connected. */}
-        <span
-          aria-hidden="true"
-          className={`absolute -bottom-[3px] left-0 block h-[2px] rounded-full bg-[#1F5B46] ${
-            done ? "w-full" : drawing ? "al-eco-underline" : "w-0"
-          }`}
-        />
       </span>
     </div>
   );
