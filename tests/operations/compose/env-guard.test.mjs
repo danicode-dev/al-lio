@@ -8,7 +8,7 @@ import { promisify } from "node:util";
 import test from "node:test";
 
 const execFileAsync = promisify(execFile);
-const helperPath = fileURLToPath(new URL("../scripts/lib/compose-env-guard.sh", import.meta.url));
+const helperPath = fileURLToPath(new URL("../../../scripts/lib/compose-env-guard.sh", import.meta.url));
 const bashPath = process.platform === "win32" ? "C:\\Program Files\\Git\\bin\\bash.exe" : "bash";
 
 const baseCompose = `services:

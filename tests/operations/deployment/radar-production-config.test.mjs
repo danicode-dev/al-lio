@@ -1,10 +1,12 @@
+// Source-level assertion rationale: these checks protect dormant production configuration and its
+// activation runbook without starting or mutating the production Compose stack.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const composeUrl = new URL("../infra/docker-compose.prod.yml", import.meta.url);
-const productionEnvUrl = new URL("../.env.production.example", import.meta.url);
-const runbookUrl = new URL("../docs/operations/OPENWEBINARS_NEWS_PILOT.md", import.meta.url);
+const composeUrl = new URL("../../../infra/docker-compose.prod.yml", import.meta.url);
+const productionEnvUrl = new URL("../../../.env.production.example", import.meta.url);
+const runbookUrl = new URL("../../../docs/operations/OPENWEBINARS_NEWS_PILOT.md", import.meta.url);
 
 test("production Compose passes the reviewed Radar controls with dormant defaults", async () => {
   const compose = await readFile(composeUrl, "utf8");

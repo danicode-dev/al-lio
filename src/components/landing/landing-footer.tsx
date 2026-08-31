@@ -4,6 +4,7 @@ import { Github } from "lucide-react";
 
 import type { Lang } from "@/components/landing/i18n";
 import { messages } from "@/components/landing/i18n";
+import { PUBLIC_CONTACT_EMAILS } from "@/lib/public-contact";
 
 // Shared footer for the landing and every legal page: the mark, the
 // required Aircury SL credit + the open-source (MIT) link, and two short
@@ -39,6 +40,12 @@ export function LandingFooter({ lang }: { lang: Lang }) {
           >
             <Github className="h-3.5 w-3.5" aria-hidden="true" />
             {t.openSource}
+          </a>
+          <a
+            href={`mailto:${PUBLIC_CONTACT_EMAILS.general}`}
+            className="mt-2 block w-fit text-[#4D4842] underline underline-offset-2 hover:text-[#2F2A24]"
+          >
+            {PUBLIC_CONTACT_EMAILS.general}
           </a>
         </div>
 
