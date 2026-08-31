@@ -9,7 +9,8 @@ economic audit.
 The frozen delivery release is commit
 `1e516ead8f69d60a263718c20d59b97c9618c97a`, deployed and publicly observed on
 31 August 2026 under tag `aircury-2026-delivery`. Its authenticated owner smoke
-test remains pending under `QAL-002`. Values that depend on participants,
+test is partial under `QAL-002`; Calendar, news and device-recorded mobile
+validation retain explicit limitations. Values that depend on participants,
 production content, invoices, provider prices or owner-operated controls remain
 `planned` until collected and approved.
 
@@ -102,10 +103,15 @@ uses the stable code and does not infer a public expansion.
 | Semantic labelling | Headings, `aria` labels/states, listbox, toolbar, menu and dialog roles in shared and feature components | The implementation contains screen-reader-oriented semantics in important controls | Screen-reader testing is still required |
 | Feedback channel | Public accessibility statement and support contact | Users have a published route for reporting barriers | Confirm ownership and response process through issue #299 |
 
-The project targets WCAG 2.1 level AA, but no complete independent or
-end-to-end accessibility audit has been recorded for the final release.
-Therefore the report may describe implemented considerations and known gaps;
-it must not claim WCAG conformance.
+The project targets WCAG 2.1 level AA, but the repository and owner review do
+not evidence a complete manual, independent or end-to-end accessibility audit
+for the final release. Structural tests and implementation review support the
+mechanism claims above; they do not establish conformance. The report must not
+claim WCAG conformance.
+
+The owner also confirmed on 31 August 2026 that AL-LIO had not previously been
+submitted to another contest or grant programme. This owner statement supports
+programme eligibility (`DEL-008`); it is separate from product-impact evidence.
 
 ### 4.2 Exclusion and bias risks
 
@@ -122,9 +128,10 @@ it must not claim WCAG conformance.
 
 ## 5. Privacy-safe user-validation protocol
 
-This protocol may be run after the candidate release is stable. It is optional:
-if no valid study is completed, `IMP-001` remains `planned` and the report uses
-only the expected-impact reasoning in `IMP-002`.
+No formal user study had been completed by 31 August 2026. The owner intends to
+test the product with users later. Until a consented study is completed,
+`IMP-001` has no result and the report uses only the expected-impact reasoning
+in `IMP-002`.
 
 ### 5.1 Study record
 
@@ -233,13 +240,24 @@ costs. Those values must come from dated owner/provider evidence.
 
 | Cost component | Current technical boundary | Evidence required | Current monthly cost | Projection through 31 August 2027 | Variability or fallback |
 |---|---|---|---|---|---|
-| VPS compute | Shared single VPS running the web, PostgreSQL and Radar containers | Dated invoice and documented AL-LIO allocation method if the host is shared | Pending owner input | Pending | Resource monitoring; resize or migrate using the documented container boundary |
-| Primary domain (`al-lio.app`) | Canonical public domain | Registrar invoice, renewal date and tax treatment | Pending owner input | Pending | Transfer to another registrar or preserve a documented replacement domain |
-| Transactional email | Provider-backed registration/recovery messages when configured | Current plan, included quota, actual usage and overage terms | Pending owner input | Pending | Change provider behind the mail boundary; preserve generic failure behaviour |
-| External monitoring | Must observe health/readiness outside the VPS failure boundary | Provider plan and configured probe/alert evidence | Pending owner input | Pending | Alternative probe provider or owner-operated external monitor |
-| Encrypted off-host backup | PostgreSQL and Radar copies outside the VPS/provider failure boundary | Storage invoice, retention, estimated volume and restore/egress assumptions | Pending owner input | Pending | Compatible object/file storage with verified restore rehearsal |
-| Google identity and optional Calendar | External OAuth/API dependency | Dated provider terms and any applicable quota/billing configuration | Pending verification | Pending | Password access for eligible accounts; local planning remains independent of Calendar |
-| Source access and other external services | Approved public sources used by Radar | Provider terms and any paid-access commitment | Pending verification | Pending | Disable affected source; retain reviewed catalogue and add an approved replacement |
+| VPS compute | OVH single VPS running the web, PostgreSQL and Radar containers | Owner-stated current charge; VAT and shared-host allocation not confirmed | EUR 28.00 | EUR 336.00 for twelve months | Resource monitoring; resize or migrate using the documented container boundary |
+| Primary domain (`al-lio.app`) | Cloudflare registrar and DNS; renewal required before the support period ends | Owner-stated annual charge; public registration expiry; VAT not confirmed | EUR 1.25 monthly equivalent | EUR 15.00 annual renewal | Renew before expiry or transfer while preserving the canonical domain |
+| Transactional email | Resend sends registration/recovery messages; public inbound aliases route to a private owner mailbox | Owner-stated current charge; plan/quota evidence not retained publicly | EUR 0.00 at current usage | EUR 0.00 only while current usage remains within the existing plan | Change provider behind the mail boundary; preserve generic failure behaviour |
+| External monitoring | Not currently evidenced; must observe health/readiness outside the VPS failure boundary | Provider and plan to be selected in #316 | Unknown | Excluded from known-base estimate | Alternative probe provider or owner-operated external monitor |
+| Encrypted off-host backup | Owner reports a local off-VPS copy; automation, encryption, retention and restore are not evidenced | Storage destination and policy to be selected in #317 | Unknown | Excluded from known-base estimate | Compatible off-host storage with verified restore rehearsal |
+| Google identity and optional Calendar | External OAuth/API dependency; Google identity works, Calendar consent is currently blocked by an unverified-app warning | No separately billed production charge confirmed | Unknown / no charge evidenced | Excluded from known-base estimate | Password access remains available; local planning is independent of Calendar |
+| Source access and other external services | Approved public sources used by Radar | No paid source-access commitment confirmed | Unknown / no charge evidenced | Excluded from known-base estimate | Disable affected source; retain reviewed catalogue and add an approved replacement |
+
+The owner-stated known cash base is **EUR 29.25 per month equivalent** and
+**EUR 351.00 for twelve months**: EUR 336 VPS plus one EUR 15 domain renewal.
+This is an estimate, not an invoice audit. It excludes VAT or shared-host
+allocation differences, monitoring, off-host backup storage and any future
+usage-based API charge.
+
+ChatGPT and Claude are development tools rather than production runtime
+dependencies and are excluded from operating cost. Radar removed its unused
+OpenAI dependency before the frozen release. Google libraries remain runtime
+integration dependencies, but no paid Google usage was evidenced.
 
 Do not label a service “free” because the repository contains no payment key or
 because current usage is below a quota. Record a zero value only when dated
@@ -268,13 +286,13 @@ The total is an estimate, not a guarantee.
 
 | Responsibility | Minimum sustainable activity | Owner | Evidence/status |
 |---|---|---|---|
-| Hosting and domain | Renew services, monitor capacity and keep canonical DNS/TLS operational | Pending owner confirmation | Issue #299 operational plan |
-| Monitoring and incidents | Receive external alerts, triage impact, record resolution and escalate repeated failures | Pending owner confirmation | Provider/recipient configuration pending |
-| Backup and recovery | Run scheduled encrypted off-host backups and recurring isolated restore rehearsals | Pending owner confirmation | Final dated evidence owned by #299 |
-| Dependency and security maintenance | Review supported updates and security advisories on an agreed cadence; validate before release | Pending owner confirmation | Cadence and maintenance log pending |
-| Editorial maintenance | Review sources/candidates, withdrawals, expiry and per-cycle coverage | Pending owner confirmation | Review/outbox records and coverage checks |
-| Release and rollback | Approve releases, retain immutable references and choose rollback versus restore | Pending owner confirmation | Final release record owned by #299 |
-| User and accessibility feedback | Receive support/accessibility reports, prioritise barriers and document material fixes | Pending owner confirmation | Public contact exists; response target pending |
+| Hosting and domain | Renew OVH/Cloudflare services, monitor capacity and keep canonical DNS/TLS operational | Daniel García Ortega | Ownership confirmed; external monitoring pending #316 |
+| Monitoring and incidents | Receive external alerts, triage impact, record resolution and escalate repeated failures | Daniel García Ortega | Provider, recipients and thresholds pending #316 |
+| Backup and recovery | Run scheduled encrypted off-host backups and recurring isolated restore rehearsals | Daniel García Ortega | Local copy reported; complete control pending #317 |
+| Dependency and security maintenance | Review supported updates and security advisories on an agreed cadence; validate before release | Daniel García Ortega | Owner confirmed; cadence and maintenance log remain to be defined |
+| Editorial maintenance | Review sources/candidates, withdrawals, expiry and per-cycle coverage | Daniel García Ortega | Owner confirmed; current news coverage limitation remains open under #235 |
+| Release and rollback | Approve releases, retain immutable references and choose rollback versus restore | Daniel García Ortega | Frozen release recorded; recovery exercise remains incomplete |
+| User and accessibility feedback | Receive support/accessibility reports, prioritise barriers and document material fixes | Daniel García Ortega | Public contacts exist; response target and full accessibility audit remain pending |
 
 Execution capacity is supported by the repository's modular application,
 automated checks, versioned migrations, container deployment and documented
@@ -289,12 +307,12 @@ consolidated register without renumbering them.
 
 | Evidence ID | Claim | Class | Primary source or method | Publication boundary | Status |
 |---|---|---|---|---|---|
-| `IMP-001` | Student task completion, time, perceived relevance, clarity and ease | measured | Protocol in section 5; consented aggregate results | Aggregate only | Planned; no study result claimed |
+| `IMP-001` | Student task completion, time, perceived relevance, clarity and ease | measured | Protocol in section 5; consented aggregate results | Aggregate only | Not conducted by the cut-off; future study planned, no result claimed |
 | `IMP-002` | Intended social benefit follows from reducing fragmented work into cycle-relevant next actions | expected | Product specification; `PRD-001`–`PRD-017`; impact model in section 2 | Public | Collected as reasoned expected impact |
-| `IMP-003` | Mobile, keyboard, focus, reduced-motion and semantic mechanisms exist, without claiming full accessibility conformance | internally validated | Shared UI source, accessibility statement and structural tests | Public summary | Collected; manual accessibility review pending |
+| `IMP-003` | Mobile, keyboard, focus, reduced-motion and semantic mechanisms exist, without claiming full accessibility conformance | internally validated | Shared UI source and structural tests | Public summary | Mechanisms collected; no complete manual or independent audit |
 | `IMP-004` | Inclusion risks and unequal cycle coverage are explicitly assessed rather than hidden by a total | expected | Risk register; `DAT-001`–`DAT-007` | Public summary/aggregate | Risk model collected; final coverage planned |
-| `ECO-001` | Current and projected operating cost through 31 August 2027 | estimated | Dated invoices/provider prices and section 7 calculation method | Aggregate only | Planned owner input |
-| `ECO-002` | Maintenance responsibilities and provider fallbacks support continued operation | implemented | Operations documentation and section 7.3 | Public summary | Mechanisms documented; owners and operating evidence planned |
+| `ECO-001` | Current and projected operating cost through 31 August 2027 | estimated | Owner-stated costs and section 7 calculation method | Aggregate only | Known base estimated at EUR 29.25/month equivalent and EUR 351/twelve months; exclusions stated |
+| `ECO-002` | Maintenance responsibilities and provider fallbacks support continued operation | implemented | Operations documentation and section 7.3 | Public summary | Owner confirmed; monitoring and complete backup/recovery evidence pending #316/#317 |
 
 ## 9. Extraction boundary for the final PDF
 
@@ -321,13 +339,13 @@ generic testimonials or internal team opinion.
 
 ## Open items for owner and final collection
 
-- Decide whether the privacy-safe validation protocol will be run. If not,
-  retain only the `expected` impact claim.
+- A future privacy-safe user study is planned; retain only the `expected`
+  impact claim until consented aggregate results exist.
 - Reconcile the public long-form `TSAF` name before the PDF.
-- Supply dated, redacted cost evidence, VAT treatment, shared-host allocation
-  and renewal dates for `ECO-001`.
-- Confirm named maintenance owners, cadence and provider fallbacks with issue
-  #299; do not duplicate its final operational evidence here.
+- Confirm VAT treatment, shared-host allocation and future monitoring/backup
+  provider costs if the final PDF needs a total beyond the known cash base.
+- Complete monitoring/alerting under #316 and encrypted off-host
+  backup/restore evidence under #317; until then preserve both limitations.
 - Collect per-cycle `DAT-*` values from the frozen release before describing
   content breadth or equity.
 - `IMP-003`, `IMP-004` and `ECO-002` are now represented in

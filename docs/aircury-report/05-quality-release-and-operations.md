@@ -241,47 +241,63 @@ inferred from the successful deployment alone.
 
 ### 3.1 Owner-performed authenticated smoke test
 
-Requirement, not an action to perform in this issue. The owner runs it once,
-after the release is frozen, using purpose-built fictional accounts.
+The owner performed a production smoke test on 31 August 2026 using desktop
+Chrome. No screenshots, credentials, account identifiers or personal records
+were retained. The owner did not record a separate physical mobile-device
+session or a five-cycle result matrix, so `QAL-002` is partial rather than a
+complete release pass.
 
-- One clean fictional account per supported vocational cycle. The working
-  baseline shows five cycle codes in the schema (`DAW`, `DAM`, `AF`, `MP`,
-  `TSAF`); the exact supported set and labels are confirmed by `Q-PRD-004` /
-  `PRD-004` at the frozen release, and the smoke test must cover every cycle
-  that query returns.
-- For each account, exercise the agreed flow matrix: public entry and
-  sign-in; onboarding and cycle selection; dashboard next actions; competency
-  route and a learning resource; progress and a note; a task create/complete;
-  the Google Calendar boundary behaviour; cycle-specific news showing only that
-  cycle's Spanish-audience content; one opportunity flow (course, event,
-  company or job); profile and cycle state.
-- Record only aggregate outcomes (`QAL-002`, `aggregate-only`): pass/fail per
-  flow and per cycle, the release SHA, the environment and the date. No
-  screenshots are required for this result (issue #301 owns visual evidence).
-  No personal data, no real accounts, no reusable demo credentials in the
-  record.
+| Flow | Result | Boundary or limitation |
+|---|---|---|
+| Registration, email/password login, logout and password recovery | Pass | Owner-verified in production |
+| Google identity login | Pass | Identity login succeeds independently from Calendar consent |
+| Onboarding and cycle selection | Pass | Owner-verified in production |
+| Dashboard | Pass | Owner-verified in production |
+| Task create, update and completion | Pass | Persistence reported working |
+| Profile and cycle update | Pass | Owner-verified in production |
+| Learning progress and notes | Pass | Persistence reported working |
+| Google Calendar connect/disconnect/sign-out boundary | Blocked | Google displayed an unverified-application warning before consent; the Calendar flow could not complete |
+| Cycle-specific news | Fail / insufficient content | The owner observed failure or very little/no production content; issue #235 owns rollout and coverage follow-up |
+| Mobile navigation continuity | Owner-reported pass, not device-recorded | Responsive navigation is reported to work like desktop, but no device/browser pair was captured |
 
-## 4. Owner-supplied operational information still pending
+This result supports the delivered core workflow while preserving Calendar,
+news and mobile-validation limitations. It must not be rewritten as a complete
+five-cycle E2E pass.
 
-These are facts only the owner can confirm. They are recorded here as fields,
-not guesses. Do not fill them from assumptions.
+### 3.2 Frozen-release automated and public evidence
+
+| Evidence | Result |
+|---|---|
+| Published release | `aircury-2026-delivery` resolves to `1e516ead8f69d60a263718c20d59b97c9618c97a` |
+| CI | Run `33404234578` passed: 41 focused test files, 263 mapped legacy tests, 345 tests passed, 0 failed, build compiled successfully, dependency installation reported 0 vulnerabilities |
+| Code scanning | CodeQL run `33404234583` passed |
+| Production deployment | Run `33404461730` passed; exact web image deployed, PostgreSQL and Radar preserved |
+| Migration inventory | 15 migration files (`0002`–`0016`) in the frozen tag; deployment reported no new migration for this release |
+| Original cut-off observation | `/api/health` and `/api/ready` returned HTTP 200; unauthenticated `/api/job-radar` returned HTTP 401 at `2026-08-31T14:49:37Z` |
+| Later confirmation | The same public results were observed again at `2026-08-31T15:47:24Z`; this later time is not substituted for the original cut-off |
+
+## 4. Owner-supplied operational information
+
+These facts were supplied by the owner on 31 August 2026 and reconciled with
+the repository. Unknown controls remain unknown rather than inferred from the
+presence of scripts or healthchecks.
 
 | Field | Status |
 |---|---|
-| VPS hosting provider and account ownership | pending owner confirmation |
-| `al-lio.app` domain registrar and ownership; DNS control | pending owner confirmation |
-| Transactional email sender domain in production (`RESEND_FROM_EMAIL`) | pending owner confirmation of the final verified sender |
-| External uptime monitoring provider for `/api/health` and `/api/ready` | pending owner setup and confirmation |
-| Host CPU / memory / disk / inode / container-restart alerting | pending owner setup and confirmation |
-| Radar heartbeat and delivery-outbox alerting | pending owner setup and confirmation |
-| Primary and fallback human alert recipients | pending owner |
-| Backup schedule, retention, off-host storage location and encryption | pending owner |
-| Isolated restore-rehearsal cadence and last rehearsal date | pending owner |
-| Dependency and security-update cadence and responsible person | pending owner |
-| Editorial maintenance responsibility (Radar source review) | pending owner |
-| Incident-response and rollback owner | pending owner |
-| Expected current and projected monthly operating cost through 31 August 2027 | pending owner (economic detail is also owned by issue #300 / `ECO-001`) |
-| Final release identifiers (tag, SHAs, image references, cut-off timestamp) | pending frozen release (`VER-004`, `OPS-003`) |
+| VPS hosting provider and account ownership | OVH provides the VPS; Daniel García Ortega retains project/operator responsibility. Private account identifiers stay outside Git. |
+| `al-lio.app` domain registrar and ownership; DNS control | Cloudflare is the registrar and DNS provider; Daniel García Ortega retains renewal and configuration responsibility. |
+| Transactional email and public inbound contacts | Resend sends confirmation and recovery email. `hola@al-lio.app` and `privacidad@al-lio.app` route to a private owner mailbox whose address is deliberately excluded. |
+| External uptime monitoring provider for `/api/health` and `/api/ready` | Not evidenced/configured; implementation tracked in #316. Internal healthchecks do not satisfy this field. |
+| Host CPU / memory / disk / inode / container-restart alerting | Not evidenced; tracked in #316. |
+| Radar heartbeat and delivery-outbox alerting | Not configured by owner statement; planned in #316. |
+| Primary and fallback human alert recipients | Not configured; #316 must record recipients by role without publishing private destinations. |
+| Backup schedule, retention, off-host storage location and encryption | Owner confirms a local copy outside the VPS. Schedule, retention and encryption are unknown; automation tracked in #317. |
+| Isolated restore-rehearsal cadence and last rehearsal date | No dated result evidenced. The final web-only deployment had no new migration and did not execute the migration-triggered restore path. |
+| Dependency and security-update cadence and responsible person | Daniel García Ortega is responsible; cadence remains to be defined. |
+| Editorial maintenance responsibility (Radar source review) | Daniel García Ortega. |
+| Incident-response and rollback owner | Daniel García Ortega. |
+| Expected operating cost through 31 August 2027 | Known base: EUR 28/month VPS, EUR 15/year domain and EUR 0 current transactional-email charge; monitoring/backup/API usage costs remain unpriced. See `ECO-001`. |
+| Final release identifiers (tag, SHAs, image references, cut-off timestamp) | Verified under `VER-004`, `OPS-001` and `OPS-003`. |
 
 ### 4.1 Maintenance commitment through 31 August 2027
 
@@ -291,38 +307,19 @@ through at least 31 August 2027, from the supplied programme rules and
 already happened. The operating plan that backs the commitment — hosting,
 monitoring recipients, backup/restore schedule, update cadence, editorial
 responsibility, incident/rollback owner and monthly cost — is the set of
-pending fields in section 4 and must be completed before the report claims the
-commitment is operationally supported.
+controls in sections 4 and 5.2. The owner confirms continued maintenance,
+security work, new improvements and implementation through at least the
+required date; issues #316 and #317 track the material monitoring and recovery
+gaps.
 
 ## 5. Known failures, limitations and incomplete controls
 
-### 5.1 CRLF-sensitive source-text locator (`markCompetencyCompleted`)
+### 5.1 Resolved CRLF-sensitive test locator
 
-- File: `tests/integration/learning/persistence-and-resources.test.mjs`, test
-  `"markCompetencyCompleted optimistically completes and rolls back on failure
-  (issue #96)"`.
-- Reproduced at `ccaa3f2` on a Windows checkout: the test fails at line 79 with
-  `AssertionError: could not locate the markCompetencyCompleted action body`.
-- Assessment. The test reads
-  `src/features/learning/client/use-learning-actions.ts` (which exists at that
-  exact path — the action was not moved or removed), finds the start anchor
-  `markCompetencyCompleted: (skillId) =>`, then locates the block end with
-  `storeSource.indexOf("\n    },\n  };")`. That end pattern uses LF-only
-  newlines. On this machine the file is checked out with CRLF line terminators
-  (65 CRLF, 0 LF-only; there is no repository `.gitattributes` normalising line
-  endings and `core.autocrlf` is `true`), so the LF pattern is not found
-  (`indexOf` returns `-1`) and the block cannot be sliced. The CRLF form
-  `"\r\n    },\r\n  };"` is present in the file.
-- Conclusion: this is a test-harness portability issue in the block-end
-  locator, not a product defect. The optimistic-completion-with-rollback
-  behaviour it checks is present. On CI (Linux checkout, LF) the pattern
-  matches and the test passes, which is consistent with historical green CI
-  runs. Per this issue's constraints, the test and the implementation are left
-  unchanged here; a fix belongs to a code issue, ideally by adding a
-  `.gitattributes` `* text=auto eol=lf` normalisation and/or making the
-  locator newline-agnostic.
-- Report impact: `QAL-001` must be recorded from the CI run on the frozen tag
-  (Linux, LF), not from a local Windows `test:all`.
+Issue #307 normalised source text before the learning assertion searched for
+its target block. PR #310 merged the fix before the frozen release. Exact-SHA
+CI subsequently passed all 345 tests, so the earlier Windows-only locator
+failure is historical and is not a final-release defect or report limitation.
 
 ### 5.2 Operator-owned controls not yet evidenced
 
@@ -340,8 +337,9 @@ and dated evidence before real-user readiness:
 - a tested incident-response and secret-rotation procedure;
 - CSP / HSTS / origin-policy confirmation at the proxy.
 
-Their status is `planned` (`OPS-004` and the section 4 fields), not
-`delivered`.
+Their status is incomplete (`OPS-004` and the section 4 fields), not delivered.
+Focused remediation is tracked in #316 for monitoring/alerts and #317 for
+off-host backup and restore evidence.
 
 ### 5.3 Verification-coverage limitations
 
@@ -383,18 +381,18 @@ operations runbooks; they are not repeated in the PDF.
 
 | ID | Command or source | Baseline | Timestamp requirement | Result status | Immutable ref | Publication boundary |
 |---|---|---|---|---|---|---|
-| `QAL-001` | `npm ci` + `npm run ci`, or the `CI` workflow run | final tag SHA | run start/end, ISO 8601 + tz | planned | workflow run URL + conclusion | public (conclusion + totals only) |
-| `QAL-002` | Owner authenticated smoke test, agreed flow matrix | final release in production | test date + tz | planned | release record entry | aggregate-only (pass/fail per cycle) |
+| `QAL-001` | `npm ci` + `npm run ci`, or the `CI` workflow run | `1e516ead8f69d60a263718c20d59b97c9618c97a` | `2026-08-31T14:42:44Z`–`14:45:04Z` | verified: 345 passed, 0 failed | run `33404234578` | public (conclusion + totals only) |
+| `QAL-002` | Owner authenticated smoke test, agreed flow matrix | frozen release in production | 31 August 2026 | partial | owner record in #315 | aggregate-only; core pass, Calendar blocked, news fail/sparse, no device-recorded mobile run |
 | `ENG-001` | `git rev-parse` / `git rev-list --count` / first+last `git log` | final tag | tag date | planned | tag SHA | public |
 | `ENG-002` | tracked `src` source files + line count | final tag | collection date | planned | tag SHA | public (size indicator only) |
-| `ENG-003` | tracked `*.test.mjs` count + runner summary | final tag + final CI run | run date | planned | tag SHA + run URL | public |
-| `ENG-004` | migration files in tag + `postgres:migrate:status` | final tag + production DB | status check date | planned | tag SHA | public (counts + status) |
+| `ENG-003` | tracked `*.test.mjs` count + runner summary | final tag + final CI run | 31 August 2026 | verified: 41 files; 345/345 pass | tag SHA + run `33404234578` | public |
+| `ENG-004` | migration files in tag + deployment migration audit | final tag + production deployment | 31 August 2026 | partial: 15 files; deployment reported no new migration; current DB list not exported | tag SHA + run `33404461730` | public summary |
 | `ENG-005` | tracked `page.tsx` + `route.ts` under `src/app` | final tag | collection date | planned | tag SHA | public (context, not feature count) |
 | `ENG-006` | `gh pr list --state merged` + ancestor check vs tag SHA | final tag | collection date | planned | tag SHA | public |
-| `OPS-001` | `/api/health` + `/api/ready` over HTTPS | production at cut-off | observation time + tz | planned | HTTP status + body summary | public |
-| `OPS-003` | release record + production image inventory | final release | release time | planned | image SHAs / references | private inventory, public summary |
-| `OPS-004` | backup id/checksum + isolated restore result + rollback ref | dated operational records | each record's date | planned | private evidence store | aggregate-only (status + timestamp) |
-| `VER-004` | aligned tag / web image / Radar ref / prod state / verification record | final release | cut-off time | planned | tag SHA + record | public |
+| `OPS-001` | `/api/health` + `/api/ready` over HTTPS | production at cut-off | `2026-08-31T14:49:37Z` | verified: HTTP 200/200 | HTTP status + body summary | public |
+| `OPS-003` | release record + production image inventory | final release | 31 August 2026 | verified public summary | image SHAs / references | private inventory, public summary |
+| `OPS-004` | backup id/checksum + isolated restore result + rollback ref | dated operational records | no complete dated record | incomplete | #317 | aggregate-only (status + timestamp) |
+| `VER-004` | aligned tag / web image / Radar ref / prod state / verification record | final release | `2026-08-31T14:49:37Z` | verified | `aircury-2026-delivery` | public |
 
 ### 6.2 Release-evidence procedure (final AL-LIO and Radar)
 
@@ -448,14 +446,13 @@ Owner and status fields are recorded, not assumed.
 
 | Risk | Effect if unmanaged | Owner | Status |
 |---|---|---|---|
-| External monitoring and alerting not configured | An outage or backup failure is noticed late | pending owner | open |
-| Off-host encrypted backups and a recorded restore rehearsal not yet evidenced | Recovery from data loss is unproven | pending owner | open |
-| Single VPS, shared reverse proxy, no multi-node redundancy | A host failure is a full outage until restore/rollback | pending owner | accepted design (ADR-0005), needs stated RTO/RPO |
+| External monitoring and alerting not configured | An outage or backup failure is noticed late | Daniel García Ortega | open; #316 |
+| Off-host encrypted backups and a recorded restore rehearsal not yet evidenced | Recovery from data loss is unproven | Daniel García Ortega | open; local copy reported, complete control tracked in #317 |
+| Single VPS, shared reverse proxy, no multi-node redundancy | A host failure is a full outage until restore/rollback | Daniel García Ortega | accepted design (ADR-0005), needs stated RTO/RPO |
 | Radar single scheduler replica (SQLite single-writer) | Collector cannot scale horizontally; a Radar outage pauses new curated content | project | accepted design (ADR-0002) |
-| Editorial throughput depends on a human reviewer | Curated content freshness degrades if review lapses | pending owner (editorial responsibility) | open |
-| Shared external services (email sender domain, job-source APIs) can change terms | Transactional email or job discovery degrades | pending owner | open, fallback options to document (issue #300) |
-| Secret rotation procedure not yet tested | Slower, riskier response to a credential exposure | pending owner | open |
-| CRLF-sensitive test locator (section 5.1) | A local Windows `test:all` is not clean; masks or is confused with real regressions | code issue (not #299) | open, CI unaffected |
+| Editorial throughput depends on a human reviewer | Curated content freshness degrades if review lapses | Daniel García Ortega | open; production news is currently sparse/failing |
+| Shared external services (Resend, Google and source APIs) can change terms | Email, Calendar or discovery degrades | Daniel García Ortega | open; Calendar consent currently blocked |
+| Secret rotation procedure not yet tested | Slower, riskier response to a credential exposure | Daniel García Ortega | open |
 
 ## 7. Final-PDF extraction
 
@@ -490,5 +487,7 @@ for auditability.
 
 ## Status
 
-Issue #299 remains open for owner review and for the final frozen-release
-evidence. No value in this document is presented as final evidence.
+Issue #315 records the frozen-release and owner evidence available on 31 August
+2026. Verified values are labelled as such; incomplete controls and failed or
+blocked product checks remain explicit. Issues #316 and #317 own operational
+remediation. No screenshot was collected or committed.

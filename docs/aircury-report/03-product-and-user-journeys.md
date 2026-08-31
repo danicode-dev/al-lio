@@ -18,11 +18,12 @@ Current frozen delivery release:
 - automated CI and production deployment: successful;
 - public health and readiness observation: successful at the evidence cut-off;
 - immutable tag: `aircury-2026-delivery`;
-- authenticated owner smoke test: pending collection under `QAL-002`.
+- authenticated owner smoke test: partial under `QAL-002`; core flows pass,
+  Calendar is blocked and news fails or is sparse.
 
-The release is frozen for report review, but a capability verified in the
-repository is not presented as an owner-verified production journey until the
-final authenticated smoke test passes.
+The release is frozen for report review. Only flows that passed the owner test
+are presented as production-verified; implemented, blocked and limited flows
+remain distinguishable.
 
 ## Status vocabulary
 
@@ -355,11 +356,9 @@ mixed with delivered scope.
 
 ## Known limitations and conflicts to resolve before the PDF
 
-1. `README.md` and `docs/product/PRODUCT_SPEC.md` still describe public
-   registration, password recovery and email verification as unavailable.
-   The reviewed product code and authentication test suite implement those
-   flows. The final release must verify the production journey, then the
-   canonical product copy must be aligned.
+1. The owner verified registration, email/password access, Google identity,
+   logout and password recovery in production on 31 August 2026 using desktop
+   Chrome. This is owner smoke evidence, not a cross-browser E2E suite.
 2. The README's English expansion of `TSAF` conflicts with the active database
    catalogue. The final report must use the owner-confirmed canonical Spanish
    programme name.
@@ -370,19 +369,18 @@ mixed with delivered scope.
 4. Verified jobs and verified-only opportunity catalogues depend on production
    flags and accepted canonical Radar content. Code presence alone is not
    evidence that a non-empty catalogue was available at the report cut-off.
-5. Google identity, Google Calendar, transactional email and external job
-   portals depend on third-party availability and production configuration.
+5. Google identity works in production, but Calendar authorisation reached
+   Google's unverified-application warning. The optional Calendar connection,
+   disconnect and post-sign-out flow did not complete. This is a provider
+   consent/verification limitation, not evidence that Google login failed.
 6. Automated coverage is strong at domain, integration-contract and
    source-boundary level, but it is not a comprehensive browser end-to-end
    suite. Final owner-led release checks must be reported honestly.
-7. On the Windows documentation worktree, the integration suite reported
-   186 passing checks and one line-ending-sensitive source assertion. The
-   failing check searches for an LF-only closing sequence in
-   `use-learning-actions.ts`; the checkout uses CRLF. Direct inspection
-   confirms that optimistic competency completion and rollback are present.
-   This brittle test boundary must be normalised or replaced under issue #299
-   before final CI evidence is collected; it is not a product failure and is
-   not a final report metric.
+7. The owner reported that production news failed or exposed very little/no
+   content during the 31 August smoke test. The implementation and automated
+   authorisation boundary remain present, but the report must disclose the
+   production coverage limitation and must not invent a catalogue total.
+   Production rollout and coverage work remains tracked in issue #235.
 8. No screenshot is collected by this issue. Visual evidence is coordinated
    separately in issue #301 and captured by the owner only after the final
    release is visually approved.
@@ -394,24 +392,24 @@ not intended as headings or visible labels in the final PDF.
 
 | Evidence ID | Capability supported | Primary implementation evidence | Automated evidence | Current status |
 |---|---|---|---|---|
-| `PRD-001` | Public project entry and public information | `src/app/page.tsx`, `src/app/en/page.tsx`, `src/features/marketing/`, legal routes | `tests/integration/marketing/public-contact.test.mjs` | Collected; final production route check pending |
-| `PRD-002` | Account creation, confirmation, login, reset, Google identity and signed access | `src/app/(auth)/`, `src/app/api/auth/google/`, `src/lib/auth/`, `src/middleware.ts` | `tests/integration/auth/production-auth.test.mjs`, `tests/unit/auth/session-token.test.mjs` | Collected; third-party and production flow check pending |
-| `PRD-003` | Onboarding, profile updates and product tour | `src/app/onboarding/`, `src/components/onboarding/`, `src/components/profile/profile-form.tsx` | `tests/integration/onboarding/`, `tests/unit/onboarding/product-tour.test.mjs` | Collected |
+| `PRD-001` | Public project entry and public information | `src/app/page.tsx`, `src/app/en/page.tsx`, `src/features/marketing/`, legal routes | `tests/integration/marketing/public-contact.test.mjs` | Verified in owner desktop smoke test |
+| `PRD-002` | Account creation, confirmation, login, reset, Google identity and signed access | `src/app/(auth)/`, `src/app/api/auth/google/`, `src/lib/auth/`, `src/middleware.ts` | `tests/integration/auth/production-auth.test.mjs`, `tests/unit/auth/session-token.test.mjs` | Registration, login, logout, reset and Google identity verified in production |
+| `PRD-003` | Onboarding, profile updates and product tour | `src/app/onboarding/`, `src/components/onboarding/`, `src/components/profile/profile-form.tsx` | `tests/integration/onboarding/`, `tests/unit/onboarding/product-tour.test.mjs` | Onboarding, profile and cycle change verified; tour not separately smoked |
 | `PRD-004` | Five-cycle model and relevance boundary | `infra/postgres/schema.sql`, `src/lib/profile/onboarding-options.ts`, cycle-scoped repositories | `tests/integration/onboarding/`, learning/news/work integration tests | Collected; final active-cycle query pending |
 | `PRD-005` | Dashboard and Quick Add | `src/components/dashboard/`, `src/components/quick-add.tsx`, `src/lib/data.ts` | `tests/integration/dashboard/data-and-layout.test.mjs`, `tests/unit/dashboard/upcoming-feed.test.mjs` | Collected |
-| `PRD-006` | Competency roadmap and cycle progress | `src/components/roadmap/`, `src/lib/fp/roadmap.ts`, `src/lib/fp/roadmap-overview.ts` | `tests/integration/learning/persistence-and-resources.test.mjs` | Collected; CRLF portability correction tracked in #307; final coverage query pending |
-| `PRD-007` | Approved learning resources, player progress and notes | `src/components/learning/`, `src/features/learning/`, `src/app/(dashboard)/aprende/` | `tests/integration/learning/persistence-and-resources.test.mjs`, `tests/unit/learning/resource-selection.test.mjs` | Collected; final content coverage pending |
+| `PRD-006` | Competency roadmap and cycle progress | `src/components/roadmap/`, `src/lib/fp/roadmap.ts`, `src/lib/fp/roadmap-overview.ts` | `tests/integration/learning/persistence-and-resources.test.mjs` | Route and progress verified; final coverage query pending |
+| `PRD-007` | Approved learning resources, player progress and notes | `src/components/learning/`, `src/features/learning/`, `src/app/(dashboard)/aprende/` | `tests/integration/learning/persistence-and-resources.test.mjs`, `tests/unit/learning/resource-selection.test.mjs` | Progress and notes verified; final content coverage pending |
 | `PRD-008` | Private task lifecycle | `src/features/tasks/` | `tests/integration/tasks/workflows.test.mjs`, `tests/integration/dashboard/data-and-layout.test.mjs` | Collected |
 | `PRD-009` | Private Bloc notes, recovery and export | `src/features/bloc/`, `src/lib/bloc/` | `tests/integration/bloc/editor.test.mjs`, `tests/unit/bloc/notes.test.mjs` | Collected |
-| `PRD-010` | Local and Google calendar flows | `src/components/calendar/`, `src/features/calendar/`, `src/app/api/google/calendar/` | `tests/integration/navigation/app-shell.test.mjs`, authentication boundary checks | Collected; Google production check pending |
-| `PRD-011` | Authorised cycle-news list/detail/read/save boundary | `src/components/noticias/`, `src/app/api/news/`, `src/lib/db/repositories/radar.ts` | `tests/integration/news/authorised-feed.test.mjs`, `tests/unit/news/text.test.mjs` | Collected; final production content query pending |
+| `PRD-010` | Local and Google calendar flows | `src/components/calendar/`, `src/features/calendar/`, `src/app/api/google/calendar/` | `tests/integration/navigation/app-shell.test.mjs`, `tests/integration/auth/calendar-ownership.test.mjs` | Local boundary implemented; Google Calendar consent blocked by unverified-app warning |
+| `PRD-011` | Authorised cycle-news list/detail/read/save boundary | `src/components/noticias/`, `src/app/api/news/`, `src/lib/db/repositories/radar.ts` | `tests/integration/news/authorised-feed.test.mjs`, `tests/unit/news/text.test.mjs` | Implemented; production smoke failed or returned little/no content; #235 remains open |
 | `PRD-012` | Courses catalogue, details, completion and favourites | `src/features/courses/`, `src/app/(dashboard)/courses/` | `tests/integration/courses/` | Collected; final accepted-content query pending |
 | `PRD-013` | Events/retos catalogue, requirements, details and favourites | `src/features/events/`, `src/app/(dashboard)/hackathons/` | `tests/integration/events/`, `tests/unit/events/` | Collected; final accepted-content query pending |
 | `PRD-014` | Verified cycle jobs and private actions | `src/app/api/verified-jobs/`, `src/app/(dashboard)/work/jobs/`, `src/lib/jobs/` | `tests/contracts/radar/v4.test.mjs` | Collected; feature flag and final open-job query pending |
 | `PRD-015` | Portal search, company catalogue and candidature tracker | `src/features/work/`, `src/app/api/job-radar/` | `tests/integration/work/`, `tests/unit/work/`, `tests/operations/importers/company-catalogue.test.mjs` | Collected |
 | `PRD-016` | Consolidated saved-content hub | `src/components/profile/saved-hub.tsx` | `tests/integration/profile/saved-hub.test.mjs` | Collected |
-| `PRD-017` | Shared desktop/mobile navigation hierarchy | `src/components/app-sidebar.tsx`, `src/components/mobile-header-navigation.tsx` | `tests/integration/navigation/app-shell.test.mjs`, `tests/unit/onboarding/product-tour.test.mjs` | Collected; owner smoke test pending |
-| `PRD-018` | Complete final-release student journey matrix | The nine-stage journey in this document | `QAL-002` owner smoke matrix | Planned until the frozen release is tested |
+| `PRD-017` | Shared desktop/mobile navigation hierarchy | `src/components/app-sidebar.tsx`, `src/components/mobile-header-navigation.tsx` | `tests/integration/navigation/app-shell.test.mjs`, `tests/unit/onboarding/product-tour.test.mjs` | Desktop Chrome verified; owner reports responsive navigation works, but no mobile device/browser was recorded |
+| `PRD-018` | Complete final-release student journey matrix | The nine-stage journey in this document | `QAL-002` owner smoke matrix | Partial: core flows pass; Calendar and news prevent a complete result |
 
 ## PDF extraction guidance
 
