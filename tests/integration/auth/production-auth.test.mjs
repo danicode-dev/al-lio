@@ -302,7 +302,7 @@ test("Owner-reported follow-up: sendTransactionalEmail requires a text alternati
 
   const templatesSource = await readFile(new URL("../../../src/lib/email/templates.ts", import.meta.url), "utf8");
   assert.match(templatesSource, /import \{ absolutePublicAssetUrl \} from "@\/lib\/auth\/app-url";/);
-  assert.match(templatesSource, /const logoUrl = absolutePublicAssetUrl\("\/assets\/al_lio_logo_horizontal_transparent\.png"\);/);
+  assert.match(templatesSource, /const logoUrl = absolutePublicAssetUrl\("\/assets\/al_lio_wordmark\.png"\);/);
 
   const appUrlSource = await readFile(new URL("../../../src/lib/auth/app-url.ts", import.meta.url), "utf8");
   assert.match(appUrlSource, /const base = process\.env\.PUBLIC_ASSET_BASE_URL \?\? process\.env\.BASE_URL \?\? "http:\/\/localhost:3000";/, "must fall back to BASE_URL when unset, so production needs no extra config for this to work");
