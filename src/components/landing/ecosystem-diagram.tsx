@@ -149,11 +149,11 @@ export function EcosystemDiagram() {
         @keyframes al-eco-grow { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
         .al-eco-active { stroke-dasharray: 1; stroke-dashoffset: 1; animation: al-eco-grow ${DRAW_S}s ease-in-out forwards; }
         .al-eco-hub p { text-shadow: 0 0 6px #F7F3EC, 0 0 6px #F7F3EC, 0 0 12px #F7F3EC, 0 1px 0 #F7F3EC; }
-        .al-eco-hub { opacity: 0; transition: opacity 0.25s; }
-        .al-eco-hub[data-show="true"] { opacity: 1; }
+        .al-eco-hub, .al-eco-hub-m { opacity: 0; transition: opacity 0.25s; }
+        .al-eco-hub[data-show="true"], .al-eco-hub-m[data-show="true"] { opacity: 1; }
         @media (prefers-reduced-motion: reduce) {
           .al-eco-active { animation: none; stroke-dashoffset: 0; }
-          .al-eco-hub { display: none; }
+          .al-eco-hub, .al-eco-hub-m { display: none; }
         }
       `}</style>
 
@@ -247,6 +247,17 @@ export function EcosystemDiagram() {
             />
           ))}
         </div>
+      </div>
+
+      {/* Phones have no room for the popup above the mark, so the arriving
+          module's line is shown as a caption under the diagram instead. */}
+      <div
+        className="al-eco-hub-m mx-auto mt-9 min-h-[72px] max-w-[300px] text-center sm:hidden"
+        data-show={hubModule ? "true" : "false"}
+        aria-hidden="true"
+      >
+        <p className="text-[15px] font-bold text-[#1F5B46]">{hubModule?.label ?? ""}</p>
+        <p className="mt-1 text-[13.5px] leading-relaxed text-[#7A736B]">{hubModule?.description ?? ""}</p>
       </div>
     </div>
   );

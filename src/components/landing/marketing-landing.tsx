@@ -53,7 +53,13 @@ export function MarketingLanding() {
     <div className="relative min-h-screen bg-[#F7F3EC] text-[#2F2A24]">
       <style>{`
         html { scroll-behavior: smooth; }
-        @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+        /* The diagram's guided animation carries the module copy; the plain
+           list is only a fallback for visitors who turn motion off. */
+        .al-rm-fallback { display: none; }
+        @media (prefers-reduced-motion: reduce) {
+          html { scroll-behavior: auto; }
+          .al-rm-fallback { display: block; }
+        }
       `}</style>
 
       {/* Faint dot grid + paper grain so the cream has some body. */}
@@ -108,23 +114,15 @@ export function MarketingLanding() {
                 <EcosystemDiagram />
               </div>
 
-              {/* The hover copy from the diagram, spelled out where the
-                  side tooltips have no room (below xl). */}
-              <ul className="mx-auto mt-14 max-w-[560px] divide-y divide-[#E6DED2] xl:hidden">
-                {LANDING_MODULES.map((module) => {
-                  const Icon = module.icon;
-                  return (
-                    <li key={module.label} className="flex gap-3.5 py-4 first:pt-0 last:pb-0">
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[11px] bg-[#E7EFEA] text-[#1F5B46]">
-                        <Icon className="h-5 w-5" aria-hidden="true" />
-                      </span>
-                      <div>
-                        <p className="text-[15px] font-semibold text-[#2F2A24]">{module.label}</p>
-                        <p className="mt-1 text-[13.5px] leading-relaxed text-[#7A736B]">{module.description}</p>
-                      </div>
-                    </li>
-                  );
-                })}
+              {/* The diagram's animation spells out each module at the hub.
+                  This list is only revealed when motion is turned off. */}
+              <ul className="al-rm-fallback mx-auto mt-12 max-w-[560px] divide-y divide-[#E6DED2]">
+                {LANDING_MODULES.map((module) => (
+                  <li key={module.label} className="py-4 first:pt-0 last:pb-0">
+                    <p className="text-[15px] font-semibold text-[#1F5B46]">{module.label}</p>
+                    <p className="mt-1 text-[13.5px] leading-relaxed text-[#7A736B]">{module.description}</p>
+                  </li>
+                ))}
               </ul>
             </div>
           </section>
