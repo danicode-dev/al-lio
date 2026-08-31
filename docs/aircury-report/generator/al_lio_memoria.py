@@ -10,6 +10,7 @@ Para escribir en el documento:
                      {"t":"ul","items":[...]}       lista
                      {"t":"ol","items":[...]}       lista numerada
                      {"t":"table","head":[...],"rows":[[...],...]}
+                     {"t":"timeline","rows":[{"period":"...",...}]}
                      {"t":"note","title":"Nota","s":"..."}
                      {"t":"quote","s":"...","by":"..."}
                      {"t":"code","s":"linea1\\nlinea2"}
@@ -25,6 +26,7 @@ Navegación clicable (para leer y para que una IA salte por el documento):
     solo (destino con nombre  p-sec-<num>).
 """
 import argparse
+import re
 import tempfile
 from pathlib import Path
 from reportlab.lib.pagesizes import A4
@@ -36,104 +38,385 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
+REPORT_SOURCE = HERE.parent / "08-technical-report-source.md"
 
 # ───────────────────────────────────────── CONTENT ─────────────────────────────
+SECTION_FAMILIES = {
+    "01": "Apertura",
+    "02": "Apertura",
+    "03": "Apertura",
+    "04": "Producto y tecnología",
+    "05": "Producto y tecnología",
+    "06": "Producto y tecnología",
+    "07": "Producto y tecnología",
+    "08": "Producto y tecnología",
+    "09": "Producto y tecnología",
+    "10": "Proceso y cierre",
+    "11": "Proceso y cierre",
+    "12": "Proceso y cierre",
+    "13": "Proceso y cierre",
+}
+
+TOC_GROUPS = [
+    ("Apertura", [
+        ("01", "Síntesis ejecutiva"),
+        ("02", "Contexto, usuarios y motivación"),
+        ("03", "Objetivos, alcance y éxito"),
+    ]),
+    ("Producto y tecnología", [
+        ("04", "Solución y capacidades"),
+        ("05", "Diseño y experiencia"),
+        ("06", "Diseño técnico"),
+        ("07", "Datos, acceso e integraciones"),
+        ("08", "Radar y control editorial"),
+        ("09", "Seguridad y operación"),
+    ]),
+    ("Proceso y cierre", [
+        ("10", "Desarrollo y calidad"),
+        ("11", "Hitos del programa"),
+        ("12", "Resultados y sostenibilidad"),
+        ("13", "Límites, hoja de ruta y cierre"),
+    ]),
+]
+
+FIGURE_CATALOG = {
+    "VE-01A": {
+        "filename": "ve-01a-landing-hero-desktop.png",
+        "caption": "Portada pública de AL-LIO y acceso al espacio del estudiante.",
+        "h": 250,
+    },
+    "VE-01B": {
+        "filename": "ve-01b-landing-fullpage-desktop.png",
+        "caption": "Recorrido público de la propuesta de valor y sus principales áreas.",
+        "h": 250,
+    },
+    "VE-01C": {
+        "filename": "ve-01c-auth-entry-desktop.png",
+        "caption": "Entrada mediante contraseña o identidad de Google, sin datos personales.",
+        "h": 250,
+    },
+    "VE-02": {
+        "filename": "ve-02-onboarding-cycle-selection-desktop.png",
+        "caption": "Selección del ciclo y curso académico que establece el contexto de la experiencia.",
+        "h": 250,
+    },
+    "VE-03": {
+        "filename": "ve-03-dashboard-personalised-desktop.png",
+        "caption": "Panel personalizado con las próximas acciones del estudiante.",
+        "h": 250,
+    },
+    "VE-04": {
+        "filename": "ve-04-competencies-cycle-filtered-desktop.png",
+        "caption": "Competencias filtradas para el ciclo activo.",
+        "h": 250,
+    },
+    "VE-05": {
+        "filename": "ve-05-learning-progress-notes-desktop.png",
+        "caption": "Recurso aprobado con progreso y notas ficticias conservadas por el usuario.",
+        "h": 250,
+    },
+    "VE-06": {
+        "filename": "ve-06-task-completed-desktop.png",
+        "caption": "Tarea ficticia completada para mostrar el ciclo básico de planificación.",
+        "h": 250,
+    },
+    "VE-07": {
+        "filename": "ve-07-news-production-limitation-desktop.png",
+        "caption": "Estado real de las noticias de producción en la fecha de captura.",
+        "h": 250,
+    },
+    "VE-08": {
+        "filename": "ve-08-opportunity-verified-detail-desktop.png",
+        "caption": "Oportunidad revisada con fuente y acción disponible para el perfil.",
+        "h": 250,
+    },
+    "VE-09": {
+        "filename": "ve-09-profile-cycle-fictional-desktop.png",
+        "caption": "Perfil ficticio y ciclo activo que controlan la personalización.",
+        "h": 250,
+    },
+    "VE-10": {
+        "filename": "ve-10-dashboard-navigation-mobile.png",
+        "caption": "Jerarquía principal de AL-LIO en un viewport móvil responsive.",
+        "h": 285,
+    },
+}
+
+# Eight non-redundant placements are reserved for the review layout. The
+# remaining catalogue entries stay available as owner-approved alternatives.
+FIGURE_PLACEMENTS = {
+    "02": {None: ["VE-01A"]},
+    "04": {
+        "4.1 Entrada, onboarding y personalización": ["VE-02"],
+        "4.2 Panel y siguiente acción": ["VE-03"],
+        "4.3 Tareas y calendario": ["VE-06"],
+        "4.5 Competencias y aprendizaje": ["VE-05"],
+        "4.8 Trabajo, empresas y candidaturas": ["VE-08"],
+    },
+    "05": {None: ["VE-10"]},
+    "08": {None: ["VE-07"]},
+}
+
+SECTION_INTROS = {
+    "03": "Objetivos verificables, alcance deliberado y estado real de la entrega.",
+    "04": "Un recorrido privado que conecta entrada, planificación, aprendizaje y oportunidades.",
+    "07": "Propiedad de los datos, sesiones protegidas e integraciones encapsuladas.",
+    "12": "Resultados comprobados, impacto esperado y continuidad económica y operativa.",
+    "13": "Límites explícitos y prioridades que orientan el siguiente año de trabajo.",
+}
+
+
+def clean_markdown_text(value):
+    """Convert the approved Markdown prose into plain PDF-safe text."""
+    value = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1 (\2)", value)
+    value = re.sub(r"<(https?://[^>]+)>", r"\1", value)
+    value = value.replace("**", "").replace("`", "")
+    for dash in ("—", "–", "‑", "−"):
+        value = value.replace(dash, "-")
+    return " ".join(value.split())
+
+
+def table_widths(header):
+    key = tuple(header)
+    presets = {
+        ("Ámbito", "Función entregada", "Verificación y límite"):
+            [0.17, 0.39, 0.44],
+        ("Componente", "Función", "Límite de confianza"):
+            [0.20, 0.36, 0.44],
+        ("Periodo", "Hito", "Resultado principal"):
+            [0.18, 0.27, 0.55],
+        ("Prioridad", "Próximo resultado", "Evidencia de cierre"):
+            [0.14, 0.36, 0.50],
+    }
+    if key in presets:
+        return presets[key]
+    if len(header) == 2:
+        return [0.29, 0.71]
+    return [1 / len(header)] * len(header)
+
+
+def figure_block(evidence_id):
+    item = FIGURE_CATALOG[evidence_id]
+    return {
+        "t": "figure",
+        "evidence_id": evidence_id,
+        "expected_filename": item["filename"],
+        "caption": item["caption"],
+        "h": item["h"],
+    }
+
+
+def inject_figures(section):
+    placements = FIGURE_PLACEMENTS.get(section["num"], {})
+    if not placements:
+        return
+
+    rebuilt = []
+    pending_ids = []
+    for block in section["blocks"]:
+        if block["t"] == "h3":
+            rebuilt.extend(figure_block(item) for item in pending_ids)
+            pending_ids = placements.get(block["s"], [])
+        rebuilt.append(block)
+    rebuilt.extend(figure_block(item) for item in pending_ids)
+    rebuilt.extend(figure_block(item) for item in placements.get(None, []))
+    section["blocks"] = rebuilt
+
+
+def promote_conclusion(section):
+    """Give the approved conclusion a deliberate branded continuation page."""
+    if section["num"] != "13":
+        return
+    for index, block in enumerate(section["blocks"]):
+        if block["t"] == "h3" and block["s"].endswith("Conclusión"):
+            paragraphs = [item["s"] for item in section["blocks"][index + 1:] if item["t"] == "p"]
+            section["blocks"] = section["blocks"][:index] + [{
+                "t": "conclusion",
+                "title": block["s"],
+                "paragraphs": paragraphs,
+            }]
+            return
+    raise ValueError("Section 13 must contain its approved conclusion")
+
+
+def promote_timeline(section):
+    """Render the approved programme chronology as an editorial timeline."""
+    if section["num"] != "11":
+        return
+    for index, block in enumerate(section["blocks"]):
+        if block["t"] != "table":
+            continue
+        if block.get("head") != ["Periodo", "Hito", "Resultado principal"]:
+            raise ValueError("Section 11 must keep the approved timeline columns")
+        section["blocks"][index] = {
+            "t": "timeline",
+            "rows": [
+                {"period": row[0], "title": row[1], "description": row[2]}
+                for row in block["rows"]
+            ],
+        }
+        return
+    raise ValueError("Section 11 must contain the approved programme timeline")
+
+
+def parse_report_sections(source_path):
+    """Read only exportable sections 01-13 from the approved editorial source."""
+    lines = source_path.read_text(encoding="utf-8").splitlines()
+    sections = []
+    current = None
+    active = False
+    index = 0
+
+    while index < len(lines):
+        raw = lines[index]
+        stripped = raw.strip()
+
+        if stripped == "# Texto exportable":
+            active = True
+            index += 1
+            continue
+        if active and stripped.startswith("# Mapa interno de figuras"):
+            break
+        if not active:
+            index += 1
+            continue
+        if stripped.startswith("> **NOTA INTERNA"):
+            index += 1
+            while index < len(lines) and (lines[index].lstrip().startswith(">") or not lines[index].strip()):
+                index += 1
+            continue
+
+        section_match = re.match(r"^## (\d+)\.\s+(.+)$", stripped)
+        if section_match:
+            num = section_match.group(1).zfill(2)
+            current = {
+                "num": num,
+                "family": SECTION_FAMILIES[num],
+                "title": clean_markdown_text(section_match.group(2)),
+                "entradilla": SECTION_INTROS.get(num, ""),
+                "blocks": [],
+            }
+            sections.append(current)
+            index += 1
+            continue
+
+        if stripped.startswith("## "):
+            current = None
+            index += 1
+            continue
+        if current is None or not stripped or stripped == "---":
+            index += 1
+            continue
+
+        if stripped.startswith("### "):
+            current["blocks"].append({"t": "h3", "s": clean_markdown_text(stripped[4:])})
+            index += 1
+            continue
+
+        if stripped.startswith("|"):
+            table_lines = []
+            while index < len(lines) and lines[index].strip().startswith("|"):
+                table_lines.append(lines[index].strip())
+                index += 1
+
+            def cells(line):
+                return [clean_markdown_text(cell.strip()) for cell in line.strip("|").split("|")]
+
+            header = cells(table_lines[0])
+            rows = [cells(line) for line in table_lines[2:]]
+            current["blocks"].append({
+                "t": "table",
+                "head": header,
+                "rows": rows,
+                "widths": table_widths(header),
+            })
+            continue
+
+        list_match = re.match(r"^(-|\d+\.)\s+(.+)$", stripped)
+        if list_match:
+            ordered = list_match.group(1) != "-"
+            items = []
+            while index < len(lines):
+                candidate = lines[index]
+                match = re.match(r"^\s*(-|\d+\.)\s+(.+)$", candidate)
+                if not match or (match.group(1) != "-") != ordered:
+                    break
+                item = match.group(2).strip()
+                index += 1
+                while index < len(lines):
+                    continuation = lines[index]
+                    if not continuation.strip() or re.match(r"^\s*(-|\d+\.)\s+", continuation):
+                        break
+                    if continuation.startswith(" ") and not continuation.lstrip().startswith(("#", "|", ">")):
+                        item += " " + continuation.strip()
+                        index += 1
+                    else:
+                        break
+                items.append(clean_markdown_text(item))
+                if index < len(lines) and not lines[index].strip():
+                    break
+            current["blocks"].append({"t": "ol" if ordered else "ul", "items": items})
+            continue
+
+        paragraph_lines = [stripped]
+        index += 1
+        while index < len(lines):
+            candidate = lines[index]
+            candidate_stripped = candidate.strip()
+            if (not candidate_stripped or candidate_stripped.startswith(("#", ">", "|")) or
+                    re.match(r"^(-|\d+\.)\s+", candidate_stripped)):
+                break
+            paragraph_lines.append(candidate_stripped)
+            index += 1
+        current["blocks"].append({"t": "p", "s": clean_markdown_text(" ".join(paragraph_lines))})
+
+    if [section["num"] for section in sections] != [f"{number:02d}" for number in range(1, 14)]:
+        raise ValueError("The approved report source must contain sections 01 through 13 in order")
+
+    for section in sections:
+        if not section["entradilla"] and section["blocks"] and section["blocks"][0]["t"] == "p":
+            section["entradilla"] = section["blocks"].pop(0)["s"]
+        promote_timeline(section)
+        inject_figures(section)
+        promote_conclusion(section)
+    return sections
+
+
 CONTENT = {
     "cover": {
         "kicker": "Aircury Summer of Code 2026",
-        "title": ["Memoria", "técnica"],
-        "subtitle": "Documentación técnica final",
-        "intro": ("Plantilla de maquetación: portada, índice, apertura de sección, "
-                  "página de contenido y cierre. El contenido validado se incorpora "
-                  "en la fase siguiente."),
+        "title": ["AL-LIO", "Memoria técnica"],
+        "subtitle": "Versión técnica para revisión",
+        "intro": ("Espacio digital privado para estudiantes de Formación Profesional: "
+                  "planificación, aprendizaje e información revisada según el ciclo."),
         "meta": [
             ("Autor", "Daniel García Ortega", None),
-            ("Fecha", "Agosto 2026", None),
+            ("Fecha", "31 de agosto de 2026", None),
+            ("Versión", "aircury-2026-delivery", None),
             ("Repositorio", "github.com/danielgarciaortega-dev/al-lio",
              "https://github.com/danielgarciaortega-dev/al-lio"),
             ("Web", "al-lio.app", "https://al-lio.app"),
         ],
     },
-    "toc": {
-        "groups": [
-            ("Apertura", [
-                ("01", "Resumen ejecutivo"),
-                ("02", "Contexto, problema y usuarios objetivo"),
-                ("03", "Objetivos, alcance y criterios de éxito"),
-            ]),
-            ("Producto y tecnología", [
-                ("04", "Producto y funcionalidades desarrolladas"),
-                ("05", "Diseño y experiencia de usuario"),
-                ("06", "Arquitectura técnica"),
-                ("07", "Modelo de datos, autenticación e integraciones"),
-                ("08", "AL·LÍO Radar — subsistema de contenidos"),
-                ("09", "Seguridad, infraestructura y despliegue"),
-            ]),
-            ("Proceso y cierre", [
-                ("10", "Metodología, pruebas y control de calidad"),
-                ("11", "Hitos y cronología del programa"),
-                ("12", "Resultados y cumplimiento del programa"),
-                ("13", "Limitaciones, roadmap y conclusiones"),
-            ]),
-        ],
-    },
-    "sections": [
-        {
-            "num": "04",
-            "family": "Producto y tecnología",
-            "title": "Título de la sección",
-            "entradilla": ("Entradilla de una o dos líneas que resume el propósito "
-                           "de la sección. Se redacta en la fase de contenido."),
-            "blocks": [
-                {"t": "h3", "s": "Subtítulo"},
-                {"t": "p", "s": ("Texto de cuerpo en Inter a 10 pt sobre fondo crema. "
-                                 "Interlineado holgado, sin justificar y sin sangría. "
-                                 "Los términos destacados usan el verde de AL·LÍO. Cada "
-                                 "bloque abre con una regla verde corta a la izquierda.")},
-                {"t": "h3", "s": "Lista"},
-                {"t": "ul", "items": [
-                    "Punto uno de la lista, breve y concreto.",
-                    "Punto dos, con el marcador en verde tenue.",
-                    "Punto tres para cerrar el bloque.",
-                ]},
-                {"t": "h3", "s": "Tabla"},
-                {"t": "table", "head": ["Campo", "Valor de ejemplo"], "rows": [
-                    ["Formato", "A4 · 595 × 842 pt"],
-                    ["Tipografía", "Barlow ExtraBold · Inter"],
-                ]},
-                {"t": "note", "title": "Nota", "s": (
-                    "Bloque de nota: regla verde a la izquierda, sin recuadro. Para "
-                    "advertencias, matices o aclaraciones breves dentro del texto.")},
-                {"t": "figure", "caption": "Figura 1 · Pie de figura", "h": 150},
-                {"t": "h3", "s": "Cita"},
-                {"t": "quote", "s": ("Una cita destacada usa Inter Medium, regla verde a "
-                                     "la izquierda y sin comillas decorativas."),
-                 "by": "Fuente de la cita"},
-                {"t": "h3", "s": "Código"},
-                {"t": "code", "s": "npm ci\nnpm run verify:cheap\nnpm run build"},
-                {"t": "p", "s": ("El texto largo fluye solo entre páginas: cuando un "
-                                 "bloque no cabe, la página se cierra con su cabecera y "
-                                 "folio y el contenido continúa en la siguiente sin "
-                                 "cortes ni ajustes manuales. Así, pegar el texto de "
-                                 "una issue en la sección correspondiente basta para "
-                                 "maquetarla.")},
-            ],
-        },
-    ],
+    "toc": {"groups": TOC_GROUPS},
+    "sections": parse_report_sections(REPORT_SOURCE),
     "closing": {
         "kicker": "Aircury Summer of Code 2026",
-        "title": "Fin de la memoria técnica",
-        "intro": ("Documento provisional de maquetación. Gracias a Aircury por el "
-                  "programa Summer of Code 2026."),
+        "title": "Organiza, aprende y avanza",
+        "intro": ("AL-LIO ha sido desarrollado en el marco de Aircury Summer of Code "
+                  "2026. Gracias a Aircury SL por impulsar iniciativas tecnológicas "
+                  "con impacto social, vocación abierta y continuidad."),
         "meta": [
             ("Autor", "Daniel García Ortega", None),
+            ("Fecha", "31 de agosto de 2026", None),
+            ("Contacto", "hola@al-lio.app", None),
             ("Repositorio", "github.com/danielgarciaortega-dev/al-lio",
              "https://github.com/danielgarciaortega-dev/al-lio"),
             ("Web", "al-lio.app", "https://al-lio.app"),
         ],
     },
     "output": str(REPO_ROOT / "output" / "pdf" /
-                  "AL_LIO_Memoria_Tecnica_PLANTILLA.pdf"),
+                  "AL_LIO_Memoria_Tecnica_REVISION.pdf"),
 }
 
 # ───────────────────────────────────────── STYLE ──────────────────────────────
@@ -242,8 +525,13 @@ class Doc:
                          width=w, height=h, mask="auto", preserveAspectRatio=True)
 
     def _running_head(self):
-        self.eyebrow(ML, TOP, "AL·LÍO — Memoria técnica", FAINT, 7.6)
-        self.rtext(RX, TOP, self.section.upper(), "Inter-B", 7.6, FAINT, track=1.9)
+        self.eyebrow(ML, TOP, "AL·LÍO - Memoria técnica", FAINT, 7.6)
+        section_label = self.section.upper()
+        while self.sw(section_label, "Inter-B", 7.6, track=1.4) > 220 and len(section_label) > 8:
+            section_label = section_label[:-1]
+        if section_label != self.section.upper():
+            section_label = section_label.rstrip() + "..."
+        self.rtext(RX, TOP, section_label, "Inter-B", 7.6, FAINT, track=1.4)
         self.rule(ML, TOP - 8, RX)
 
     def _folio(self):
@@ -354,14 +642,17 @@ class Doc:
 
     def section_header(self, sec):
         """Compact section start at the top of a fresh page; content flows after."""
-        self.section = f"{sec['num']} · {sec['title']}"
+        self.section = f"{sec['num']} · {sec['family']}"
         self.new_page(kind="body")
         self.anchor(f"p-sec-{sec['num']}", f"{sec['num']} · {sec['title']}")
         self.y = TOP - 42
         self.text(ML, self.y, sec["num"], "Barlow", 30, GREEN, track=-1)
         self.y -= 34
-        self.text(ML, self.y, sec["title"], "Barlow", 18, INK, track=-0.4)
-        self.y -= 22
+        title_lines = self.wrap(sec["title"], CW, "Barlow", 18, track=-0.4)
+        for title_line in title_lines:
+            self.text(ML, self.y, title_line, "Barlow", 18, INK, track=-0.4)
+            self.y -= 21
+        self.y -= 1
         if sec.get("entradilla"):
             for line in self.wrap(sec["entradilla"], CW, "Inter", 9.6):
                 self.text(ML, self.y, line, "Inter", 9.6, MUTED)
@@ -376,12 +667,18 @@ class Doc:
             self.new_page(kind="body")
 
     def blk_h3(self, s):
-        self._need(58)
+        display = re.sub(r"^(\d+\.\d+)\s+", r"\1 · ", s)
+        lines = self.wrap(display, CW - 14, "Barlow", 13.5, track=-0.2)
+        height = len(lines) * 17 + 25
+        self._need(height)
         self.y -= 8
+        top = self.y + 9.5
         self.c.setStrokeColor(GREEN); self.c.setLineWidth(3)
-        self.c.line(ML, self.y - 2, ML, self.y + 9.5)
-        self.text(ML + 12, self.y, s, "Barlow", 13.5, INK, track=-0.2)
-        self.y -= 22
+        for line in lines:
+            self.text(ML + 12, self.y, line, "Barlow", 13.5, INK, track=-0.2)
+            self.y -= 17
+        self.c.line(ML, self.y + 13, ML, top)
+        self.y -= 5
 
     def blk_p(self, s, size=10, lead=15.5, color=BODY, x=ML, width=CW):
         for line in self.wrap(s, width, "Inter", size):
@@ -405,44 +702,188 @@ class Doc:
             self.y -= 2
         self.y -= 4
 
-    def blk_table(self, head, rows):
-        LABEL_X, VAL_X = ML, ML + 130
-        label_width = VAL_X - LABEL_X - 14
+    def estimate_table_height(self, head, rows, widths=None):
+        """Estimate a table using the same wrapping and padding as its renderer."""
+        column_count = len(head) if head else len(rows[0])
+        widths = widths or [1 / column_count] * column_count
+        column_widths = [CW * fraction for fraction in widths]
 
-        def prepared_row(label, value):
-            label_lines = self.wrap(label, label_width, "Inter", 9.4)
-            value_lines = self.wrap(value, RX - VAL_X, "Inter", 9.4)
-            row_height = max(len(label_lines), len(value_lines)) * 14 + 3
-            return label_lines, value_lines, row_height
+        def row_height(values, font, size, lead, padding):
+            line_count = max(
+                len(self.wrap(value, column_widths[index] - 18, font, size))
+                for index, value in enumerate(values)
+            )
+            return padding[0] + line_count * lead + padding[1]
 
-        prepared_rows = [prepared_row(label, value) for label, value in rows]
+        header_height = (
+            row_height(head, "Inter-SB", 8.1, 12.0, (10, 10)) if head else 0
+        )
+        body_height = sum(
+            row_height(row, "Inter", 8.9, 13.2, (9, 10)) for row in rows
+        )
+        return 10 + header_height + body_height + 22
+
+    def blk_table(self, head, rows, widths=None):
+        column_count = len(head) if head else len(rows[0])
+        widths = widths or [1 / column_count] * column_count
+        if len(widths) != column_count or abs(sum(widths) - 1) > 0.001:
+            raise ValueError("Table widths must match the column count and sum to one")
+        if any(len(row) != column_count for row in rows):
+            raise ValueError("Every table row must match the table column count")
+
+        column_widths = [CW * fraction for fraction in widths]
+        column_x = [ML]
+        for width in column_widths[:-1]:
+            column_x.append(column_x[-1] + width)
+
+        horizontal_padding = 9
+        header_font, header_size, header_lead = "Inter-SB", 8.1, 12.0
+        body_font, body_size, body_lead = "Inter", 8.9, 13.2
+        header_padding = (10, 10)
+        body_padding = (9, 10)
+
+        def prepare(values, font, size, lead, padding):
+            prepared = [
+                self.wrap(value, column_widths[index] - 2 * horizontal_padding, font, size)
+                for index, value in enumerate(values)
+            ]
+            height = padding[0] + max(len(lines) for lines in prepared) * lead + padding[1]
+            return prepared, height
+
+        prepared_rows = [prepare(row, body_font, body_size, body_lead, body_padding) for row in rows]
+        prepared_header = prepare(
+            head, header_font, header_size, header_lead, header_padding
+        ) if head else ([], 0)
+
+        def draw_cells(prepared, font, size, lead, color, row_top, padding_top):
+            for column_index, lines in enumerate(prepared):
+                line_y = row_top - padding_top - size + 1.5
+                for line in lines:
+                    self.text(
+                        column_x[column_index] + horizontal_padding,
+                        line_y,
+                        line,
+                        font,
+                        size,
+                        color,
+                    )
+                    line_y -= lead
+
+        def draw_column_rules(row_top, row_bottom):
+            self.c.setStrokeColor(Color(0.82, 0.79, 0.73, 0.55))
+            self.c.setLineWidth(0.35)
+            for x in column_x[1:]:
+                self.c.line(x, row_bottom, x, row_top)
 
         def draw_header():
-            self.rule(ML, self.y + 12, RX, HAIR, 0.8)
-            if head:
-                self.text(LABEL_X, self.y, head[0], "Inter-SB", 8.6, GREEN)
-                self.text(VAL_X, self.y, head[1], "Inter-SB", 8.6, GREEN)
-                self.rule(ML, self.y - 6, RX, HAIR, 0.5)
-                self.y -= 17
+            if not head:
+                return
+            prepared, header_height = prepared_header
+            top = self.y
+            self.c.setFillColor(PANEL)
+            self.c.rect(ML, top - header_height, CW, header_height, fill=1, stroke=0)
+            self.rule(ML, top, RX, GREEN, 1.4)
+            draw_cells(
+                prepared,
+                header_font,
+                header_size,
+                header_lead,
+                GREEN,
+                top,
+                header_padding[0],
+            )
+            draw_column_rules(top, top - header_height)
+            self.y = top - header_height
+            self.rule(ML, self.y, RX, LEADER, 0.7)
 
-        first_row_height = prepared_rows[0][2] if prepared_rows else 17
-        self._need(20 + (17 if head else 0) + first_row_height)
+        first_row_height = prepared_rows[0][1] if prepared_rows else 17
+        self.y -= 10
+        self._need(prepared_header[1] + first_row_height + 24)
         draw_header()
-        for label_lines, value_lines, row_height in prepared_rows:
+        for row_index, (prepared, row_height) in enumerate(prepared_rows):
             if self.y - row_height < BOT:
                 self.new_page(kind="body")
+                self.y -= 8
                 draw_header()
-            row_y = self.y
-            for line in label_lines:
-                self.text(LABEL_X, row_y, line, "Inter", 9.4, INK)
-                row_y -= 14
-            row_y = self.y
-            for line in value_lines:
-                self.text(VAL_X, row_y, line, "Inter", 9.4, BODY)
-                row_y -= 14
-            self.y -= row_height
-            self.rule(ML, self.y + 8, RX, HAIR, 0.5)
+            top = self.y
+            bottom = top - row_height
+            if row_index % 2:
+                self.c.setFillColor(Color(0.94, 0.92, 0.88, 0.38))
+                self.c.rect(ML, bottom, CW, row_height, fill=1, stroke=0)
+            draw_cells(
+                prepared,
+                body_font,
+                body_size,
+                body_lead,
+                BODY,
+                top,
+                body_padding[0],
+            )
+            draw_column_rules(top, bottom)
+            self.rule(ML, bottom, RX, HAIR, 0.55)
+            self.y = bottom
+        self.y -= 22
+
+    def blk_timeline(self, rows):
+        """Draw a chronological sequence with clear phase/result hierarchy."""
+        if not rows:
+            return
+
+        line_x = ML + 10
+        card_x = ML + 28
+        card_w = CW - 28
         self.y -= 8
+
+        for index, row in enumerate(rows):
+            period_lines = self.wrap(row["period"].upper(), card_w - 24, "Inter-B", 7.4, track=1.0)
+            title_lines = self.wrap(row["title"], card_w - 24, "Barlow", 12.2, track=-0.15)
+            description_lines = self.wrap(row["description"], card_w - 24, "Inter", 9.4)
+            card_height = (
+                13
+                + len(period_lines) * 10.5
+                + 3
+                + len(title_lines) * 15.2
+                + 5
+                + len(description_lines) * 14.2
+                + 12
+            )
+
+            old_page = self.page
+            self._need(card_height + 8)
+            if self.page != old_page:
+                self.eyebrow(ML, self.y, "Cronología - continuación", GREEN, 7.2)
+                self.y -= 22
+
+            top = self.y
+            bottom = top - card_height
+            if index % 2 == 0:
+                self.c.setFillColor(Color(0.94, 0.92, 0.88, 0.42))
+                self.c.roundRect(card_x, bottom, card_w, card_height, 4, fill=1, stroke=0)
+
+            marker_y = top - 18
+            self.c.setStrokeColor(GREEN)
+            self.c.setLineWidth(1.3)
+            self.c.line(line_x, marker_y, line_x, bottom - 7)
+            self.c.setFillColor(CREAM)
+            self.c.circle(line_x, marker_y, 4.8, fill=1, stroke=1)
+            self.c.setFillColor(GREEN)
+            self.c.circle(line_x, marker_y, 2.0, fill=1, stroke=0)
+
+            yy = top - 15
+            for line in period_lines:
+                self.text(card_x + 12, yy, line, "Inter-B", 7.4, GREEN, track=1.0)
+                yy -= 10.5
+            yy -= 3
+            for line in title_lines:
+                self.text(card_x + 12, yy, line, "Barlow", 12.2, INK, track=-0.15)
+                yy -= 15.2
+            yy -= 5
+            for line in description_lines:
+                self.text(card_x + 12, yy, line, "Inter", 9.4, BODY)
+                yy -= 14.2
+
+            self.y = bottom - 7
+        self.y -= 14
 
     def blk_note(self, title, s):
         lines = self.wrap(s, CW - 16, "Inter", 9.4)
@@ -466,7 +907,7 @@ class Doc:
             self.text(ML + 16, self.y, line, "Inter-M", 11, INK)
             self.y -= 17
         if by:
-            self.text(ML + 16, self.y, f"— {by}", "Inter", 8.6, MUTED)
+            self.text(ML + 16, self.y, f"- {by}", "Inter", 8.6, MUTED)
             self.y -= 14
         self.c.setStrokeColor(GREEN); self.c.setLineWidth(2)
         self.c.line(ML, self.y + 12, ML, top)
@@ -516,28 +957,70 @@ class Doc:
             self.c.drawImage(image, figure_x, figure_y, width=draw_w, height=draw_h,
                              mask="auto", preserveAspectRatio=True, anchor="c")
         else:
-            self.ctext(W / 2, figure_y + draw_h / 2 - 3, "FIGURA", "Inter-B", 7.6,
-                       FAINT, track=1.9)
+            self.c.setFillColor(PANEL)
+            self.c.rect(figure_x, figure_y, draw_w, draw_h, fill=1, stroke=0)
+            self.ctext(W / 2, figure_y + draw_h / 2 - 3, "EVIDENCIA VISUAL", "Inter-B",
+                       7.6, FAINT, track=1.9)
         self.y = figure_y - 14
         for line in caption_lines:
             self.text(ML, self.y, line, "Inter-SB", 8, MUTED, track=0.4)
             self.y -= 12
         self.y -= 2
 
+    def blk_conclusion(self, title, paragraphs):
+        self.new_page(kind="body")
+        self._faint_symbol()
+        self.y = TOP - 76
+        display = re.sub(r"^(\d+\.\d+)\s+", r"\1 · ", title)
+        self.text(ML, self.y, display, "Barlow", 24, INK, track=-0.5)
+        self.y -= 30
+        self.rule(ML, self.y + 8, ML + 54, GREEN, 1.8)
+        self.y -= 18
+        for index, paragraph in enumerate(paragraphs):
+            self.blk_p(
+                paragraph,
+                size=11.2 if index == 0 else 10.2,
+                lead=17.2 if index == 0 else 15.8,
+                color=INK if index == 0 else BODY,
+                width=390,
+            )
+            self.y -= 4
+
     def section_body(self, sec):
         self.section_header(sec)
-        for b in sec["blocks"]:
+        for index, b in enumerate(sec["blocks"]):
             t = b["t"]
-            if t == "h3":       self.blk_h3(b["s"])
+            if t == "h3":
+                next_block = sec["blocks"][index + 1] if index + 1 < len(sec["blocks"]) else None
+                if next_block and next_block["t"] == "table":
+                    display = re.sub(r"^(\d+\.\d+)\s+", r"\1 · ", b["s"])
+                    heading_height = len(
+                        self.wrap(display, CW - 14, "Barlow", 13.5, track=-0.2)
+                    ) * 17 + 25
+                    table_height = self.estimate_table_height(
+                        next_block.get("head"),
+                        next_block["rows"],
+                        next_block.get("widths"),
+                    )
+                    combined_height = heading_height + table_height
+                    fresh_y = TOP - 46
+                    if (
+                        self.y - combined_height < BOT
+                        and fresh_y - combined_height >= BOT
+                    ):
+                        self.new_page(kind="body")
+                self.blk_h3(b["s"])
             elif t == "p":      self.blk_p(b["s"])
             elif t == "ul":     self.blk_ul(b["items"])
             elif t == "ol":     self.blk_ul(b["items"], ordered=True)
-            elif t == "table":  self.blk_table(b.get("head"), b["rows"])
+            elif t == "table":  self.blk_table(b.get("head"), b["rows"], b.get("widths"))
+            elif t == "timeline": self.blk_timeline(b["rows"])
             elif t == "note":   self.blk_note(b.get("title", "Nota"), b["s"])
             elif t == "quote":  self.blk_quote(b["s"], b.get("by"))
             elif t == "code":   self.blk_code(b["s"])
             elif t == "figure": self.blk_figure(b.get("caption", "Figura"), b.get("h", 150),
                                                  b.get("path"))
+            elif t == "conclusion": self.blk_conclusion(b["title"], b["paragraphs"])
             elif t == "space":  self.y -= b.get("h", 10)
 
     def build(self):
@@ -556,14 +1039,37 @@ def validate_content(content):
     section_nums = [section["num"] for section in content["sections"]]
     if len(section_nums) != len(set(section_nums)):
         raise ValueError("Section numbers must be unique")
+    expected_nums = [f"{number:02d}" for number in range(1, 14)]
+    if section_nums != expected_nums:
+        raise ValueError("The report must contain sections 01 through 13 in order")
 
     toc_nums = [num for _, items in content["toc"]["groups"] for num, _ in items]
     if len(toc_nums) != len(set(toc_nums)):
         raise ValueError("Table-of-contents numbers must be unique")
+    if toc_nums != section_nums:
+        raise ValueError("Table-of-contents numbers must match the report sections in order")
 
-    missing = sorted(set(section_nums) - set(toc_nums))
-    if missing:
-        raise ValueError(f"Sections missing from the table of contents: {', '.join(missing)}")
+    figures = [
+        block
+        for section in content["sections"]
+        for block in section["blocks"]
+        if block["t"] == "figure"
+    ]
+    evidence_ids = [figure.get("evidence_id") for figure in figures]
+    if len(evidence_ids) != 8 or len(evidence_ids) != len(set(evidence_ids)):
+        raise ValueError("The review report must reserve eight unique visual-evidence slots")
+    for figure in figures:
+        evidence_id = figure["evidence_id"]
+        expected = FIGURE_CATALOG.get(evidence_id)
+        if not expected or figure.get("expected_filename") != expected["filename"]:
+            raise ValueError(f"Figure metadata does not match the #301 catalogue: {evidence_id}")
+        if figure.get("path"):
+            raise ValueError("Issue #323 must not insert unapproved screenshot candidates")
+
+    serialized = repr(content)
+    for forbidden in ("NOTA INTERNA", "NO EXPORTAR AL PDF", "gmail.com"):
+        if forbidden in serialized:
+            raise ValueError(f"Non-exportable or private content leaked into CONTENT: {forbidden}")
 
 
 def generate_pdf(output_path):

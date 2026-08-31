@@ -13,7 +13,7 @@ python docs/aircury-report/generator/al_lio_memoria.py
 ```
 
 The default output is written to
-`output/pdf/AL_LIO_Memoria_Tecnica_PLANTILLA.pdf`. An alternative path can be
+`output/pdf/AL_LIO_Memoria_Tecnica_REVISION.pdf`. An alternative path can be
 provided with `--output`.
 
 ```powershell
@@ -31,12 +31,15 @@ Run the structural checks after generation:
 
 ```powershell
 python docs/aircury-report/generator/verify_pdf.py `
-  output/pdf/AL_LIO_Memoria_Tecnica_PLANTILLA.pdf
+  output/pdf/AL_LIO_Memoria_Tecnica_REVISION.pdf
 ```
 
 ## Editing contract
 
-- Edit `CONTENT` for the cover, table of contents, sections and closing page.
+- Edit `08-technical-report-source.md` for approved report prose. The generator
+  imports only the exportable sections and excludes every internal evidence note.
+- Edit `CONTENT` for cover metadata, the concise table of contents, the closing
+  page and layout-level configuration.
 - Keep each section number unique and include every report section in the table of
   contents.
 - Do not maintain visible page numbers or the final page total manually. The
@@ -44,6 +47,12 @@ python docs/aircury-report/generator/verify_pdf.py `
 - A figure block without `path` remains an empty placeholder.
 - A figure block with `path` loads a local image relative to this directory unless
   an absolute path is supplied. Images are scaled proportionally and never cropped.
+- Issue #323 reserves eight non-redundant figure slots. Their `evidence_id` and
+  `expected_filename` values map the layout to #301 without exposing those internal
+  identifiers in the rendered PDF.
+- The approved section 11 chronology is rendered automatically as an editorial
+  timeline. Other Markdown tables use padded, paginated rows and repeat their
+  header after a page break.
 
 Example:
 

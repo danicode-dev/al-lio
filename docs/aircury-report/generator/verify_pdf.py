@@ -1,6 +1,7 @@
 """Structural checks for a generated AL-LIO technical report PDF."""
 
 import argparse
+import re
 from collections import Counter
 from pathlib import Path
 
@@ -99,11 +100,44 @@ def verify(pdf_path):
             "Internal table-of-contents destinations do not match section pages"
         )
 
+    full_text = " ".join(
+        " ".join((page.extract_text() or "").split())
+        for page in reader.pages
+    )
+    required_fragments = [
+        "345 pruebas",
+        "31 de agosto de 2027",
+        "aplicación no verificada",
+        "no se había realizado un estudio formal",
+        "Bloc de notas",
+        "Aircury SL",
+    ]
+    missing_fragments = [item for item in required_fragments if item not in full_text]
+    if missing_fragments:
+        raise AssertionError(f"Required report statements are missing: {missing_fragments}")
+
+    if full_text.count("EVIDENCIA VISUAL") != 8:
+        raise AssertionError("The review PDF must contain eight visual-evidence placeholders")
+    forbidden_fragments = ["NOTA INTERNA", "NO EXPORTAR AL PDF", "gmail.com"]
+    leaked_fragments = [item for item in forbidden_fragments if item in full_text]
+    if leaked_fragments:
+        raise AssertionError(f"Non-exportable content leaked into the PDF: {leaked_fragments}")
+    if re.search(r"\b(?:DEL|VER|PRD|DAT|ARC|SEC|GOV|ENG|QAL|OPS|IMP|ECO|VIS|VE)-\d{2,3}[A-C]?\b", full_text):
+        raise AssertionError("Internal evidence identifiers must not be rendered in the PDF")
+    if re.search(r"\bBloc\b(?! de notas)", full_text):
+        raise AssertionError("The product area must be named 'Bloc de notas' in the PDF")
+    if any(route in full_text for route in (
+        "/dashboard", "/tasks", "/calendar", "/bloc", "/roadmap",
+        "/courses", "/noticias", "/work", "/hackathons", "/profile",
+    )):
+        raise AssertionError("Private product routes must not be rendered in the PDF")
+
     return {
         "pages": total_pages,
         "outline_entries": len(outline),
         "internal_links": len(internal_destinations),
         "external_links": len(external_links),
+        "figure_placeholders": full_text.count("EVIDENCIA VISUAL"),
     }
 
 

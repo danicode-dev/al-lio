@@ -163,7 +163,7 @@ de su aprendizaje y acceder a información revisada y relevante para su ciclo.
 
 ### 3.3 Alcance entregado y criterio de éxito
 
-| Ámbito | Resultado esperado en la entrega | Estado a 31 de agosto de 2026 |
+| Ámbito | Función entregada | Verificación y límite |
 |---|---|---|
 | Acceso | Registro, confirmación, inicio y cierre de sesión, recuperación y acceso con Google | Verificado en producción |
 | Personalización | Selección y modificación de ciclo y curso, con acceso condicionado al onboarding | Verificado en producción |
@@ -185,46 +185,94 @@ declarados y la publicación automática de fuentes sin revisión.
 
 ## 4. Solución entregada y capacidades
 
-### 4.1 Entrada y personalización
+### 4.1 Entrada, onboarding y personalización
 
 La portada pública explica la propuesta y dirige al registro o al acceso. Una
 cuenta por correo necesita confirmación antes de iniciar sesión y dispone de
 recuperación de contraseña. También existe inicio de sesión con identidad de
 Google. Tras el primer acceso, el onboarding solicita ciclo y curso académico;
-ninguna ruta privada muestra contenido hasta completar esta información.
+ningún espacio privado muestra contenido hasta completar esta información. El
+ciclo y el curso determinan después las competencias, los catálogos y las
+oportunidades que resultan aplicables al estudiante.
 
-### 4.2 Panel y planificación personal
+### 4.2 Panel y siguiente acción
 
-El panel actúa como punto de retorno. Prioriza las próximas acciones y permite
-crear elementos sin abandonar el contexto. Las tareas admiten creación,
-modificación y finalización. Bloc conserva notas privadas y la planificación
-local reúne compromisos del propio usuario. Este estado pertenece al
-estudiante y se consulta siempre con su identidad resuelta en el servidor.
+El panel actúa como punto de retorno después del acceso. Resume tareas y fechas
+próximas, progreso de aprendizaje y contenidos guardados que pueden requerir
+atención. También permite crear una tarea sin abandonar la vista. Su función no
+es duplicar cada módulo, sino reducir la decisión inicial y conducir al
+siguiente paso con el contexto del perfil activo.
 
-### 4.3 Competencias y aprendizaje
+### 4.3 Tareas y calendario
 
-La ruta de competencias presenta el mapa asociado al ciclo activo. Desde él se
-pueden abrir recursos previamente aprobados, utilizar el reproductor y guardar
-progreso o notas para continuar más adelante. AL-LIO conserva el progreso
-personal aunque el catálogo compartido evolucione; no interpreta ese progreso
+Tareas permite crear, modificar, completar, posponer o eliminar pendientes,
+asignar prioridad y conservar una nota de contexto. El calendario reúne esas
+tareas con eventos personales y presenta también la actividad completada. La
+planificación local funciona con independencia de proveedores externos; la
+conexión opcional con Google Calendar requiere un consentimiento separado que
+no llegó a completarse en la verificación de producción.
+
+### 4.4 Bloc de notas
+
+El Bloc de notas conserva documentos privados del estudiante. Permite crear y
+editar notas con formato, localizar contenidos, destacar favoritos y recuperar
+elementos desde la papelera. Una nota puede exportarse a PDF, Word o texto
+plano. Durante un recurso de aprendizaje también se pueden guardar apuntes en
+el Bloc de notas para mantener juntos el contenido y el contexto de estudio.
+
+### 4.5 Competencias y aprendizaje
+
+Competencias presenta el mapa asociado al ciclo activo, organizado por módulos
+y etapas. Cada competencia puede reunir recursos en español previamente
+revisados. El reproductor conserva la posición, permite marcar un recurso como
+completado y añadir notas para continuar más adelante. AL-LIO mantiene ese
+progreso personal aunque el catálogo compartido evolucione; no lo interpreta
 como una calificación oficial ni como evidencia de aprendizaje adquirido.
 
-### 4.4 Información y oportunidades
+### 4.6 Cursos
 
-El producto incluye superficies para noticias, cursos, eventos, retos,
-empresas, oportunidades laborales, candidaturas y elementos guardados. Su
-disponibilidad depende de que exista contenido válido para el ciclo y de que
-la función correspondiente esté habilitada. Las empresas forman un catálogo
-curado y no se presentan como vacantes en tiempo real. Los enlaces externos
-conservan la fuente oficial para que el usuario pueda comprobar condiciones y
-realizar la acción fuera de AL-LIO cuando corresponda.
+Cursos reúne formación relacionada con el ciclo y permite buscar, filtrar,
+consultar el detalle y guardar propuestas para revisarlas después. Cada ficha
+mantiene la procedencia y los datos disponibles de la actividad. La cantidad de
+cursos depende de la cobertura editorial existente y no se presenta como un
+catálogo exhaustivo de toda la oferta formativa.
 
-### 4.5 Perfil y continuidad
+### 4.7 Noticias
+
+Noticias muestra actualidad relacionada con el ciclo después del proceso de
+recopilación y revisión de Radar. El estudiante puede consultar el detalle,
+identificar la fuente, marcar una noticia como leída y conservarla en
+guardados. Los filtros distinguen publicaciones recientes, pendientes y
+guardadas. En la fecha de entrega, esta superficie existía, pero la producción
+mostraba fallos o una cobertura insuficiente; esa limitación se conserva de
+forma explícita en la memoria.
+
+### 4.8 Trabajo, empresas y candidaturas
+
+Trabajo separa cuatro necesidades: ofertas verificadas, acceso a portales de
+búsqueda, empresas relacionadas con el ámbito profesional y seguimiento de
+candidaturas. El estudiante puede guardar empresas y ofertas, conservar
+búsquedas frecuentes y registrar una candidatura manualmente o a partir de una
+oferta. El estado de la candidatura sirve para el seguimiento personal y no
+implica comunicación automática con la empresa. El catálogo de empresas es una
+referencia curada, no una lista de vacantes en tiempo real.
+
+### 4.9 Eventos y retos
+
+Eventos y retos reúne hackathons, charlas, convocatorias y actividades que
+pueden aportar experiencia o visibilidad profesional. La vista permite buscar,
+filtrar, revisar fechas y modalidad, consultar la fuente y guardar elementos.
+Cuando existe una inscripción, la acción final se realiza en la fuente externa;
+AL-LIO no sustituye las condiciones ni el formulario de la entidad organizadora.
+
+### 4.10 Perfil y guardados
 
 El perfil permite actualizar la información funcional, incluido el ciclo. El
-cambio modifica el contexto que usan las consultas posteriores. La navegación
-mantiene la misma jerarquía esencial en escritorio y en anchura móvil, sin
-pretender que ambos diseños sean idénticos píxel a píxel.
+cambio modifica el contexto que usan las consultas posteriores. También resume
+el progreso de aprendizaje y reúne cursos, empresas y eventos guardados para
+que puedan revisarse o retirarse de la colección. La navegación mantiene la
+misma jerarquía esencial en escritorio y en anchura móvil, sin pretender que
+ambos diseños sean idénticos píxel a píxel.
 
 > **NOTA INTERNA — NO EXPORTAR AL PDF:** `PRD-001`–`PRD-017`. Figuras
 > propuestas: `VE-01A` o `VE-01B` para entrada; `VE-02` para personalización;
@@ -278,7 +326,7 @@ superado el proceso de revisión. Esta separación reduce el alcance de un fallo
 del recolector y evita que una fuente externa tenga acceso indirecto a datos
 privados.
 
-| Componente | Responsabilidad principal | Límite relevante |
+| Componente | Función | Límite de confianza |
 |---|---|---|
 | Caddy | HTTPS y encaminamiento público | No almacena el estado funcional de AL-LIO |
 | Aplicación Next.js | Interfaz, API, autenticación, autorización e integraciones | Accede a PostgreSQL con un rol restringido |
@@ -454,19 +502,24 @@ rendimiento y accesibilidad de extremo a extremo.
 
 ## 11. Hitos y cronología del programa
 
+El desarrollo avanzó por capas: primero se fijó una base operativa, después se
+consolidó el flujo del estudiante y, por último, se endurecieron los límites de
+seguridad, contenido y despliegue. Los periodos siguientes describen decisiones
+y resultados verificables, no dedicación continua a jornada completa.
+
 | Periodo | Hito | Resultado principal |
 |---|---|---|
-| Abril–mayo de 2026 | Fundamentos | Base Next.js y TypeScript, PostgreSQL y primeras superficies para estudiantes |
-| Junio–mediados de agosto | Construcción del producto | Tareas, calendario, Bloc, competencias, recursos, cursos, eventos, guardados y perfil |
-| 22–27 de agosto | Consolidación y preparación de producción | Sesiones firmadas, revisión de arquitectura, entrega firmada de Radar, migraciones y despliegue controlado |
-| Finales de agosto | Gobierno de contenido | Contenido canónico de Radar, noticias verificadas, oportunidades y controles de vigencia y retirada |
-| 28–31 de agosto | Pulido y entrega | Onboarding guiado, navegación móvil, reorganización de pruebas, límites funcionales y preparación de la memoria |
-| 31 de agosto de 2026 | Release de referencia | CI satisfactoria, despliegue del SHA congelado, salud y disponibilidad verificadas |
-| Septiembre de 2026–agosto de 2027 | Operación y evolución | Soporte, seguridad, mejoras, validación con usuarios y cierre de brechas operativas |
+| Abril–mayo de 2026 | Fundamentos y primer flujo | Definición del problema, base Next.js y TypeScript, PostgreSQL autogestionado y primeras superficies privadas para estudiantes |
+| Junio–mediados de agosto | Construcción del espacio del estudiante | Integración de panel, tareas, Bloc de notas, calendario local, perfil, competencias, recursos, cursos, eventos y elementos guardados |
+| 22–27 de agosto | Consolidación de arquitectura y acceso | Sesiones firmadas, confirmación y recuperación de cuenta, límites de módulos, migraciones versionadas y decisiones de arquitectura documentadas |
+| Finales de agosto | Radar y gobierno del contenido | Separación de Radar, revisión humana, entrega firmada, procedencia, vigencia, retirada y filtrado por ciclo |
+| 28–31 de agosto | Calidad y preparación de entrega | Onboarding guiado, navegación responsive, reorganización de pruebas, dominio canónico y verificación de los recorridos principales |
+| 31 de agosto de 2026 | Release de referencia | Congelación del tag y SHA, 345 pruebas superadas, despliegue exacto y comprobaciones públicas de salud y disponibilidad |
+| Septiembre de 2026–agosto de 2027 | Operación y evolución | Soporte, seguridad, mejoras de noticias y Calendar, monitorización, recuperación y futura validación consentida con estudiantes |
 
-Los periodos describen fases de trabajo y no dedicación continua a jornada
-completa. La entrega no se considera el final del proyecto: fija una versión
-reproducible para evaluar el programa mientras el producto sigue vivo.
+La entrega fija una referencia reproducible para la evaluación; no marca el
+final del producto. La siguiente fase prioriza continuidad operativa y
+validación real de las hipótesis de impacto.
 
 > **NOTA INTERNA — NO EXPORTAR AL PDF:** cronología contrastada con historial,
 > ADR y `QAL-001`/`VER-004`. Las fases previas son contexto histórico; la única
@@ -593,7 +646,7 @@ proyecto; no se presenta como evidencia de trabajo futuro ya realizado.
 
 ### 13.2 Hoja de ruta priorizada
 
-| Prioridad | Siguiente resultado | Criterio de cierre |
+| Prioridad | Próximo resultado | Evidencia de cierre |
 |---|---|---|
 | Alta | Estabilizar las noticias y su cobertura por ciclo | Flujo reproducible en producción, métricas por ciclo y estado vacío/error correcto |
 | Alta | Completar monitorización y recuperación | Alertas externas, copias cifradas fuera del VPS y restauración aislada registrada |
