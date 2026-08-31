@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/landing/legal-page";
 
-export const metadata: Metadata = { title: "Cookies" };
+export const metadata: Metadata = { title: "Cookies", alternates: { canonical: "/cookies", languages: { es: "/cookies", en: "/en/cookies" } } };
 
 export default function CookiesPage() {
   return (
     <LegalPage
+      lang="es"
+      altHref="/en/cookies"
       title="Política de cookies"
       kicker="Cookies"
       lead={

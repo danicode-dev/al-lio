@@ -3,6 +3,9 @@ import { ArrowRight, ChevronDown } from "lucide-react";
 
 import { CookieNotice } from "@/components/landing/cookie-notice";
 import { EcosystemDiagram } from "@/components/landing/ecosystem-diagram";
+import { HtmlLang } from "@/components/landing/html-lang";
+import type { Lang } from "@/components/landing/i18n";
+import { messages } from "@/components/landing/i18n";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { LandingHeader } from "@/components/landing/landing-header";
 import { LANDING_MODULES } from "@/components/landing/modules";
@@ -22,37 +25,18 @@ const eyebrow = "text-[13px] font-bold uppercase tracking-[0.16em] text-[#1F5B46
 const secTitle = "font-[family-name:var(--font-barlow)] font-extrabold tracking-[-0.01em]";
 const shell = "mx-auto max-w-[1120px] px-6 sm:px-12";
 
-const CYCLES = [
-  {
-    code: "DAW · DAM",
-    name: "Desarrollo",
-    line: "Hackathons, retos de código y ofertas de prácticas en desarrollo web y multiplataforma, con los recursos del ciclo siempre a mano.",
-  },
-  {
-    code: "AF",
-    name: "Administración y Finanzas",
-    line: "Prácticas y convocatorias del ámbito administrativo y contable, y los eventos del sector ordenados junto a tu calendario académico.",
-  },
-  {
-    code: "MP",
-    name: "Marketing y Publicidad",
-    line: "Eventos del sector, concursos creativos y ofertas en comunicación y publicidad, con las noticias de marketing que de verdad te aplican.",
-  },
-  {
-    code: "TSAF",
-    name: "Actividades Físico‑deportivas",
-    line: "Competiciones, formaciones y salidas profesionales del ámbito deportivo, filtradas para tu itinerario y tu nivel.",
-  },
-] as const;
+// Public marketing page served at "/" (Spanish) and "/en" (English) for
+// signed-out visitors; an authenticated visitor is redirected to the
+// dashboard in the route. The first screen holds only the slogan and a
+// scroll cue; the connected diagram and the per-cycle section are the
+// explanation. No product screenshots, no bordered white cards.
+export function MarketingLanding({ lang, altHref }: { lang: Lang; altHref: string }) {
+  const t = messages[lang];
+  const projectHref = lang === "es" ? "/proyecto" : "/en/proyecto";
 
-// Public marketing page served at "/" for signed-out visitors (an
-// authenticated visitor is redirected to the dashboard in the route). The
-// first screen holds only the slogan and a scroll cue; the connected
-// diagram and the per-cycle section are the explanation. No product
-// screenshots, no bordered white cards - the copy sits on the cream.
-export function MarketingLanding() {
   return (
     <div className="relative min-h-screen bg-[#F7F3EC] text-[#2F2A24]">
+      <HtmlLang lang={lang} />
       <style>{`
         html { scroll-behavior: smooth; }
         /* The diagram's guided animation carries the module copy; the plain
@@ -79,22 +63,22 @@ export function MarketingLanding() {
       />
 
       <div className="relative z-10">
-        <LandingHeader />
+        <LandingHeader lang={lang} altHref={altHref} />
 
         <main>
           {/* First screen: slogan + a single scroll cue, vertically centred. */}
           <section className="relative flex min-h-[calc(100svh-80px)] items-center overflow-hidden">
             <div className={`${shell} relative w-full pb-20 text-center`}>
-              <p className={eyebrow}>Plataforma para estudiantes de FP</p>
+              <p className={eyebrow}>{t.hero.eyebrow}</p>
               <h1 className="mx-auto mt-5 max-w-[18ch] font-[family-name:var(--font-barlow)] text-[50px] font-extrabold leading-[1.02] tracking-[-0.03em] text-[#2F2A24] sm:text-[78px]">
-                Enfoca. Actúa.<br />
-                Logra más.
+                {t.hero.titleLines[0]}<br />
+                {t.hero.titleLines[1]}
               </h1>
               <p className="mx-auto mt-6 max-w-[46ch] text-[18px] leading-relaxed text-[#4D4842]">
-                Tu curso en un panel: tareas, prácticas, cursos, eventos y calendario, con noticias y convocatorias de tu ciclo revisadas cada día.
+                {t.hero.lead}
               </p>
               <a href="#panel" className={`${linkAction} mt-12 text-[18px]`}>
-                Ver cómo funciona
+                {t.hero.scrollCue}
                 <ChevronDown className="h-5 w-5 transition-transform group-hover:translate-y-0.5" aria-hidden="true" />
               </a>
             </div>
@@ -104,24 +88,27 @@ export function MarketingLanding() {
           <section id="panel" className="scroll-mt-6 border-y border-[#E6DED2] py-24 md:py-32">
             <div className={shell}>
               <div className="mx-auto max-w-[60ch] text-center">
-                <h2 className={`${secTitle} text-[36px]`}>Un panel, todo conectado</h2>
+                <h2 className={`${secTitle} text-[36px]`}>{t.panel.title}</h2>
                 <p className="mx-auto mt-3 max-w-[54ch] text-[16px] leading-relaxed text-[#7A736B]">
-                  Cada área se conecta con AL-LÍO y te cuenta qué aporta.
+                  {t.panel.lead}
                 </p>
               </div>
               <div className="mt-16">
-                <EcosystemDiagram />
+                <EcosystemDiagram lang={lang} />
               </div>
 
               {/* The diagram's animation spells out each module at the hub.
                   This list is only revealed when motion is turned off. */}
               <ul className="al-rm-fallback mx-auto mt-12 max-w-[560px] divide-y divide-[#E6DED2]">
-                {LANDING_MODULES.map((module) => (
-                  <li key={module.label} className="py-4 first:pt-0 last:pb-0">
-                    <p className="text-[15px] font-semibold text-[#1F5B46]">{module.label}</p>
-                    <p className="mt-1 text-[13.5px] leading-relaxed text-[#7A736B]">{module.description}</p>
-                  </li>
-                ))}
+                {LANDING_MODULES.map((module) => {
+                  const m = t.modules[module.key];
+                  return (
+                    <li key={module.key} className="py-4 first:pt-0 last:pb-0">
+                      <p className="text-[15px] font-semibold text-[#1F5B46]">{m.label}</p>
+                      <p className="mt-1 text-[13.5px] leading-relaxed text-[#7A736B]">{m.description}</p>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </section>
@@ -133,16 +120,13 @@ export function MarketingLanding() {
             <div className={`${shell} py-24 md:py-28`}>
               <div className="grid gap-x-16 gap-y-8 md:grid-cols-[1fr_0.9fr] md:items-start">
                 <div>
-                  <p className={eyebrow}>Para tu ciclo</p>
-                  <h2 className={`${secTitle} mt-3 text-[32px] sm:text-[36px]`}>Lo que ves depende de lo que estudias</h2>
+                  <p className={eyebrow}>{t.cycle.eyebrow}</p>
+                  <h2 className={`${secTitle} mt-3 text-[32px] sm:text-[36px]`}>{t.cycle.title}</h2>
                 </div>
                 <div className="md:pt-9">
-                  <p className="text-[16px] leading-relaxed text-[#4D4842]">
-                    AL-LÍO conoce tu familia profesional y filtra por ella: los cursos, las prácticas, los eventos y las
-                    noticias que ves son los de tu itinerario, no un tablón genérico para todos.
-                  </p>
-                  <Link href="/proyecto" className={`${linkAction} mt-6 text-[15px]`}>
-                    Sobre el proyecto
+                  <p className="text-[16px] leading-relaxed text-[#4D4842]">{t.cycle.lead}</p>
+                  <Link href={projectHref} className={`${linkAction} mt-6 text-[15px]`}>
+                    {t.cycle.projectLink}
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                   </Link>
                 </div>
@@ -152,7 +136,7 @@ export function MarketingLanding() {
                   tells each family apart. Name and code share a line so the
                   block never runs to a needless second row. */}
               <div className="mt-16 grid gap-x-14 gap-y-12 sm:grid-cols-2">
-                {CYCLES.map((cycle) => (
+                {t.cycle.families.map((cycle) => (
                   <div key={cycle.code} className="border-l-2 border-[#1F5B46]/35 pl-6">
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                       <p className="text-[19px] font-bold text-[#2F2A24]">{cycle.name}</p>
@@ -166,10 +150,10 @@ export function MarketingLanding() {
           </section>
         </main>
 
-        <LandingFooter />
+        <LandingFooter lang={lang} />
       </div>
 
-      <CookieNotice />
+      <CookieNotice lang={lang} />
     </div>
   );
 }

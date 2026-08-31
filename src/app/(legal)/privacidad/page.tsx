@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/landing/legal-page";
 
-export const metadata: Metadata = { title: "Privacidad" };
+export const metadata: Metadata = { title: "Privacidad", alternates: { canonical: "/privacidad", languages: { es: "/privacidad", en: "/en/privacidad" } } };
 
 export default function PrivacidadPage() {
   return (
     <LegalPage
+      lang="es"
+      altHref="/en/privacidad"
       title="Privacidad"
       kicker="Protección de datos"
       lead="AL-LÍO es una plataforma para estudiantes de Formación Profesional. Tratamos los datos mínimos para que la herramienta funcione y no compartimos tu información con terceros con fines comerciales."

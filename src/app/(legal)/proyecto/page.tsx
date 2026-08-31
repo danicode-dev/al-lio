@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/landing/legal-page";
 
-export const metadata: Metadata = { title: "El proyecto" };
+export const metadata: Metadata = { title: "El proyecto", alternates: { canonical: "/proyecto", languages: { es: "/proyecto", en: "/en/proyecto" } } };
 
 export default function ProyectoPage() {
   return (
     <LegalPage
+      lang="es"
+      altHref="/en/proyecto"
       title="El proyecto"
       kicker="Sobre AL-LÍO"
       lead="AL-LÍO responde a un problema concreto de la Formación Profesional: la información y las tareas del curso repartidas en demasiados sitios. Es una herramienta para el curso, no un feed más."

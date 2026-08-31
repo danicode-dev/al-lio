@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/landing/legal-page";
 
-export const metadata: Metadata = { title: "Términos" };
+export const metadata: Metadata = { title: "Términos", alternates: { canonical: "/terminos", languages: { es: "/terminos", en: "/en/terminos" } } };
 
 export default function TerminosPage() {
   return (
     <LegalPage
+      lang="es"
+      altHref="/en/terminos"
       title="Términos de uso"
       kicker="Condiciones"
       lead="Al usar AL-LÍO aceptas estos términos. Es un proyecto educativo sin ánimo de lucro: no es un producto comercial y se ofrece tal cual, sin garantías."

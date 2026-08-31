@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
+import type { Lang } from "@/components/landing/i18n";
+import { messages } from "@/components/landing/i18n";
 import { LANDING_MODULES } from "@/components/landing/modules";
 
 type BeamPath = { d: string };
@@ -25,7 +27,8 @@ const HOLD_MS = 2200; // pause with everything connected before the loop restart
 type Seq = { cycle: number; active: number; done: number; hub: number };
 const SEQ_IDLE: Seq = { cycle: 0, active: -1, done: 0, hub: -1 };
 
-export function EcosystemDiagram() {
+export function EcosystemDiagram({ lang }: { lang: Lang }) {
+  const mod = messages[lang].modules;
   const stageRef = useRef<HTMLDivElement>(null);
   const hubRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -142,11 +145,11 @@ export function EcosystemDiagram() {
 
   const left = LANDING_MODULES.map((module, index) => ({ module, index })).filter(({ module }) => module.side === "left");
   const right = LANDING_MODULES.map((module, index) => ({ module, index })).filter(({ module }) => module.side === "right");
-  const hubModule = seq.hub >= 0 ? LANDING_MODULES[seq.hub] : null;
+  const hubCopy = seq.hub >= 0 ? mod[LANDING_MODULES[seq.hub].key] : null;
   const growingPath = seq.active >= 0 ? paths[seq.active] : undefined;
 
   return (
-    <div ref={stageRef} className="relative mx-auto max-w-[900px]" aria-label="Los módulos de AL-LÍO conectados">
+    <div ref={stageRef} className="relative mx-auto max-w-[900px]" aria-label={messages[lang].panel.diagramAria}>
       <style>{`
         @keyframes al-eco-grow { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
         .al-eco-active { stroke-dasharray: 1; stroke-dashoffset: 1; animation: al-eco-grow ${DRAW_S}s ease-in-out forwards; }
@@ -202,8 +205,9 @@ export function EcosystemDiagram() {
         <div className="flex flex-col items-start gap-6 sm:gap-12">
           {left.map(({ module, index }) => (
             <DiagramNode
-              key={module.label}
-              module={module}
+              key={module.key}
+              icon={module.icon}
+              label={mod[module.key].label}
               done={inView && index < seq.done}
               nodeRef={(node) => {
                 nodeRefs.current[index] = node;
@@ -216,11 +220,11 @@ export function EcosystemDiagram() {
           {/* The arriving module's line, opened above the mark. */}
           <div
             className="al-eco-hub pointer-events-none absolute bottom-[calc(100%+16px)] left-1/2 hidden w-[280px] -translate-x-1/2 text-center sm:block"
-            data-show={hubModule ? "true" : "false"}
+            data-show={hubCopy ? "true" : "false"}
             aria-hidden="true"
           >
-            <p className="text-[17px] font-bold text-[#1F5B46]">{hubModule?.label ?? ""}</p>
-            <p className="mt-1 text-[14px] leading-relaxed text-[#7A736B]">{hubModule?.description ?? ""}</p>
+            <p className="text-[17px] font-bold text-[#1F5B46]">{hubCopy?.label ?? ""}</p>
+            <p className="mt-1 text-[14px] leading-relaxed text-[#7A736B]">{hubCopy?.description ?? ""}</p>
           </div>
 
           <span
@@ -240,8 +244,9 @@ export function EcosystemDiagram() {
         <div className="flex flex-col items-end gap-6 sm:gap-12">
           {right.map(({ module, index }) => (
             <DiagramNode
-              key={module.label}
-              module={module}
+              key={module.key}
+              icon={module.icon}
+              label={mod[module.key].label}
               done={inView && index < seq.done}
               nodeRef={(node) => {
                 nodeRefs.current[index] = node;
@@ -255,26 +260,27 @@ export function EcosystemDiagram() {
           module's line is shown as a caption under the diagram instead. */}
       <div
         className="al-eco-hub-m mx-auto mt-9 min-h-[72px] max-w-[300px] text-center sm:hidden"
-        data-show={hubModule ? "true" : "false"}
+        data-show={hubCopy ? "true" : "false"}
         aria-hidden="true"
       >
-        <p className="text-[15px] font-bold text-[#1F5B46]">{hubModule?.label ?? ""}</p>
-        <p className="mt-1 text-[13.5px] leading-relaxed text-[#7A736B]">{hubModule?.description ?? ""}</p>
+        <p className="text-[15px] font-bold text-[#1F5B46]">{hubCopy?.label ?? ""}</p>
+        <p className="mt-1 text-[13.5px] leading-relaxed text-[#7A736B]">{hubCopy?.description ?? ""}</p>
       </div>
     </div>
   );
 }
 
 function DiagramNode({
-  module,
+  icon: Icon,
+  label,
   nodeRef,
   done,
 }: {
-  module: (typeof LANDING_MODULES)[number];
+  icon: (typeof LANDING_MODULES)[number]["icon"];
+  label: string;
   nodeRef: (node: HTMLDivElement | null) => void;
   done: boolean;
 }) {
-  const Icon = module.icon;
   return (
     <div ref={nodeRef} className="flex items-center gap-2.5">
       <Icon
@@ -288,7 +294,7 @@ function DiagramNode({
           done ? "text-[#1F5B46]" : "text-[#2F2A24]"
         }`}
       >
-        {module.label}
+        {label}
       </span>
     </div>
   );

@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import type { Lang } from "@/components/landing/i18n";
+import { messages } from "@/components/landing/i18n";
+
 const STORAGE_KEY = "al-lio.cookie-notice.v1";
 
 type Phase = "hidden" | "in" | "out";
@@ -12,7 +15,8 @@ type Phase = "hidden" | "in" | "out";
 // small line at the foot of the page, centred, that rises into view once
 // (first visit only), waits a few seconds and slips away. It is marked as
 // seen the moment it shows, so it never comes back even if ignored.
-export function CookieNotice() {
+export function CookieNotice({ lang }: { lang: Lang }) {
+  const t = messages[lang].cookie;
   const [phase, setPhase] = useState<Phase>("hidden");
   const [armed, setArmed] = useState(false);
 
@@ -57,16 +61,16 @@ export function CookieNotice() {
     <div
       className="pointer-events-none fixed inset-x-0 bottom-3 z-50 flex justify-center px-4"
       role="status"
-      aria-label="Aviso de cookies"
+      aria-label={t.aria}
     >
       <p
         className={`pointer-events-auto max-w-[640px] text-center text-[12px] leading-relaxed text-[#7A736B] transition-all duration-[350ms] ease-out [text-shadow:0_0_6px_#F7F3EC,0_0_6px_#F7F3EC,0_0_12px_#F7F3EC] motion-reduce:translate-y-0 motion-reduce:transition-none ${
           phase === "in" && armed ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
         }`}
       >
-        Solo cookies técnicas: sin analítica ni rastreo.{" "}
-        <Link href="/cookies" className="font-semibold text-[#1F5B46] underline underline-offset-2">
-          Política de cookies
+        {t.text}{" "}
+        <Link href={lang === "es" ? "/cookies" : "/en/cookies"} className="font-semibold text-[#1F5B46] underline underline-offset-2">
+          {t.policy}
         </Link>
         {" · "}
         <button
@@ -74,7 +78,7 @@ export function CookieNotice() {
           onClick={() => setPhase("out")}
           className="font-semibold text-[#1F5B46] underline underline-offset-2"
         >
-          Entendido
+          {t.dismiss}
         </button>
       </p>
     </div>

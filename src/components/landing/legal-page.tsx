@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 
 import { CookieNotice } from "@/components/landing/cookie-notice";
+import { HtmlLang } from "@/components/landing/html-lang";
+import type { Lang } from "@/components/landing/i18n";
+import { messages } from "@/components/landing/i18n";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { LandingHeader } from "@/components/landing/landing-header";
 
@@ -10,12 +13,16 @@ import { LandingHeader } from "@/components/landing/landing-header";
 // carry a short green rule. Same warm cream and Barlow/Inter pairing
 // as the landing.
 export function LegalPage({
+  lang,
+  altHref,
   title,
   kicker,
   lead,
   aside,
   children,
 }: {
+  lang: Lang;
+  altHref: string;
   title: string;
   kicker?: string;
   lead?: ReactNode;
@@ -24,10 +31,13 @@ export function LegalPage({
 }) {
   return (
     <div className="min-h-screen bg-[#F7F3EC] text-[#2F2A24]">
-      <LandingHeader />
+      <HtmlLang lang={lang} />
+      <LandingHeader lang={lang} altHref={altHref} />
 
       <main className="mx-auto max-w-[1120px] px-6 py-16 sm:px-12 sm:py-20">
-        <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-[#1F5B46]">{kicker ?? "AL-LÍO"}</p>
+        <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-[#1F5B46]">
+          {kicker ?? messages[lang].legalShell.kickerDefault}
+        </p>
         <h1 className="mt-4 max-w-[16ch] font-[family-name:var(--font-barlow)] text-[44px] font-extrabold leading-[1.04] tracking-[-0.02em] sm:text-[56px]">
           {title}
         </h1>
@@ -48,8 +58,8 @@ export function LegalPage({
         <div className="al-legal-prose mt-14 max-w-[680px] text-[16px] leading-[1.78] text-[#4D4842]">{children}</div>
       </main>
 
-      <LandingFooter />
-      <CookieNotice />
+      <LandingFooter lang={lang} />
+      <CookieNotice lang={lang} />
 
       <style>{`
         .al-legal-prose > :first-child { margin-top: 0; }

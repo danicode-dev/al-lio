@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/landing/legal-page";
 
-export const metadata: Metadata = { title: "Accesibilidad" };
+export const metadata: Metadata = { title: "Accesibilidad", alternates: { canonical: "/accesibilidad", languages: { es: "/accesibilidad", en: "/en/accesibilidad" } } };
 
 export default function AccesibilidadPage() {
   return (
     <LegalPage
+      lang="es"
+      altHref="/en/accesibilidad"
       title="Accesibilidad"
       kicker="Compromiso"
       lead={
