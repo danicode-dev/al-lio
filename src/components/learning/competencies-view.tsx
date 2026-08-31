@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, CheckCircle2, Clock3, PlayCircle, Sparkles } from "lucide-react";
-import type { LearningCompetencySummary } from "@/lib/db/repositories/learning";
+import type { LearningCompetencySummary } from "@/features/learning/server/repository";
 import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 

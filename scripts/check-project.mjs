@@ -6,7 +6,12 @@ const requiredFiles = [
   "src/app/page.tsx",
   "src/app/layout.tsx",
   "src/app/globals.css",
-  "src/components/guest-app.tsx",
+  "src/features/work/index.ts",
+  "src/features/courses/index.ts",
+  "src/features/events/index.ts",
+  "src/features/calendar/index.ts",
+  "src/features/bloc/index.ts",
+  "src/shared/ui/feature-page.tsx",
   "src/components/calendar/app-calendar.tsx",
   "src/components/quick-add.tsx",
   "public/data/empresas_tech_granada.md",
@@ -48,7 +53,7 @@ for (const file of requiredFiles) {
 }
 
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-for (const script of ["lint", "typecheck", "check:project", "audit:schema", "smoke", "verify:startup", "verify:cheap", "verify:prod", "test", "ci"]) {
+for (const script of ["lint", "typecheck", "check:project", "check:boundaries", "audit:schema", "smoke", "verify:startup", "verify:cheap", "verify:prod", "test", "ci"]) {
   if (!packageJson.scripts?.[script]) {
     fail(`Falta el script npm: ${script}`);
   }
@@ -68,18 +73,21 @@ for (const text of ["AL-LÍO", "npm run verify:startup", "docs/README.md"]) {
   }
 }
 
-const guestApp = readFileSync(join(root, "src/components/guest-app.tsx"), "utf8");
-for (const text of ["techlife.bloc.D1OS.v1", "techlife.app.settings.D1OS.v1", "techOpportunities"]) {
-  if (!guestApp.includes(text)) {
-    fail(`components/guest-app.tsx deberia contener: ${text}`);
+const blocTypes = readFileSync(join(root, "src/features/bloc/client/bloc-types.ts"), "utf8");
+const settingsFeature = readFileSync(join(root, "src/features/settings/client/settings-feature.tsx"), "utf8");
+const coursesFeature = readFileSync(join(root, "src/features/courses/client/courses-feature.tsx"), "utf8");
+if (!blocTypes.includes("techlife.bloc.D1OS.v1")) fail("Bloc debe conservar la clave de migracion local heredada");
+if (!settingsFeature.includes("techlife.app.settings.D1OS.v1")) fail("Settings debe conservar la clave local heredada");
+if (!coursesFeature.includes("techOpportunities")) fail("Courses debe combinar el catalogo de oportunidades");
+
+const applicationStore = readFileSync(join(root, "src/shared/store/application-store.tsx"), "utf8");
+for (const text of ["export function ApplicationStoreProvider", "export function useApplicationStore"]) {
+  if (!applicationStore.includes(text)) {
+    fail(`shared/store/application-store.tsx deberia contener: ${text}`);
   }
 }
-
-const guestStore = readFileSync(join(root, "src/components/guest-store.tsx"), "utf8");
-for (const text of ["progress_notes", "export function StoreProvider", "export function useStore"]) {
-  if (!guestStore.includes(text)) {
-    fail(`components/guest-store.tsx deberia contener: ${text}`);
-  }
+if (applicationStore.includes("server/actions") || applicationStore.includes("toast.")) {
+  fail("El store compartido debe ser un contenedor de datos sin mutaciones de producto");
 }
 
 if (packageJson.scripts?.dev !== "next dev -p 3000") {
@@ -100,9 +108,9 @@ for (const text of ["CalendarHeader", "CalendarMonthGrid", "TaskCalendar", "Cale
   }
 }
 
-const actions = readFileSync(join(root, "src/lib/actions.ts"), "utf8");
-if (actions.includes('revalidatePath("/dashboard")')) {
-  fail('src/lib/actions.ts no debe revalidar "/dashboard"; rompe foco y refresca el layout completo');
+const taskActions = readFileSync(join(root, "src/features/tasks/server/actions.ts"), "utf8");
+if (taskActions.includes('revalidatePath("/dashboard")')) {
+  fail('Las acciones de Tasks no deben revalidar "/dashboard"; rompe foco y refresca el layout completo');
 }
 
 const companiesMd = readFileSync(join(root, "public/data/empresas_tech_granada.md"), "utf8");

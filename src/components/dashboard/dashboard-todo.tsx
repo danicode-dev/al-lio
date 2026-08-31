@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { ArrowRight, Check, ListTodo, MessageSquareText, Plus, X } from "lucide-react";
-import type { ReturnTypeActions, Store } from "@/components/store/types";
+import type { Store } from "@/components/store/types";
+import type { TaskActions } from "@/features/tasks/client";
 import { dashboardLightSurface } from "@/components/dashboard/dashboard-surface";
 import { selectDashboardTodoTasks } from "@/lib/dashboard/upcoming-feed";
 
@@ -11,7 +12,7 @@ function isCompleted(status: string) {
   return status === "completada" || status === "cancelada";
 }
 
-export function DashboardTodo({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
+export function DashboardTodo({ store, actions }: { store: Store; actions: TaskActions }) {
   const [composerOpen, setComposerOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");

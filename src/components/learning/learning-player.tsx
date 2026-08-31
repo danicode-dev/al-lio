@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { ArrowLeft, CheckCircle2, LoaderCircle, RotateCcw, Save } from "lucide-react";
 import { toast } from "sonner";
-import { addLearningNoteAction, saveLearningProgressAction } from "@/lib/learning/actions";
+import { addLearningNoteAction, saveLearningProgressAction } from "@/features/learning/server/player-actions";
 import { useYouTubePlayer } from "@/components/ruta/use-youtube-player";
-import type { LearningResourceDetail } from "@/lib/db/repositories/learning";
+import type { LearningResourceDetail } from "@/features/learning/server/repository";
 import type { DbFpLearningNote, FpLearningStatus } from "@/lib/db/types";
 import { formatTimestamp } from "@/lib/learning/time";
 

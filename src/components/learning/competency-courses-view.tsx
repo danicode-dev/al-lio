@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, CheckCircle2, Clock3, PlayCircle } from "lucide-react";
-import type { LearningCompetencyDetail } from "@/lib/db/repositories/learning";
+import type { LearningCompetencyDetail } from "@/features/learning/server/repository";
 import { formatTimestamp } from "@/lib/learning/time";
 
 export function CompetencyCoursesView({ competency }: { competency: LearningCompetencyDetail }) {

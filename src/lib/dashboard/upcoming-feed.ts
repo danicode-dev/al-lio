@@ -3,9 +3,8 @@ import type { Course, FpCatalogItem, Hackathon, Task } from "@/components/store/
 const UPCOMING_WINDOW_DAYS = 14;
 const DASHBOARD_TODO_LIMIT = 4;
 
-// Mirrors the FP catalogue's own event-like type set (guest-app.tsx keeps an
-// identical private copy for the same reason it can't be imported here: it's
-// a large client component tree, unsafe to pull into a plain data module).
+// Mirrors the FP catalogue's event-like type set without importing a client
+// feature tree into this plain dashboard data module.
 const FP_EVENT_TYPES = new Set(["hackathon", "evento", "reto", "convocatoria_practicas"]);
 
 export type FeedItemKind = "task" | "course" | "hackathon" | "fp_event";

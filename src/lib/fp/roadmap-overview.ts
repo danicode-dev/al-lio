@@ -7,7 +7,7 @@ import {
   getLearningItemsForCompetencies,
   getSharedModuleCodes,
   getUserContentStatesForItems,
-} from "@/lib/db/repositories/fp_catalog";
+} from "@/features/learning/server/catalogue-repository";
 import {
   buildRoadmapModules,
   moduleCompletion,

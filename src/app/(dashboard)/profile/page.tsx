@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { getValidatedSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
-import { getActiveFpCycles } from "@/lib/db/repositories/fp_catalog";
+import { getActiveFpCycles } from "@/features/learning/server";
 import { getUserById } from "@/lib/db/repositories/users";
-import { getLearningOverview } from "@/lib/learning/overview";
+import { getLearningOverview } from "@/features/learning/domain";
 import { ProfileForm } from "@/components/profile/profile-form";
 
 export const dynamic = "force-dynamic";

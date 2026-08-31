@@ -23,19 +23,17 @@ const REPOS = [
   "src/lib/db/repositories/users.ts",
   "src/lib/db/repositories/profiles.ts",
   "src/lib/db/repositories/sources.ts",
-  "src/lib/db/repositories/quick_searches.ts",
-  "src/lib/db/repositories/opportunities.ts",
-  "src/lib/db/repositories/hackathons.ts",
-  "src/lib/db/repositories/courses.ts",
-  "src/lib/db/repositories/tasks.ts",
   "src/lib/db/repositories/reminders.ts",
-  "src/lib/db/repositories/quick_links.ts",
   "src/lib/db/repositories/tech_opportunities.ts",
-  "src/lib/db/repositories/fp_catalog.ts",
-  "src/lib/db/repositories/fp_resource_notes.ts",
-  "src/lib/db/repositories/bloc_notes.ts",
-  "src/lib/db/repositories/companies.ts",
-  "src/lib/db/repositories/learning.ts",
+  "src/features/tasks/server/repository.ts",
+  "src/features/courses/server/repository.ts",
+  "src/features/events/server/repository.ts",
+  "src/features/bloc/server/repository.ts",
+  "src/features/work/server/repository.ts",
+  "src/features/work/server/opportunity-repository.ts",
+  "src/features/resources/server/repository.ts",
+  "src/features/learning/server/catalogue-repository.ts",
+  "src/features/learning/server/repository.ts",
 ];
 for (const repo of REPOS) {
   check(`${repo} existe`, existsSync(join(root, repo)));
@@ -79,20 +77,20 @@ console.log("\n── lib/data.ts ──");
 const data = read("src/lib/data.ts");
 const dashboardLayout = read("src/app/(dashboard)/layout.tsx");
 const dashboardPage = read("src/app/(dashboard)/dashboard/page.tsx");
-check("src/lib/data.ts importa repositorios", data.includes("@/lib/db/repositories/"));
+check("src/lib/data.ts importa repositorios con dueño", data.includes("@/features/") && data.includes("/server/"));
 check("src/lib/data.ts no usa .from() de Supabase para datos", !data.includes(".from(\"tasks\"") && !data.includes(".from(\"courses\"") && !data.includes(".from(\"hackathons\""));
 check("La aplicacion autenticada usa un loader global cacheado", data.includes("export const getGlobalStore = cache(async () =>"));
 check("El loader global deriva el usuario de la sesion", data.includes("const userId = session.uid"));
 check("El loader global conserva fallbacks por seccion", data.includes("loadStoreSection") && data.includes("loadIssues: [...new Set(issues)]"));
-check("El layout monta el store autenticado una sola vez", dashboardLayout.includes("getGlobalStore") && dashboardLayout.includes("<StoreProvider initialStore={store}>") && !dashboardLayout.includes("getShellStore"));
+check("El layout monta el store autenticado una sola vez", dashboardLayout.includes("getGlobalStore") && dashboardLayout.includes("<ApplicationStoreProvider initialStore={store}>") && !dashboardLayout.includes("getShellStore"));
 check("Dashboard reutiliza el store del layout", !dashboardPage.includes("getGlobalStore") && !dashboardPage.includes("getDashboardStore") && dashboardPage.includes("<DashboardClient />"));
 
 console.log("\n── Aislamiento de contenido FP ──");
-const fpCatalog = read("src/lib/db/repositories/fp_catalog.ts");
+const fpCatalog = read("src/features/learning/server/catalogue-repository.ts");
 const manifest = read("src/app/manifest.ts");
-const resourceActions = read("src/lib/fp/resource-notes-actions.ts");
-const learningRepository = read("src/lib/db/repositories/learning.ts");
-const learningActions = read("src/lib/learning/actions.ts");
+const resourceActions = read("src/features/learning/server/actions.ts");
+const learningRepository = read("src/features/learning/server/repository.ts");
+const learningActions = read("src/features/learning/server/player-actions.ts");
 const techOpportunities = read("src/lib/db/repositories/tech_opportunities.ts");
 check("El catalogo filtra por cycle_code exacto", fpCatalog.includes('"fit.cycle_code = $3"'));
 check("Los recursos formativos filtran por cycle_code", fpCatalog.includes("AND fit.cycle_code = $2"));
@@ -102,34 +100,21 @@ check("Las acciones consultan el perfil antes del recurso", resourceActions.incl
 check("Los cursos de competencias filtran por ciclo", learningRepository.includes("competency.cycle_code=$3"));
 check("El progreso valida usuario y ciclo antes de escribir", learningActions.includes("getAuthorizedResource") && learningActions.includes("getLearningResourceForCycle"));
 check("La reproducción persiste la posición", learningRepository.includes("last_position_seconds"));
-check("El layout comparte el store global con todas las rutas autenticadas", dashboardLayout.includes("getGlobalStore") && dashboardLayout.includes("StoreProvider"));
+check("El layout comparte el store global con todas las rutas autenticadas", dashboardLayout.includes("getGlobalStore") && dashboardLayout.includes("ApplicationStoreProvider"));
 check("Existe boundary de error del dashboard", existsSync(join(root, "src/app/(dashboard)/error.tsx")));
 check("Los grados FP no se sirven como cursos complementarios", techOpportunities.includes("<> 'fp'"));
 
-// ── lib/actions.ts uses repositories for data ────────────────────────────────
-
-console.log("\n── lib/actions.ts ──");
-const actions = read("src/lib/actions.ts");
-check("src/lib/actions.ts importa repositorios", actions.includes("@/lib/db/repositories/"));
-check("src/lib/actions.ts importa getCurrentUserId", actions.includes("getCurrentUserId"));
-check("src/lib/actions.ts no usa .from() de Supabase para datos (tasks/courses/etc)", !actions.includes('.from("tasks")') && !actions.includes('.from("courses")') && !actions.includes('.from("hackathons")'));
-check(
-  "src/lib/actions.ts no upsertea profiles en Supabase",
-  !actions.includes('.from("profiles")') &&
-  !actions.includes(".from('profiles')") &&
-  !actions.includes(".from(`profiles`)") &&
-  !actions.includes('profiles").upsert') &&
-  !actions.includes("profiles').upsert")
-);
-
-// ── lib/db.ts usa PostgreSQL ──────────────────────────────────────────────────
-
-console.log("\n── lib/db.ts ──");
-const db = read("src/lib/db.ts");
-check("src/lib/db.ts usa query de pool", db.includes('from "@/lib/db/pool"'));
-check("src/lib/db.ts tiene whitelist de tablas", db.includes("WRITABLE_TABLES"));
-check("src/lib/db.ts no usa supabase", !db.includes("createClient") || db.includes("// createClient"));
-check("src/lib/db.ts no imprime connectionString", !db.includes("console.log(connectionString"));
+// Product mutations must be explicit and feature-owned. The former generic
+// table/column write surface is intentionally forbidden.
+console.log("\n── Feature-owned mutations ──");
+check("src/lib/actions.ts no existe", !existsSync(join(root, "src/lib/actions.ts")));
+check("src/lib/db.ts no existe", !existsSync(join(root, "src/lib/db.ts")));
+for (const feature of ["tasks", "courses", "events", "bloc", "work"]) {
+  const featureActions = read(`src/features/${feature}/server/actions.ts`);
+  check(`${feature}: acciones validan con Zod`, featureActions.includes('from "zod"'));
+  check(`${feature}: acciones derivan el usuario de sesión`, featureActions.includes("getCurrentUserId") || featureActions.includes("getValidatedSession"));
+  check(`${feature}: no acepta tabla o columna del cliente`, !featureActions.includes("table:") && !featureActions.includes("Object.keys(data)"));
+}
 
 // ── set-user-password requires explicit confirmation ─────────────────────────
 

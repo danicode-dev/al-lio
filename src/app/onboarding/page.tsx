@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getValidatedSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
-import { getActiveFpCycles } from "@/lib/db/repositories/fp_catalog";
+import { getActiveFpCycles } from "@/features/learning/server";
 import { OnboardingForm } from "@/components/onboarding/onboarding-form";
 
 export const dynamic = "force-dynamic";

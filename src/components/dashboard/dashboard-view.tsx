@@ -3,7 +3,8 @@
 import type { ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { ReturnTypeActions, Store } from "@/components/store/types";
+import type { Store } from "@/components/store/types";
+import type { TaskActions } from "@/features/tasks/client";
 import { DashboardCalendar } from "@/components/dashboard/dashboard-calendar";
 import { DashboardFocusCarousel } from "@/components/dashboard/dashboard-focus-carousel";
 import { DashboardGreeting } from "@/components/dashboard/dashboard-greeting";
@@ -13,7 +14,7 @@ import { DashboardTodo } from "@/components/dashboard/dashboard-todo";
 
 type DashboardViewProps = {
   store: Store;
-  actions: ReturnTypeActions;
+  actions: TaskActions;
   calendar: ReactNode;
 };
 

@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { BookOpen, ChevronRight, ListTodo, Trophy, X } from "lucide-react";
 
-import type { ReturnTypeActions } from "@/components/store/types";
+import type { CourseActions } from "@/features/courses/client";
+import type { EventActions } from "@/features/events/client";
+import type { TaskActions } from "@/features/tasks/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,7 +17,7 @@ type QuickAddType = "task" | "course" | "hackathon";
 type QuickAddProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
-  actions: ReturnTypeActions;
+  actions: Pick<TaskActions, "addTask"> & Pick<CourseActions, "addCourse"> & Pick<EventActions, "addHackathon">;
 };
 
 export function QuickAdd({ open, setOpen, actions }: QuickAddProps) {
