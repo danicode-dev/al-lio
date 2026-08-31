@@ -7,14 +7,14 @@ exploitable detail.
 
 Mechanism claims below describe the reviewed source baseline unless marked
 otherwise, and point to an architecture decision, executable configuration,
-test or release record. They do not prove that the final production release is
-already frozen or that an operator-owned control has already been exercised.
+test or release record. The frozen release is recorded separately, and source
+mechanisms do not prove that an operator-owned control has been exercised.
 This document assigns stable architecture, security and governance evidence
 IDs, which are represented in the consolidated evidence register
 ([`02-evidence-register.md`](02-evidence-register.md)).
 The frozen delivery release and public production observation are recorded
 under `VER-004` and `OPS-001`. The owner-approved image summary is recorded
-under `OPS-003`; the authenticated owner smoke test remains pending under
+under `OPS-003`; the partial authenticated owner smoke result is recorded under
 `QAL-002`.
 
 Diagrams and topology below reflect the maintained architecture reference. The
@@ -311,11 +311,11 @@ they remain `planned` here.
 Stated without secrets or unnecessary exploit detail. These limitations exist
 in the reviewed source baseline; the final release must reconfirm them.
 
-- **Security / operational:** several production controls are operator
-  responsibilities that the repository cannot contain — off-host encrypted
-  backup credentials and scheduler, external HTTPS uptime probes, host
-  capacity and container-restart alerting, and Radar heartbeat/outbox
-  alerting. Their configured status is `planned` until issue #299 records it.
+- **Security / operational:** external HTTPS monitoring, host/container
+  alerting and Radar heartbeat/outbox alerts are not evidenced. A local
+  off-VPS backup exists by owner statement, but its schedule, retention,
+  encryption and restore status are unknown. Implementation is tracked in
+  issues #316 and #317.
 - **Radar single-writer:** Radar runs one scheduler replica because its SQLite
   boundary is single-writer; horizontal scaling of the collector is not
   supported.
@@ -329,12 +329,12 @@ in the reviewed source baseline; the final release must reconfirm them.
   motion, keyboard navigation and contrast, but full end-to-end accessibility
   and browser E2E verification across every flow is not claimed; treat
   accessibility conformance as `expected` pending an audit.
-- **Calendar session binding:** Calendar credentials are protected in an
-  encrypted, `HttpOnly` cookie, but status and event operations in the reviewed
-  baseline do not independently revalidate the AL-LIO session or bind the
-  credential to a user row. Describe Calendar as optional and cookie-scoped;
-  do not claim complete user-session binding without a later implementation
-  and verification record.
+- **Calendar production consent:** PR #312 binds the encrypted Calendar
+  credential to the validated AL-LIO user, session-gates every Calendar route
+  and clears legacy or mismatched credentials. The exact-SHA CI verifies that
+  boundary. The owner could not complete Calendar consent in production
+  because Google displayed an unverified-application warning; production
+  connect/disconnect behaviour therefore remains unverified.
 - **Password reset for identity-only accounts:** an account that only ever
   signed in with Google cannot set a password through the reset flow in the
   reviewed baseline; it must continue signing in with Google.
@@ -357,12 +357,12 @@ measured or release-dependent evidence.
 | Server-side per-operation user scoping; no user id accepted from the request | implemented | ADR-0008; `src/features/*/server/`; `tests/architecture/features/boundaries.test.mjs` | `SEC-003` |
 | HMAC-SHA256 signed Radar webhook with replay window, schema-version enforcement, transactional ingest and delivery/item idempotency | implemented | ADR-0003; `src/lib/radar/webhook-auth.ts`; `src/app/api/radar/v1/ingest/route.ts`; Radar contract/signature tests | `SEC-004` |
 | Human approval required before any currently enabled source publishes; autonomous publication off by default | implemented | ADR-0003; `docs/integrations/`; `infra/docker-compose.prod.yml` | `GOV-001` |
-| Google identity and Calendar are separate and optional; Calendar credentials are encrypted in a browser cookie but are not fully application-session-bound | implemented | `src/lib/google/identity.ts`; `src/lib/google/calendar.ts`; Calendar tests | `SEC-005` |
-| Backup, isolated restore rehearsal and image-based rollback are defined release gates | implemented | ADR-0005; `docs/operations/backup-and-recovery.md`; `docs/operations/release-and-rollback.md` | `OPS-005`; measured `OPS-004` evidence pending in #299 |
-| Post-merge CI gates the guarded production deploy | implemented | ADR-0006; `docs/operations/AUTONOMOUS_PRODUCTION_DEPLOY.md` | `QAL-003`; measured `QAL-001` execution evidence pending |
+| Google identity and Calendar are separate and optional; Calendar credentials are encrypted, owner-bound and protected by validated application sessions | implemented | PR #312; `src/lib/google/identity.ts`; `src/lib/google/calendar.ts`; `tests/integration/auth/calendar-ownership.test.mjs` | `SEC-005`; provider consent limitation under `PRD-010` |
+| Backup, isolated restore rehearsal and image-based rollback are defined release gates | implemented | ADR-0005; `docs/operations/backup-and-recovery.md`; `docs/operations/release-and-rollback.md` | `OPS-005`; complete measured `OPS-004` evidence pending in #317 |
+| Post-merge CI gates the guarded production deploy | delivered | ADR-0006; `docs/operations/AUTONOMOUS_PRODUCTION_DEPLOY.md`; runs `33404234578` and `33404461730` | `QAL-003`; measured execution under `QAL-001` |
 | Per-cycle content governance: provenance, approval, expiry, withdrawal and server-side cycle filter | implemented | `docs/integrations/`; `infra/postgres/migrations/`; `Q-DAT-001`–`Q-DAT-007` | `GOV-002`; measured values `DAT-001`–`DAT-007` pending |
-| One immutable AL-LIO and Radar release baseline for all identifiers | planned | `01-delivery-brief.md` | `VER-004` |
-| Final release live with a ready database boundary at the evidence cut-off | planned | `/api/health`, `/api/ready` | `OPS-001` |
+| One immutable AL-LIO and Radar release baseline for all identifiers | delivered | `aircury-2026-delivery`; `01-delivery-brief.md` | `VER-004` |
+| Final release live with a ready database boundary at the evidence cut-off | measured | `/api/health`, `/api/ready`; deployment run `33404461730` | `OPS-001` |
 
 ## 9. Extraction boundary for the final PDF
 
