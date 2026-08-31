@@ -1,14 +1,14 @@
 # Product visual evidence
 
-This catalogue records the approved production screenshots for the AL-LIO
-technical report. It is an evidence catalogue, not a capture plan: it lists only
-images that passed technical and privacy review. Editorial approval of
-composition, legibility and brand consistency remains with the owner.
+This catalogue records the four production screenshots explicitly selected by
+the owner as the only candidate image pool for the AL-LIO technical report. It
+is an evidence catalogue, not a capture plan. Earlier approved, reserve and
+operator-captured screenshots have been removed from the repository and must
+not be used in the final PDF.
 
 Images live in [`assets/product-evidence/`](assets/product-evidence/). The
-mandatory capture pool, its classification (`APPROVED` / `RESERVE` / `REJECTED`)
-and the reasons are recorded in the local, uncommitted review manifest
-(`output/aircury-report/product-evidence/capture-manifest.md`).
+technical report will use only the smallest useful subset of these four images;
+the catalogue does not require every candidate to appear in the PDF.
 
 ## Capture baseline
 
@@ -19,132 +19,85 @@ and the reasons are recorded in the local, uncommitted review manifest
 | Release tag | `aircury-2026-delivery` |
 | AL-LIO commit SHA | `1e516ead8f69d60a263718c20d59b97c9618c97a` |
 | Capture date | 2026-08-31 |
-| Account | One disposable production test account created for this task. Fictional identity. The owner performed the sign-in; the capture operator never handled the credentials. |
-| Desktop viewport | Chrome-compatible desktop viewport. Owner captures are exported at device-pixel-ratio 2 (2880 px wide); operator captures are browser-automation frames down-scaled by the tool to 1568 px wide. |
-| Mobile viewport | Emulated responsive viewport (iPhone-class width, DPR ~3). Recorded as an emulated viewport, not a physical-device test. |
-| Privacy review | Every approved image was checked for account e-mail, password, token, OAuth content, personal data and internal operational detail. Where the account e-mail would appear in the collapsed-sidebar footer it is out of frame; on `VIS-001-05` it was replaced with a placeholder string in the page DOM before capture and the PNG was not edited afterwards. |
+| Account and records | Disposable production test account with fictional task, progress and note data. |
+| Desktop viewport | Owner-provided desktop capture, 3114 × 1851 px. |
+| Mobile viewport | Emulated iPhone 14 Pro Max-class responsive viewport, 1290 × 2796 px; not a physical-device test. |
+| Privacy treatment | The owner-provided originals remain unchanged outside the repository. In the two desktop repository copies, only the account-identity footer was blanked to prevent publication of the account address. No product content or demonstrated state was changed. The mobile captures contain no account address. |
 
-## Approved evidence
+## Approved candidate evidence
 
-### VIS-001-01 — Public landing
-
-| Field | Value |
-|---|---|
-| Evidence ID | `VIS-001-01` (supports `PRD-001`) |
-| Filename | `assets/product-evidence/ve-01a-landing-hero-desktop.png` |
-| Caption | AL-LIO public landing: value proposition and primary entry point. |
-| Demonstrated claim | The project presents a public Spanish landing page with a clear value proposition ("Enfoca. Actúa. Logra más."), an audience statement ("Plataforma para estudiantes de FP"), a language switch and a sign-in entry point. |
-| Flow or product area | Public entry and account access. |
-| Viewport | Desktop, 2880 x 1800 px (DPR 2). |
-| Fictional data | None. Logged out; no account involved. |
-| Release | `aircury-2026-delivery`, SHA `1e516ead8f69d60a263718c20d59b97c9618c97a`. |
-| Capture date | 2026-08-31. |
-| Privacy status | Clean. No account, credentials or personal data. |
-| Intended report section | Product overview / introduction. |
-| Interpretation limitation | Hero section only; the full landing is held in reserve. |
-
-### VIS-001-02 — Task completion persists
+### VIS-001-01 — Personalised dashboard
 
 | Field | Value |
 |---|---|
-| Evidence ID | `VIS-001-02` (supports `PRD-008`) |
-| Filename | `assets/product-evidence/ve-06-task-completed-desktop.png` |
-| Caption | A completed personal task persists in the private task list. |
-| Demonstrated claim | A student can create a personal task and mark it complete; the completed task persists with its title, note and date under the "Completadas" filter, and the header counters update (Pendientes 1 / Completadas 1 / Totales 2). |
-| Flow or product area | Personal planning — private task lifecycle. |
-| Viewport | Desktop, 1568 x 726 px. |
-| Fictional data | Task "Preparar presentación del proyecto (ficticio)", note "Tarea de prueba para la evidencia visual. Datos ficticios.", due 5 September 2026, created and then completed with the test account. |
+| Evidence ID | `VIS-001-01` (supports `PRD-006`, `PRD-007`, `PRD-017`) |
+| Filename | `assets/product-evidence/ve-03-dashboard-personalised-desktop.png` |
+| Caption | Personalised dashboard combining immediate tasks, learning continuity, calendar context and cycle progress. |
+| Demonstrated claim | After access, the student receives one consolidated view of pending and completed tasks, the active vocational cycle, the next learning action, calendar context and progress by competency. |
+| Product area | Dashboard and next action. |
+| Viewport | Desktop, 3114 × 1851 px. |
+| Fictional data | Fictional test-account tasks and zero-state learning progress for the DAW cycle. |
 | Release | `aircury-2026-delivery`, SHA `1e516ead8f69d60a263718c20d59b97c9618c97a`. |
 | Capture date | 2026-08-31. |
-| Privacy status | Clean. Sidebar collapsed; no account e-mail in frame. |
-| Intended report section | Product / personal planning. |
-| Interpretation limitation | Operator frame at 1568 px wide; the layout is sparse but the text is legible. |
+| Privacy status | Approved. The account-identity footer was blanked in the repository copy; the product area is unchanged. |
+| Intended report section | Product capabilities — dashboard and next action. |
+| Interpretation limitation | Demonstrates one fictional account state at the capture date; it is not a usage metric or a user-study result. |
 
-### VIS-001-03 — Reviewed-news production limitation
+### VIS-001-02 — Learning progress and contextual notes
 
 | Field | Value |
 |---|---|
-| Evidence ID | `VIS-001-03` (supports `PRD-011`) |
-| Filename | `assets/product-evidence/ve-07-news-production-limitation-desktop.png` |
-| Caption | For this cycle, production news shows no approved content. |
-| Demonstrated claim | The reviewed-news surface is present and cycle-scoped, but for the captured cycle production currently exposes no approved content ("Todavía no hay contenido aprobado"; all counters 0). This is shown as a limitation, not as delivered success. |
-| Flow or product area | Trustworthy discovery — reviewed cycle news. |
-| Viewport | Desktop, 1568 x 726 px. |
-| Fictional data | None. This is the empty production state. |
+| Evidence ID | `VIS-001-02` (supports `PRD-005`, `PRD-009`, `PRD-010`) |
+| Filename | `assets/product-evidence/ve-05-learning-progress-notes-desktop.png` |
+| Caption | Reviewed learning resource with automatic progress, contextual notes and completion control. |
+| Demonstrated claim | A student can open an approved Spanish learning resource, resume progress, save a fictional note at a video timestamp and mark the resource as completed. The interface explains that saved notes are also available in Bloc de notas. |
+| Product area | Competencies, learning resources and Bloc de notas continuity. |
+| Viewport | Desktop, 3114 × 1851 px. |
+| Fictional data | Fictional note at 0:00: “Nota de prueba (ficticia): repasar los ejemplos de POO y volver a este punto mañana.” |
 | Release | `aircury-2026-delivery`, SHA `1e516ead8f69d60a263718c20d59b97c9618c97a`. |
 | Capture date | 2026-08-31. |
-| Privacy status | Clean. Sidebar collapsed. |
-| Intended report section | Product / reviewed news — stated as a production-coverage limitation, consistent with `PRD-011` and the open rollout work in issue #235. |
-| Interpretation limitation | Coverage is uneven per cycle: other cycles do surface reviewed items. This image must be read as the coverage boundary for one cycle, not as a claim that news never works. |
+| Privacy status | Approved. The account-identity footer was blanked in the repository copy; the learning state is unchanged. |
+| Intended report section | Product capabilities — competencies and learning. |
+| Interpretation limitation | The embedded thumbnail is public third-party source material displayed by the production resource player; the screenshot does not claim ownership of that content. |
 
-### VIS-001-04 — Verified opportunity detail
+### VIS-001-03 — Bloc de notas on mobile
 
 | Field | Value |
 |---|---|
-| Evidence ID | `VIS-001-04` (supports `PRD-012`) |
-| Filename | `assets/product-evidence/ve-08-opportunity-verified-detail-desktop.png` |
-| Caption | Verified course detail with source entity, dates and entry requirements. |
-| Demonstrated claim | A reviewed opportunity has an internal detail page that keeps the source entity, dates, location, modality, entry requirements, accreditation level, price and availability distinct, and offers an "Abrir curso" action and a save action. |
-| Flow or product area | Trustworthy discovery — courses catalogue detail. |
-| Viewport | Desktop, 1568 x 726 px. |
-| Fictional data | None. Real reviewed catalogue content (course "IFCD0005 - PROGRAMADOR JAVA SE PROFESIONAL EN CLOUD", entity CORE NETWORKS SL); no data was entered. |
+| Evidence ID | `VIS-001-03` (supports `PRD-009`, `PRD-017`) |
+| Filename | `assets/product-evidence/ve-05b-learning-note-in-bloc-mobile.png` |
+| Caption | The learning note remains editable and exportable in Bloc de notas on a mobile-width layout. |
+| Demonstrated claim | The note created from the learning resource appears in Bloc de notas with formatting controls, saved status, source context and export actions. The responsive layout preserves the essential editing workflow. |
+| Product area | Bloc de notas and responsive continuity. |
+| Viewport | Emulated iPhone 14 Pro Max-class viewport, 1290 × 2796 px; not a physical-device test. |
+| Fictional data | The same fictional Java learning note used in `VIS-001-02`. |
 | Release | `aircury-2026-delivery`, SHA `1e516ead8f69d60a263718c20d59b97c9618c97a`. |
 | Capture date | 2026-08-31. |
-| Privacy status | Clean. Sidebar collapsed; only public catalogue content. |
-| Intended report section | Product / trustworthy discovery. |
-| Interpretation limitation | Operator frame at 1568 px wide, fitted with a small zoom-out so the whole detail page fits one frame. |
+| Privacy status | Approved. No account address, credential or personal data is visible. |
+| Intended report section | Product capabilities — Bloc de notas. |
+| Interpretation limitation | Responsive browser evidence only; it is not a physical-device test. |
 
-### VIS-001-05 — Profile and cycle ownership
+### VIS-001-04 — Reviewed news on mobile
 
 | Field | Value |
 |---|---|
-| Evidence ID | `VIS-001-05` (supports `PRD-003`, `PRD-017`) |
-| Filename | `assets/product-evidence/ve-09-profile-cycle-fictional-desktop.png` |
-| Caption | Student profile: the active cycle and year that drive relevance. |
-| Demonstrated claim | The profile page shows and lets the student change the vocational cycle and academic year ("Desarrollo de Aplicaciones Web", "1º curso", "Ciclo activo · DAW"), and surfaces per-cycle progress ("Progreso de competencias 0 %", "Recursos completados 0 / 17") and the saved-content area. |
-| Flow or product area | Profile management and continuity. |
-| Viewport | Desktop, 1568 x 772 px. |
-| Fictional data | Fictional profile of the disposable test account. The account e-mail shown in the profile card and sidebar footer was replaced with the placeholder text "cuenta demo (email oculto)" in the page DOM before the screenshot; the PNG has not been edited. All other values are the live state. |
+| Evidence ID | `VIS-001-04` (supports `PRD-011`, `PRD-017`) |
+| Filename | `assets/product-evidence/ve-07-news-reviewed-mobile.png` |
+| Caption | Cycle-scoped reviewed news with visible source, freshness state and mobile actions. |
+| Demonstrated claim | For the captured MP cycle, production exposes one reviewed item with source, publication date, category, unread state, save control and detail action. The view also reports the delivery freshness timestamp and cycle-specific counters. |
+| Product area | Radar news and responsive discovery. |
+| Viewport | Emulated iPhone 14 Pro Max-class viewport, 1290 × 2796 px; not a physical-device test. |
+| Fictional data | None. The item is reviewed public-source content; only the read/save state belongs to the test account. |
 | Release | `aircury-2026-delivery`, SHA `1e516ead8f69d60a263718c20d59b97c9618c97a`. |
 | Capture date | 2026-08-31. |
-| Privacy status | Clean. The two e-mail strings show a disclosed placeholder; no other personal data. |
-| Intended report section | Product / profile and continuity; Inclusion / per-cycle relevance. |
-| Interpretation limitation | Operator frame at 1568 px wide. The placeholder text is a privacy substitution, not a product state. |
+| Privacy status | Approved. No account address, credential or personal data is visible. |
+| Intended report section | Product capabilities — news; content governance. |
+| Interpretation limitation | Demonstrates content available for one cycle on the capture date. It does not imply complete or uniform news coverage across every vocational cycle. |
 
-### VIS-001-06 — Mobile navigation continuity
+## Final report selection rule
 
-| Field | Value |
-|---|---|
-| Evidence ID | `VIS-001-06` (supports `PRD-017`) |
-| Filename | `assets/product-evidence/ve-10-tasks-navigation-mobile.png` |
-| Caption | A core feature and the navigation menu in the mobile layout. |
-| Demonstrated claim | The mobile layout keeps a usable navigation hierarchy: a mobile header with the menu control, and a core feature (Tareas) with its stat cards and list rendered for a phone-width viewport. |
-| Flow or product area | Responsive navigation continuity. |
-| Viewport | Emulated mobile viewport, 1320 x 2868 px (DPR ~3). |
-| Fictional data | Fictional task list of the test account. |
-| Release | `aircury-2026-delivery`, SHA `1e516ead8f69d60a263718c20d59b97c9618c97a`. |
-| Capture date | 2026-08-31. |
-| Privacy status | Clean. No account e-mail in the mobile layout. |
-| Intended report section | Product / profile and continuity — responsive navigation. |
-| Interpretation limitation | Emulated responsive viewport, not a physical-device test. Shows the Tareas surface; a mobile dashboard capture is held in reserve. |
-
-## Reserve and outstanding
-
-Held in reserve (legible, real, but secondary or not held to a consistent
-fictional cycle): a stitched full-landing capture with the per-cycle model
-section, a mobile personalised dashboard, Bloc notes on mobile, the local
-calendar view, and a mobile reviewed-news item.
-
-Outstanding for a complete set, to be re-captured with the sidebar collapsed, a
-single consistent fictional cycle and empty authentication fields: authentication
-entry (empty fields), onboarding cycle and year selection (needs a new
-un-onboarded account), personalised dashboard, cycle competency route, and the
-learning resource with saved progress and notes.
-
-## Report selection
-
-The technical report should use only the strongest non-redundant subset (roughly
-six to eight images across the whole report). The remaining approved and reserve
-items stay in this catalogue rather than being added to the PDF as filler. This
-catalogue is not integrated into the PDF generator here; that integration is a
-separate task.
+These four files are the complete owner-approved candidate pool. The final PDF
+must not use the earlier screenshots removed by this change. To avoid visual
+overload, integration must select only images that materially support the nearby
+text, combine desktop and mobile evidence, and leave the report narrative
+unchanged.
