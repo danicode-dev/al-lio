@@ -5,8 +5,6 @@ import { getSession } from "@/lib/auth/session";
 import { getTasksByUser } from "@/features/tasks/server/repository";
 import { getCoursesByUser } from "@/features/courses/server/repository";
 import { getHackathonsByUser } from "@/features/events/server/repository";
-import { getOpportunitiesByUser } from "@/features/work/server/opportunity-repository";
-import { getQuickLinksByUser } from "@/features/resources/server/repository";
 import { getAllTechOpportunities } from "@/lib/db/repositories/tech_opportunities";
 import { getCompaniesByCycleGroup, getFavoriteCompanyIds } from "@/features/work/server/repository";
 import { getUserById } from "@/lib/db/repositories/users";
@@ -62,14 +60,12 @@ export const getGlobalStore = cache(async () => {
 
   const issues: StoreLoadSection[] = [];
 
-  const [tasks, courses, hackathons, techOpportunities, opportunities, links, fpContent, dbCompanies, favoriteCompanyIds, roadmap] =
+  const [tasks, courses, hackathons, techOpportunities, fpContent, dbCompanies, favoriteCompanyIds, roadmap] =
     await Promise.all([
       loadStoreSection("tasks", getTasksByUser(userId), [], issues),
       loadStoreSection("courses", getCoursesByUser(userId), [], issues),
       loadStoreSection("hackathons", getHackathonsByUser(userId), [], issues),
       loadStoreSection("opportunities", getAllTechOpportunities(), [], issues),
-      getOpportunitiesByUser(userId),
-      getQuickLinksByUser(userId),
       loadStoreSection("opportunities", getFpContentForProfile(userId, profile), [], issues),
       profile.cycle_group
         ? loadStoreSection("companies", getCompaniesByCycleGroup(profile.cycle_group), [], issues)
@@ -141,13 +137,6 @@ export const getGlobalStore = cache(async () => {
     userName,
     userEmail: session.email,
     tasks: serializeTasks(tasks),
-    opportunities: opportunities.map((o) => ({
-      ...o,
-      published_at: iso(o.published_at),
-      detected_at: iso(o.detected_at),
-      created_at: iso(o.created_at),
-      updated_at: iso(o.updated_at),
-    })),
     techOpportunities: sortTechOpportunities(
       (techOpportunitiesForCycle as unknown as TechOpportunity[]).map((item) => ({
         ...item,
@@ -260,12 +249,6 @@ export const getGlobalStore = cache(async () => {
       })),
     })),
     hackathons: serializeHackathons(hackathons),
-    links: links.map((l) => ({
-      ...l,
-      created_at: iso(l.created_at),
-      updated_at: iso(l.updated_at),
-    })),
-    reminders: [],
     roadmap,
     companies: dbCompanies.map((c) => ({
       id: c.id,
