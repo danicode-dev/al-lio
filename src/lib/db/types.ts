@@ -594,29 +594,6 @@ export type EntityStatus = {
   course: "pendiente" | "empezado" | "terminado" | "pausado" | "descartado";
 };
 
-export type NormalizedOpportunity = {
-  source: string;
-  source_type: "api" | "rss" | "deeplink" | "manual";
-  title: string;
-  company?: string;
-  description?: string;
-  location?: string;
-  province?: string;
-  remote?: boolean;
-  url: string;
-  published_at?: string;
-  detected_at?: string;
-  category?: string;
-  tags?: string[];
-  level?: string;
-  salary_min?: number;
-  salary_max?: number;
-  status?: string;
-  score?: number;
-  external_id?: string;
-  unique_hash?: string;
-};
-
 export type HackathonSeed = {
   name: string;
   organizer: string;
