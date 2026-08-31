@@ -188,9 +188,10 @@ Source: ADR-0005, `docs/operations/backup-and-recovery.md`,
 
 ## 2. Working-baseline checks executed now
 
-Executed at `ccaa3f2` on 31 August 2026 in a local Windows checkout, with
-ephemeral local environment values only. No production system was contacted.
-These are **working baseline**, not final evidence.
+Executed at `ccaa3f2` on 31 August 2026 in a local Windows checkout. No
+production system or database was contacted. Checks that require installed
+package dependencies or a live database were not treated as executed. These
+are **working baseline**, not final evidence.
 
 | Check | Command | Result |
 |---|---|---|
@@ -203,13 +204,14 @@ These are **working baseline**, not final evidence.
 | Radar integration | `node scripts/validate-radar-integration.mjs` | pass |
 | Production-deploy readiness | `node scripts/validate-production-deploy-readiness.mjs` | pass |
 | Migration and Docker contract | `node scripts/validate-migrations.mjs` | pass (file-based; no database connected) |
-| Runtime env guard | `node scripts/validate-runtime-env.mjs` | not applicable without a real `DATABASE_URL`; the guard correctly refuses ephemeral values. Not a defect. |
+| Runtime env guard | `node scripts/validate-runtime-env.mjs` | not run successfully: this isolated worktree had no `node_modules`, so its `@next/env` dependency was unavailable. A final run requires `npm ci` first; syntactically valid ephemeral local values may be used for a non-production working check. |
 | Learning persistence tests | `node --test tests/integration/learning/persistence-and-resources.test.mjs` | 1 failure — see section 5.1 |
 
 Not executed here (require installed dependencies and/or a database; deferred to
-CI on the frozen tag): `npm ci`, `lint`, `typecheck`, `build`, the full
-`test:all` run, `validate:fp-content`, `validate:learning-competencies`,
-`validate:postgres-app-integration`. CI has historically executed the full
+CI on the frozen tag): `npm ci`, `validate:runtime`, `lint`, `typecheck`,
+`build`, the full `test:all` run, `validate:fp-content`,
+`validate:learning-competencies`, `validate:postgres-app-integration`. CI has
+historically executed the full
 `npm run ci` chain on merged changes (see section 6.3, historical evidence
 only).
 
