@@ -63,6 +63,10 @@ export function CookieNotice() {
           Usamos únicamente las cookies necesarias para que la plataforma funcione. Sin analítica, sin publicidad, sin
           rastreo, así que no hay nada que aceptar o rechazar.
         </p>
+        <p className="mt-2.5 text-[13px] leading-relaxed text-[#7A736B]">
+          We only use the technical cookies the platform needs to run. No analytics, no ads, no tracking — so there is
+          nothing to accept or reject.
+        </p>
         <div className="mt-5 flex flex-col items-center gap-3">
           <button
             type="button"
