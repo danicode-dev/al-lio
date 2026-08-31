@@ -204,6 +204,14 @@ PostgreSQL for a web-only release.
 Start with [`docs/README.md`](docs/README.md). It links the maintained product,
 architecture, integration, source-governance and operations documents.
 
+## Contact
+
+| Address | Purpose |
+|---|---|
+| [`hola@al-lio.app`](mailto:hola@al-lio.app) | General questions, feedback and project enquiries |
+| [`soporte@al-lio.app`](mailto:soporte@al-lio.app) | Account, product and accessibility support |
+| [`privacidad@al-lio.app`](mailto:privacidad@al-lio.app) | Privacy and personal-data rights requests |
+
 ## Security
 
 Please read [`SECURITY.md`](.github/SECURITY.md) before reporting a vulnerability. Do

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/landing/legal-page";
+import { PUBLIC_CONTACT_EMAILS } from "@/lib/public-contact";
 
 export const metadata: Metadata = {
   title: "Accessibility",
@@ -25,7 +26,9 @@ export default function AccessibilityPageEn() {
         <>
           <p className="al-aside-title">Found a barrier?</p>
           <p>
-            Write to us at <strong>[project email]</strong> with the page and the problem. We will prioritise it.
+            Write to us at{" "}
+            <a href={`mailto:${PUBLIC_CONTACT_EMAILS.support}`}><strong>{PUBLIC_CONTACT_EMAILS.support}</strong></a> with
+            the page and the problem. We will prioritise it.
           </p>
         </>
       }
