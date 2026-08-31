@@ -5,9 +5,11 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { readFeatureSource } from "../../helpers/feature-sources.mjs";
+
 import { isSafeHttpUrl, selectAptitudeVideos } from "../../../src/lib/fp/event-cta.ts";
 
-import { fpItemToCourse } from "../../../src/lib/courses/course-presentation.ts";
+import { fpItemToCourse } from "../../../src/features/courses/presentation/course-presentation.ts";
 
 const fixtureFpCourseItem = {
   id: "f2",
@@ -22,7 +24,7 @@ const fixtureFpCourseItem = {
 
 test("learning saves do not invalidate or recreate the active video route", async () => {
   const [actionsSource, playerHookSource] = await Promise.all([
-    readFile(new URL("../../../src/lib/learning/actions.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/learning/server/player-actions.ts", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/ruta/use-youtube-player.ts", import.meta.url), "utf8"),
   ]);
 
@@ -35,8 +37,8 @@ test("learning saves do not invalidate or recreate the active video route", asyn
 
 test("learning notes are saved atomically and mirrored to Bloc", async () => {
   const [actionsSource, repositorySource] = await Promise.all([
-    readFile(new URL("../../../src/lib/learning/actions.ts", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/lib/db/repositories/learning.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/learning/server/player-actions.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/learning/server/repository.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(actionsSource, /addLearningNoteToBloc/);
@@ -47,20 +49,19 @@ test("learning notes are saved atomically and mirrored to Bloc", async () => {
 });
 
 test("Competency completion is authorized against the caller's session and cycle, never a client-supplied user (issue #96)", async () => {
-  const actionsSource = await readFile(new URL("../../../src/lib/fp/competency-actions.ts", import.meta.url), "utf8");
-  const fnSource = actionsSource.slice(actionsSource.indexOf("export async function markCompetencyCompletedAction"));
+  const actionsSource = await readFile(new URL("../../../src/features/learning/server/actions.ts", import.meta.url), "utf8");
+  const fnSource = actionsSource.slice(actionsSource.indexOf("export async function markLearningCompetencyCompletedAction"));
 
-  assert.match(fnSource, /const session = await getValidatedSession\(\);/);
-  assert.match(fnSource, /if \(!session\) redirect\("\/login"\);/);
-  assert.match(fnSource, /getAuthorizedSkill\(session\.uid, skillId\)/, "must resolve the skill scoped to the current session's user/cycle");
-  assert.match(fnSource, /markUserCompetencyCompleted\(session\.uid, skillId\)/, "must write scoped to session.uid, not a caller-supplied id");
+  assert.match(fnSource, /const userId = await getCurrentUserId\(\);/);
+  assert.match(fnSource, /getCycleSkillById\(profile\.cycle_code, parsed\.data\.skillId\)/, "must resolve the skill scoped to the current session's user/cycle");
+  assert.match(fnSource, /markUserCompetencyCompleted\(userId, parsed\.data\.skillId\)/, "must write scoped to the authenticated user, not a caller-supplied id");
 
-  const guestAppSource = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const guestAppSource = await readFeatureSource("events", "courses");
   assert.match(guestAppSource, /return !!competency\.completed;/, "isCompetencyDone must read the explicit per-user competency record, not infer from resource status");
 });
 
 test("A competency with no linked learning item can still be marked complete (issue #96)", async () => {
-  const guestAppSource = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const guestAppSource = await readFeatureSource("events", "courses");
   const componentStart = guestAppSource.indexOf("function RequirementRow(");
   const componentEnd = guestAppSource.indexOf("export function HackathonDetailView", componentStart);
   assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the RequirementRow component");
@@ -72,14 +73,14 @@ test("A competency with no linked learning item can still be marked complete (is
 });
 
 test("markCompetencyCompleted optimistically completes and rolls back on failure (issue #96)", async () => {
-  const storeSource = await readFile(new URL("../../../src/components/guest-store.tsx", import.meta.url), "utf8");
-  const start = storeSource.indexOf("markCompetencyCompleted: (skillId: string) =>");
-  const end = storeSource.indexOf("reset: () =>", start);
+  const storeSource = await readFile(new URL("../../../src/features/learning/client/use-learning-actions.ts", import.meta.url), "utf8");
+  const start = storeSource.indexOf("markCompetencyCompleted: (skillId) =>");
+  const end = storeSource.indexOf("\n    },\n  };", start);
   assert.ok(start > -1 && end > start, "could not locate the markCompetencyCompleted action body");
   const actionSource = storeSource.slice(start, end);
 
   assert.match(actionSource, /setStore\(\(current\) => \(\{ \.\.\.current, fpContent: patchCompetencies\(current\.fpContent, true\) \}\)\);/, "must optimistically mark the competency completed before the request resolves");
-  assert.match(actionSource, /void markCompetencyCompletedAction\(skillId\)\.then\(\(result\) => \{/);
+  assert.match(actionSource, /void markLearningCompetencyCompletedAction\(\{ skillId \}\)\.then\(\(result\) => \{/);
   assert.match(actionSource, /if \(!result\.error\) return;/);
   assert.match(actionSource, /patchCompetencies\(current\.fpContent, false\)/, "must roll back to not-completed on failure");
   assert.match(actionSource, /toast\.error\("No se pudo guardar"\);/);
@@ -104,7 +105,7 @@ test("the Eventos redirect resolver never depends on fp_user_competency_state - 
 });
 
 test("A competency never renders legacy free-text references as preparation resources (issue #96, issue #202)", async () => {
-  const guestAppSource = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const guestAppSource = await readFeatureSource("events", "courses");
   const componentStart = guestAppSource.indexOf("function RequirementRow(");
   const componentEnd = guestAppSource.indexOf("export function HackathonDetailView", componentStart);
   assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the RequirementRow component");
@@ -115,7 +116,7 @@ test("A competency never renders legacy free-text references as preparation reso
 });
 
 test("getActiveVideoResourcesForCompetency queries only active, cycle-matching, ensena resources with a video - and never touches the Roadmap-shared query (issue #112)", async () => {
-  const source = await readFile(new URL("../../../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/learning/server/catalogue-repository.ts", import.meta.url), "utf8");
   const fnStart = source.indexOf("export async function getActiveVideoResourcesForCompetency");
   assert.ok(fnStart > -1, "could not locate getActiveVideoResourcesForCompetency");
   const fnSource = source.slice(fnStart, source.indexOf("\nexport async function getUserContentState", fnStart));
@@ -160,7 +161,7 @@ test("ruta/[slug] is a pure redirect endpoint for every content type - it never 
 });
 
 test("legacy video URLs are matched only to active Spanish courses from the user's cycle", async () => {
-  const source = await readFile(new URL("../../../src/lib/db/repositories/learning.ts", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/learning/server/repository.ts", import.meta.url), "utf8");
   const start = source.indexOf("export async function getInternalLearningTargetsForVideoUrls");
   const end = source.indexOf("\nexport async function getLearningNotes", start);
   assert.ok(start > -1 && end > start, "could not locate the internal learning target query");
@@ -184,7 +185,7 @@ test("/roadmap/[modulo] never depended on, and still does not depend on, the ret
 });
 
 test("event catalogue cards keep the official URL in the validated detail action and never restore the retired /ruta screen (issue #112, issue #164)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("courses", "events");
 
   assert.doesNotMatch(source, /\/ruta\//, "no CTA anywhere in this file may construct a /ruta/ URL any more");
   const hackathonsStart = source.indexOf("function Hackathons(");
@@ -207,7 +208,7 @@ test("event catalogue cards keep the official URL in the validated detail action
 });
 
 test("each aptitude renders only canonical approved preparation resources and explicit gaps", async () => {
-  const guestAppSource = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const guestAppSource = await readFeatureSource("events", "courses");
   const componentStart = guestAppSource.indexOf("function RequirementRow(");
   const componentEnd = guestAppSource.indexOf("export function HackathonDetailView", componentStart);
   assert.ok(componentStart > -1 && componentEnd > componentStart, "could not locate the RequirementRow component");
@@ -228,7 +229,7 @@ test("each aptitude renders only canonical approved preparation resources and ex
 });
 
 test("preparation resources require canonical approval and join progress only for the authenticated user", async () => {
-  const source = await readFile(new URL("../../../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/learning/server/catalogue-repository.ts", import.meta.url), "utf8");
   const start = source.indexOf("export async function getPreparationResourcesForCompetencies");
   const end = source.indexOf("\n// Return only resources", start);
   assert.ok(start > -1 && end > start, "could not locate canonical preparation-resource query");
@@ -244,9 +245,9 @@ test("preparation resources require canonical approval and join progress only fo
 
 test("manual competency and resource completion stay distinct from observed player completion", async () => {
   const [catalogSource, learningSource, actionsSource, playerSource] = await Promise.all([
-    readFile(new URL("../../../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/lib/db/repositories/learning.ts", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/lib/learning/actions.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/learning/server/catalogue-repository.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/learning/server/repository.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/learning/server/player-actions.ts", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/learning/learning-player.tsx", import.meta.url), "utf8"),
   ]);
   const completionStart = catalogSource.indexOf("export async function markUserCompetencyCompleted");
@@ -261,7 +262,7 @@ test("manual competency and resource completion stay distinct from observed play
 });
 
 test("the learning player authorizes canonical skill mappings without reopening legacy candidates", async () => {
-  const source = await readFile(new URL("../../../src/lib/db/repositories/learning.ts", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/learning/server/repository.ts", import.meta.url), "utf8");
   const start = source.indexOf("export async function getLearningResourceForCycle");
   const end = source.indexOf("export async function getInternalLearningTargetsForVideoUrls", start);
   const querySource = source.slice(start, end);
@@ -291,16 +292,16 @@ test("the learning player embeds YouTube without offering an external YouTube ex
 });
 
 test("the notes/status Server Actions no longer revalidate the retired ruta screen, but keep every revalidation that still renders content (issue #112)", async () => {
-  const source = await readFile(new URL("../../../src/lib/fp/resource-notes-actions.ts", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/learning/server/actions.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /revalidatePath\(`\/ruta\/\$\{idSlug\}`\)/, "/ruta/[slug] never renders content any more, so revalidating it is meaningless");
   assert.match(source, /revalidatePath\("\/roadmap"\)/);
-  assert.match(source, /revalidatePath\("\/dashboard"\)/);
+  assert.doesNotMatch(source, /revalidatePath\("\/dashboard"\)/, "background mutations must not refresh the whole dashboard layout");
   assert.match(source, /revalidatePath\("\/courses"\)/);
   assert.match(source, /revalidatePath\("\/hackathons"\)/);
 });
 
 test("FP course details expose only reviewed taught/demonstrated aptitudes, keeping them separate from event requirements", async () => {
-  const repository = await readFile(new URL("../../../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
+  const repository = await readFile(new URL("../../../src/features/learning/server/catalogue-repository.ts", import.meta.url), "utf8");
   const queryStart = repository.indexOf("export async function getCourseAptitudesForItems");
   const queryEnd = repository.indexOf("export type CompetencyLearningItem", queryStart);
   const querySource = repository.slice(queryStart, queryEnd);
@@ -327,13 +328,13 @@ test("the global store loads course aptitudes and shares live completion state w
   assert.match(dataSource, /courseAptitudes: \(courseAptitudesByItem\.get\(item\.id\) \?\? \[\]\)\.map/);
   assert.match(dataSource, /completed: userCompetencyStates\.has\(aptitude\.id\)/);
 
-  const storeSource = await readFile(new URL("../../../src/components/guest-store.tsx", import.meta.url), "utf8");
+  const storeSource = await readFile(new URL("../../../src/features/learning/client/use-learning-actions.ts", import.meta.url), "utf8");
   assert.match(storeSource, /courseAptitudes: item\.courseAptitudes\?\.map/);
   assert.match(storeSource, /aptitude\.id === skillId \? \{ \.\.\.aptitude, completed \} : aptitude/);
 });
 
 test("CourseDetailView combines only canonical learning outcomes and reviewed aptitudes, omitting the section when neither exists (issue #160, issue #200)", async () => {
-  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFeatureSource("courses", "events");
   const fnStart = source.indexOf("export function CourseDetailView");
   const fnEnd = source.indexOf("function Hackathons(");
   const fnSource = source.slice(fnStart, fnEnd);

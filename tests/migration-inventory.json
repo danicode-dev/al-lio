@@ -411,7 +411,7 @@
     },
     {
       "legacyIndex": 31,
-      "currentName": "insertDb enforces authorization and scopes every write to the current user (issue #92)",
+      "currentName": "product writes use feature-owned, user-scoped repositories instead of a generic table/column action (issue #92, #275)",
       "originatingIssues": [
         92
       ],
@@ -426,7 +426,7 @@
     },
     {
       "legacyIndex": 32,
-      "currentName": "Quick Add course and event creation normalize empty optional fields to null and roll back on failure (issue #92)",
+      "currentName": "Quick Add mutations validate optional fields and each feature rolls back optimistic creation on failure (issue #92, #275)",
       "originatingIssues": [
         92
       ],
@@ -2288,7 +2288,7 @@
     },
     {
       "legacyIndex": 156,
-      "currentName": "toggleHackathonFavoriteAction is session-gated and redirects unauthenticated callers, matching the toggleCompanyFavoriteAction pattern it mirrors (issue #131)",
+      "currentName": "toggleHackathonFavoriteAction is session-gated through the shared current-user boundary (issue #131, #275)",
       "originatingIssues": [
         131
       ],
@@ -2318,7 +2318,7 @@
     },
     {
       "legacyIndex": 158,
-      "currentName": "ReturnTypeActions declares toggleHackathonFavorite, so the store's action object type-checks against the shared interface (issue #131)",
+      "currentName": "EventActions declares toggleHackathonFavorite inside the feature boundary (issue #131, #275)",
       "originatingIssues": [
         131
       ],
@@ -2524,7 +2524,7 @@
     },
     {
       "legacyIndex": 172,
-      "currentName": "toggleCourseFavoriteAction is session-gated and redirects unauthenticated callers, matching toggleCompanyFavoriteAction/toggleHackathonFavoriteAction (issue #120)",
+      "currentName": "toggleCourseFavoriteAction is session-gated through the shared current-user boundary (issue #120, #275)",
       "originatingIssues": [
         120
       ],
@@ -2554,7 +2554,7 @@
     },
     {
       "legacyIndex": 174,
-      "currentName": "ReturnTypeActions declares toggleCourseFavorite, so the store's action object type-checks against the shared interface (issue #120)",
+      "currentName": "CourseActions declares toggleCourseFavorite inside the feature boundary (issue #120, #275)",
       "originatingIssues": [
         120
       ],
@@ -3380,7 +3380,7 @@
     },
     {
       "legacyIndex": 230,
-      "currentName": "src/lib/work/actions.ts is session-scoped, never redirects (it runs from background effects/clicks, not a form submit), and works around createQuickSearch's dead category default (issue #123)",
+      "currentName": "Work's feature-owned actions are session-scoped, validated and never redirect from a background mutation (issue #123, #275)",
       "originatingIssues": [
         123
       ],

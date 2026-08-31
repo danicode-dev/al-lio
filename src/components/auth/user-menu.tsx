@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ChevronDown, ChevronsUpDown, LogOut, UserRound } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
-import { signOut } from "@/lib/actions";
+import { signOut } from "@/features/auth/server/sign-out";
 import { cn } from "@/lib/utils";
 
 // One account control for both shells. It never signs the student out on a

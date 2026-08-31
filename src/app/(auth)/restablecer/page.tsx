@@ -12,12 +12,12 @@ export default async function ResetPasswordPage({ searchParams }: ResetPageProps
   if (!token) {
     return (
       <AuthPageShell>
-        <div className="space-y-3 text-center">
-          <h1 className="text-xl font-bold">Enlace no válido</h1>
-          <p className="text-sm text-muted-foreground">Falta el token de restablecimiento en el enlace.</p>
-          <Link href="/recuperar" className="text-sm font-medium text-primary underline underline-offset-4">
-            Solicitar un nuevo enlace
-          </Link>
+        <div className="auth-note">
+          <h1 className="auth-heading">Enlace no válido</h1>
+          <p className="auth-sub">Falta el token de restablecimiento en el enlace.</p>
+          <p className="auth-alt">
+            <Link href="/recuperar">Solicitar un nuevo enlace</Link>
+          </p>
         </div>
       </AuthPageShell>
     );

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { tryGetCurrentUserId } from "@/lib/auth/current-user";
-import { deleteTasksByUserLike, createTask } from "@/lib/db/repositories/tasks";
-import { deleteHackathonsByUserLike, createHackathon } from "@/lib/db/repositories/hackathons";
-import { deleteCoursesByUserLike, createCourse } from "@/lib/db/repositories/courses";
+import { deleteTasksByUserLike, createTask } from "@/features/tasks/server/repository";
+import { deleteHackathonsByUserLike, createHackathon } from "@/features/events/server/repository";
+import { deleteCoursesByUserLike, createCourse } from "@/features/courses/server/repository";
 
 export async function GET() {
   if (process.env.NODE_ENV === "production") {

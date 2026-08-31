@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { TasksView } from "@/components/tasks/tasks-view";
+import { TasksView } from "@/features/tasks";
 
 export default function TasksPage() {
   return (

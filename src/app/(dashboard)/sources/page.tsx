@@ -1,5 +1,5 @@
-import { StoredGuestApp } from "@/components/stored-guest-app";
+import { SourcesFeature } from "@/features/resources";
 
 export default function SourcesPage() {
-  return <StoredGuestApp view="sources" />;
+  return <SourcesFeature />;
 }
