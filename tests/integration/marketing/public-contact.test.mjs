@@ -1,8 +1,10 @@
+// Source-level assertion rationale: this verifies contact copy across static server-rendered and
+// documentation surfaces without starting the full Next.js application.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const readSource = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+const readSource = (path) => readFile(new URL(`../../../${path}`, import.meta.url), "utf8");
 
 const publicContactSurfaces = [
   "src/app/(legal)/accesibilidad/page.tsx",

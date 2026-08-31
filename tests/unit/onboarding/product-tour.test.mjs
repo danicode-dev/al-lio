@@ -1,3 +1,5 @@
+// Source-level assertion rationale: the tour state machine executes directly; Next.js server wiring
+// and responsive anchor presence remain structural contracts until a browser/server harness is available.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
@@ -7,7 +9,7 @@ import {
   normalizeProductTourState,
   resumeStepFor,
   shouldOfferProductTour,
-} from "../src/lib/onboarding/tour-state.ts";
+} from "../../../src/lib/onboarding/tour-state.ts";
 import {
   PRODUCT_TOUR_LENGTH,
   findStepIndex,
@@ -15,7 +17,7 @@ import {
   productTourSteps,
   resolveTransition,
   stepIdAt,
-} from "../src/lib/onboarding/tour-steps.ts";
+} from "../../../src/lib/onboarding/tour-steps.ts";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -184,9 +186,9 @@ test("skipping marks it skipped from any step, and going back never closes the t
 
 test("every anchor the steps ask for exists in the sidebar, the header or the mobile navigation", async () => {
   const markup = (await Promise.all([
-    read("../src/components/app-sidebar.tsx"),
-    read("../src/components/student-header-actions.tsx"),
-    read("../src/components/mobile-header-navigation.tsx"),
+    read("../../../src/components/app-sidebar.tsx"),
+    read("../../../src/components/student-header-actions.tsx"),
+    read("../../../src/components/mobile-header-navigation.tsx"),
   ])).join("\n");
 
   for (const step of productTourSteps) {
@@ -202,7 +204,7 @@ test("every anchor the steps ask for exists in the sidebar, the header or the mo
 });
 
 test("pressing the card does not count as clicking away from the phone menu", async () => {
-  const mobileSource = await read("../src/components/mobile-header-navigation.tsx");
+  const mobileSource = await read("../../../src/components/mobile-header-navigation.tsx");
 
   // The sheet closes when a press lands outside it. The tour's card is
   // outside it by definition, so without this exception every Siguiente
@@ -217,8 +219,8 @@ test("pressing the card does not count as clicking away from the phone menu", as
 
 test("the tour's own state never reuses the profile wizard's onboarding columns", async () => {
   const [actions, repository] = await Promise.all([
-    read("../src/lib/onboarding/tour-actions.ts"),
-    read("../src/lib/db/repositories/product_tour.ts"),
+    read("../../../src/lib/onboarding/tour-actions.ts"),
+    read("../../../src/lib/db/repositories/product_tour.ts"),
   ]);
 
   // Sharing them would make "finished choosing my cycle" and "watched the
@@ -230,7 +232,7 @@ test("the tour's own state never reuses the profile wizard's onboarding columns"
 });
 
 test("tour server actions resolve the user from the session and accept no user id", async () => {
-  const source = await read("../src/lib/onboarding/tour-actions.ts");
+  const source = await read("../../../src/lib/onboarding/tour-actions.ts");
   const exported = source.matchAll(/export async function (\w+)\(([^)]*)\)/g);
 
   for (const [, name, parameters] of exported) {

@@ -1,9 +1,11 @@
+// Source-level assertion rationale: GitHub Actions cannot be executed safely inside the unit runner,
+// so trigger, serialization, and immutable-release guarantees remain structural contracts.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const workflowUrl = new URL("../.github/workflows/deploy-production.yml", import.meta.url);
-const entrypointUrl = new URL("../scripts/github-actions-deploy-entrypoint.sh", import.meta.url);
+const workflowUrl = new URL("../../../.github/workflows/deploy-production.yml", import.meta.url);
+const entrypointUrl = new URL("../../../scripts/github-actions-deploy-entrypoint.sh", import.meta.url);
 
 test("production deployment waits for successful post-merge CI", async () => {
   const workflow = await readFile(workflowUrl, "utf8");
