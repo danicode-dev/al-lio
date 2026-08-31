@@ -35,7 +35,7 @@ programme material.
 | [`02-evidence-register.md`](02-evidence-register.md) | Evidence model, metric provenance, collection commands and aggregate-query definitions | Active |
 | [`03-product-and-user-journeys.md`](03-product-and-user-journeys.md) | Delivered scope and student journeys | Active; final-release checks pending |
 | [`04-architecture-data-and-security.md`](04-architecture-data-and-security.md) | Architecture, governance, privacy and security | Active; final-release checks pending |
-| [`05-quality-release-and-operations.md`](05-quality-release-and-operations.md) | Verification, release and support evidence | Active; frozen-release and owner evidence pending |
+| [`05-quality-release-and-operations.md`](05-quality-release-and-operations.md) | Verification, release and support evidence | Active; frozen-release CI, deployment and health evidence recorded; backup/restore and remaining metric evidence pending |
 | [`06-impact-inclusion-and-sustainability.md`](06-impact-inclusion-and-sustainability.md) | Social impact, inclusion and operating sustainability | Active; owner/final evidence pending |
 | `07-product-visual-evidence.md` | Final owner-captured visual evidence and captions; not a capture plan | Planned in issue #301 |
 | `08-technical-report-source.md` | Consolidated report narrative used to fill the final PDF template | Planned in issue #302 |
