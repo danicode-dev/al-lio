@@ -14,15 +14,10 @@ import { LANDING_MODULES } from "@/components/landing/modules";
 // Colour (AL-LÍO style guide): no pure black, no orange as an interface
 // colour. Warm ink #2F2A24 for headings, green #1F5B46 for every action
 // and accent, cream #F7F3EC ground, warm greys for support text.
-// Actions are text + arrow, never a filled or bordered box. The primary
-// action per screen wraps its label in `hl` for a permanent green
-// highlighter (the band sits behind the text only, not the arrow).
+// Actions are text + arrow, nothing behind them: no fill, no border, no
+// highlighter. Hover/focus just underlines.
 const linkAction =
   "group inline-flex items-center gap-1.5 font-semibold text-[#1F5B46] underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:underline focus-visible:decoration-2";
-const linkPrimary =
-  "group inline-flex items-center gap-2 font-semibold text-[#1F5B46] focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-2";
-const hl =
-  "[background:linear-gradient(transparent_56%,rgba(31,91,70,0.22)_56%)] transition-[background] group-hover:[background:linear-gradient(transparent_56%,rgba(31,91,70,0.34)_56%)]";
 const eyebrow = "text-[13px] font-bold uppercase tracking-[0.16em] text-[#1F5B46]";
 const secTitle = "font-[family-name:var(--font-barlow)] font-extrabold tracking-[-0.01em]";
 const shell = "mx-auto max-w-[1120px] px-6 sm:px-12";
@@ -98,8 +93,8 @@ export function MarketingLanding() {
               <p className="mx-auto mt-6 max-w-[46ch] text-[18px] leading-relaxed text-[#4D4842]">
                 Tu curso en un panel: tareas, prácticas, cursos, eventos y calendario, con noticias y convocatorias de tu ciclo revisadas cada día.
               </p>
-              <a href="#panel" className={`${linkPrimary} mt-12 text-[18px]`}>
-                <span className={hl}>Ver cómo funciona</span>
+              <a href="#panel" className={`${linkAction} mt-12 text-[18px]`}>
+                Ver cómo funciona
                 <ChevronDown className="h-5 w-5 transition-transform group-hover:translate-y-0.5" aria-hidden="true" />
               </a>
             </div>

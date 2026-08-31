@@ -24,11 +24,9 @@ export function LandingHeader() {
         </button>
         <Link
           href="/login"
-          className="group inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1F5B46] focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-2"
+          className="group inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1F5B46] underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:underline focus-visible:decoration-2"
         >
-          <span className="[background:linear-gradient(transparent_56%,rgba(31,91,70,0.22)_56%)] transition-[background] group-hover:[background:linear-gradient(transparent_56%,rgba(31,91,70,0.34)_56%)]">
-            Entrar
-          </span>
+          Entrar
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
         </Link>
       </nav>

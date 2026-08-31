@@ -52,8 +52,10 @@ export function EcosystemDiagram() {
         const node = nodeRefs.current[index];
         if (!node) return [];
         const rect = node.getBoundingClientRect();
+        // Anchor the beam to the node's hub-facing edge (where its icon
+        // sits), not the middle of the icon+label pair.
         const start = {
-          x: rect.left - stageRect.left + rect.width / 2,
+          x: (module.side === "left" ? rect.right - 12 : rect.left + 12) - stageRect.left,
           y: rect.top - stageRect.top + rect.height / 2,
         };
         const sideIndex = perSide[module.side]++;
@@ -198,12 +200,13 @@ export function EcosystemDiagram() {
         )}
       </svg>
 
-      <div className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:h-[460px] sm:gap-8 xl:gap-16">
-        <div className="flex flex-col items-start gap-3 sm:gap-6">
+      <div className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:h-[460px] sm:gap-8 xl:gap-16">
+        <div className="flex flex-col items-start gap-5 sm:gap-9">
           {left.map(({ module, index }) => (
             <DiagramNode
               key={module.label}
               module={module}
+              side="left"
               done={inView && index < seq.done}
               drawing={inView && seq.active === index}
               nodeRef={(node) => {
@@ -238,11 +241,12 @@ export function EcosystemDiagram() {
           />
         </div>
 
-        <div className="flex flex-col items-end gap-3 sm:gap-6">
+        <div className="flex flex-col items-end gap-5 sm:gap-9">
           {right.map(({ module, index }) => (
             <DiagramNode
               key={module.label}
               module={module}
+              side="right"
               done={inView && index < seq.done}
               drawing={inView && seq.active === index}
               nodeRef={(node) => {
@@ -269,11 +273,13 @@ export function EcosystemDiagram() {
 
 function DiagramNode({
   module,
+  side,
   nodeRef,
   done,
   drawing,
 }: {
   module: (typeof LANDING_MODULES)[number];
+  side: "left" | "right";
   nodeRef: (node: HTMLDivElement | null) => void;
   done: boolean;
   drawing: boolean;
@@ -282,19 +288,18 @@ function DiagramNode({
   return (
     <div
       ref={nodeRef}
-      className={`flex items-center gap-2 rounded-xl border bg-white py-1.5 pl-1.5 pr-2.5 shadow-[0_10px_22px_rgba(90,60,25,0.07)] transition-colors duration-300 sm:gap-3 sm:py-2.5 sm:pl-2.5 sm:pr-4 ${
-        done ? "border-[#CDE2D6]" : "border-[#E6DED2]"
-      }`}
+      // No card: bare icon + label. The icon sits on the hub-facing side so
+      // the beam meets it.
+      className={`flex items-center gap-2.5 ${side === "left" ? "flex-row-reverse" : ""}`}
     >
-      <span
-        className={`grid h-6 w-6 shrink-0 place-items-center rounded-[8px] transition-colors duration-300 sm:h-8 sm:w-8 sm:rounded-[9px] ${
-          done ? "bg-[#E7EFEA] text-[#1F5B46]" : "bg-[#EFEADF] text-[#7A736B]"
+      <Icon
+        className={`h-[19px] w-[19px] shrink-0 transition-colors duration-300 sm:h-[22px] sm:w-[22px] ${
+          done ? "text-[#1F5B46]" : "text-[#7A736B]"
         }`}
-      >
-        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
-      </span>
+        aria-hidden="true"
+      />
       <span
-        className={`relative text-left text-[12px] font-semibold leading-tight transition-colors duration-300 sm:text-[13.5px] ${
+        className={`relative text-left text-[12.5px] font-semibold leading-tight transition-colors duration-300 sm:text-[14px] ${
           done ? "text-[#1F5B46]" : "text-[#2F2A24]"
         }`}
       >
