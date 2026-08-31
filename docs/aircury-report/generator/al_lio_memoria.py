@@ -26,6 +26,7 @@ Navegación clicable (para leer y para que una IA salte por el documento):
     solo (destino con nombre  p-sec-<num>).
 """
 import argparse
+import math
 import re
 import tempfile
 from pathlib import Path
@@ -80,81 +81,56 @@ TOC_GROUPS = [
 ]
 
 FIGURE_CATALOG = {
-    "VE-01A": {
-        "filename": "ve-01a-landing-hero-desktop.png",
-        "caption": "Portada pública de AL-LIO y acceso al espacio del estudiante.",
-        "h": 250,
+    "VIS-001-01": {
+        "kind": "image",
+        "filenames": ["ve-03-dashboard-personalised-desktop.png"],
+        "caption": ("Panel personalizado: tareas, ruta de aprendizaje, calendario "
+                    "y progreso del ciclo en una única vista."),
+        "h": 270,
     },
-    "VE-01B": {
-        "filename": "ve-01b-landing-fullpage-desktop.png",
-        "caption": "Recorrido público de la propuesta de valor y sus principales áreas.",
-        "h": 250,
+    "VIS-001-02": {
+        "kind": "image",
+        "filenames": ["ve-05-learning-progress-notes-desktop.png"],
+        "caption": ("Recurso revisado con progreso automático, nota contextual "
+                    "ficticia y control de finalización."),
+        "h": 220,
     },
-    "VE-01C": {
-        "filename": "ve-01c-auth-entry-desktop.png",
-        "caption": "Entrada mediante contraseña o identidad de Google, sin datos personales.",
-        "h": 250,
+    "VIS-001-03-04": {
+        "kind": "image_pair",
+        "filenames": [
+            "ve-05b-learning-note-in-bloc-mobile.png",
+            "ve-07-news-reviewed-mobile.png",
+        ],
+        "caption": ("Continuidad responsive: Bloc de notas y noticias revisadas "
+                    "en viewport móvil emulado."),
+        "h": 310,
     },
-    "VE-02": {
-        "filename": "ve-02-onboarding-cycle-selection-desktop.png",
-        "caption": "Selección del ciclo y curso académico que establece el contexto de la experiencia.",
-        "h": 250,
+    "DIAG-ARCHITECTURE": {
+        "kind": "architecture",
+        "filenames": [],
+        "caption": ("Arquitectura y límites de confianza: Radar entrega lotes "
+                    "aprobados sin acceder a sesiones ni datos privados."),
+        "h": 126,
     },
-    "VE-03": {
-        "filename": "ve-03-dashboard-personalised-desktop.png",
-        "caption": "Panel personalizado con las próximas acciones del estudiante.",
-        "h": 250,
-    },
-    "VE-04": {
-        "filename": "ve-04-competencies-cycle-filtered-desktop.png",
-        "caption": "Competencias filtradas para el ciclo activo.",
-        "h": 250,
-    },
-    "VE-05": {
-        "filename": "ve-05-learning-progress-notes-desktop.png",
-        "caption": "Recurso aprobado con progreso y notas ficticias conservadas por el usuario.",
-        "h": 250,
-    },
-    "VE-06": {
-        "filename": "ve-06-task-completed-desktop.png",
-        "caption": "Tarea ficticia completada para mostrar el ciclo básico de planificación.",
-        "h": 250,
-    },
-    "VE-07": {
-        "filename": "ve-07-news-production-limitation-desktop.png",
-        "caption": "Estado real de las noticias de producción en la fecha de captura.",
-        "h": 250,
-    },
-    "VE-08": {
-        "filename": "ve-08-opportunity-verified-detail-desktop.png",
-        "caption": "Oportunidad revisada con fuente y acción disponible para el perfil.",
-        "h": 250,
-    },
-    "VE-09": {
-        "filename": "ve-09-profile-cycle-fictional-desktop.png",
-        "caption": "Perfil ficticio y ciclo activo que controlan la personalización.",
-        "h": 250,
-    },
-    "VE-10": {
-        "filename": "ve-10-dashboard-navigation-mobile.png",
-        "caption": "Jerarquía principal de AL-LIO en un viewport móvil responsive.",
-        "h": 285,
+    "DIAG-RADAR": {
+        "kind": "radar_pipeline",
+        "filenames": [],
+        "caption": ("Flujo editorial de Radar desde las fuentes públicas hasta "
+                    "el catálogo publicado y filtrado por ciclo."),
+        "h": 205,
     },
 }
 
-# Eight non-redundant placements are reserved for the review layout. The
-# remaining catalogue entries stay available as owner-approved alternatives.
+# Four owner-approved screenshots and two compact diagrams replace the former
+# review placeholders. Product prose remains unchanged.
 FIGURE_PLACEMENTS = {
-    "02": {None: ["VE-01A"]},
     "04": {
-        "4.1 Entrada, onboarding y personalización": ["VE-02"],
-        "4.2 Panel y siguiente acción": ["VE-03"],
-        "4.3 Tareas y calendario": ["VE-06"],
-        "4.5 Competencias y aprendizaje": ["VE-05"],
-        "4.8 Trabajo, empresas y candidaturas": ["VE-08"],
+        "4.2 Panel y siguiente acción": ["VIS-001-01"],
+        "4.5 Competencias y aprendizaje": ["VIS-001-02"],
     },
-    "05": {None: ["VE-10"]},
-    "08": {None: ["VE-07"]},
+    "05": {None: ["VIS-001-03-04"]},
+    "07": {None: ["DIAG-ARCHITECTURE"]},
+    "08": {None: ["DIAG-RADAR"]},
 }
 
 SECTION_INTROS = {
@@ -197,13 +173,22 @@ def table_widths(header):
 
 def figure_block(evidence_id):
     item = FIGURE_CATALOG[evidence_id]
-    return {
+    filenames = list(item.get("filenames", []))
+    paths = [str(Path("..") / "assets" / "product-evidence" / filename)
+             for filename in filenames]
+    block = {
         "t": "figure",
         "evidence_id": evidence_id,
-        "expected_filename": item["filename"],
+        "kind": item["kind"],
+        "expected_filenames": filenames,
         "caption": item["caption"],
         "h": item["h"],
     }
+    if len(paths) == 1:
+        block["path"] = paths[0]
+    elif paths:
+        block["paths"] = paths
+    return block
 
 
 def inject_figures(section):
@@ -386,7 +371,7 @@ CONTENT = {
     "cover": {
         "kicker": "Aircury Summer of Code 2026",
         "title": ["AL-LIO", "Memoria técnica"],
-        "subtitle": "Versión técnica para revisión",
+        "subtitle": "Versión técnica final",
         "intro": ("Espacio digital privado para estudiantes de Formación Profesional: "
                   "planificación, aprendizaje e información revisada según el ciclo."),
         "meta": [
@@ -416,7 +401,7 @@ CONTENT = {
         ],
     },
     "output": str(REPO_ROOT / "output" / "pdf" /
-                  "AL_LIO_Memoria_Tecnica_REVISION.pdf"),
+                  "AL_LIO_Memoria_Tecnica_FINAL.pdf"),
 }
 
 # ───────────────────────────────────────── STYLE ──────────────────────────────
@@ -432,6 +417,7 @@ W, H = A4
 CREAM  = HexColor("#F7F3EC"); INK   = HexColor("#2F2A24"); GREEN = HexColor("#1F5B46")
 BODY   = HexColor("#4D4842"); MUTED = HexColor("#7A736B"); FAINT = HexColor("#9A9589")
 HAIR   = HexColor("#E6DED2"); LEADER = HexColor("#DAD2C3"); PANEL = HexColor("#EFEAE0")
+ACCENT = HexColor("#C84C28")
 
 ML, MR, MT, MB = 58, 58, 62, 56
 CW = W - ML - MR
@@ -927,7 +913,141 @@ class Doc:
             yy -= 12.5
         self.y = top - h - 6
 
-    def blk_figure(self, caption, h=138, path=None):
+    def _figure_image(self, path):
+        image_path = Path(path)
+        if not image_path.is_absolute():
+            image_path = HERE / image_path
+        image_path = image_path.resolve()
+        if not image_path.is_file():
+            raise FileNotFoundError(f"Figure image not found: {image_path}")
+        return ImageReader(str(image_path))
+
+    def _diagram_arrow(self, x1, y1, x2, y2, color=GREEN, width=1.1):
+        angle = math.atan2(y2 - y1, x2 - x1)
+        head = 4.5
+        self.c.saveState()
+        self.c.setStrokeColor(color)
+        self.c.setFillColor(color)
+        self.c.setLineWidth(width)
+        self.c.line(x1, y1, x2, y2)
+        left = (x2 - head * math.cos(angle - 0.52),
+                y2 - head * math.sin(angle - 0.52))
+        right = (x2 - head * math.cos(angle + 0.52),
+                 y2 - head * math.sin(angle + 0.52))
+        arrow = self.c.beginPath()
+        arrow.moveTo(x2, y2)
+        arrow.lineTo(*left)
+        arrow.lineTo(*right)
+        arrow.close()
+        self.c.drawPath(arrow, fill=1, stroke=0)
+        self.c.restoreState()
+
+    def _diagram_box(self, x, y, w, h, label, fill=CREAM, border=HAIR,
+                     color=INK, size=7.2):
+        self.c.saveState()
+        self.c.setFillColor(fill)
+        self.c.setStrokeColor(border)
+        self.c.setLineWidth(0.8)
+        self.c.roundRect(x, y, w, h, 4, fill=1, stroke=1)
+        self.c.restoreState()
+        lines = self.wrap(label, w - 10, "Inter-SB", size, track=0)
+        lead = size + 2.2
+        yy = y + h / 2 + (len(lines) - 1) * lead / 2 - size * 0.34
+        for line in lines:
+            self.ctext(x + w / 2, yy, line, "Inter-SB", size, color, track=0)
+            yy -= lead
+
+    def _draw_architecture_diagram(self, x, y, w, h):
+        self.c.saveState()
+        self.c.setFillColor(PANEL)
+        self.c.setStrokeColor(HAIR)
+        self.c.setLineWidth(0.8)
+        self.c.roundRect(x, y, w, h, 5, fill=1, stroke=1)
+        self.c.restoreState()
+
+        gap = 10
+        box_w = (w - 30 - gap * 3) / 4
+        box_h = 30
+        top_y = y + h - box_h - 10
+        top_x = [x + 15 + index * (box_w + gap) for index in range(4)]
+        labels = ["Estudiante", "Caddy / HTTPS", "Aplicación Next.js", "PostgreSQL"]
+        for index, (box_x, label) in enumerate(zip(top_x, labels)):
+            fill = CREAM if index < 2 else HexColor("#E5EFE9")
+            border = HAIR if index < 2 else GREEN
+            self._diagram_box(box_x, top_y, box_w, box_h, label, fill, border)
+            if index:
+                self._diagram_arrow(top_x[index - 1] + box_w + 2,
+                                    top_y + box_h / 2,
+                                    box_x - 2, top_y + box_h / 2)
+
+        lower_w = 98
+        lower_y = y + 10
+        lower_x = [x + 25, x + (w - lower_w) / 2, x + w - lower_w - 25]
+        lower_labels = ["Fuentes públicas", "AL-LIO Radar", "Webhook firmado"]
+        for index, (box_x, label) in enumerate(zip(lower_x, lower_labels)):
+            fill = CREAM if index == 0 else HexColor("#F6E7E0")
+            border = HAIR if index == 0 else ACCENT
+            self._diagram_box(box_x, lower_y, lower_w, box_h, label, fill, border,
+                              ACCENT if index else INK)
+            if index:
+                self._diagram_arrow(lower_x[index - 1] + lower_w + 2,
+                                    lower_y + box_h / 2,
+                                    box_x - 2, lower_y + box_h / 2, ACCENT)
+        self._diagram_arrow(lower_x[2] + lower_w / 2, lower_y + box_h + 2,
+                            top_x[2] + box_w / 2, top_y - 2, ACCENT)
+
+    def _draw_radar_pipeline(self, x, y, w, h):
+        self.c.saveState()
+        self.c.setFillColor(PANEL)
+        self.c.setStrokeColor(HAIR)
+        self.c.setLineWidth(0.8)
+        self.c.roundRect(x, y, w, h, 5, fill=1, stroke=1)
+        self.c.restoreState()
+
+        gap = 9
+        box_h = 31
+        top_w = (w - 28 - gap * 3) / 4
+        top_y = y + h - box_h - 12
+        top_x = [x + 14 + index * (top_w + gap) for index in range(4)]
+        top_labels = ["Fuentes públicas", "Recogida y normalización",
+                      "Revisión humana", "Lote aprobado"]
+        for index, (box_x, label) in enumerate(zip(top_x, top_labels)):
+            fill = CREAM if index < 2 else HexColor("#E5EFE9")
+            border = HAIR if index < 2 else GREEN
+            self._diagram_box(box_x, top_y, top_w, box_h, label, fill, border)
+            if index:
+                self._diagram_arrow(top_x[index - 1] + top_w + 2,
+                                    top_y + box_h / 2,
+                                    box_x - 2, top_y + box_h / 2)
+
+        pill_w = 104
+        pill_x = top_x[2] + (top_w - pill_w) / 2
+        pill_y = y + 68
+        self._diagram_box(pill_x, pill_y, pill_w, 20,
+                          "No aprobado: fuera", HexColor("#F6E7E0"), ACCENT,
+                          ACCENT, 6.7)
+        self._diagram_arrow(top_x[2] + top_w / 2, top_y - 2,
+                            pill_x + pill_w / 2, pill_y + 22, ACCENT)
+
+        lower_w = 112
+        lower_gap = 14
+        lower_y = y + 13
+        lower_x = [x + w - 14 - lower_w,
+                   x + w - 14 - lower_w * 2 - lower_gap,
+                   x + w - 14 - lower_w * 3 - lower_gap * 2]
+        lower_labels = ["Webhook firmado", "Validación de firma y esquema",
+                        "Catálogo filtrado por ciclo"]
+        for index, (box_x, label) in enumerate(zip(lower_x, lower_labels)):
+            self._diagram_box(box_x, lower_y, lower_w, box_h, label,
+                              HexColor("#E5EFE9"), GREEN, GREEN, 6.9)
+            if index:
+                self._diagram_arrow(lower_x[index - 1] - 2,
+                                    lower_y + box_h / 2,
+                                    box_x + lower_w + 2, lower_y + box_h / 2)
+        self._diagram_arrow(top_x[3] + top_w / 2, top_y - 2,
+                            lower_x[0] + lower_w / 2, lower_y + box_h + 2)
+
+    def blk_figure(self, caption, h=138, path=None, kind="image", paths=None):
         caption_lines = self.wrap(caption, CW, "Inter-SB", 8, track=0.4)
         caption_h = max(14, len(caption_lines) * 12)
         max_image_h = min(h, TOP - 46 - BOT - caption_h - 12)
@@ -936,31 +1056,52 @@ class Doc:
 
         image = None
         draw_w, draw_h = CW, max_image_h
-        if path:
-            image_path = Path(path)
-            if not image_path.is_absolute():
-                image_path = HERE / image_path
-            image_path = image_path.resolve()
-            if not image_path.is_file():
-                raise FileNotFoundError(f"Figure image not found: {image_path}")
-            image = ImageReader(str(image_path))
+        pair_images = []
+        if kind == "image":
+            if not path:
+                raise ValueError("Image figure requires one approved path")
+            image = self._figure_image(path)
             source_w, source_h = image.getSize()
             scale = min(CW / source_w, max_image_h / source_h)
             draw_w, draw_h = source_w * scale, source_h * scale
+        elif kind == "image_pair":
+            if not paths or len(paths) != 2:
+                raise ValueError("Image-pair figure requires exactly two approved paths")
+            pair_images = [self._figure_image(item) for item in paths]
+        elif kind not in {"architecture", "radar_pipeline"}:
+            raise ValueError(f"Unsupported figure kind: {kind}")
 
         self._need(draw_h + caption_h + 12)
         figure_x = ML + (CW - draw_w) / 2
         figure_y = self.y - draw_h
-        self.c.setFillColor(CREAM); self.c.setStrokeColor(HAIR); self.c.setLineWidth(0.8)
-        self.c.rect(figure_x, figure_y, draw_w, draw_h, fill=1, stroke=1)
-        if image:
+        if kind == "image":
+            self.c.setFillColor(CREAM); self.c.setStrokeColor(HAIR); self.c.setLineWidth(0.8)
+            self.c.rect(figure_x, figure_y, draw_w, draw_h, fill=1, stroke=1)
             self.c.drawImage(image, figure_x, figure_y, width=draw_w, height=draw_h,
                              mask="auto", preserveAspectRatio=True, anchor="c")
-        else:
+        elif kind == "image_pair":
             self.c.setFillColor(PANEL)
-            self.c.rect(figure_x, figure_y, draw_w, draw_h, fill=1, stroke=0)
-            self.ctext(W / 2, figure_y + draw_h / 2 - 3, "EVIDENCIA VISUAL", "Inter-B",
-                       7.6, FAINT, track=1.9)
+            self.c.setStrokeColor(HAIR)
+            self.c.setLineWidth(0.8)
+            self.c.roundRect(figure_x, figure_y, draw_w, draw_h, 5, fill=1, stroke=1)
+            half_w = (draw_w - 24) / 2
+            for index, pair_image in enumerate(pair_images):
+                source_w, source_h = pair_image.getSize()
+                scale = min((half_w - 18) / source_w, (draw_h - 16) / source_h)
+                image_w, image_h = source_w * scale, source_h * scale
+                half_x = figure_x + 8 + index * (half_w + 8)
+                image_x = half_x + (half_w - image_w) / 2
+                image_y = figure_y + (draw_h - image_h) / 2
+                self.c.setFillColor(CREAM)
+                self.c.setStrokeColor(HAIR)
+                self.c.rect(image_x, image_y, image_w, image_h, fill=1, stroke=1)
+                self.c.drawImage(pair_image, image_x, image_y, width=image_w,
+                                 height=image_h, mask="auto",
+                                 preserveAspectRatio=True, anchor="c")
+        elif kind == "architecture":
+            self._draw_architecture_diagram(figure_x, figure_y, draw_w, draw_h)
+        else:
+            self._draw_radar_pipeline(figure_x, figure_y, draw_w, draw_h)
         self.y = figure_y - 14
         for line in caption_lines:
             self.text(ML, self.y, line, "Inter-SB", 8, MUTED, track=0.4)
@@ -992,17 +1133,22 @@ class Doc:
             t = b["t"]
             if t == "h3":
                 next_block = sec["blocks"][index + 1] if index + 1 < len(sec["blocks"]) else None
-                if next_block and next_block["t"] == "table":
+                if next_block and next_block["t"] in {"p", "table"}:
                     display = re.sub(r"^(\d+\.\d+)\s+", r"\1 · ", b["s"])
                     heading_height = len(
                         self.wrap(display, CW - 14, "Barlow", 13.5, track=-0.2)
                     ) * 17 + 25
-                    table_height = self.estimate_table_height(
-                        next_block.get("head"),
-                        next_block["rows"],
-                        next_block.get("widths"),
-                    )
-                    combined_height = heading_height + table_height
+                    if next_block["t"] == "table":
+                        following_height = self.estimate_table_height(
+                            next_block.get("head"),
+                            next_block["rows"],
+                            next_block.get("widths"),
+                        )
+                    else:
+                        following_height = (
+                            len(self.wrap(next_block["s"], CW, "Inter", 10)) * 15.5 + 4
+                        )
+                    combined_height = heading_height + following_height
                     fresh_y = TOP - 46
                     if (
                         self.y - combined_height < BOT
@@ -1018,8 +1164,10 @@ class Doc:
             elif t == "note":   self.blk_note(b.get("title", "Nota"), b["s"])
             elif t == "quote":  self.blk_quote(b["s"], b.get("by"))
             elif t == "code":   self.blk_code(b["s"])
-            elif t == "figure": self.blk_figure(b.get("caption", "Figura"), b.get("h", 150),
-                                                 b.get("path"))
+            elif t == "figure": self.blk_figure(
+                b.get("caption", "Figura"), b.get("h", 150), b.get("path"),
+                b.get("kind", "image"), b.get("paths"),
+            )
             elif t == "conclusion": self.blk_conclusion(b["title"], b["paragraphs"])
             elif t == "space":  self.y -= b.get("h", 10)
 
@@ -1056,18 +1204,39 @@ def validate_content(content):
         if block["t"] == "figure"
     ]
     evidence_ids = [figure.get("evidence_id") for figure in figures]
-    if len(evidence_ids) != 8 or len(evidence_ids) != len(set(evidence_ids)):
-        raise ValueError("The review report must reserve eight unique visual-evidence slots")
+    if len(evidence_ids) != 5 or len(evidence_ids) != len(set(evidence_ids)):
+        raise ValueError("The final report must contain five unique visual blocks")
+    rendered_filenames = []
     for figure in figures:
         evidence_id = figure["evidence_id"]
         expected = FIGURE_CATALOG.get(evidence_id)
-        if not expected or figure.get("expected_filename") != expected["filename"]:
+        if not expected:
+            raise ValueError(f"Unknown final visual block: {evidence_id}")
+        if figure.get("kind") != expected["kind"]:
+            raise ValueError(f"Figure kind does not match the final catalogue: {evidence_id}")
+        if figure.get("expected_filenames") != expected.get("filenames", []):
             raise ValueError(f"Figure metadata does not match the #301 catalogue: {evidence_id}")
-        if figure.get("path"):
-            raise ValueError("Issue #323 must not insert unapproved screenshot candidates")
+        rendered_filenames.extend(figure.get("expected_filenames", []))
+        paths = ([figure["path"]] if figure.get("path") else figure.get("paths", []))
+        if len(paths) != len(figure.get("expected_filenames", [])):
+            raise ValueError(f"Screenshot path count is incorrect: {evidence_id}")
+        for path in paths:
+            resolved = (HERE / path).resolve()
+            approved_root = (HERE.parent / "assets" / "product-evidence").resolve()
+            if approved_root not in resolved.parents or not resolved.is_file():
+                raise ValueError(f"Screenshot is outside the approved evidence set: {resolved}")
+
+    approved_filenames = {
+        filename
+        for item in FIGURE_CATALOG.values()
+        for filename in item.get("filenames", [])
+    }
+    if set(rendered_filenames) != approved_filenames or len(rendered_filenames) != 4:
+        raise ValueError("The final PDF must use exactly the four owner-approved screenshots")
 
     serialized = repr(content)
-    for forbidden in ("NOTA INTERNA", "NO EXPORTAR AL PDF", "gmail.com"):
+    for forbidden in ("NOTA INTERNA", "NO EXPORTAR AL PDF", "gmail.com",
+                      "EVIDENCIA VISUAL"):
         if forbidden in serialized:
             raise ValueError(f"Non-exportable or private content leaked into CONTENT: {forbidden}")
 

@@ -13,7 +13,7 @@ python docs/aircury-report/generator/al_lio_memoria.py
 ```
 
 The default output is written to
-`output/pdf/AL_LIO_Memoria_Tecnica_REVISION.pdf`. An alternative path can be
+`output/pdf/AL_LIO_Memoria_Tecnica_FINAL.pdf`. An alternative path can be
 provided with `--output`.
 
 ```powershell
@@ -31,7 +31,7 @@ Run the structural checks after generation:
 
 ```powershell
 python docs/aircury-report/generator/verify_pdf.py `
-  output/pdf/AL_LIO_Memoria_Tecnica_REVISION.pdf
+  output/pdf/AL_LIO_Memoria_Tecnica_FINAL.pdf
 ```
 
 ## Editing contract
@@ -44,12 +44,12 @@ python docs/aircury-report/generator/verify_pdf.py `
   contents.
 - Do not maintain visible page numbers or the final page total manually. The
   generator resolves them with a two-pass build.
-- A figure block without `path` remains an empty placeholder.
-- A figure block with `path` loads a local image relative to this directory unless
-  an absolute path is supplied. Images are scaled proportionally and never cropped.
-- Issue #323 reserves eight non-redundant figure slots. Their `evidence_id` and
-  `expected_filename` values map the layout to #301 without exposing those internal
-  identifiers in the rendered PDF.
+- Screenshot figures load only the four owner-approved files catalogued by #301.
+  Images are scaled proportionally and never cropped.
+- The final layout includes two compact vector diagrams drawn directly by the
+  generator: the system trust boundaries and the Radar editorial pipeline.
+- Issue #303 validates that no placeholder or unapproved screenshot reaches the
+  final PDF.
 - The approved section 11 chronology is rendered automatically as an editorial
   timeline. Other Markdown tables use padded, paginated rows and repeat their
   header after a page break.
@@ -65,9 +65,9 @@ Example:
 }
 ```
 
-Product screenshots remain owned by issue #301 and must use fictional data. Report
-drafting remains owned by issue #302, and final PDF verification remains owned by
-issue #303.
+Product screenshots remain owned by issue #301 and use fictional data where the
+account state is visible. Report drafting remains owned by issue #302, and final
+PDF verification remains owned by issue #303.
 
 The bundled Barlow and Inter font files retain their original SIL Open Font
 License 1.1 notices in the `fonts/` directory.

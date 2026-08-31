@@ -105,20 +105,28 @@ def verify(pdf_path):
         for page in reader.pages
     )
     required_fragments = [
+        "Versión técnica final",
         "345 pruebas",
         "31 de agosto de 2027",
         "aplicación no verificada",
         "no se había realizado un estudio formal",
         "Bloc de notas",
         "Aircury SL",
+        "Panel personalizado: tareas, ruta de aprendizaje",
+        "Continuidad responsive: Bloc de notas y noticias revisadas",
+        "Arquitectura y límites de confianza",
+        "Flujo editorial de Radar",
     ]
     missing_fragments = [item for item in required_fragments if item not in full_text]
     if missing_fragments:
         raise AssertionError(f"Required report statements are missing: {missing_fragments}")
 
-    if full_text.count("EVIDENCIA VISUAL") != 8:
-        raise AssertionError("The review PDF must contain eight visual-evidence placeholders")
-    forbidden_fragments = ["NOTA INTERNA", "NO EXPORTAR AL PDF", "gmail.com"]
+    if "EVIDENCIA VISUAL" in full_text:
+        raise AssertionError("The final PDF must not contain visual-evidence placeholders")
+    forbidden_fragments = [
+        "NOTA INTERNA", "NO EXPORTAR AL PDF", "gmail.com",
+        "Versión técnica para revisión",
+    ]
     leaked_fragments = [item for item in forbidden_fragments if item in full_text]
     if leaked_fragments:
         raise AssertionError(f"Non-exportable content leaked into the PDF: {leaked_fragments}")
@@ -137,7 +145,7 @@ def verify(pdf_path):
         "outline_entries": len(outline),
         "internal_links": len(internal_destinations),
         "external_links": len(external_links),
-        "figure_placeholders": full_text.count("EVIDENCIA VISUAL"),
+        "figure_placeholders": 0,
     }
 
 
