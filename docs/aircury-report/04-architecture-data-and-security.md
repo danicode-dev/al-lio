@@ -228,11 +228,13 @@ Source: `src/lib/google/identity.ts`, `src/lib/google/calendar.ts`, ADR-0002,
   validated AL-LIO session and do not create or link an account.
 - Calendar is optional. Its access and refresh token material is encrypted with
   a dedicated key inside an `HttpOnly`, `SameSite=Lax` browser cookie (`Secure`
-  in production); it is not stored in PostgreSQL or linked to the AL-LIO user
-  row. In the reviewed baseline, Calendar status and event operations rely on
-  possession of that cookie and do not independently revalidate the
-  application session. The final report must not describe the credential as
-  user-bound unless that boundary is strengthened and verified before release.
+  in production); it is not stored in PostgreSQL. Since PR #312 the encrypted
+  payload carries the AL-LIO user id that completed the OAuth callback, and
+  every Calendar status and event route resolves the user from a validated
+  AL-LIO session before using it; a credential with no owner, or one bound to a
+  different AL-LIO user, fails closed and is cleared for reconnection
+  (`tests/integration/auth/calendar-ownership.test.mjs`, verified by the
+  exact-SHA CI).
 - OAuth state is validated and return paths are normalised. A Calendar failure
   does not affect AL-LIO-owned data.
 
@@ -271,7 +273,7 @@ Source: `infra/postgres/schema.sql`, `docs/architecture/README.md`, ADR-0002.
 | Delivered news and Radar-managed opportunities | AL-LIO PostgreSQL | Governed by review, publication, expiry and withdrawal rules |
 | Curated learning resources and company catalogue entries | AL-LIO PostgreSQL | Curated catalogue data; companies are not represented as live vacancies |
 | Session material | Signed cookie in the browser; `security_stamp` in PostgreSQL | No server-side session store of contents |
-| Google Calendar token material (only if consented) | Encrypted `HttpOnly` browser cookie | Optional and revocable; not persisted in PostgreSQL and not user-row-bound in the reviewed baseline |
+| Google Calendar token material (only if consented) | Encrypted `HttpOnly` browser cookie | Optional and revocable; not persisted in PostgreSQL; the encrypted payload is bound to the AL-LIO user id and every Calendar route validates the session (PR #312) |
 | Source catalogue, review decisions, delivery outbox | AL-LIO Radar SQLite volume | Separate backup and recovery procedure |
 
 Radar has no user authentication, no student UI and no AL-LIO database
@@ -335,9 +337,6 @@ in the reviewed source baseline; the final release must reconfirm them.
   boundary. The owner could not complete Calendar consent in production
   because Google displayed an unverified-application warning; production
   connect/disconnect behaviour therefore remains unverified.
-- **Password reset for identity-only accounts:** an account that only ever
-  signed in with Google cannot set a password through the reset flow in the
-  reviewed baseline; it must continue signing in with Google.
 
 ## 8. Claim-to-evidence map
 
@@ -389,6 +388,7 @@ an audit procedure or expose unnecessary operational detail.
 - `ARC-001`–`ARC-002`, `SEC-001`–`SEC-005` and `GOV-001`–`GOV-002` are now
   represented in the consolidated evidence register with their original
   meaning and numbering.
-- Release-dependent values (`VER-004`, `OPS-001`, `OPS-003`, `QAL-001`,
-  `OPS-004`, all `DAT-*` counts) are completed by issues #299 and the
-  final-compliance issue after the delivery release is frozen.
+- The delivery release is frozen. `VER-004`, `OPS-001`, `OPS-003` and `QAL-001`
+  are verified in the consolidated evidence register; `OPS-004` remains
+  incomplete (tracked in #317) and the `DAT-*` counts remain planned pending
+  the final aggregate queries.

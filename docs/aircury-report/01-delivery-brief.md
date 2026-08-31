@@ -86,7 +86,7 @@ observations were made after the automated production deployment completed.
 | Readiness observation | HTTP 200; `{"ok":true,"app":"al-lio","database":"ready"}` |
 | Unauthenticated Radar boundary | `/api/job-radar` returned HTTP 401 |
 | Final automated-check run | CI run `33404234578` passed for the exact AL-LIO SHA; CodeQL run `33404234583` passed |
-| Authenticated production smoke test | Not performed in issue #295; transfer to the final-release evidence issue without representing it as complete |
+| Authenticated production smoke test | Not performed in issue #295; issue #315 later recorded a partial owner smoke test (`QAL-002`), not a complete release pass |
 | Author display name | `Daniel García Ortega`; owner-approved through the #295 review and release instruction |
 
 The Radar image reference comes from the last public production release record.
@@ -102,14 +102,16 @@ The owner approved the author name, delivery SHA, Radar reference and release
 tag by merging PR #313 and instructing publication of the #295 release. The tag
 resolves to the exact deployed application commit.
 
-An authenticated, cycle-based smoke test remains necessary evidence for
-`QAL-002`, but it is not silently inferred from the version freeze or public
-health probes. It will be collected with the remaining final-release metrics
-in the next dedicated issue.
+An authenticated, cycle-based smoke test is necessary evidence for `QAL-002`
+and is not silently inferred from the version freeze or public health probes.
+Issue #315 recorded it as a partial result: core account, onboarding, planning
+and learning flows pass in production, while Calendar consent, production
+cycle-news and a device-recorded mobile run remain outstanding. A complete
+five-cycle pass is still open and is carried in `QAL-002`.
 
-Every downstream report document must use these final values once they are
-updated. Historical release values may appear only when explicitly labelled as
-historical evidence. The tag must never be moved after publication.
+Every downstream report document uses these final values. Historical release
+values may appear only when explicitly labelled as historical evidence. The tag
+must never be moved after publication.
 
 ## Report boundary
 
