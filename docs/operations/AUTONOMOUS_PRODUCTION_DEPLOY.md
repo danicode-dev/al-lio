@@ -103,7 +103,7 @@ Next step: perform the owner functional review in production.
 ```
 
 Después realiza tu comprobación funcional habitual directamente en
-`https://al-lio.danielcode.dev`.
+`https://al-lio.app`.
 
 ## What the command does
 

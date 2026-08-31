@@ -7,7 +7,7 @@ It combines planning, vocational-skills learning, curated opportunities,
 cycle-specific news and progress tracking in one Spanish-language product for
 Higher Vocational Education students.
 
-[Live application](https://al-lio.danielcode.dev) · [Documentation](docs/README.md) · [VPS runbook](docs/operations/DEPLOY_VPS.md)
+[Live application](https://al-lio.app) · [Documentation](docs/README.md) · [VPS runbook](docs/operations/DEPLOY_VPS.md)
 
 > The product interface and educational content are intentionally in Spanish.
 > Source code, technical documentation and engineering collaboration use
