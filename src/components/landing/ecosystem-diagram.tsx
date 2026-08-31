@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { LANDING_MODULES } from "@/components/landing/modules";
@@ -147,12 +146,15 @@ export function EcosystemDiagram() {
     <div ref={stageRef} className="relative mx-auto max-w-[900px]" aria-label="Los módulos de AL-LÍO conectados">
       <style>{`
         @keyframes al-eco-grow { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+        @keyframes al-eco-underline { from { width: 0; } to { width: 100%; } }
         .al-eco-active { stroke-dasharray: 1; stroke-dashoffset: 1; animation: al-eco-grow ${DRAW_S}s ease-in-out forwards; }
+        .al-eco-underline { animation: al-eco-underline ${DRAW_S}s ease-in-out forwards; }
         .al-eco-hub p { text-shadow: 0 0 6px #F7F3EC, 0 0 6px #F7F3EC, 0 0 12px #F7F3EC, 0 1px 0 #F7F3EC; }
         .al-eco-hub, .al-eco-hub-m { opacity: 0; transition: opacity 0.25s; }
         .al-eco-hub[data-show="true"], .al-eco-hub-m[data-show="true"] { opacity: 1; }
         @media (prefers-reduced-motion: reduce) {
           .al-eco-active { animation: none; stroke-dashoffset: 0; }
+          .al-eco-underline { animation: none; width: 0; }
           .al-eco-hub, .al-eco-hub-m { display: none; }
         }
       `}</style>
@@ -203,6 +205,7 @@ export function EcosystemDiagram() {
               key={module.label}
               module={module}
               done={inView && index < seq.done}
+              drawing={inView && seq.active === index}
               nodeRef={(node) => {
                 nodeRefs.current[index] = node;
               }}
@@ -241,6 +244,7 @@ export function EcosystemDiagram() {
               key={module.label}
               module={module}
               done={inView && index < seq.done}
+              drawing={inView && seq.active === index}
               nodeRef={(node) => {
                 nodeRefs.current[index] = node;
               }}
@@ -267,10 +271,12 @@ function DiagramNode({
   module,
   nodeRef,
   done,
+  drawing,
 }: {
   module: (typeof LANDING_MODULES)[number];
   nodeRef: (node: HTMLDivElement | null) => void;
   done: boolean;
+  drawing: boolean;
 }) {
   const Icon = module.icon;
   return (
@@ -281,23 +287,26 @@ function DiagramNode({
       }`}
     >
       <span
-        className={`relative grid h-6 w-6 shrink-0 place-items-center rounded-[8px] transition-colors duration-300 sm:h-8 sm:w-8 sm:rounded-[9px] ${
+        className={`grid h-6 w-6 shrink-0 place-items-center rounded-[8px] transition-colors duration-300 sm:h-8 sm:w-8 sm:rounded-[9px] ${
           done ? "bg-[#E7EFEA] text-[#1F5B46]" : "bg-[#EFEADF] text-[#7A736B]"
         }`}
       >
         <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
-        {done && (
-          <span className="absolute -right-1.5 -top-1.5 grid h-4 w-4 place-items-center rounded-full bg-[#1F5B46] text-white shadow-sm">
-            <Check className="h-2.5 w-2.5" strokeWidth={3} aria-hidden="true" />
-          </span>
-        )}
       </span>
       <span
-        className={`text-left text-[12px] font-semibold leading-tight transition-colors duration-300 sm:text-[13.5px] ${
+        className={`relative text-left text-[12px] font-semibold leading-tight transition-colors duration-300 sm:text-[13.5px] ${
           done ? "text-[#1F5B46]" : "text-[#2F2A24]"
         }`}
       >
         {module.label}
+        {/* Connection cue: a small underline that fills as the beam grows,
+            then stays as a solid green rule once connected. */}
+        <span
+          aria-hidden="true"
+          className={`absolute -bottom-[3px] left-0 block h-[2px] rounded-full bg-[#1F5B46] ${
+            done ? "w-full" : drawing ? "al-eco-underline" : "w-0"
+          }`}
+        />
       </span>
     </div>
   );

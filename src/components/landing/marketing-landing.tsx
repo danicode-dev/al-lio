@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 
 import { CookieNotice } from "@/components/landing/cookie-notice";
 import { EcosystemDiagram } from "@/components/landing/ecosystem-diagram";
@@ -14,8 +14,15 @@ import { LANDING_MODULES } from "@/components/landing/modules";
 // Colour (AL-LÍO style guide): no pure black, no orange as an interface
 // colour. Warm ink #2F2A24 for headings, green #1F5B46 for every action
 // and accent, cream #F7F3EC ground, warm greys for support text.
-const ghostBtn =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#1F5B46] bg-transparent px-5 text-[15px] font-semibold text-[#1F5B46] transition-colors hover:bg-[#E7EFEA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F5B46]/20";
+// Actions are text + arrow, never a filled or bordered box. The primary
+// action per screen wraps its label in `hl` for a permanent green
+// highlighter (the band sits behind the text only, not the arrow).
+const linkAction =
+  "group inline-flex items-center gap-1.5 font-semibold text-[#1F5B46] underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:underline focus-visible:decoration-2";
+const linkPrimary =
+  "group inline-flex items-center gap-2 font-semibold text-[#1F5B46] focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-2";
+const hl =
+  "[background:linear-gradient(transparent_56%,rgba(31,91,70,0.22)_56%)] transition-[background] group-hover:[background:linear-gradient(transparent_56%,rgba(31,91,70,0.34)_56%)]";
 const eyebrow = "text-[13px] font-bold uppercase tracking-[0.16em] text-[#1F5B46]";
 const secTitle = "font-[family-name:var(--font-barlow)] font-extrabold tracking-[-0.01em]";
 const shell = "mx-auto max-w-[1120px] px-6 sm:px-12";
@@ -91,12 +98,9 @@ export function MarketingLanding() {
               <p className="mx-auto mt-6 max-w-[46ch] text-[18px] leading-relaxed text-[#4D4842]">
                 Tu curso en un panel: tareas, prácticas, cursos, eventos y calendario, con noticias y convocatorias de tu ciclo revisadas cada día.
               </p>
-              <a
-                href="#panel"
-                className="mt-10 inline-flex h-14 items-center justify-center gap-2.5 rounded-full border border-[#1F5B46] bg-[#1F5B46] px-8 text-[16px] font-semibold text-white transition-colors hover:bg-[#174938] hover:border-[#174938] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F5B46]/30 focus-visible:ring-offset-2"
-              >
-                Ver cómo funciona
-                <ChevronDown className="h-5 w-5" aria-hidden="true" />
+              <a href="#panel" className={`${linkPrimary} mt-12 text-[18px]`}>
+                <span className={hl}>Ver cómo funciona</span>
+                <ChevronDown className="h-5 w-5 transition-transform group-hover:translate-y-0.5" aria-hidden="true" />
               </a>
             </div>
           </section>
@@ -142,7 +146,10 @@ export function MarketingLanding() {
                     AL-LÍO conoce tu familia profesional y filtra por ella: los cursos, las prácticas, los eventos y las
                     noticias que ves son los de tu itinerario, no un tablón genérico para todos.
                   </p>
-                  <Link href="/proyecto" className={`${ghostBtn} mt-6 h-12 px-6`}>Sobre el proyecto</Link>
+                  <Link href="/proyecto" className={`${linkAction} mt-6 text-[15px]`}>
+                    Sobre el proyecto
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  </Link>
                 </div>
               </div>
 
