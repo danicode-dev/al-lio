@@ -163,7 +163,7 @@ de su aprendizaje y acceder a información revisada y relevante para su ciclo.
 
 ### 3.3 Alcance entregado y criterio de éxito
 
-| Ámbito | Resultado esperado en la entrega | Estado a 31 de agosto de 2026 |
+| Ámbito | Función entregada | Verificación y límite |
 |---|---|---|
 | Acceso | Registro, confirmación, inicio y cierre de sesión, recuperación y acceso con Google | Verificado en producción |
 | Personalización | Selección y modificación de ciclo y curso, con acceso condicionado al onboarding | Verificado en producción |
@@ -278,7 +278,7 @@ superado el proceso de revisión. Esta separación reduce el alcance de un fallo
 del recolector y evita que una fuente externa tenga acceso indirecto a datos
 privados.
 
-| Componente | Responsabilidad principal | Límite relevante |
+| Componente | Función | Límite de confianza |
 |---|---|---|
 | Caddy | HTTPS y encaminamiento público | No almacena el estado funcional de AL-LIO |
 | Aplicación Next.js | Interfaz, API, autenticación, autorización e integraciones | Accede a PostgreSQL con un rol restringido |
@@ -454,19 +454,24 @@ rendimiento y accesibilidad de extremo a extremo.
 
 ## 11. Hitos y cronología del programa
 
+El desarrollo avanzó por capas: primero se fijó una base operativa, después se
+consolidó el flujo del estudiante y, por último, se endurecieron los límites de
+seguridad, contenido y despliegue. Los periodos siguientes describen decisiones
+y resultados verificables, no dedicación continua a jornada completa.
+
 | Periodo | Hito | Resultado principal |
 |---|---|---|
-| Abril–mayo de 2026 | Fundamentos | Base Next.js y TypeScript, PostgreSQL y primeras superficies para estudiantes |
-| Junio–mediados de agosto | Construcción del producto | Tareas, calendario, Bloc, competencias, recursos, cursos, eventos, guardados y perfil |
-| 22–27 de agosto | Consolidación y preparación de producción | Sesiones firmadas, revisión de arquitectura, entrega firmada de Radar, migraciones y despliegue controlado |
-| Finales de agosto | Gobierno de contenido | Contenido canónico de Radar, noticias verificadas, oportunidades y controles de vigencia y retirada |
-| 28–31 de agosto | Pulido y entrega | Onboarding guiado, navegación móvil, reorganización de pruebas, límites funcionales y preparación de la memoria |
-| 31 de agosto de 2026 | Release de referencia | CI satisfactoria, despliegue del SHA congelado, salud y disponibilidad verificadas |
-| Septiembre de 2026–agosto de 2027 | Operación y evolución | Soporte, seguridad, mejoras, validación con usuarios y cierre de brechas operativas |
+| Abril–mayo de 2026 | Fundamentos y primer flujo | Definición del problema, base Next.js y TypeScript, PostgreSQL autogestionado y primeras superficies privadas para estudiantes |
+| Junio–mediados de agosto | Construcción del espacio del estudiante | Integración de panel, tareas, Bloc, calendario local, perfil, competencias, recursos, cursos, eventos y elementos guardados |
+| 22–27 de agosto | Consolidación de arquitectura y acceso | Sesiones firmadas, confirmación y recuperación de cuenta, límites de módulos, migraciones versionadas y decisiones de arquitectura documentadas |
+| Finales de agosto | Radar y gobierno del contenido | Separación de Radar, revisión humana, entrega firmada, procedencia, vigencia, retirada y filtrado por ciclo |
+| 28–31 de agosto | Calidad y preparación de entrega | Onboarding guiado, navegación responsive, reorganización de pruebas, dominio canónico y verificación de los recorridos principales |
+| 31 de agosto de 2026 | Release de referencia | Congelación del tag y SHA, 345 pruebas superadas, despliegue exacto y comprobaciones públicas de salud y disponibilidad |
+| Septiembre de 2026–agosto de 2027 | Operación y evolución | Soporte, seguridad, mejoras de noticias y Calendar, monitorización, recuperación y futura validación consentida con estudiantes |
 
-Los periodos describen fases de trabajo y no dedicación continua a jornada
-completa. La entrega no se considera el final del proyecto: fija una versión
-reproducible para evaluar el programa mientras el producto sigue vivo.
+La entrega fija una referencia reproducible para la evaluación; no marca el
+final del producto. La siguiente fase prioriza continuidad operativa y
+validación real de las hipótesis de impacto.
 
 > **NOTA INTERNA — NO EXPORTAR AL PDF:** cronología contrastada con historial,
 > ADR y `QAL-001`/`VER-004`. Las fases previas son contexto histórico; la única
@@ -593,7 +598,7 @@ proyecto; no se presenta como evidencia de trabajo futuro ya realizado.
 
 ### 13.2 Hoja de ruta priorizada
 
-| Prioridad | Siguiente resultado | Criterio de cierre |
+| Prioridad | Próximo resultado | Evidencia de cierre |
 |---|---|---|
 | Alta | Estabilizar las noticias y su cobertura por ciclo | Flujo reproducible en producción, métricas por ciclo y estado vacío/error correcto |
 | Alta | Completar monitorización y recuperación | Alertas externas, copias cifradas fuera del VPS y restauración aislada registrada |

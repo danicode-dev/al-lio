@@ -50,6 +50,9 @@ python docs/aircury-report/generator/verify_pdf.py `
 - Issue #323 reserves eight non-redundant figure slots. Their `evidence_id` and
   `expected_filename` values map the layout to #301 without exposing those internal
   identifiers in the rendered PDF.
+- The approved section 11 chronology is rendered automatically as an editorial
+  timeline. Other Markdown tables use padded, paginated rows and repeat their
+  header after a page break.
 
 Example:
 

@@ -10,6 +10,7 @@ Para escribir en el documento:
                      {"t":"ul","items":[...]}       lista
                      {"t":"ol","items":[...]}       lista numerada
                      {"t":"table","head":[...],"rows":[[...],...]}
+                     {"t":"timeline","rows":[{"period":"...",...}]}
                      {"t":"note","title":"Nota","s":"..."}
                      {"t":"quote","s":"...","by":"..."}
                      {"t":"code","s":"linea1\\nlinea2"}
@@ -177,13 +178,13 @@ def clean_markdown_text(value):
 def table_widths(header):
     key = tuple(header)
     presets = {
-        ("Ámbito", "Resultado esperado en la entrega", "Estado a 31 de agosto de 2026"):
+        ("Ámbito", "Función entregada", "Verificación y límite"):
             [0.17, 0.39, 0.44],
-        ("Componente", "Responsabilidad principal", "Límite relevante"):
+        ("Componente", "Función", "Límite de confianza"):
             [0.20, 0.36, 0.44],
         ("Periodo", "Hito", "Resultado principal"):
             [0.18, 0.27, 0.55],
-        ("Prioridad", "Siguiente resultado", "Criterio de cierre"):
+        ("Prioridad", "Próximo resultado", "Evidencia de cierre"):
             [0.14, 0.36, 0.50],
     }
     if key in presets:
@@ -235,6 +236,26 @@ def promote_conclusion(section):
             }]
             return
     raise ValueError("Section 13 must contain its approved conclusion")
+
+
+def promote_timeline(section):
+    """Render the approved programme chronology as an editorial timeline."""
+    if section["num"] != "11":
+        return
+    for index, block in enumerate(section["blocks"]):
+        if block["t"] != "table":
+            continue
+        if block.get("head") != ["Periodo", "Hito", "Resultado principal"]:
+            raise ValueError("Section 11 must keep the approved timeline columns")
+        section["blocks"][index] = {
+            "t": "timeline",
+            "rows": [
+                {"period": row[0], "title": row[1], "description": row[2]}
+                for row in block["rows"]
+            ],
+        }
+        return
+    raise ValueError("Section 11 must contain the approved programme timeline")
 
 
 def parse_report_sections(source_path):
@@ -354,6 +375,7 @@ def parse_report_sections(source_path):
     for section in sections:
         if not section["entradilla"] and section["blocks"] and section["blocks"][0]["t"] == "p":
             section["entradilla"] = section["blocks"].pop(0)["s"]
+        promote_timeline(section)
         inject_figures(section)
         promote_conclusion(section)
     return sections
@@ -679,6 +701,27 @@ class Doc:
             self.y -= 2
         self.y -= 4
 
+    def estimate_table_height(self, head, rows, widths=None):
+        """Estimate a table using the same wrapping and padding as its renderer."""
+        column_count = len(head) if head else len(rows[0])
+        widths = widths or [1 / column_count] * column_count
+        column_widths = [CW * fraction for fraction in widths]
+
+        def row_height(values, font, size, lead, padding):
+            line_count = max(
+                len(self.wrap(value, column_widths[index] - 18, font, size))
+                for index, value in enumerate(values)
+            )
+            return padding[0] + line_count * lead + padding[1]
+
+        header_height = (
+            row_height(head, "Inter-SB", 8.1, 12.0, (10, 10)) if head else 0
+        )
+        body_height = sum(
+            row_height(row, "Inter", 8.9, 13.2, (9, 10)) for row in rows
+        )
+        return 10 + header_height + body_height + 22
+
     def blk_table(self, head, rows, widths=None):
         column_count = len(head) if head else len(rows[0])
         widths = widths or [1 / column_count] * column_count
@@ -692,49 +735,154 @@ class Doc:
         for width in column_widths[:-1]:
             column_x.append(column_x[-1] + width)
 
-        def prepare(values, font, size, lead, vertical_padding):
+        horizontal_padding = 9
+        header_font, header_size, header_lead = "Inter-SB", 8.1, 12.0
+        body_font, body_size, body_lead = "Inter", 8.9, 13.2
+        header_padding = (10, 10)
+        body_padding = (9, 10)
+
+        def prepare(values, font, size, lead, padding):
             prepared = [
-                self.wrap(value, column_widths[index] - 12, font, size)
+                self.wrap(value, column_widths[index] - 2 * horizontal_padding, font, size)
                 for index, value in enumerate(values)
             ]
-            return prepared, max(len(lines) for lines in prepared) * lead + vertical_padding
+            height = padding[0] + max(len(lines) for lines in prepared) * lead + padding[1]
+            return prepared, height
 
-        prepared_rows = [prepare(row, "Inter", 8.8, 12.5, 7) for row in rows]
-        prepared_header = prepare(head, "Inter-SB", 8.0, 11.5, 9) if head else ([], 0)
+        prepared_rows = [prepare(row, body_font, body_size, body_lead, body_padding) for row in rows]
+        prepared_header = prepare(
+            head, header_font, header_size, header_lead, header_padding
+        ) if head else ([], 0)
 
-        def draw_cells(prepared, font, size, lead, color, y):
+        def draw_cells(prepared, font, size, lead, color, row_top, padding_top):
             for column_index, lines in enumerate(prepared):
-                line_y = y
+                line_y = row_top - padding_top - size + 1.5
                 for line in lines:
-                    self.text(column_x[column_index] + 5, line_y, line, font, size, color)
+                    self.text(
+                        column_x[column_index] + horizontal_padding,
+                        line_y,
+                        line,
+                        font,
+                        size,
+                        color,
+                    )
                     line_y -= lead
+
+        def draw_column_rules(row_top, row_bottom):
+            self.c.setStrokeColor(Color(0.82, 0.79, 0.73, 0.55))
+            self.c.setLineWidth(0.35)
+            for x in column_x[1:]:
+                self.c.line(x, row_bottom, x, row_top)
 
         def draw_header():
             if not head:
                 return
             prepared, header_height = prepared_header
-            top = self.y + 9
+            top = self.y
             self.c.setFillColor(PANEL)
             self.c.rect(ML, top - header_height, CW, header_height, fill=1, stroke=0)
-            draw_cells(prepared, "Inter-SB", 8.0, 11.5, GREEN, self.y)
-            self.y = top - header_height - 2
-            self.rule(ML, self.y + 1, RX, HAIR, 0.6)
+            self.rule(ML, top, RX, GREEN, 1.4)
+            draw_cells(
+                prepared,
+                header_font,
+                header_size,
+                header_lead,
+                GREEN,
+                top,
+                header_padding[0],
+            )
+            draw_column_rules(top, top - header_height)
+            self.y = top - header_height
+            self.rule(ML, self.y, RX, LEADER, 0.7)
 
         first_row_height = prepared_rows[0][1] if prepared_rows else 17
-        self._need(prepared_header[1] + first_row_height + 16)
+        self.y -= 10
+        self._need(prepared_header[1] + first_row_height + 24)
         draw_header()
         for row_index, (prepared, row_height) in enumerate(prepared_rows):
             if self.y - row_height < BOT:
                 self.new_page(kind="body")
+                self.y -= 8
                 draw_header()
-            top = self.y + 6
+            top = self.y
+            bottom = top - row_height
             if row_index % 2:
+                self.c.setFillColor(Color(0.94, 0.92, 0.88, 0.38))
+                self.c.rect(ML, bottom, CW, row_height, fill=1, stroke=0)
+            draw_cells(
+                prepared,
+                body_font,
+                body_size,
+                body_lead,
+                BODY,
+                top,
+                body_padding[0],
+            )
+            draw_column_rules(top, bottom)
+            self.rule(ML, bottom, RX, HAIR, 0.55)
+            self.y = bottom
+        self.y -= 22
+
+    def blk_timeline(self, rows):
+        """Draw a chronological sequence with clear phase/result hierarchy."""
+        if not rows:
+            return
+
+        line_x = ML + 10
+        card_x = ML + 28
+        card_w = CW - 28
+        self.y -= 8
+
+        for index, row in enumerate(rows):
+            period_lines = self.wrap(row["period"].upper(), card_w - 24, "Inter-B", 7.4, track=1.0)
+            title_lines = self.wrap(row["title"], card_w - 24, "Barlow", 12.2, track=-0.15)
+            description_lines = self.wrap(row["description"], card_w - 24, "Inter", 9.4)
+            card_height = (
+                13
+                + len(period_lines) * 10.5
+                + 3
+                + len(title_lines) * 15.2
+                + 5
+                + len(description_lines) * 14.2
+                + 12
+            )
+
+            old_page = self.page
+            self._need(card_height + 8)
+            if self.page != old_page:
+                self.eyebrow(ML, self.y, "Cronología - continuación", GREEN, 7.2)
+                self.y -= 22
+
+            top = self.y
+            bottom = top - card_height
+            if index % 2 == 0:
                 self.c.setFillColor(Color(0.94, 0.92, 0.88, 0.42))
-                self.c.rect(ML, top - row_height, CW, row_height, fill=1, stroke=0)
-            draw_cells(prepared, "Inter", 8.8, 12.5, BODY, self.y)
-            self.y = top - row_height
-            self.rule(ML, self.y + 1, RX, HAIR, 0.45)
-        self.y -= 9
+                self.c.roundRect(card_x, bottom, card_w, card_height, 4, fill=1, stroke=0)
+
+            marker_y = top - 18
+            self.c.setStrokeColor(GREEN)
+            self.c.setLineWidth(1.3)
+            self.c.line(line_x, marker_y, line_x, bottom - 7)
+            self.c.setFillColor(CREAM)
+            self.c.circle(line_x, marker_y, 4.8, fill=1, stroke=1)
+            self.c.setFillColor(GREEN)
+            self.c.circle(line_x, marker_y, 2.0, fill=1, stroke=0)
+
+            yy = top - 15
+            for line in period_lines:
+                self.text(card_x + 12, yy, line, "Inter-B", 7.4, GREEN, track=1.0)
+                yy -= 10.5
+            yy -= 3
+            for line in title_lines:
+                self.text(card_x + 12, yy, line, "Barlow", 12.2, INK, track=-0.15)
+                yy -= 15.2
+            yy -= 5
+            for line in description_lines:
+                self.text(card_x + 12, yy, line, "Inter", 9.4, BODY)
+                yy -= 14.2
+
+            self.y = bottom - 7
+        self.y -= 14
 
     def blk_note(self, title, s):
         lines = self.wrap(s, CW - 16, "Inter", 9.4)
@@ -839,13 +987,33 @@ class Doc:
 
     def section_body(self, sec):
         self.section_header(sec)
-        for b in sec["blocks"]:
+        for index, b in enumerate(sec["blocks"]):
             t = b["t"]
-            if t == "h3":       self.blk_h3(b["s"])
+            if t == "h3":
+                next_block = sec["blocks"][index + 1] if index + 1 < len(sec["blocks"]) else None
+                if next_block and next_block["t"] == "table":
+                    display = re.sub(r"^(\d+\.\d+)\s+", r"\1 · ", b["s"])
+                    heading_height = len(
+                        self.wrap(display, CW - 14, "Barlow", 13.5, track=-0.2)
+                    ) * 17 + 25
+                    table_height = self.estimate_table_height(
+                        next_block.get("head"),
+                        next_block["rows"],
+                        next_block.get("widths"),
+                    )
+                    combined_height = heading_height + table_height
+                    fresh_y = TOP - 46
+                    if (
+                        self.y - combined_height < BOT
+                        and fresh_y - combined_height >= BOT
+                    ):
+                        self.new_page(kind="body")
+                self.blk_h3(b["s"])
             elif t == "p":      self.blk_p(b["s"])
             elif t == "ul":     self.blk_ul(b["items"])
             elif t == "ol":     self.blk_ul(b["items"], ordered=True)
             elif t == "table":  self.blk_table(b.get("head"), b["rows"], b.get("widths"))
+            elif t == "timeline": self.blk_timeline(b["rows"])
             elif t == "note":   self.blk_note(b.get("title", "Nota"), b["s"])
             elif t == "quote":  self.blk_quote(b["s"], b.get("by"))
             elif t == "code":   self.blk_code(b["s"])
