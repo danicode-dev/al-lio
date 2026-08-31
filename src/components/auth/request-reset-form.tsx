@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { requestPasswordResetAction, type PasswordResetRequestState } from "@/lib/auth/password-reset";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 const initialState: PasswordResetRequestState = { submitted: false };
 
@@ -13,37 +11,45 @@ export function RequestResetForm() {
 
   if (state.submitted) {
     return (
-      <div className="space-y-3 text-center">
-        <h1 className="text-xl font-bold">Revisa tu correo</h1>
-        <p className="text-sm text-muted-foreground">
+      <div className="auth-note">
+        <h1 className="auth-heading">Revisa tu correo</h1>
+        <p className="auth-sub">
           Si el correo tiene una cuenta con contraseña, te hemos enviado un enlace para restablecerla. El enlace caduca en 1 hora.
         </p>
-        <Link href="/login" className="text-sm font-medium text-primary underline underline-offset-4">
-          Volver a inicio de sesión
-        </Link>
+        <p className="auth-alt">
+          <Link href="/login">Volver a inicio de sesión</Link>
+        </p>
       </div>
     );
   }
 
   return (
-    <form action={formAction} className="space-y-4">
-      <div className="space-y-1">
-        <h1 className="text-xl font-bold">Recuperar contraseña</h1>
-        <p className="text-sm text-muted-foreground">Te enviaremos un enlace para restablecerla.</p>
-      </div>
+    <>
+      <h1 className="auth-heading">Recuperar contraseña</h1>
+      <p className="auth-sub">Te enviaremos un enlace para restablecerla.</p>
 
-      <div className="space-y-1">
-        <label htmlFor="reset-email" className="text-sm font-medium">Correo electrónico</label>
-        <Input id="reset-email" name="email" type="email" autoComplete="email" required placeholder="usuario@ejemplo.com" />
-      </div>
+      <form action={formAction} className="auth-form">
+        <div>
+          <label htmlFor="reset-email" className="auth-label">Correo electrónico</label>
+          <input
+            id="reset-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="usuario@ejemplo.com"
+            className="auth-input"
+          />
+        </div>
 
-      <Button type="submit" disabled={isPending} className="w-full">
-        {isPending ? "Enviando..." : "Enviar enlace"}
-      </Button>
+        <button type="submit" disabled={isPending} className="auth-submit">
+          {isPending ? "Enviando..." : "Enviar enlace"}
+        </button>
 
-      <p className="text-center text-sm text-muted-foreground">
-        <Link href="/login" className="font-medium text-primary underline underline-offset-4">Volver a inicio de sesión</Link>
-      </p>
-    </form>
+        <p className="auth-alt">
+          <Link href="/login">Volver a inicio de sesión</Link>
+        </p>
+      </form>
+    </>
   );
 }

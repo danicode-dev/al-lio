@@ -79,5 +79,5 @@ barrels `@/features/<feature>/client`, `/domain`, `/presentation`, or `/server`.
 Client code may import `/server/actions` as the one explicit Next.js Server
 Action boundary; repository barrels must never be re-exported through it.
 Other concrete files below those barrels remain private. Product code must not
-introduce view-string routing shells. ADR-0007 defines the full dependency rule
+introduce view-string routing shells. ADR-0008 defines the full dependency rule
 and `npm run check:boundaries` enforces it.

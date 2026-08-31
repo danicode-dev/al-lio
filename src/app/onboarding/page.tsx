@@ -15,5 +15,12 @@ export default async function OnboardingPage() {
     getProfileByUser(session.uid),
   ]);
 
+  // A student who has already completed the questionnaire never sees it
+  // again by typing the URL - the dashboard gate would send them back here,
+  // so this is the other half of that pair.
+  if (profile?.onboarding_completed_at && profile.cycle_code) {
+    redirect("/dashboard");
+  }
+
   return <OnboardingForm cycles={cycles} profile={profile} />;
 }

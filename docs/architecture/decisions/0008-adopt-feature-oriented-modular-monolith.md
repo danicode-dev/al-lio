@@ -1,4 +1,4 @@
-# ADR-0007: Adopt a feature-oriented modular monolith
+# ADR-0008: Adopt a feature-oriented modular monolith
 
 **Status:** Accepted
 
