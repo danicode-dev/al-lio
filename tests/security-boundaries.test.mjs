@@ -897,6 +897,11 @@ test("Routine actions share the quiet terracotta treatment while semantic states
     readFile(new URL("../src/components/roadmap/roadmap-view.tsx", import.meta.url), "utf8"),
   ]);
 
+  // The login page is deliberately on its own green treatment (issue #264),
+  // not the shared terracotta one - it must not restore the loud gradient.
+  assert.doesNotMatch(login, /linear-gradient\(90deg, #E15D2D|#E9A23B|#e9a23b/i, "the login card must not use the amber/orange gradient");
+  assert.match(login, /background:\s*#1F5B46/, "the login submit button is the standalone green fill");
+
   for (const token of [
     "--al-action-soft-bg: #fff8f4",
     "--al-action-soft-bg-hover: #fbe7dd",
@@ -922,7 +927,7 @@ test("Routine actions share the quiet terracotta treatment while semantic states
   }
   assert.match(guestApp, /"Welcome to the Jungle": "border border-\[#e9d6cb\] bg-\[#fff8f4\] text-\[#a63f1a\]"/);
 
-  for (const source of [dailyAlerts, login, bloc, roadmap]) {
+  for (const source of [dailyAlerts, bloc, roadmap]) {
     assert.match(source, /al-action-soft|var\(--al-action-soft-/, "each major routine-action surface must consume the shared treatment");
   }
   assert.match(dailyAlerts, /bg-rose-500 text-white/, "urgent alerts must remain semantically red");

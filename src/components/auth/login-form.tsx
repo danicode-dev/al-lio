@@ -46,20 +46,19 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           to   { opacity: 1; transform: translateY(0); }
         }
 
-        html, body { background: #F6F1E6; }
+        html, body { background: #F7F3EC; }
 
         /* One light theme, phone through desktop: the app has no dark mode,
-           so the login is a single centred card on the same warm cream the
-           rest of AL-LÍO uses, with the wordmark anchored top-left like a
-           production product and a discreet footer. */
+           so the login is a single centred card on the same warm cream and
+           green accent the rest of AL-LÍO uses. */
         .login-page {
           position: relative;
           min-height: 100svh;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 40px 20px 72px;
-          background: #F6F1E6;
+          padding: 40px 20px 84px;
+          background: #F7F3EC;
           isolation: isolate;
         }
 
@@ -69,9 +68,7 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           inset: 0;
           z-index: -1;
           pointer-events: none;
-          background:
-            radial-gradient(ellipse 62% 46% at 50% 0%, rgba(233, 162, 59, 0.14) 0%, transparent 66%),
-            radial-gradient(ellipse 56% 40% at 50% 100%, rgba(225, 93, 45, 0.06) 0%, transparent 60%);
+          background: radial-gradient(ellipse 60% 44% at 50% 0%, rgba(31, 91, 70, 0.06) 0%, transparent 68%);
         }
 
         .login-brand-tl {
@@ -90,10 +87,10 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           width: 100%;
           max-width: 396px;
           background: #ffffff;
-          border: 1px solid #EBE4D6;
+          border: 1px solid #E6DED2;
           border-radius: 16px;
           padding: 40px 36px 34px;
-          box-shadow: 0 18px 48px rgba(90, 60, 25, 0.09);
+          box-shadow: 0 18px 48px rgba(40, 40, 30, 0.07);
           overflow: hidden;
           animation: al-fadeUp 0.5s ease both;
         }
@@ -104,14 +101,14 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           left: 0;
           right: 0;
           height: 3px;
-          background: linear-gradient(90deg, #E15D2D 0%, #E9A23B 100%);
+          background: #1F5B46;
         }
 
         .al-card-heading {
           font-size: 1.6rem;
           font-weight: 700;
           line-height: 1.2;
-          color: #111111;
+          color: #2F2A24;
           margin: 0 0 24px 0;
         }
 
@@ -121,7 +118,7 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           display: block;
           font-size: 13px;
           font-weight: 500;
-          color: #111111;
+          color: #2F2A24;
           margin-bottom: 6px;
         }
 
@@ -129,19 +126,19 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           width: 100%;
           height: 50px;
           border-radius: 11px;
-          border: 1px solid #DDD7CE;
+          border: 1px solid #E6DED2;
           background: #ffffff;
           padding: 0 14px 0 40px;
           font-size: 14px;
-          color: #111111;
+          color: #2F2A24;
           outline: none;
           box-sizing: border-box;
           transition: border-color 0.15s, box-shadow 0.15s;
         }
-        .al-input::placeholder { color: #bbb5a8; }
+        .al-input::placeholder { color: #a9a293; }
         .al-input:focus {
-          border-color: rgba(225, 93, 45, 0.6);
-          box-shadow: 0 0 0 3px rgba(225, 93, 45, 0.12);
+          border-color: rgba(31, 91, 70, 0.55);
+          box-shadow: 0 0 0 3px rgba(31, 91, 70, 0.12);
         }
         .al-input-password { padding-right: 42px; }
 
@@ -167,7 +164,7 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           line-height: 0;
           transition: color 0.15s;
         }
-        .al-eye-btn:hover { color: #525252; }
+        .al-eye-btn:hover { color: #2F2A24; }
 
         .al-forgot {
           margin-top: 8px;
@@ -175,10 +172,11 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
         }
         .al-forgot a {
           font-size: 13px;
-          color: #9a9589;
+          color: #7A736B;
           text-decoration: underline;
           text-underline-offset: 3px;
         }
+        .al-forgot a:hover { color: #2F2A24; }
 
         .al-btn-submit {
           width: 100%;
@@ -187,27 +185,31 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           cursor: pointer;
           font-size: 15px;
           font-weight: 600;
+          border: 1px solid #1F5B46;
+          background: #1F5B46;
+          color: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
-          transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
+          transition: background 0.15s, border-color 0.15s, transform 0.15s;
         }
-        .al-btn-submit:hover:not(:disabled) { transform: translateY(-1px); }
+        .al-btn-submit:hover:not(:disabled) { background: #174938; border-color: #174938; transform: translateY(-1px); }
         .al-btn-submit:active:not(:disabled) { transform: translateY(0); }
         .al-btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .al-btn-submit:focus-visible { outline: 2px solid rgba(31, 91, 70, 0.5); outline-offset: 2px; }
 
         .al-divider { display: flex; align-items: center; gap: 12px; }
-        .al-divider-line { flex: 1; height: 1px; background: #E5DECF; }
+        .al-divider-line { flex: 1; height: 1px; background: #E6DED2; }
         .al-divider-text { font-size: 12px; color: #9a9589; }
 
         .al-google-btn {
           width: 100%;
           height: 44px;
           border-radius: 9px;
-          border: 1px solid #DDD7CE;
+          border: 1px solid #E6DED2;
           background: #ffffff;
-          color: #111111;
+          color: #2F2A24;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -218,45 +220,50 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           box-sizing: border-box;
           transition: background-color 0.15s, border-color 0.15s;
         }
-        .al-google-btn:hover { background: #faf6ef; }
+        .al-google-btn:hover { background: #F0EBDF; }
         .al-google-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
 
         .al-signup {
           text-align: center;
           font-size: 14px;
-          color: #525252;
+          color: #4D4842;
           margin: 4px 0 0 0;
         }
         .al-signup a {
           font-weight: 600;
-          color: #E15D2D;
+          color: #1F5B46;
           text-decoration: underline;
           text-underline-offset: 3px;
         }
 
         .login-foot {
           position: absolute;
-          left: 0;
-          right: 0;
-          bottom: 28px;
-          text-align: center;
+          left: 40px;
+          right: 40px;
+          bottom: 26px;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 4px 16px;
           font-size: 12px;
-          color: #a39d8e;
+          color: #9a9589;
           margin: 0;
         }
+        .login-foot b { font-weight: 700; color: #7A736B; letter-spacing: 0.01em; }
 
         .al-input:-webkit-autofill,
         .al-input:-webkit-autofill:hover,
         .al-input:-webkit-autofill:focus {
-          -webkit-text-fill-color: #111111;
+          -webkit-text-fill-color: #2F2A24;
           -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
           box-shadow: 0 0 0 1000px #ffffff inset;
-          caret-color: #111111;
+          caret-color: #2F2A24;
           transition: background-color 9999s ease-out 0s;
         }
 
         @media (max-width: 560px) {
-          .login-page { padding: 24px 16px 64px; }
+          .login-page { padding: 24px 16px 88px; }
           .login-brand-tl { top: 24px; left: 24px; }
           .login-brand-tl img { width: 34px; }
           .login-card {
@@ -266,6 +273,7 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
             padding: 78px 6px 24px;
           }
           .login-card::before { display: none; }
+          .login-foot { left: 20px; right: 20px; justify-content: center; text-align: center; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -341,17 +349,17 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
               </div>
             </div>
 
-            <button type="submit" disabled={isPasswordLoginPending} className="al-btn-submit al-action-soft">
+            <button type="submit" disabled={isPasswordLoginPending} className="al-btn-submit">
               {isPasswordLoginPending ? (
                 <>
                   <svg style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.3" />
                     <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
                   </svg>
-                  Entrando...
+                  Iniciando sesión...
                 </>
               ) : (
-                "Entrar"
+                "Iniciar sesión"
               )}
             </button>
 
@@ -372,7 +380,10 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           {demoAccessEnabled && <DemoProfilePicker />}
         </main>
 
-        <p className="login-foot">© 2026 AL LÍO · Menos planes. Más acción.</p>
+        <p className="login-foot">
+          <b>AL-LÍO</b>
+          <span>Proyecto desarrollado gracias a la beca Aircury Summer of Code 2026 de Aircury SL.</span>
+        </p>
       </div>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
