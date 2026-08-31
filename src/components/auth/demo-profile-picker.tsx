@@ -11,20 +11,20 @@ export function DemoProfilePicker() {
   const panelId = useId();
 
   return (
-    <section className="mt-4 overflow-hidden rounded-xl border border-[#ddd7ce] bg-white/65 max-[900px]:border-[#282828] max-[900px]:bg-[#111111]">
+    <section className="mt-4 overflow-hidden rounded-xl border border-[#ddd7ce] bg-white/65">
       <button
         type="button"
         aria-expanded={isOpen}
         aria-controls={panelId}
         onClick={() => setIsOpen((current) => !current)}
-        className="flex min-h-12 w-full items-center gap-3 px-4 py-3 text-left text-[#111111] transition-colors hover:bg-[#f7f3ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e15d2d] max-[900px]:text-white max-[900px]:hover:bg-[#191919]"
+        className="flex min-h-12 w-full items-center gap-3 px-4 py-3 text-left text-[#111111] transition-colors hover:bg-[#f7f3ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e15d2d]"
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#fce9df] text-[#e15d2d] max-[900px]:bg-[#2a1a14]">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#fce9df] text-[#e15d2d]">
           <UserRound className="h-4 w-4" aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold">Probar con un perfil demo</span>
-          <span className="block text-xs text-[#777168] max-[900px]:text-[#8f8982]">
+          <span className="block text-xs text-[#777168]">
             Acceso en un clic, sin registro
           </span>
         </span>
@@ -35,8 +35,8 @@ export function DemoProfilePicker() {
       </button>
 
       {isOpen && (
-        <div id={panelId} className="border-t border-[#e8e2d9] px-3 pb-3 pt-2 max-[900px]:border-[#282828]">
-          <p className="px-1 pb-2 text-xs leading-5 text-[#777168] max-[900px]:text-[#8f8982]">
+        <div id={panelId} className="border-t border-[#e8e2d9] px-3 pb-3 pt-2">
+          <p className="px-1 pb-2 text-xs leading-5 text-[#777168]">
             Elige un caso de uso. Los datos y cambios de estas cuentas son compartidos.
           </p>
           <div className="space-y-1.5">
@@ -60,16 +60,16 @@ function DemoProfileButton({ profile }: { profile: DemoProfile }) {
     <button
       type="submit"
       disabled={pending}
-      className="group flex min-h-12 w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-[#f7f3ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e15d2d] disabled:cursor-wait disabled:opacity-60 max-[900px]:hover:bg-[#1b1b1b]"
+      className="group flex min-h-12 w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-[#f7f3ed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e15d2d] disabled:cursor-wait disabled:opacity-60"
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#ead8cf] bg-[#fff7f2] text-[10px] font-bold tracking-wide text-[#d55225] max-[900px]:border-[#513124] max-[900px]:bg-[#241711]">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#ead8cf] bg-[#fff7f2] text-[10px] font-bold tracking-wide text-[#d55225]">
         {profile.initials}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-[#111111] max-[900px]:text-white">
+        <span className="block truncate text-sm font-medium text-[#111111]">
           {profile.title}
         </span>
-        <span className="block text-xs text-[#817b72] max-[900px]:text-[#8f8982]">{profile.detail}</span>
+        <span className="block text-xs text-[#817b72]">{profile.detail}</span>
       </span>
       <span className="text-xs font-semibold text-[#e15d2d]" aria-live="polite">
         {pending ? "Entrando…" : "Acceder"}

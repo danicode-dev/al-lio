@@ -278,6 +278,7 @@ export type QuickLink = {
 export type Store = {
   version: 2;
   userName?: string;
+  userEmail?: string;
   tasks: Task[];
   opportunities: Opportunity[];
   techOpportunities: TechOpportunity[];
