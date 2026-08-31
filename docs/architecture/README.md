@@ -73,6 +73,9 @@ Legacy JSON news files are not a production source of truth.
 
 - [`ARCHITECTURE_AND_STACK.md`](ARCHITECTURE_AND_STACK.md): the concise
   runtime view (services, ports, processes and where each concern lives).
+- [`AUTH_AND_ONBOARDING_FLOWS.md`](AUTH_AND_ONBOARDING_FLOWS.md): how a visitor
+  becomes an authenticated student, the four entry points and the single
+  onboarding gate.
 
 ## Diagrams
 
