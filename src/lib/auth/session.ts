@@ -55,4 +55,10 @@ export async function getValidatedSession(): Promise<SessionPayload | null> {
 export async function clearSession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE);
+  // Both sign-out paths (the sign-out action and /api/auth/logout-stale) run
+  // through here, so dropping the Google Calendar credential cookie here means
+  // sign-out and stale-session cleanup can never leave a usable Calendar
+  // capability behind for the next user of a shared browser (issue #280). The
+  // cookie name is owned by src/lib/google/calendar.ts.
+  cookieStore.delete("d1os_google_calendar");
 }

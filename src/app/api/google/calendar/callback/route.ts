@@ -39,7 +39,7 @@ export async function GET(req: Request) {
 
   try {
     const { tokens } = await oauth.getToken(code);
-    await saveGoogleTokens(tokens);
+    await saveGoogleTokens(session.uid, tokens);
     return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("connected"), baseUrl));
   } catch {
     return NextResponse.redirect(new URL(await getGoogleReturnPathFromCookie("connect_error"), baseUrl));
