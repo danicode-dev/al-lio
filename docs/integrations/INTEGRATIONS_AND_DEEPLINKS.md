@@ -25,7 +25,8 @@ Production configuration requires exact callback alignment:
 ```env
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=https://al-lio.danielcode.dev/api/google/calendar/callback
+GOOGLE_IDENTITY_REDIRECT_URI=https://al-lio.app/api/auth/google/callback
+GOOGLE_REDIRECT_URI=https://al-lio.app/api/google/calendar/callback
 GOOGLE_TOKEN_ENCRYPTION_KEY=
 ```
 

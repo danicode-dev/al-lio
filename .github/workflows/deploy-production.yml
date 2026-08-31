@@ -37,7 +37,7 @@ jobs:
     timeout-minutes: 45
     environment:
       name: Production
-      url: https://al-lio.danielcode.dev
+      url: https://al-lio.app
     env:
       RELEASE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.release_sha }}
       SSH_HOST: ${{ secrets.PRODUCTION_SSH_HOST }}

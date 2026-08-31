@@ -3,7 +3,21 @@
 #
 # El contenedor al_lio_web debe estar en la red Docker danicode_web.
 
+al-lio.app {
+	encode gzip zstd
+	reverse_proxy al_lio_web:3000
+}
+
+# Temporary compatibility for the previous production host. Radar can keep
+# delivering to its current base URL without a restart while browser traffic
+# moves to the new primary domain.
 al-lio.danielcode.dev {
-    encode gzip zstd
-    reverse_proxy al_lio_web:3000
+	@radar path /api/radar/*
+	handle @radar {
+		reverse_proxy al_lio_web:3000
+	}
+
+	handle {
+		redir https://al-lio.app{uri} 308
+	}
 }

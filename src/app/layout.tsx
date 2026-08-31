@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://al-lio.danielcode.dev"),
+  metadataBase: new URL("https://al-lio.app"),
   title: {
     default: "AL-LIO",
     template: "%s · AL-LIO",
