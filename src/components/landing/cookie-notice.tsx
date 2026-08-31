@@ -5,10 +5,10 @@ import { useCallback, useEffect, useState } from "react";
 
 const STORAGE_KEY = "al-lio.cookie-notice.v1";
 
-// AL-LÍO sets only strictly necessary cookies (the session and the sidebar
-// preference), so there is nothing to consent to - just a one-time notice,
-// centred on screen when the visitor first arrives. The choice lives in
-// localStorage, never a cookie.
+// AL-LÍO sets only strictly necessary cookies, so there is nothing to
+// consent to - just a one-time notice. Not a dialog and not a card: a
+// single small line at the foot of the page, centred, that lifts off the
+// background with a cream halo. The choice lives in localStorage.
 export function CookieNotice() {
   const [visible, setVisible] = useState(false);
 
@@ -30,56 +30,24 @@ export function CookieNotice() {
     setVisible(false);
   }, []);
 
-  useEffect(() => {
-    if (!visible) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") dismiss();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [visible, dismiss]);
-
   if (!visible) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-[#2F2A24]/35 p-4 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="al-cookie-title"
-      onClick={dismiss}
+      className="pointer-events-none fixed inset-x-0 bottom-3 z-50 flex justify-center px-4"
+      role="region"
+      aria-label="Aviso de cookies"
     >
-      <div
-        className="w-full max-w-[420px] rounded-2xl border border-[#E6DED2] bg-[#FFFFFF] p-7 text-center shadow-[0_28px_70px_rgba(40,25,10,0.28)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <p
-          id="al-cookie-title"
-          className="font-[family-name:var(--font-barlow)] text-[20px] font-extrabold tracking-[-0.01em] text-[#2F2A24]"
-        >
-          Solo cookies técnicas
-        </p>
-        <p className="mt-2.5 text-[14px] leading-relaxed text-[#4D4842]">
-          Usamos únicamente las cookies necesarias para que la plataforma funcione. Sin analítica, sin publicidad, sin
-          rastreo, así que no hay nada que aceptar o rechazar.
-        </p>
-        <p className="mt-2.5 text-[13px] leading-relaxed text-[#7A736B]">
-          We only use the technical cookies the platform needs to run. No analytics, no ads, no tracking — so there is
-          nothing to accept or reject.
-        </p>
-        <div className="mt-5 flex flex-col items-center gap-3">
-          <button
-            type="button"
-            onClick={dismiss}
-            className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-[#1F5B46] bg-[#1F5B46] px-5 text-[14px] font-semibold text-white transition-colors hover:border-[#174938] hover:bg-[#174938]"
-          >
-            Entendido
-          </button>
-          <Link href="/cookies" className="text-[13px] font-semibold text-[#1F5B46] underline underline-offset-2">
-            Ver política de cookies
-          </Link>
-        </div>
-      </div>
+      <p className="pointer-events-auto max-w-[640px] text-center text-[12px] leading-relaxed text-[#7A736B] [text-shadow:0_0_6px_#F7F3EC,0_0_6px_#F7F3EC,0_0_12px_#F7F3EC]">
+        Solo cookies técnicas: sin analítica ni rastreo.{" "}
+        <Link href="/cookies" className="font-semibold text-[#1F5B46] underline underline-offset-2">
+          Política de cookies
+        </Link>
+        {" · "}
+        <button type="button" onClick={dismiss} className="font-semibold text-[#1F5B46] underline underline-offset-2">
+          Entendido
+        </button>
+      </p>
     </div>
   );
 }
