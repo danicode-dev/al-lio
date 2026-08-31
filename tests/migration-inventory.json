@@ -3513,11 +3513,11 @@
     },
     {
       "legacyIndex": 239,
-      "currentName": "requestPasswordResetAction only emails a password account, never a Google-only account, but returns the same generic response either way (issue #132)",
+      "currentName": "requestPasswordResetAction emails any confirmed account - setting a first password for a Google-only one - and returns the same generic response for every branch (issue #132, issue #294)",
       "originatingIssues": [
         132
       ],
-      "protectedRisk": "requestPasswordResetAction only emails a password account, never a Google-only account, but returns the same generic response either way (issue #132)",
+      "protectedRisk": "requestPasswordResetAction emails any confirmed account - setting a first password for a Google-only one - and returns the same generic response for every branch (issue #132, issue #294)",
       "domain": "auth",
       "layer": "integration",
       "currentStyle": "source-string",
