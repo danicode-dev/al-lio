@@ -33,7 +33,7 @@ migration-artifacts/
 
 # local generated artifacts and loose backups
 /output/
-/.codex-artifacts/
+/.*-artifacts/
 /al-lio-logo-loop-desktop.png
 *.dump
 *.dump.sha256
