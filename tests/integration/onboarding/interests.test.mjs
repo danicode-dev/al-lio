@@ -11,7 +11,7 @@ test("Inactive interest questions are absent from onboarding and Profile without
     readFile(new URL("../../../src/components/profile/profile-form.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/lib/profile/onboarding-actions.ts", import.meta.url), "utf8"),
     readFile(new URL("../../../src/lib/profile/onboarding-options.ts", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/learning/server/catalogue-repository.ts", import.meta.url), "utf8"),
     readFile(new URL("../../../infra/postgres/schema.sql", import.meta.url), "utf8"),
   ]);
 

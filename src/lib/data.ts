@@ -2,17 +2,17 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 import { getSession } from "@/lib/auth/session";
-import { getTasksByUser } from "@/lib/db/repositories/tasks";
-import { getCoursesByUser } from "@/lib/db/repositories/courses";
-import { getHackathonsByUser } from "@/lib/db/repositories/hackathons";
-import { getOpportunitiesByUser } from "@/lib/db/repositories/opportunities";
-import { getQuickLinksByUser } from "@/lib/db/repositories/quick_links";
+import { getTasksByUser } from "@/features/tasks/server/repository";
+import { getCoursesByUser } from "@/features/courses/server/repository";
+import { getHackathonsByUser } from "@/features/events/server/repository";
+import { getOpportunitiesByUser } from "@/features/work/server/opportunity-repository";
+import { getQuickLinksByUser } from "@/features/resources/server/repository";
 import { getAllTechOpportunities } from "@/lib/db/repositories/tech_opportunities";
-import { getCompaniesByCycleGroup, getFavoriteCompanyIds } from "@/lib/db/repositories/companies";
+import { getCompaniesByCycleGroup, getFavoriteCompanyIds } from "@/features/work/server/repository";
 import { getUserById } from "@/lib/db/repositories/users";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
-import { getInternalLearningTargetsForVideoUrls } from "@/lib/db/repositories/learning";
-import { getLearningOverview } from "@/lib/learning/overview";
+import { getInternalLearningTargetsForVideoUrls } from "@/features/learning/server/repository";
+import { getLearningOverview } from "@/features/learning/domain/overview";
 import {
   getFpContentForProfile,
   getRequiredCompetenciesForItems,
@@ -23,7 +23,7 @@ import {
   getUserCompetencyStatesForSkills,
   type CompetencyLearningItem,
   type PreparationResource,
-} from "@/lib/db/repositories/fp_catalog";
+} from "@/features/learning/server/catalogue-repository";
 
 export const FP_APTITUDE_GATED_TYPES = new Set(["hackathon", "evento", "reto", "convocatoria_practicas"]);
 export const FP_COURSE_APTITUDE_TYPES = new Set(["curso_basico", "curso_complementario", "herramienta", "recurso", "evidencia_recomendada"]);

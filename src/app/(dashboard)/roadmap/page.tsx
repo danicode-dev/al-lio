@@ -1,8 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getValidatedSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
-import { getActiveFpCycles } from "@/lib/db/repositories/fp_catalog";
-import { getLearningCompetenciesForCycle } from "@/lib/db/repositories/learning";
+import { getActiveFpCycles, getLearningCompetenciesForCycle } from "@/features/learning/server";
 import { LEARNING_CATALOG_DISCLAIMER } from "@/lib/learning/catalog";
 import { CompetenciesView } from "@/components/learning/competencies-view";
 

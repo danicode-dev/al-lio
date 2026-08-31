@@ -2,9 +2,13 @@
 
 ## Application
 
-- `src/app/`: App Router routes, layouts and route handlers.
-- `src/components/`: React components and product views.
-- `src/lib/`: authentication, repositories, domain services and integrations.
+- `src/app/`: App Router routes, layouts, route handlers and route-level access control.
+- `src/features/`: named product features with explicit public entry points.
+- `src/shared/`: cross-feature UI composition and utilities with multiple consumers.
+- `src/components/`: established shared React components being adopted by features.
+- `src/lib/`: shared authentication, database primitives and integrations that
+  do not yet have one product owner. Product repositories and actions belong to
+  `src/features/<feature>/server/`.
 - `src/middleware.ts`: protected-route and session boundary.
 - `public/`: static assets served by Next.js.
 - `tests/`: Node test-runner suites; see `tests/README.md`.
@@ -68,3 +72,12 @@ New files must have one clear owner. Runtime code belongs in `src`, deployment
 material in `infra`, repeatable operator commands in `scripts`, reviewed import
 inputs in `csv` and maintained explanations in `docs`. Generated artifacts do
 not belong in the repository unless they are an intentional public asset.
+
+App Router pages compose feature UI through `@/features/<feature>`. When a route
+or another feature needs a narrower contract, it may import the explicit public
+barrels `@/features/<feature>/client`, `/domain`, `/presentation`, or `/server`.
+Client code may import `/server/actions` as the one explicit Next.js Server
+Action boundary; repository barrels must never be re-exported through it.
+Other concrete files below those barrels remain private. Product code must not
+introduce view-string routing shells. ADR-0008 defines the full dependency rule
+and `npm run check:boundaries` enforces it.

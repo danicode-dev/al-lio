@@ -1,5 +1,5 @@
-import { StoredGuestApp } from "@/components/stored-guest-app";
+import { WorkFeature } from "@/features/work";
 
 export default function WorkPage() {
-  return <StoredGuestApp view="work" />;
+  return <WorkFeature />;
 }

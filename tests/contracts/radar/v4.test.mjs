@@ -299,7 +299,7 @@ test("verified job reads and direct actions are authenticated, cycle-scoped and 
 });
 
 test("the Work UI preserves manual applications but does not expose legacy scrape-to-application sync", () => {
-  const source = readFileSync(join(process.cwd(), "src", "components", "guest-app.tsx"), "utf8");
+  const source = readFileSync(join(process.cwd(), "src", "features", "work", "client", "work-feature.tsx"), "utf8");
   assert.match(source, /\["candidaturas", "Candidaturas"\]/);
   assert.match(source, /Añadir candidatura manual/);
   assert.doesNotMatch(source, /Sincronizar radar|onClick=\{syncRadar\}/);

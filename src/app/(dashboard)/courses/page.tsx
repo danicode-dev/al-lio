@@ -1,5 +1,5 @@
-import { StoredGuestApp } from "@/components/stored-guest-app";
+import { CoursesFeature } from "@/features/courses";
 
 export default function CoursesPage() {
-  return <StoredGuestApp view="courses" />;
+  return <CoursesFeature />;
 }

@@ -1,5 +1,5 @@
-import { StoredGuestApp } from "@/components/stored-guest-app";
+import { EventsFeature } from "@/features/events";
 
 export default function HackathonsPage() {
-  return <StoredGuestApp view="hackathons" />;
+  return <EventsFeature />;
 }
