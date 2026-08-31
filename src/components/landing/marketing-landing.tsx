@@ -21,10 +21,26 @@ const secTitle = "font-[family-name:var(--font-barlow)] font-extrabold tracking-
 const shell = "mx-auto max-w-[1120px] px-6 sm:px-12";
 
 const CYCLES = [
-  { code: "DAW · DAM", name: "Desarrollo", line: "Tecnología, hackathons y ofertas de desarrollo web y multiplataforma." },
-  { code: "AF", name: "Administración y Finanzas", line: "Gestión, prácticas y convocatorias del ámbito administrativo." },
-  { code: "MP", name: "Marketing y Publicidad", line: "Comunicación, eventos y ofertas del sector del marketing." },
-  { code: "TSAF", name: "Actividades Físico-deportivas", line: "Formación y salidas profesionales del ámbito deportivo." },
+  {
+    code: "DAW · DAM",
+    name: "Desarrollo",
+    line: "Hackathons, retos de código y ofertas de prácticas en desarrollo web y multiplataforma, con los recursos del ciclo siempre a mano.",
+  },
+  {
+    code: "AF",
+    name: "Administración y Finanzas",
+    line: "Prácticas y convocatorias del ámbito administrativo y contable, y los eventos del sector ordenados junto a tu calendario académico.",
+  },
+  {
+    code: "MP",
+    name: "Marketing y Publicidad",
+    line: "Eventos del sector, concursos creativos y ofertas en comunicación y publicidad, con las noticias de marketing que de verdad te aplican.",
+  },
+  {
+    code: "TSAF",
+    name: "Actividades Físico‑deportivas",
+    line: "Competiciones, formaciones y salidas profesionales del ámbito deportivo, filtradas para tu itinerario y tu nivel.",
+  },
 ] as const;
 
 // Public marketing page served at "/" for signed-out visitors (an
@@ -113,29 +129,38 @@ export function MarketingLanding() {
             </div>
           </section>
 
-          {/* Closing section: what each professional family gets. */}
+          {/* Closing section: what each professional family gets. Title on
+              the left, a short summary + the project link level with it on
+              the right, then the four families with room to breathe. */}
           <section className="border-t border-[#E6DED2]">
             <div className={`${shell} py-24 md:py-28`}>
-              <div className="max-w-[46ch]">
-                <p className={eyebrow}>Para tu ciclo</p>
-                <h2 className={`${secTitle} mt-3 text-[32px] sm:text-[34px]`}>Lo que ves depende de lo que estudias</h2>
-                <p className="mt-4 text-[16px] leading-relaxed text-[#4D4842]">
-                  Cada familia profesional recibe sus cursos, prácticas y eventos. Nada de un catálogo común.
-                </p>
+              <div className="grid gap-x-16 gap-y-8 md:grid-cols-[1fr_0.9fr] md:items-start">
+                <div>
+                  <p className={eyebrow}>Para tu ciclo</p>
+                  <h2 className={`${secTitle} mt-3 text-[32px] sm:text-[36px]`}>Lo que ves depende de lo que estudias</h2>
+                </div>
+                <div className="md:pt-9">
+                  <p className="text-[16px] leading-relaxed text-[#4D4842]">
+                    AL-LÍO conoce tu familia profesional y filtra por ella: los cursos, las prácticas, los eventos y las
+                    noticias que ves son los de tu itinerario, no un tablón genérico para todos.
+                  </p>
+                  <Link href="/proyecto" className={`${ghostBtn} mt-6 h-12 px-6`}>Sobre el proyecto</Link>
+                </div>
               </div>
+
               {/* Marked on one edge, not boxed: a green rule down the left
-                  tells each family apart without a white card. */}
-              <div className="mt-14 grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+                  tells each family apart. Name and code share a line so the
+                  block never runs to a needless second row. */}
+              <div className="mt-16 grid gap-x-14 gap-y-12 sm:grid-cols-2">
                 {CYCLES.map((cycle) => (
-                  <div key={cycle.code} className="border-l-2 border-[#1F5B46]/35 pl-5">
-                    <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#1F5B46]">{cycle.code}</p>
-                    <p className="mt-1.5 text-[16px] font-semibold text-[#2F2A24]">{cycle.name}</p>
-                    <p className="mt-2 text-[14px] leading-relaxed text-[#7A736B]">{cycle.line}</p>
+                  <div key={cycle.code} className="border-l-2 border-[#1F5B46]/35 pl-6">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <p className="text-[19px] font-bold text-[#2F2A24]">{cycle.name}</p>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#1F5B46]">{cycle.code}</p>
+                    </div>
+                    <p className="mt-2.5 text-[14.5px] leading-relaxed text-[#7A736B]">{cycle.line}</p>
                   </div>
                 ))}
-              </div>
-              <div className="mt-14">
-                <Link href="/proyecto" className={`${ghostBtn} h-12 px-6`}>Sobre el proyecto</Link>
               </div>
             </div>
           </section>
