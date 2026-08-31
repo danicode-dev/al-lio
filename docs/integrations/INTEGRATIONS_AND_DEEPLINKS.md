@@ -45,18 +45,18 @@ sender-side contract in the Radar repository.
 
 ## Employment platforms
 
-| Platform | Supported mode | Current responsibility |
-|---|---|---|
-| LinkedIn | Deep link | Open an explicit user-controlled search. |
-| InfoJobs | API and deep link | Use the API when configured; otherwise preserve direct search. |
-| Indeed | Deep link | Open an explicit user-controlled search. |
-| Tecnoempleo | RSS and deep link | Use public metadata and direct search where available. |
-| Adzuna | API | Return normalised results when credentials exist. |
-| Jooble | API | Return normalised results when credentials exist. |
-| Remotive | Public API | Return remote opportunities. |
+Employment platforms are exposed as explicit, user-controlled deep links. The
+student chooses the search terms and location, and the external platform remains
+responsible for its search results and authentication. AL-LIO does not run its
+retired InfoJobs, Adzuna, Jooble, Remotive or Tecnoempleo collectors.
 
-Missing optional credentials must produce an empty or degraded integration
-result, not an application failure.
+Reviewed vacancies are a separate capability. AL-LIO Radar sends accepted job
+metadata through its authenticated contract, and the product exposes that data
+as the verified-job catalogue. A deep-linked search result must never be
+presented as a Radar-verified vacancy.
+
+`GET /api/collect` remains only as a `410 Gone` compatibility response. It has
+no provider credentials and cannot initiate external work.
 
 ## Prohibited behaviour
 
@@ -65,33 +65,6 @@ result, not an application failure.
 - No storage of a student's external platform password.
 - No hidden redirects or affiliate URLs presented as direct sources.
 - No external content may bypass server-side validation and user ownership.
-
-## Normalised opportunity contract
-
-```ts
-export type NormalizedOpportunity = {
-  source: string;
-  source_type: "api" | "rss" | "deeplink" | "manual";
-  title: string;
-  company?: string;
-  description?: string;
-  location?: string;
-  province?: string;
-  remote?: boolean;
-  url: string;
-  published_at?: string;
-  detected_at?: string;
-  category?: string;
-  tags?: string[];
-  level?: string;
-  salary_min?: number;
-  salary_max?: number;
-  status?: string;
-  score?: number;
-  external_id?: string;
-  unique_hash?: string;
-};
-```
 
 Deep links must be generated as transparent URLs from a keyword and optional
 location. AL-LIO must not imply that a deep-linked result was validated by an
