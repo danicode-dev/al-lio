@@ -46,7 +46,7 @@ the official call" for a missing source fact.
 | Current path | Current role | Verified-catalogue decision |
 | --- | --- | --- |
 | LinkedIn/InfoJobs/Indeed/Tecnoempleo/Jooble deep links | User-owned external search | Keep during the pilot; a search page is not a verified vacancy |
-| InfoJobs, Adzuna, Jooble and Tecnoempleo integrations | Direct AL-LÍO aggregation | Do not relabel; replace only after Radar records authorized API/feed access and pilot accuracy |
+| Retired InfoJobs, Adzuna, Jooble and Tecnoempleo collectors | Disabled compatibility path | Keep `/api/collect` inert with `410 Gone`; Radar owns any future authorized source access |
 | Fixed company catalogue | Employer discovery | Keep; company pages are not vacancies |
 | In-app company-page scraper | Legacy private collection | Keep behind its existing API boundary, remove the visible sync action, and do not migrate scraped rows as verified facts |
 | Manual applications | Student-owned history | Preserve unchanged with nullable canonical links |

@@ -1,5 +1,3 @@
-import { NextResponse } from "next/server";
-
 // Retired public trigger.
 //
 // This endpoint previously ran four external job collectors on an
@@ -9,13 +7,14 @@ import { NextResponse } from "next/server";
 // never runs a collector and always returns a non-success compatibility
 // response.
 //
-// The collector modules under `src/lib/integrations/` are intentionally left in
-// place; their retention or removal is issue #276's decision, not this one
-// (issue #282).
+// The unreachable collector implementation and its unused credential contract
+// were removed after the repository-hygiene classification in issue #334. The
+// route stays as an explicit compatibility response so an old caller cannot
+// silently fall through to a different handler or trigger external work.
 export const dynamic = "force-dynamic";
 
 export function GET() {
-  return NextResponse.json(
+  return Response.json(
     { error: "gone", detail: "This endpoint has been retired." },
     { status: 410, headers: { "Cache-Control": "no-store" } },
   );
