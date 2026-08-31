@@ -218,9 +218,11 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           font-size: 14px;
           font-weight: 500;
           box-sizing: border-box;
-          transition: background-color 0.15s, border-color 0.15s;
+          transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
         }
-        .al-google-btn:hover { background: #F0EBDF; }
+        .al-google-btn:hover { background: #F0EBDF; transform: translateY(-1px); }
+        .al-google-btn:active { transform: translateY(0); }
+        .al-google-btn:focus-visible { outline: 2px solid rgba(31, 91, 70, 0.5); outline-offset: 2px; }
         .al-google-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
 
         .al-signup {
@@ -251,6 +253,8 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
           margin: 0;
         }
         .login-foot b { font-weight: 700; color: #7A736B; letter-spacing: 0.01em; }
+        .login-foot a { font-weight: 600; color: #4D4842; text-decoration: underline; text-underline-offset: 2px; }
+        .login-foot a:hover { color: #2F2A24; }
 
         .al-input:-webkit-autofill,
         .al-input:-webkit-autofill:hover,
@@ -382,7 +386,10 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
 
         <p className="login-foot">
           <b>AL-LÍO</b>
-          <span>Proyecto desarrollado gracias a la beca Aircury Summer of Code 2026 de Aircury SL.</span>
+          <span>
+            Proyecto desarrollado gracias a la beca Aircury Summer of Code 2026 de{" "}
+            <a href="https://www.aircury.es" target="_blank" rel="noreferrer">Aircury SL</a>.
+          </span>
         </p>
       </div>
 
