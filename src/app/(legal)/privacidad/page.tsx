@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/landing/legal-page";
+import { PUBLIC_CONTACT_EMAILS } from "@/lib/public-contact";
 
 export const metadata: Metadata = { title: "Privacidad", alternates: { canonical: "/privacidad", languages: { es: "/privacidad", en: "/en/privacidad" } } };
 
@@ -52,7 +53,9 @@ export default function PrivacidadPage() {
       <h2>Tus derechos</h2>
       <p>
         Puedes acceder, rectificar, suprimir, limitar u oponerte al tratamiento de tus datos, y solicitar su portabilidad.
-        Escríbenos a <strong>[correo del proyecto]</strong>. También puedes reclamar ante la{" "}
+        Escríbenos a{" "}
+        <a href={`mailto:${PUBLIC_CONTACT_EMAILS.privacy}`}><strong>{PUBLIC_CONTACT_EMAILS.privacy}</strong></a>. También
+        puedes reclamar ante la{" "}
         <a href="https://www.aepd.es" target="_blank" rel="noreferrer">Agencia Española de Protección de Datos</a>.
       </p>
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/landing/legal-page";
+import { PUBLIC_CONTACT_EMAILS } from "@/lib/public-contact";
 
 export const metadata: Metadata = {
   title: "Privacy",
@@ -55,7 +56,9 @@ export default function PrivacyPageEn() {
       <h2>Your rights</h2>
       <p>
         You can access, rectify, erase, restrict or object to the processing of your data, and request its portability.
-        Write to us at <strong>[project email]</strong>. You can also lodge a complaint with the{" "}
+        Write to us at{" "}
+        <a href={`mailto:${PUBLIC_CONTACT_EMAILS.privacy}`}><strong>{PUBLIC_CONTACT_EMAILS.privacy}</strong></a>. You can
+        also lodge a complaint with the{" "}
         <a href="https://www.aepd.es" target="_blank" rel="noreferrer">Spanish Data Protection Agency</a>.
       </p>
 
