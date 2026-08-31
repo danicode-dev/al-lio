@@ -40,8 +40,10 @@
 - `README.md`: public product and engineering entry point.
 - `docs/README.md`: maintained-documentation index.
 - `docs/product/`, `docs/architecture/`, `docs/integrations/`, `docs/operations/`:
-  documentation grouped by area (product spec, system design, external
-  contracts and content governance, production operations).
+  maintained product, system-design, external-contract, content-governance and
+  production-operations documentation.
+- `docs/aircury-report/`: reviewed report source, evidence provenance and the
+  final visual-evidence catalogue for the Aircury Summer of Code 2026 delivery.
 - `docs/architecture/decisions/`: accepted architecture decision records.
 - `.github/`: contribution, security and conduct policies plus issue/PR
   templates and workflows. Notice and licence stay at the repository root.

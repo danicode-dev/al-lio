@@ -5,7 +5,7 @@ the repository and in the supported VPS deployment. Historical plans and
 private operational evidence do not belong here.
 
 Documentation is grouped by area. Only `README.md` and `PROJECT_STRUCTURE.md`
-stay at the top of `docs/`; every other document lives in one of the four
+stay at the top of `docs/`; every other document lives in one of the maintained
 subfolders below.
 
 ## Start here
@@ -49,6 +49,15 @@ Everything about releasing and running the production deployment.
 - [`operations/PRIMARY_DOMAIN_MIGRATION.md`](operations/PRIMARY_DOMAIN_MIGRATION.md): one-time blue/green cutover to `al-lio.app` without replacing PostgreSQL or Radar.
 - [`operations/PRODUCTION_READINESS.md`](operations/PRODUCTION_READINESS.md): repository capabilities and per-release gates.
 - [`operations/release-records/`](operations/release-records/TEMPLATE.md): evidence recorded for each production change.
+
+## `aircury-report/`
+
+Reviewed source material and evidence provenance for the Aircury Summer of
+Code 2026 technical report.
+
+- [`aircury-report/README.md`](aircury-report/README.md): scope, document map and evidence workflow.
+- [`aircury-report/01-delivery-brief.md`](aircury-report/01-delivery-brief.md): confirmed delivery decisions and deferred final-release identifiers.
+- [`aircury-report/02-evidence-register.md`](aircury-report/02-evidence-register.md): claim classes, evidence inventory, repeatable commands and aggregate-query definitions.
 
 ## Documentation policy
 
