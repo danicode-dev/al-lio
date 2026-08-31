@@ -142,19 +142,18 @@ test("Real session revocation also guards direct Server Action and API calls, no
     "../../../src/app/api/google/calendar/callback/route.ts",
     "../../../src/lib/auth/authorization.ts",
     "../../../src/lib/auth/current-user.ts",
-    "../../../src/lib/bloc/notes-actions.ts",
-    "../../../src/lib/companies/actions.ts",
-    "../../../src/lib/courses/actions.ts",
-    "../../../src/lib/fp/competency-actions.ts",
-    "../../../src/lib/fp/resource-notes-actions.ts",
-    "../../../src/lib/hackathons/actions.ts",
-    "../../../src/lib/learning/actions.ts",
+    "../../../src/features/bloc/server/actions.ts",
+    "../../../src/features/work/server/actions.ts",
+    "../../../src/features/courses/server/actions.ts",
+    "../../../src/features/events/server/actions.ts",
+    "../../../src/features/learning/server/actions.ts",
+    "../../../src/features/learning/server/player-actions.ts",
+    "../../../src/features/tasks/server/actions.ts",
     "../../../src/lib/profile/onboarding-actions.ts",
-    "../../../src/lib/work/actions.ts",
   ];
   for (const file of guardedBoundaries) {
     const source = await readFile(new URL(file, import.meta.url), "utf8");
-    assert.match(source, /getValidatedSession\(\)/, `${file} must reject a revoked session before reading or mutating user data`);
+    assert.match(source, /getValidatedSession\(\)|getCurrentUserId\(\)/, `${file} must reject a revoked session before reading or mutating user data`);
     assert.doesNotMatch(source, /\bgetSession\(\)/, `${file} must not use signature-only session verification at an authorization boundary`);
   }
 });

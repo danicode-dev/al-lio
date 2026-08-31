@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useStore } from "@/components/guest-store";
+import { useApplicationStore } from "@/shared/store/application-store";
 import type { Store } from "@/components/store/types";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -193,7 +193,7 @@ function shouldShow(): boolean {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function DailyAlerts() {
-  const { store } = useStore();
+  const { store } = useApplicationStore();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"all" | "urgent">("all");

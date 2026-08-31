@@ -23,12 +23,13 @@ test("Perfil renders the Saved hub, wrapped in a real error boundary so a render
 
 test("The Saved hub derives every section from the same live store the rest of the app uses - no new fetch, no parallel storage, no reimplemented merge/dedupe logic (issue #136)", async () => {
   const source = await readFile(new URL("../../../src/components/profile/saved-hub.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /fetch\(|useEffect\(/, "must not introduce a separate data fetch - everything comes from useStore()'s already-loaded, session-scoped data");
-  assert.match(source, /const \{ store, actions \} = useStore\(\);/);
+  assert.doesNotMatch(source, /fetch\(|useEffect\(/, "must not introduce a separate data fetch - everything comes from the already-loaded, session-scoped application store");
+  assert.match(source, /const \{ store \} = useApplicationStore\(\);/);
+  assert.match(source, /const actions = \{ \.\.\.useCourseActions\(\), \.\.\.useEventActions\(\), \.\.\.useLearningActions\(\), \.\.\.useWorkActions\(\) \};/);
   assert.match(source, /const savedCompanies = useMemo\(\(\) => store\.companies\.filter\(\(c\) => c\.is_favorite\), \[store\.companies\]\);/);
   assert.match(source, /getDisplayCourses\(store\.courses, store\.techOpportunities, store\.fpContent\)\.filter\(\(c\) => c\.is_favorite\)/, "courses must reuse the exact same merge function Cursos itself uses, not a second parallel implementation");
   assert.match(source, /getDisplayHackathons\(store\.hackathons, store\.techOpportunities, store\.fpContent\)\.filter\(\(h\) => h\.is_favorite\)/, "events must reuse the exact same merge function Eventos y retos itself uses");
-  assert.match(source, /from "@\/components\/guest-app"/, "getDisplayCourses/getDisplayHackathons must be imported, not redefined");
+  assert.match(source, /from "@\/features\/courses"/, "getDisplayCourses/getDisplayHackathons must be imported, not redefined");
 });
 
 test("Unsaving from the hub calls the exact same dispatchers as the origin modules, so all surfaces stay in sync with the same optimistic-update/rollback behavior (issue #136)", async () => {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { getSession } from "@/lib/auth/session";
-import { MarketingLanding } from "@/components/landing/marketing-landing";
+import { MarketingLanding } from "@/features/marketing";
 
 export const dynamic = "force-dynamic";
 

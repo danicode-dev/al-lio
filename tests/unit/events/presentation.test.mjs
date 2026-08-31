@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 
 import test from "node:test";
 
-import { canToggleHackathonFavorite as canToggleHackathonFavoriteShared, fpItemToHackathon, getHackathonPresentation, hackathonPublicDescription, isFpHackathonLike, isTechHackathonOrEvent, resolveHackathonById, techOpportunityToHackathon } from "../../../src/lib/hackathons/hackathon-presentation.ts";
+import { canToggleHackathonFavorite as canToggleHackathonFavoriteShared, fpItemToHackathon, getHackathonPresentation, hackathonPublicDescription, isFpHackathonLike, isTechHackathonOrEvent, resolveHackathonById, techOpportunityToHackathon } from "../../../src/features/events/presentation/event-presentation.ts";
 
 const fixtureTechEvent = {
   id: "t1", id_slug: "reto-granada", categoria: "hackathon_reto", nombre: "Reto Granada",

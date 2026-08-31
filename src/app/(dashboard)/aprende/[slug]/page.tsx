@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getValidatedSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
-import { getLearningNotes, getLearningResourceForCycle } from "@/lib/db/repositories/learning";
+import { getLearningNotes, getLearningResourceForCycle } from "@/features/learning/server";
 import { LearningPlayer } from "@/components/learning/learning-player";
 
 export const dynamic = "force-dynamic";

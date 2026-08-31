@@ -1,8 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getValidatedSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
-import { getActiveVideoResourcesForCompetency, getFpContentItemBySlugForCycle, getRequiredCompetenciesForItems } from "@/lib/db/repositories/fp_catalog";
-import { getInternalLearningTargetsForVideoUrls } from "@/lib/db/repositories/learning";
+import { getActiveVideoResourcesForCompetency, getFpContentItemBySlugForCycle, getInternalLearningTargetsForVideoUrls, getRequiredCompetenciesForItems } from "@/features/learning/server";
 import { FP_APTITUDE_GATED_TYPES } from "@/lib/data";
 
 export const dynamic = "force-dynamic";

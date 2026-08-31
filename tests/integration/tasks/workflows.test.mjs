@@ -6,7 +6,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("Task editing preserves critical priority and optional due time", async () => {
-  const source = await readFile(new URL("../../../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/tasks/client/tasks-view.tsx", import.meta.url), "utf8");
 
   assert.match(source, /useState<Task\["priority"\]>\(task\.priority\)/);
   assert.match(source, /<option value="critica">Prioridad crítica<\/option>/);
@@ -18,21 +18,21 @@ test("Task editing preserves critical priority and optional due time", async () 
 
 test("Task edit waits for persistence and keeps the dialog open after failure", async () => {
   const [viewSource, storeSource] = await Promise.all([
-    readFile(new URL("../../../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/guest-store.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/tasks/client/tasks-view.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/tasks/client/use-task-actions.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(viewSource, /await actions\.updateTask\(dialogTask\.id, data\);\s+setTaskDialog\(null\);/);
   assert.match(viewSource, /No se pudo guardar la tarea/);
   assert.match(viewSource, /\{saving \? "Guardando…" : "Guardar"\}/);
 
-  assert.match(storeSource, /if \(!response\?\.result\) throw new Error\("Task update was not persisted"\)/);
+  assert.match(storeSource, /if \(!response\.ok\) throw new Error\(response\.error\)/);
   assert.match(storeSource, /patchById\(current\.tasks, id, previousTask\)/);
   assert.match(storeSource, /throw error;/);
 });
 
 test("Task rows open one shared detail/edit dialog and keep the existing edit form reusable", async () => {
-  const source = await readFile(new URL("../../../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/tasks/client/tasks-view.tsx", import.meta.url), "utf8");
 
   assert.match(source, /type TaskDialogMode = "view" \| "edit"/);
   assert.match(source, /aria-label=\{`Ver detalles de \$\{task\.title\}`\}/);
@@ -46,7 +46,7 @@ test("Task rows open one shared detail/edit dialog and keep the existing edit fo
 });
 
 test("The three task summary tiles are the only status filters, while Nueva tarea stays on the Tu lista heading row", async () => {
-  const source = await readFile(new URL("../../../src/components/tasks/tasks-view.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/tasks/client/tasks-view.tsx", import.meta.url), "utf8");
 
   // The page-specific composer button must never live in the shared top header
   // alongside the global +/calendar/bell cluster.

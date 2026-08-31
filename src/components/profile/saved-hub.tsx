@@ -3,11 +3,16 @@
 import { Component, type ReactNode, useMemo } from "react";
 import Link from "next/link";
 import { Building2, BookOpen, ExternalLink, Heart, Trophy, type LucideIcon } from "lucide-react";
-import { useStore } from "@/components/guest-store";
-import { canToggleCourseFavorite, getDisplayCourses, getDisplayHackathons, toggleCourseFavoriteFor } from "@/components/guest-app";
-import type { Course, Hackathon, ReturnTypeActions } from "@/components/store/types";
-import { getCoursePresentation } from "@/lib/courses/course-presentation";
-import { canToggleHackathonFavorite, getHackathonPresentation, toggleHackathonFavoriteFor } from "@/lib/hackathons/hackathon-presentation";
+import { useCourseActions, type CourseActions } from "@/features/courses/client";
+import { useEventActions, type EventActions } from "@/features/events/client";
+import { useLearningActions, type LearningActions } from "@/features/learning/client";
+import { useWorkActions, type WorkActions } from "@/features/work/client";
+import { useApplicationStore } from "@/shared/store/application-store";
+import { canToggleCourseFavorite, getDisplayCourses, toggleCourseFavoriteFor } from "@/features/courses";
+import { getDisplayHackathons } from "@/features/events";
+import type { Course, Hackathon } from "@/components/store/types";
+import { getCoursePresentation } from "@/features/courses/presentation";
+import { canToggleHackathonFavorite, getHackathonPresentation, toggleHackathonFavoriteFor } from "@/features/events/presentation";
 import { isSafeHttpUrl } from "@/lib/fp/event-cta";
 
 const VISIBLE_PER_SECTION = 4;
@@ -43,7 +48,8 @@ export function SavedHub() {
 }
 
 function SavedHubContent() {
-  const { store, actions } = useStore();
+  const { store } = useApplicationStore();
+  const actions = { ...useCourseActions(), ...useEventActions(), ...useLearningActions(), ...useWorkActions() };
 
   // Every list here is derived from the same live, already user/cycle-scoped
   // store the rest of the app renders from - no separate fetch, no parallel
@@ -129,7 +135,9 @@ function SavedHubContent() {
   );
 }
 
-function SavedCourseRow({ course, actions }: { course: Course; actions: ReturnTypeActions }) {
+type SavedActions = CourseActions & EventActions & LearningActions & WorkActions;
+
+function SavedCourseRow({ course, actions }: { course: Course; actions: SavedActions }) {
   const presentation = getCoursePresentation(course);
   return (
     <SavedRow
@@ -142,7 +150,7 @@ function SavedCourseRow({ course, actions }: { course: Course; actions: ReturnTy
   );
 }
 
-function SavedHackathonRow({ hackathon, actions }: { hackathon: Hackathon; actions: ReturnTypeActions }) {
+function SavedHackathonRow({ hackathon, actions }: { hackathon: Hackathon; actions: SavedActions }) {
   const presentation = getHackathonPresentation(hackathon);
   return (
     <SavedRow

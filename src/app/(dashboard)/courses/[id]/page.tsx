@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getGlobalStore } from "@/lib/data";
-import { resolveCourseById } from "@/lib/courses/course-presentation";
-import { CourseDetailView } from "@/components/guest-app";
+import { resolveCourseById } from "@/features/courses/presentation";
+import { CourseDetailView } from "@/features/courses";
 import type { Store } from "@/components/store/types";
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
