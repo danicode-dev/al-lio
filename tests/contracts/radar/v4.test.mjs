@@ -9,15 +9,15 @@ import {
   RADAR_V4_JOB_FIELDS,
   radarV4ValueHash,
   radarDeliverySchema,
-} from "../src/lib/radar/contract.ts";
+} from "../../../src/lib/radar/contract.ts";
 import {
   legacyLifecycleStatus,
   radarV4ProjectionDestinations,
   resolveRadarV4Fact,
-} from "../src/lib/radar/v4-projection.ts";
-import { radarLearningDeliverySchema } from "../src/lib/radar/learning-contract.ts";
+} from "../../../src/lib/radar/v4-projection.ts";
+import { radarLearningDeliverySchema } from "../../../src/lib/radar/learning-contract.ts";
 
-const fixtures = join(process.cwd(), "tests", "fixtures", "radar-v4");
+const fixtures = join(process.cwd(), "tests", "contracts", "radar", "fixtures");
 
 function fixture(name) {
   return JSON.parse(readFileSync(join(fixtures, name), "utf8"));

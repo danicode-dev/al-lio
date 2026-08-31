@@ -1,8 +1,10 @@
+// Source-level assertion rationale: the catalogue-order rules execute directly; the remaining
+// responsive header wiring needs a browser-capable component harness that this Node suite does not provide.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { getNextCatalogItem } from "../src/lib/catalog/next-item.ts";
+import { getNextCatalogItem } from "../../../src/lib/catalog/next-item.ts";
 
 test("course navigation advances through the complete catalogue and wraps once", () => {
   const courses = ["a", "b", "c", "d", "e"].map((id) => ({ id }));
@@ -20,7 +22,7 @@ test("course navigation has no recommendation for a missing or solitary current 
 });
 
 test("course and event detail headers keep their action clusters desktop-only", async () => {
-  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
   const courseDetail = source.slice(source.indexOf("export function CourseDetailView"), source.indexOf("function Hackathons("));
   const eventDetail = source.slice(source.indexOf("export function HackathonDetailView"), source.indexOf("function LinksView"));
 
@@ -35,7 +37,7 @@ test("course and event detail headers keep their action clusters desktop-only", 
 });
 
 test("CourseDetailView uses catalogue order without date or lifecycle filtering", async () => {
-  const source = await readFile(new URL("../src/components/guest-app.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/components/guest-app.tsx", import.meta.url), "utf8");
   const detail = source.slice(source.indexOf("export function CourseDetailView"), source.indexOf("function Hackathons("));
 
   assert.match(detail, /const nextCourse = getNextCatalogItem\(allCourses, item\.id\);/);

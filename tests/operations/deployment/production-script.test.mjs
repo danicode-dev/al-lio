@@ -1,11 +1,13 @@
+// Source-level assertion rationale: executing the production deployment would mutate remote state,
+// so the Node suite intentionally protects its reviewed shell contract structurally.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const deployScriptUrl = new URL("../scripts/deploy-production.sh", import.meta.url);
-const composeGuardUrl = new URL("../scripts/lib/compose-env-guard.sh", import.meta.url);
-const guideUrl = new URL("../docs/operations/AUTONOMOUS_PRODUCTION_DEPLOY.md", import.meta.url);
-const dockerfileUrl = new URL("../infra/Dockerfile", import.meta.url);
+const deployScriptUrl = new URL("../../../scripts/deploy-production.sh", import.meta.url);
+const composeGuardUrl = new URL("../../../scripts/lib/compose-env-guard.sh", import.meta.url);
+const guideUrl = new URL("../../../docs/operations/AUTONOMOUS_PRODUCTION_DEPLOY.md", import.meta.url);
+const dockerfileUrl = new URL("../../../infra/Dockerfile", import.meta.url);
 
 test("the production deploy command pins a reviewed forward-only main commit", async () => {
   const source = await readFile(deployScriptUrl, "utf8");
