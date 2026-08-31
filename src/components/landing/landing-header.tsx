@@ -15,7 +15,7 @@ export function LandingHeader() {
       <nav className="flex items-center gap-4 sm:gap-5">
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#55514a] transition-colors hover:text-[#2A2018]"
+          className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#4D4842] transition-colors hover:text-[#2F2A24]"
           aria-label="Cambiar idioma"
         >
           <Globe className="h-4 w-4" aria-hidden="true" />
@@ -24,7 +24,7 @@ export function LandingHeader() {
         </button>
         <Link
           href="/login"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#E15D2D] bg-[#E15D2D] px-5 text-[15px] font-semibold text-white transition-colors hover:border-[#c94f24] hover:bg-[#c94f24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]/30 focus-visible:ring-offset-2"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#1F5B46] bg-[#1F5B46] px-5 text-[15px] font-semibold text-white transition-colors hover:border-[#174938] hover:bg-[#174938] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F5B46]/30 focus-visible:ring-offset-2"
         >
           Entrar
         </Link>

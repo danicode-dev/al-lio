@@ -43,23 +43,23 @@ export function CookieNotice() {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-[#2A2018]/35 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-[#2F2A24]/35 p-4 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="al-cookie-title"
       onClick={dismiss}
     >
       <div
-        className="w-full max-w-[420px] rounded-2xl border border-[#e6ddcc] bg-[#fffdf8] p-7 text-center shadow-[0_28px_70px_rgba(40,25,10,0.28)]"
+        className="w-full max-w-[420px] rounded-2xl border border-[#E6DED2] bg-[#FFFFFF] p-7 text-center shadow-[0_28px_70px_rgba(40,25,10,0.28)]"
         onClick={(e) => e.stopPropagation()}
       >
         <p
           id="al-cookie-title"
-          className="font-[family-name:var(--font-barlow)] text-[20px] font-extrabold tracking-[-0.01em] text-[#2A2018]"
+          className="font-[family-name:var(--font-barlow)] text-[20px] font-extrabold tracking-[-0.01em] text-[#2F2A24]"
         >
           Solo cookies técnicas
         </p>
-        <p className="mt-2.5 text-[14px] leading-relaxed text-[#55514a]">
+        <p className="mt-2.5 text-[14px] leading-relaxed text-[#4D4842]">
           Usamos únicamente las cookies necesarias para que la plataforma funcione. Sin analítica, sin publicidad, sin
           rastreo, así que no hay nada que aceptar o rechazar.
         </p>
@@ -67,11 +67,11 @@ export function CookieNotice() {
           <button
             type="button"
             onClick={dismiss}
-            className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-[#E15D2D] bg-[#E15D2D] px-5 text-[14px] font-semibold text-white transition-colors hover:border-[#c94f24] hover:bg-[#c94f24]"
+            className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-[#1F5B46] bg-[#1F5B46] px-5 text-[14px] font-semibold text-white transition-colors hover:border-[#174938] hover:bg-[#174938]"
           >
             Entendido
           </button>
-          <Link href="/cookies" className="text-[13px] font-semibold text-[#b94720] underline underline-offset-2">
+          <Link href="/cookies" className="text-[13px] font-semibold text-[#1F5B46] underline underline-offset-2">
             Ver política de cookies
           </Link>
         </div>

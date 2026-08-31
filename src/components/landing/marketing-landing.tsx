@@ -11,12 +11,12 @@ import { LANDING_MODULES } from "@/components/landing/modules";
 // introduce more families or weights:
 //   - Display (h1/h2 only): Barlow, weight 800  (var(--font-barlow))
 //   - Everything else:       Inter, 400/500/600/700  (the app default)
-// Colour: no pure black anywhere. Section headings are warm ink (#2A2018),
-// the hero headline is a lighter warm brown (#5b4636), and the one filled
-// action is the app's terracotta (#E15D2D).
+// Colour (AL-LÍO style guide): no pure black, no orange as an interface
+// colour. Warm ink #2F2A24 for headings, green #1F5B46 for every action
+// and accent, cream #F7F3EC ground, warm greys for support text.
 const ghostBtn =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#d8cfc0] bg-transparent px-5 text-[15px] font-semibold text-[#2A2018] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2A2018]/15";
-const eyebrow = "text-[13px] font-bold uppercase tracking-[0.16em] text-[#b94720]";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#1F5B46] bg-transparent px-5 text-[15px] font-semibold text-[#1F5B46] transition-colors hover:bg-[#E7EFEA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F5B46]/20";
+const eyebrow = "text-[13px] font-bold uppercase tracking-[0.16em] text-[#1F5B46]";
 const secTitle = "font-[family-name:var(--font-barlow)] font-extrabold tracking-[-0.01em]";
 const shell = "mx-auto max-w-[1120px] px-6 sm:px-12";
 
@@ -34,7 +34,7 @@ const CYCLES = [
 // screenshots, no bordered white cards - the copy sits on the cream.
 export function MarketingLanding() {
   return (
-    <div className="relative min-h-screen bg-[#F6F1E6] text-[#2A2018]">
+    <div className="relative min-h-screen bg-[#F7F3EC] text-[#2F2A24]">
       <style>{`
         html { scroll-behavior: smooth; }
         @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
@@ -62,16 +62,16 @@ export function MarketingLanding() {
           <section className="relative flex min-h-[calc(100svh-80px)] items-center overflow-hidden">
             <div className={`${shell} relative w-full pb-20 text-center`}>
               <p className={eyebrow}>Plataforma para estudiantes de FP</p>
-              <h1 className="mx-auto mt-5 max-w-[18ch] font-[family-name:var(--font-barlow)] text-[50px] font-extrabold leading-[1.02] tracking-[-0.03em] text-[#5b4636] sm:text-[78px]">
+              <h1 className="mx-auto mt-5 max-w-[18ch] font-[family-name:var(--font-barlow)] text-[50px] font-extrabold leading-[1.02] tracking-[-0.03em] text-[#2F2A24] sm:text-[78px]">
                 Enfoca. Actúa.<br />
                 Logra más.
               </h1>
-              <p className="mx-auto mt-6 max-w-[46ch] text-[18px] leading-relaxed text-[#55514a]">
+              <p className="mx-auto mt-6 max-w-[46ch] text-[18px] leading-relaxed text-[#4D4842]">
                 Tu curso en un panel: tareas, prácticas, cursos, eventos y calendario, con noticias y convocatorias de tu ciclo revisadas cada día.
               </p>
               <a
                 href="#panel"
-                className="mt-10 inline-flex h-14 items-center justify-center gap-2.5 rounded-full border border-[#E15D2D] bg-[#E15D2D] px-8 text-[16px] font-semibold text-white transition-colors hover:bg-[#c94f24] hover:border-[#c94f24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E15D2D]/30 focus-visible:ring-offset-2"
+                className="mt-10 inline-flex h-14 items-center justify-center gap-2.5 rounded-full border border-[#1F5B46] bg-[#1F5B46] px-8 text-[16px] font-semibold text-white transition-colors hover:bg-[#174938] hover:border-[#174938] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F5B46]/30 focus-visible:ring-offset-2"
               >
                 Ver cómo funciona
                 <ChevronDown className="h-5 w-5" aria-hidden="true" />
@@ -80,11 +80,11 @@ export function MarketingLanding() {
           </section>
 
           {/* Where the scroll cue lands: the connected diagram. */}
-          <section id="panel" className="scroll-mt-6 border-y border-[#e7ddca] py-24 md:py-32">
+          <section id="panel" className="scroll-mt-6 border-y border-[#E6DED2] py-24 md:py-32">
             <div className={shell}>
               <div className="mx-auto max-w-[60ch] text-center">
                 <h2 className={`${secTitle} text-[36px]`}>Un panel, todo conectado</h2>
-                <p className="mx-auto mt-3 max-w-[54ch] text-[16px] leading-relaxed text-[#6b6f72]">
+                <p className="mx-auto mt-3 max-w-[54ch] text-[16px] leading-relaxed text-[#7A736B]">
                   Cada área se conecta con AL-LÍO y te cuenta qué aporta.
                 </p>
               </div>
@@ -94,17 +94,17 @@ export function MarketingLanding() {
 
               {/* The hover copy from the diagram, spelled out where the
                   side tooltips have no room (below xl). */}
-              <ul className="mx-auto mt-14 max-w-[560px] divide-y divide-[#e7ddca] xl:hidden">
+              <ul className="mx-auto mt-14 max-w-[560px] divide-y divide-[#E6DED2] xl:hidden">
                 {LANDING_MODULES.map((module) => {
                   const Icon = module.icon;
                   return (
                     <li key={module.label} className="flex gap-3.5 py-4 first:pt-0 last:pb-0">
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[11px] bg-[#fbe7dd] text-[#E15D2D]">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[11px] bg-[#E7EFEA] text-[#1F5B46]">
                         <Icon className="h-5 w-5" aria-hidden="true" />
                       </span>
                       <div>
-                        <p className="text-[15px] font-semibold text-[#35322c]">{module.label}</p>
-                        <p className="mt-1 text-[13.5px] leading-relaxed text-[#77726a]">{module.description}</p>
+                        <p className="text-[15px] font-semibold text-[#2F2A24]">{module.label}</p>
+                        <p className="mt-1 text-[13.5px] leading-relaxed text-[#7A736B]">{module.description}</p>
                       </div>
                     </li>
                   );
@@ -114,23 +114,23 @@ export function MarketingLanding() {
           </section>
 
           {/* Closing section: what each professional family gets. */}
-          <section className="border-t border-[#e7ddca]">
+          <section className="border-t border-[#E6DED2]">
             <div className={`${shell} py-24 md:py-28`}>
               <div className="max-w-[46ch]">
                 <p className={eyebrow}>Para tu ciclo</p>
                 <h2 className={`${secTitle} mt-3 text-[32px] sm:text-[34px]`}>Lo que ves depende de lo que estudias</h2>
-                <p className="mt-4 text-[16px] leading-relaxed text-[#55514a]">
+                <p className="mt-4 text-[16px] leading-relaxed text-[#4D4842]">
                   Cada familia profesional recibe sus cursos, prácticas y eventos. Nada de un catálogo común.
                 </p>
               </div>
-              {/* Marked on one edge, not boxed: a terracotta rule down the
-                  left tells each family apart without a white card. */}
+              {/* Marked on one edge, not boxed: a green rule down the left
+                  tells each family apart without a white card. */}
               <div className="mt-14 grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {CYCLES.map((cycle) => (
-                  <div key={cycle.code} className="border-l-2 border-[#E15D2D]/35 pl-5">
-                    <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#b94720]">{cycle.code}</p>
-                    <p className="mt-1.5 text-[16px] font-semibold text-[#35322c]">{cycle.name}</p>
-                    <p className="mt-2 text-[14px] leading-relaxed text-[#77726a]">{cycle.line}</p>
+                  <div key={cycle.code} className="border-l-2 border-[#1F5B46]/35 pl-5">
+                    <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#1F5B46]">{cycle.code}</p>
+                    <p className="mt-1.5 text-[16px] font-semibold text-[#2F2A24]">{cycle.name}</p>
+                    <p className="mt-2 text-[14px] leading-relaxed text-[#7A736B]">{cycle.line}</p>
                   </div>
                 ))}
               </div>

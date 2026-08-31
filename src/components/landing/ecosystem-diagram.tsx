@@ -96,7 +96,7 @@ export function EcosystemDiagram() {
   // One beam at a time: it grows (DRAW_S) -> on arrival the module turns
   // green and its line opens at the hub, held DWELL_MS to read -> next
   // module -> ... -> everything connected, hold -> restart. The growing
-  // terracotta line is dropped the instant the module connects, so it can
+  // green line is dropped the instant the module connects, so it can
   // never linger half-drawn on top of the green one.
   useEffect(() => {
     if (!inView || paths.length === 0) return;
@@ -148,7 +148,7 @@ export function EcosystemDiagram() {
       <style>{`
         @keyframes al-eco-grow { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
         .al-eco-active { stroke-dasharray: 1; stroke-dashoffset: 1; animation: al-eco-grow ${DRAW_S}s ease-in-out forwards; }
-        .al-eco-hub p { text-shadow: 0 0 6px #F6F1E6, 0 0 6px #F6F1E6, 0 0 12px #F6F1E6, 0 1px 0 #F6F1E6; }
+        .al-eco-hub p { text-shadow: 0 0 6px #F7F3EC, 0 0 6px #F7F3EC, 0 0 12px #F7F3EC, 0 1px 0 #F7F3EC; }
         .al-eco-hub { opacity: 0; transition: opacity 0.25s; }
         .al-eco-hub[data-show="true"] { opacity: 1; }
         @media (prefers-reduced-motion: reduce) {
@@ -162,7 +162,7 @@ export function EcosystemDiagram() {
             so the picture still reads as connected. */}
         {(!inView || (seq.active < 0 && seq.done === 0)) &&
           paths.map((path, index) => (
-            <path key={`static-${index}`} d={path.d} fill="none" stroke="#e0d2b8" strokeWidth="1.8" strokeLinecap="round" />
+            <path key={`static-${index}`} d={path.d} fill="none" stroke="#E6DED2" strokeWidth="1.8" strokeLinecap="round" />
           ))}
 
         {/* Beams already connected stay green. */}
@@ -172,7 +172,7 @@ export function EcosystemDiagram() {
               key={`done-${index}`}
               d={path.d}
               fill="none"
-              stroke="#1f7a4d"
+              stroke="#1F5B46"
               strokeOpacity="0.9"
               strokeWidth="3"
               strokeLinecap="round"
@@ -189,7 +189,7 @@ export function EcosystemDiagram() {
             d={growingPath.d}
             pathLength={1}
             fill="none"
-            stroke="#e15d2d"
+            stroke="#1F5B46"
             strokeWidth="3"
             strokeLinecap="round"
           />
@@ -217,13 +217,13 @@ export function EcosystemDiagram() {
             data-show={hubModule ? "true" : "false"}
             aria-hidden="true"
           >
-            <p className="text-[17px] font-bold text-[#b94720]">{hubModule?.label ?? ""}</p>
-            <p className="mt-1 text-[14px] leading-relaxed text-[#5f5a50]">{hubModule?.description ?? ""}</p>
+            <p className="text-[17px] font-bold text-[#1F5B46]">{hubModule?.label ?? ""}</p>
+            <p className="mt-1 text-[14px] leading-relaxed text-[#7A736B]">{hubModule?.description ?? ""}</p>
           </div>
 
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute -z-10 h-[240px] w-[240px] rounded-full bg-[radial-gradient(circle,rgba(225,93,45,0.22),transparent_68%)] blur-lg"
+            className="pointer-events-none absolute -z-10 h-[240px] w-[240px] rounded-full bg-[radial-gradient(circle,rgba(31,91,70,0.14),transparent_68%)] blur-lg"
           />
           <Image
             src="/assets/al_lio_icon_black.png"
@@ -266,24 +266,24 @@ function DiagramNode({
     <div
       ref={nodeRef}
       className={`flex items-center gap-2 rounded-xl border bg-white py-1.5 pl-1.5 pr-2.5 shadow-[0_10px_22px_rgba(90,60,25,0.07)] transition-colors duration-300 sm:gap-3 sm:py-2.5 sm:pl-2.5 sm:pr-4 ${
-        done ? "border-[#bfe3cf]" : "border-[#e9e2d3]"
+        done ? "border-[#CDE2D6]" : "border-[#E6DED2]"
       }`}
     >
       <span
         className={`relative grid h-6 w-6 shrink-0 place-items-center rounded-[8px] transition-colors duration-300 sm:h-8 sm:w-8 sm:rounded-[9px] ${
-          done ? "bg-[#e6f4ec] text-[#1f7a4d]" : "bg-[#fbe7dd] text-[#E15D2D]"
+          done ? "bg-[#E7EFEA] text-[#1F5B46]" : "bg-[#EFEADF] text-[#7A736B]"
         }`}
       >
         <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
         {done && (
-          <span className="absolute -right-1.5 -top-1.5 grid h-4 w-4 place-items-center rounded-full bg-[#1f7a4d] text-white shadow-sm">
+          <span className="absolute -right-1.5 -top-1.5 grid h-4 w-4 place-items-center rounded-full bg-[#1F5B46] text-white shadow-sm">
             <Check className="h-2.5 w-2.5" strokeWidth={3} aria-hidden="true" />
           </span>
         )}
       </span>
       <span
         className={`text-left text-[12px] font-semibold leading-tight transition-colors duration-300 sm:text-[13.5px] ${
-          done ? "text-[#1f7a4d]" : "text-[#35322c]"
+          done ? "text-[#1F5B46]" : "text-[#2F2A24]"
         }`}
       >
         {module.label}
