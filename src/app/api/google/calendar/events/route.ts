@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getValidatedSession } from "@/lib/auth/session";
 import { getGoogleCalendarClient } from "@/lib/google/calendar";
 
 export const dynamic = "force-dynamic";
@@ -23,11 +24,16 @@ function friendlyGoogleError(error: unknown): string {
   if (message.includes("invalid_grant") || message.includes("Token has been expired")) {
     return "La conexión con Google ha caducado. Desconecta y vuelve a conectar Google Calendar.";
   }
-  return message;
+  // Never surface the raw provider message - it can carry request URLs or
+  // internal detail (issue #280).
+  return "No se pudo completar la operación con Google Calendar. Inténtalo de nuevo.";
 }
 
 export async function GET(req: Request) {
-  const calendar = await getGoogleCalendarClient();
+  const session = await getValidatedSession();
+  if (!session) return unauthorized();
+
+  const calendar = await getGoogleCalendarClient(session.uid);
   if (!calendar) return NextResponse.json({ connected: false, events: [] });
 
   const url = new URL(req.url);
@@ -64,7 +70,10 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const calendar = await getGoogleCalendarClient();
+  const session = await getValidatedSession();
+  if (!session) return unauthorized();
+
+  const calendar = await getGoogleCalendarClient(session.uid);
   if (!calendar) return unauthorized();
 
   const parsed = eventSchema.safeParse(await req.json().catch(() => null));
@@ -100,7 +109,10 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const calendar = await getGoogleCalendarClient();
+  const session = await getValidatedSession();
+  if (!session) return unauthorized();
+
+  const calendar = await getGoogleCalendarClient(session.uid);
   if (!calendar) return unauthorized();
 
   const url = new URL(req.url);

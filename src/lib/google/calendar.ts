@@ -25,6 +25,21 @@ type StoredGoogleTokens = {
   token_type?: string | null;
 };
 
+// The encrypted cookie payload always carries the AL-LÍO user id that
+// completed the OAuth callback. A credential is only usable by that exact
+// user; anything else (no owner field, or a different owner) fails closed
+// and must be reconnected (issue #280).
+type CalendarCredential = {
+  owner: string;
+  tokens: StoredGoogleTokens;
+};
+
+type CredentialRead =
+  | { status: "ok"; tokens: StoredGoogleTokens }
+  | { status: "none" }
+  | { status: "legacy" }
+  | { status: "mismatch" };
+
 function requiredEnv(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing ${name}`);
@@ -61,18 +76,21 @@ function withGoogleStatus(path: string, status: string): string {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-function encryptTokens(tokens: StoredGoogleTokens): string {
+function encryptCredential(credential: CalendarCredential): string {
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv("aes-256-gcm", getEncryptionKey(), iv);
   const encrypted = Buffer.concat([
-    cipher.update(JSON.stringify(tokens), "utf8"),
+    cipher.update(JSON.stringify(credential), "utf8"),
     cipher.final(),
   ]);
   const tag = cipher.getAuthTag();
   return Buffer.concat([iv, tag, encrypted]).toString("base64url");
 }
 
-function decryptTokens(value?: string): StoredGoogleTokens | null {
+// Decrypts and authenticates the cookie. Returns the parsed JSON untyped so
+// the caller can tell an owner-bound credential apart from a legacy
+// (pre-#280) unbound one.
+function decryptCredentialPayload(value?: string): Record<string, unknown> | null {
   if (!value) return null;
   try {
     const raw = Buffer.from(value, "base64url");
@@ -82,10 +100,28 @@ function decryptTokens(value?: string): StoredGoogleTokens | null {
     const decipher = crypto.createDecipheriv("aes-256-gcm", getEncryptionKey(), iv);
     decipher.setAuthTag(tag);
     const text = Buffer.concat([decipher.update(encrypted), decipher.final()]).toString("utf8");
-    return JSON.parse(text) as StoredGoogleTokens;
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
   } catch {
     return null;
   }
+}
+
+async function readCalendarCredential(ownerUid: string): Promise<CredentialRead> {
+  const cookieStore = await cookies();
+  const payload = decryptCredentialPayload(cookieStore.get(TOKEN_COOKIE)?.value);
+  if (!payload) return { status: "none" };
+
+  const owner = payload.owner;
+  const tokens = payload.tokens as StoredGoogleTokens | undefined;
+  // A pre-#280 cookie is the flat token object with no `owner`/`tokens`
+  // wrapper. Never guess its owner.
+  if (typeof owner !== "string" || owner.length === 0 || !tokens || typeof tokens !== "object") {
+    return { status: "legacy" };
+  }
+  if (owner !== ownerUid) return { status: "mismatch" };
+  if (!tokens.access_token && !tokens.refresh_token) return { status: "none" };
+  return { status: "ok", tokens };
 }
 
 export function createGoogleOAuthClient(redirectUri = getRedirectUri()) {
@@ -154,9 +190,9 @@ export async function assertGoogleOAuthState(state: string | null): Promise<bool
   return Boolean(state && expected && state === expected);
 }
 
-export async function saveGoogleTokens(tokens: StoredGoogleTokens): Promise<void> {
+export async function saveGoogleTokens(ownerUid: string, tokens: StoredGoogleTokens): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(TOKEN_COOKIE, encryptTokens(tokens), {
+  cookieStore.set(TOKEN_COOKIE, encryptCredential({ owner: ownerUid, tokens }), {
     httpOnly: true,
     secure: USE_SECURE_COOKIES,
     sameSite: "lax",
@@ -171,16 +207,24 @@ export async function clearGoogleTokens(): Promise<void> {
   cookieStore.delete(TOKEN_COOKIE);
 }
 
-export async function getGoogleOAuthClientFromCookie() {
-  const cookieStore = await cookies();
-  const tokens = decryptTokens(cookieStore.get(TOKEN_COOKIE)?.value);
-  if (!tokens?.access_token && !tokens?.refresh_token) return null;
+// Legacy (unbound) or another user's credential is refused here and must be
+// cleared by the caller so the user is prompted to reconnect (issue #280).
+export type CalendarCredentialStatus = CredentialRead["status"];
 
+export async function getCalendarCredentialStatus(ownerUid: string): Promise<CalendarCredentialStatus> {
+  return (await readCalendarCredential(ownerUid)).status;
+}
+
+async function getGoogleOAuthClient(ownerUid: string) {
+  const read = await readCalendarCredential(ownerUid);
+  if (read.status !== "ok") return null;
+
+  const tokens = read.tokens;
   const auth = createGoogleOAuthClient();
   auth.setCredentials(tokens);
 
   auth.on("tokens", async (newTokens) => {
-    await saveGoogleTokens({
+    await saveGoogleTokens(ownerUid, {
       ...tokens,
       ...newTokens,
       refresh_token: newTokens.refresh_token ?? tokens.refresh_token,
@@ -190,14 +234,12 @@ export async function getGoogleOAuthClientFromCookie() {
   return auth;
 }
 
-export async function getGoogleCalendarClient() {
-  const auth = await getGoogleOAuthClientFromCookie();
+export async function getGoogleCalendarClient(ownerUid: string) {
+  const auth = await getGoogleOAuthClient(ownerUid);
   if (!auth) return null;
   return google.calendar({ version: "v3", auth });
 }
 
-export async function isGoogleCalendarConnected(): Promise<boolean> {
-  const cookieStore = await cookies();
-  const tokens = decryptTokens(cookieStore.get(TOKEN_COOKIE)?.value);
-  return Boolean(tokens?.refresh_token || tokens?.access_token);
+export async function isGoogleCalendarConnected(ownerUid: string): Promise<boolean> {
+  return (await readCalendarCredential(ownerUid)).status === "ok";
 }
