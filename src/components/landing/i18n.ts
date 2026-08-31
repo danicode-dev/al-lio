@@ -4,26 +4,13 @@
 
 export type Lang = "es" | "en";
 
-export const LANGS: readonly Lang[] = ["es", "en"];
-
-export function otherLang(lang: Lang): Lang {
-  return lang === "es" ? "en" : "es";
-}
-
-// Map an ES landing path to its EN counterpart and back.
-export function altPath(path: string, target: Lang): string {
-  const clean = path.replace(/^\/en(?=\/|$)/, "") || "/";
-  if (target === "es") return clean;
-  return clean === "/" ? "/en" : `/en${clean}`;
-}
-
 type ModuleCopy = { label: string; description: string };
 type Family = { code: string; name: string; line: string };
 
 type Messages = {
   nav: { signIn: string; langMenu: string };
   hero: { eyebrow: string; titleLines: [string, string]; lead: string; scrollCue: string };
-  panel: { title: string; lead: string; diagramAria: string; fallbackNote: string };
+  panel: { title: string; lead: string; diagramAria: string };
   cycle: {
     eyebrow: string;
     title: string;
@@ -39,7 +26,6 @@ type Messages = {
     productHeading: string;
     legalHeading: string;
     links: {
-      howItWorks: string;
       project: string;
       signIn: string;
       privacy: string;
@@ -76,7 +62,6 @@ export const messages: Record<Lang, Messages> = {
       title: "Un panel, todo conectado",
       lead: "Cada área se conecta con AL-LÍO y te cuenta qué aporta.",
       diagramAria: "Los módulos de AL-LÍO conectados",
-      fallbackNote: "Áreas de AL-LÍO",
     },
     cycle: {
       eyebrow: "Para tu ciclo",
@@ -114,7 +99,6 @@ export const messages: Record<Lang, Messages> = {
       productHeading: "Producto",
       legalHeading: "Legal",
       links: {
-        howItWorks: "Cómo funciona",
         project: "El proyecto",
         signIn: "Entrar",
         privacy: "Privacidad",
@@ -155,7 +139,6 @@ export const messages: Record<Lang, Messages> = {
       title: "One panel, everything connected",
       lead: "Every area links back to AL-LÍO and tells you what it brings.",
       diagramAria: "The AL-LÍO areas, connected",
-      fallbackNote: "AL-LÍO areas",
     },
     cycle: {
       eyebrow: "For your programme",
@@ -193,7 +176,6 @@ export const messages: Record<Lang, Messages> = {
       productHeading: "Product",
       legalHeading: "Legal",
       links: {
-        howItWorks: "How it works",
         project: "The project",
         signIn: "Sign in",
         privacy: "Privacy",

@@ -7,7 +7,7 @@ import { MarketingLanding } from "@/components/landing/marketing-landing";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "AL-LÍO",
+  title: { absolute: "AL-LÍO" },
   description: "One panel for tasks, calendar, courses, events, challenges, jobs and news for your vocational-training programme.",
   alternates: { canonical: "/en", languages: { es: "/", en: "/en" } },
 };

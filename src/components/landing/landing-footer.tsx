@@ -11,7 +11,7 @@ import { messages } from "@/components/landing/i18n";
 export function LandingFooter({ lang }: { lang: Lang }) {
   const t = messages[lang].footer;
   // Localise an ES landing path to the current language.
-  const p = (path: string) => (lang === "es" ? path : path === "/#panel" ? "/en#panel" : `/en${path}`);
+  const p = (path: string) => (lang === "es" ? path : `/en${path}`);
   const GH = "https://github.com/danielgarciaortega-dev/al-lio";
 
   return (
@@ -46,7 +46,6 @@ export function LandingFooter({ lang }: { lang: Lang }) {
           <div>
             <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[#7A736B]">{t.productHeading}</p>
             <ul className="space-y-2.5 text-[#4D4842]">
-              <li><Link href={p("/#panel")} className="hover:text-[#2F2A24]">{t.links.howItWorks}</Link></li>
               <li><Link href={p("/proyecto")} className="hover:text-[#2F2A24]">{t.links.project}</Link></li>
               <li><Link href="/login" className="hover:text-[#2F2A24]">{t.links.signIn}</Link></li>
             </ul>
