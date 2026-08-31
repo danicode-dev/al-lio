@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { Lang } from "@/components/landing/i18n";
 import { messages } from "@/components/landing/i18n";
-import { LANDING_MODULES } from "@/components/landing/modules";
+import { LANDING_MODULES } from "@/features/marketing/domain/modules";
 
 type BeamPath = { d: string };
 

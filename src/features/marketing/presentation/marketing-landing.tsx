@@ -2,13 +2,13 @@ import Link from "next/link";
 import { ArrowRight, ChevronDown } from "lucide-react";
 
 import { CookieNotice } from "@/components/landing/cookie-notice";
-import { EcosystemDiagram } from "@/components/landing/ecosystem-diagram";
 import { HtmlLang } from "@/components/landing/html-lang";
 import type { Lang } from "@/components/landing/i18n";
 import { messages } from "@/components/landing/i18n";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { LandingHeader } from "@/components/landing/landing-header";
-import { LANDING_MODULES } from "@/components/landing/modules";
+import { LANDING_MODULES } from "@/features/marketing/domain/modules";
+import { EcosystemDiagram } from "@/features/marketing/presentation/ecosystem-diagram";
 
 // Type system for the whole landing and its legal pages, fixed - do not
 // introduce more families or weights:
