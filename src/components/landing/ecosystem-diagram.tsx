@@ -59,13 +59,19 @@ export function EcosystemDiagram() {
           y: rect.top - stageRect.top + rect.height / 2,
         };
         const sideIndex = perSide[module.side]++;
-        const spread = [0.22, 0.42, 0.58, 0.78][sideIndex] ?? 0.5;
+        // Fan the four beams per side over a span a bit taller than the hub
+        // so they stay in separate lanes right up to the mark.
+        const spread = [-0.05, 0.3, 0.7, 1.05][sideIndex] ?? 0.5;
         const end = {
-          x: module.side === "left" ? hubLeft + 8 : hubRight - 8,
+          x: module.side === "left" ? hubLeft + 6 : hubRight - 6,
           y: hubTop + hubRect.height * spread,
         };
-        const midX = (start.x + end.x) / 2;
-        return [{ d: `M ${start.x} ${start.y} C ${midX} ${start.y}, ${midX} ${end.y}, ${end.x} ${end.y}` }];
+        // Asymmetric control points: hold the node's own height for the
+        // first stretch, then swoop to the hub - keeps the curves apart.
+        const dx = end.x - start.x;
+        const c1x = start.x + dx * 0.42;
+        const c2x = start.x + dx * 0.86;
+        return [{ d: `M ${start.x} ${start.y} C ${c1x} ${start.y}, ${c2x} ${end.y}, ${end.x} ${end.y}` }];
       });
       setPaths(next);
     };
@@ -200,8 +206,8 @@ export function EcosystemDiagram() {
         )}
       </svg>
 
-      <div className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:h-[460px] sm:gap-8 xl:gap-16">
-        <div className="flex flex-col items-start gap-5 sm:gap-9">
+      <div className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:h-[520px] sm:gap-12 xl:gap-20">
+        <div className="flex flex-col items-start gap-6 sm:gap-12">
           {left.map(({ module, index }) => (
             <DiagramNode
               key={module.label}
@@ -241,7 +247,7 @@ export function EcosystemDiagram() {
           />
         </div>
 
-        <div className="flex flex-col items-end gap-5 sm:gap-9">
+        <div className="flex flex-col items-end gap-6 sm:gap-12">
           {right.map(({ module, index }) => (
             <DiagramNode
               key={module.label}
