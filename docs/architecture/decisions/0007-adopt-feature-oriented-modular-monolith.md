@@ -21,7 +21,9 @@ microservices to solve that problem.
 Use a feature-oriented modular monolith with these boundaries:
 
 - `src/app` owns URLs, layouts, route handlers, metadata and route-level access
-  control. A route composes a feature through that feature's public `index.ts`.
+  control. A route composes UI through a feature's root `index.ts` and may use
+  an explicit `server`, `domain`, or `presentation` public boundary when the
+  route itself owns that composition.
 - `src/features/<feature>` owns product-specific UI, client orchestration,
   domain behavior and feature-specific server entry points.
 - `src/shared` owns UI composition and utilities that have multiple consumers
@@ -29,9 +31,11 @@ Use a feature-oriented modular monolith with these boundaries:
 - Existing `src/components` and `src/lib` modules remain valid shared and
   server infrastructure while they are incrementally moved to an unambiguous
   owner. New product behavior must start in a feature.
-- A feature may consume another feature only through the other feature's public
-  entry point. It must not import another feature's `client`, `domain` or
-  `server` internals.
+- A feature may consume another feature only through a documented public entry
+  point: the feature root or its `client`, `domain`, `presentation`, or `server`
+  barrel. A `server/actions` module is also public when a client must invoke
+  explicit Next.js Server Actions without importing a barrel that exposes
+  repositories. Other concrete files below those boundaries remain private.
 - Client modules may invoke explicit Next.js server actions, but server-only
   repositories, sessions and secrets are not re-exported by client barrels.
 - Authentication and authorisation remain route/server responsibilities.
@@ -42,9 +46,11 @@ separates orchestration, editor helpers, toolbar, note list, menus, persistence
 normalisation and export code. Automated boundary checks prevent these shells
 and oversized feature modules from returning.
 
-The cross-feature store provider lives under `src/shared/store`; it remains one
-authenticated context mounted by the dashboard layout, rather than a guest
-feature or a second per-route provider.
+The cross-feature data container lives under `src/shared/store`; it remains one
+authenticated context mounted by the dashboard layout. It owns only the loaded
+snapshot and state replacement. Product mutations, optimistic updates and
+rollback behavior live in feature-owned client hooks, so `shared` does not
+import product features or server actions.
 
 ## Consequences
 

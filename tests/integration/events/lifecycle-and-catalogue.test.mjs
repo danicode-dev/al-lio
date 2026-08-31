@@ -8,7 +8,7 @@ import test from "node:test";
 import { selectFeaturedHackathon } from "../../../src/lib/fp/event-lifecycle.ts";
 import { isSafeHttpUrl } from "../../../src/lib/fp/event-cta.ts";
 
-import { getHackathonPresentation, resolveHackathonById } from "../../../src/lib/hackathons/hackathon-presentation.ts";
+import { getHackathonPresentation, resolveHackathonById } from "../../../src/features/events/presentation/event-presentation.ts";
 
 const fixtureTechEvent = {
   id: "t1", id_slug: "reto-granada", categoria: "hackathon_reto", nombre: "Reto Granada",
@@ -38,23 +38,22 @@ const fixtureOwnHackathon = {
 };
 
 test("completeHackathon persists Realizado per origin, with rollback, and never copies a catalogue row into hackathons (issue #95)", async () => {
-  const storeSource = await readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8");
-  const start = storeSource.indexOf("completeHackathon: async");
-  const end = storeSource.indexOf("addLink: async", start);
+  const storeSource = await readFile(new URL("../../../src/features/events/client/use-event-actions.ts", import.meta.url), "utf8");
+  const start = storeSource.indexOf("completeHackathon: async (item) =>");
+  const end = storeSource.indexOf("\n  };", start);
   assert.ok(start > -1 && end > start, "could not locate the completeHackathon action body");
   const actionSource = storeSource.slice(start, end);
 
   // fp_content_items: routed through the same per-user table as course/video
   // completion, never inserted or copied into the hackathons table.
-  const fpBranchEnd = actionSource.indexOf("// Plain, already user-owned hackathon row");
+  const fpBranchEnd = actionSource.indexOf("const previous = store.hackathons.find");
   const fpBranch = actionSource.slice(0, fpBranchEnd);
-  assert.match(fpBranch, /await markResourceStatusAction\(idSlug, "completed"\)/);
-  assert.doesNotMatch(fpBranch, /insertDb\("hackathons"/, "must not copy the catalogue row into the user's hackathons table");
+  assert.match(fpBranch, /await markLearningResourceStatusAction\(\{ idSlug: item\.id_slug, status: "completed" \}\)/);
+  assert.doesNotMatch(fpBranch, /createEventAction/, "must not copy the catalogue row into the user's hackathons table");
   assert.doesNotMatch(fpBranch, /addHackathon/, "must not go through the add-new-hackathon path either");
-  assert.match(fpBranch, /const previousStatus = previousContent\?\.user_status/);
-  assert.match(fpBranch, /const previousCompletedAt = previousContent\?\.user_completed_at/);
-  assert.match(fpBranch, /user_status: previousStatus/);
-  assert.match(fpBranch, /user_completed_at: previousCompletedAt/, "must roll back the optimistic completion to the exact prior state");
+  assert.match(fpBranch, /const previous = store\.fpContent\.find/);
+  assert.match(fpBranch, /user_status: previous\?\.user_status/);
+  assert.match(fpBranch, /user_completed_at: previous\?\.user_completed_at/, "must roll back the optimistic completion to the exact prior state");
   assert.match(fpBranch, /throw error;/);
 
   // No tech_opportunities persistence branch exists - the UI does not offer
@@ -69,26 +68,26 @@ test("completeHackathon persists Realizado per origin, with rollback, and never 
   // Plain, already user-owned hackathon row: awaited update scoped by id,
   // rolled back to the exact previous row on failure.
   const plainBranch = actionSource.slice(fpBranchEnd);
-  assert.match(plainBranch, /store\.hackathons\.find\(\(hackathon\) => hackathon\.id === item\.id\)/);
-  assert.match(plainBranch, /await updateDb\("hackathons", item\.id, \{ status: "realizado" \}/);
-  assert.match(plainBranch, /if \(!response\?\.result\) throw new Error/);
-  assert.match(plainBranch, /patchById\(current\.hackathons, item\.id, previousHackathon\)/, "must roll back to the exact previous row, not just clear it");
+  assert.match(plainBranch, /store\.hackathons\.find\(\(event\) => event\.id === item\.id\)/);
+  assert.match(plainBranch, /await completeEventAction\(\{ id: item\.id \}\)/);
+  assert.match(plainBranch, /if \(!response\.ok\) throw new Error/);
+  assert.match(plainBranch, /event\.id === item\.id \? previous : event/, "must roll back to the exact previous row, not just clear it");
   assert.match(plainBranch, /throw error;/);
 });
 
 test("completeHackathon preserves favourites and is scoped to the caller's own session/row, not a client-supplied user (issue #95)", async () => {
-  const storeSource = await readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8");
-  const start = storeSource.indexOf("completeHackathon: async");
-  const end = storeSource.indexOf("addLink: async", start);
+  const storeSource = await readFile(new URL("../../../src/features/events/client/use-event-actions.ts", import.meta.url), "utf8");
+  const start = storeSource.indexOf("completeHackathon: async (item) =>");
+  const end = storeSource.indexOf("\n  };", start);
   const actionSource = storeSource.slice(start, end);
-  const fpBranchEnd = actionSource.indexOf("// Plain, already user-owned hackathon row");
+  const fpBranchEnd = actionSource.indexOf("const previous = store.hackathons.find");
   const fpBranch = actionSource.slice(0, fpBranchEnd);
   const plainBranch = actionSource.slice(fpBranchEnd);
 
   // fp_content_items: only status/completed_at are ever set - is_favorite,
   // notes and reminder_at are untouched, so upsertFpUserContentState's
   // partial-update semantics leave them exactly as they were.
-  assert.match(fpBranch, /user_status: "completed", user_completed_at: completedAt/);
+  assert.match(fpBranch, /user_status: "completed", user_completed_at: new Date\(\)\.toISOString\(\)/);
   assert.doesNotMatch(fpBranch, /is_favorite/, "must not touch is_favorite when marking an event realizado");
   // markResourceStatusAction itself resolves the user from the server
   // session (proven by the issue #94 test above) - completeHackathon never
@@ -98,7 +97,7 @@ test("completeHackathon preserves favourites and is scoped to the caller's own s
   // Plain hackathon row: the update is scoped to this exact row's id, going
   // through updateDb (which resolves the writer from the session and is
   // allowlist-gated - see the issue #92 test above), not a raw/global write.
-  assert.match(plainBranch, /updateDb\("hackathons", item\.id, \{ status: "realizado" \}/);
+  assert.match(plainBranch, /completeEventAction\(\{ id: item\.id \}\)/);
 });
 
 test("Realizado is not offered for tech_opportunities and is guarded against double submission (issue #95)", async () => {
@@ -133,25 +132,24 @@ test("The hackathon_favorites migration is additive only - a new column and inde
 });
 
 test("toggleHackathonFavorite is an atomic, user-scoped UPDATE - never touches status/lifecycle columns, and returns null (not a thrown error) for a row the caller doesn't own (issue #131)", async () => {
-  const source = await readFile(new URL("../../../src/lib/db/repositories/hackathons.ts", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/events/server/repository.ts", import.meta.url), "utf8");
   const fnSource = source.slice(source.indexOf("export async function toggleHackathonFavorite"));
-  assert.match(fnSource, /UPDATE public\.hackathons SET is_favorite = NOT is_favorite WHERE id = \$1 AND user_id = \$2/, "must be a single atomic flip, not a read-then-write, and must filter by user_id");
+  assert.match(fnSource, /UPDATE public\.hackathons[\s\S]*SET is_favorite = NOT is_favorite[\s\S]*WHERE id = \$1 AND user_id = \$2/, "must be a single atomic flip, not a read-then-write, and must filter by user_id");
   assert.doesNotMatch(fnSource, /\bstatus\b/, "toggling the heart must never touch the status/lifecycle column");
   assert.match(fnSource, /rows\[0\]\?\.is_favorite \?\? null/);
 });
 
-test("toggleHackathonFavoriteAction is session-gated and redirects unauthenticated callers, matching the toggleCompanyFavoriteAction pattern it mirrors (issue #131)", async () => {
-  const source = await readFile(new URL("../../../src/lib/hackathons/actions.ts", import.meta.url), "utf8");
+test("toggleHackathonFavoriteAction is session-gated through the shared current-user boundary (issue #131, #275)", async () => {
+  const source = await readFile(new URL("../../../src/features/events/server/actions.ts", import.meta.url), "utf8");
   assert.match(source, /"use server"/);
-  assert.match(source, /const session = await getValidatedSession\(\);/);
-  assert.match(source, /if \(!session\) redirect\("\/login"\);/);
-  assert.match(source, /toggleHackathonFavorite\(session\.uid, hackathonId\)/, "must scope to session.uid, never a client-supplied user id");
+  assert.match(source, /const userId = await getCurrentUserId\(\);/);
+  assert.match(source, /toggleHackathonFavorite\(userId, parsed\.data\)/, "must scope to the authenticated user, never a client-supplied user id");
 });
 
 test("The toggleHackathonFavorite store action applies an optimistic flip with rollback and an honest error toast on failure, mirroring toggleCompanyFavorite/toggleFpFavorite - not the unguarded fire-and-forget updateHackathon (issue #131)", async () => {
-  const source = await readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8");
-  const start = source.indexOf("toggleHackathonFavorite: (id: string)");
-  const end = source.indexOf("updateHackathon: async (id: string, data: Partial<Hackathon>)");
+  const source = await readFile(new URL("../../../src/features/events/client/use-event-actions.ts", import.meta.url), "utf8");
+  const start = source.indexOf("toggleHackathonFavorite: (id) =>");
+  const end = source.indexOf("completeHackathon: async (item) =>", start);
   assert.ok(start !== -1 && end !== -1 && end > start, "toggleHackathonFavorite must be defined as its own dedicated action, before updateHackathon");
   const fn = source.slice(start, end);
   assert.match(fn, /setStore\(/, "must apply an optimistic update");
@@ -162,15 +160,15 @@ test("The toggleHackathonFavorite store action applies an optimistic flip with r
   assert.ok(rollbackAssignments.length >= 1, "the failure branch must flip is_favorite back, not leave the optimistic value stuck");
 });
 
-test("ReturnTypeActions declares toggleHackathonFavorite, so the store's action object type-checks against the shared interface (issue #131)", async () => {
-  const source = await readFile(new URL("../../../src/components/store/types.ts", import.meta.url), "utf8");
+test("EventActions declares toggleHackathonFavorite inside the feature boundary (issue #131, #275)", async () => {
+  const source = await readFile(new URL("../../../src/features/events/client/use-event-actions.ts", import.meta.url), "utf8");
   assert.match(source, /toggleHackathonFavorite: \(id: string\) => void;/);
 });
 
 test("The heart control appears in the card, the featured hero and the detail view, all driven by the same shared canToggleHackathonFavorite/toggleHackathonFavoriteFor helpers - so no surface can drift out of sync (issue #131, extended by #135)", async () => {
   const source = await readFile(new URL("../../../src/features/events/client/events-feature.tsx", import.meta.url), "utf8");
 
-  assert.match(source, /import \{[^}]*canToggleHackathonFavorite[^}]*toggleHackathonFavoriteFor[^}]*\} from "@\/lib\/hackathons\/hackathon-presentation";/, "the Events feature must import both shared favorite helpers, not keep local copies");
+  assert.match(source, /import \{[^}]*canToggleHackathonFavorite[^}]*toggleHackathonFavoriteFor[^}]*\} from "@\/features\/events\/presentation";/, "the Events feature must import both shared favorite helpers, not keep local copies");
 
   const heartSites = source.match(/onClick=\{\(\) => toggleHackathonFavoriteFor\(/g) ?? [];
   assert.equal(heartSites.length, 3, "the card, the hero and the detail view must all call the same dispatcher - expected exactly 3 call sites (the requirements modal was retired, folded into the detail view)");
@@ -191,7 +189,7 @@ test("Saving copy is consistent everywhere - Guardar / Quitar de guardados - and
 });
 
 test("tech_opportunities-sourced events are excluded from saving with a documented reason, not silently broken or given a non-functional heart (issue #131, relocated to hackathon-presentation.ts by issue #135)", async () => {
-  const source = await readFile(new URL("../../../src/lib/hackathons/hackathon-presentation.ts", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/events/presentation/event-presentation.ts", import.meta.url), "utf8");
   const fnStart = source.indexOf("export function canToggleHackathonFavorite");
   const fnSource = source.slice(fnStart, source.indexOf("export function toggleHackathonFavoriteFor"));
   assert.match(fnSource, /sourceTable === "tech_opportunities"\) return false/);
@@ -215,9 +213,9 @@ test("Guardados is a real heart-driven filter tab, independent of and additional
 });
 
 test("Toggling the heart is wired through a distinct action from completion/status changes - completeHackathon and the Realizado button never touch is_favorite (issue #131)", async () => {
-  const source = await readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8");
-  const completeFnStart = source.indexOf("completeHackathon: async (item: Hackathon)");
-  const completeFnEnd = source.indexOf("addLink:", completeFnStart);
+  const source = await readFile(new URL("../../../src/features/events/client/use-event-actions.ts", import.meta.url), "utf8");
+  const completeFnStart = source.indexOf("completeHackathon: async (item)");
+  const completeFnEnd = source.indexOf("\n  };", completeFnStart);
   assert.ok(completeFnStart !== -1 && completeFnEnd > completeFnStart);
   const completeFn = source.slice(completeFnStart, completeFnEnd);
   assert.doesNotMatch(completeFn, /is_favorite/, "completing/archiving an event must never read or write is_favorite - the two concepts stay independent");
@@ -278,7 +276,7 @@ test("The requirements step-by-step modal was retired (owner-reported follow-up 
   const source = await readFile(new URL("../../../src/features/events/client/events-feature.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(source, /function HackathonRequirementsModal/, "the modal must be removed entirely, not just left unreachable");
   assert.doesNotMatch(source, /requirementsItemId|requirementsOpen/, "no state should remain for opening a modal that no longer exists");
-  assert.match(source, /function RequirementRow\(\{ competency, actions \}: \{ competency: RequiredCompetency; actions: ReturnTypeActions \}\)/);
+  assert.match(source, /function RequirementRow\(\{ competency, actions \}: \{ competency: RequiredCompetency; actions: EventsActions \}\)/);
 
   const viewFnStart = source.indexOf("export function HackathonDetailView");
   const viewFnEnd = source.indexOf("function LinksView");
@@ -332,7 +330,7 @@ test("The detail view heart control reuses the exact shared canToggleHackathonFa
   const source = await readFile(new URL("../../../src/features/events/client/events-feature.tsx", import.meta.url), "utf8");
   const heartSites = source.match(/onClick=\{\(\) => toggleHackathonFavoriteFor\(/g) ?? [];
   assert.equal(heartSites.length, 3, "card, hero and the detail view must all call the same dispatcher - expected exactly 3 call sites");
-  assert.match(source, /from "@\/lib\/hackathons\/hackathon-presentation"/, "the Events feature must import the shared helpers rather than keep a second local copy that could drift");
+  assert.match(source, /from "@\/features\/events\/presentation"/, "the Events feature must import the shared helpers rather than keep a second local copy that could drift");
 });
 
 test("An event past its actionable date shows an honest 'ya ha finalizado' notice on the detail view instead of presenting stale registration as still open (issue #135)", async () => {

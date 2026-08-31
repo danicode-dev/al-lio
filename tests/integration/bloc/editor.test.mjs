@@ -12,7 +12,7 @@ import { toIsoTimestamp } from "../../../src/lib/bloc/timestamps.ts";
 import { buildNoteExportHtml } from "../../../src/lib/bloc/note-export.ts";
 
 test("Bloc's server boundary normalizes PostgreSQL timestamps before they reach the client, instead of passing raw Date values through (issue #128)", async () => {
-  const source = await readFile(new URL("../../../src/lib/bloc/notes-actions.ts", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/bloc/server/actions.ts", import.meta.url), "utf8");
   assert.match(source, /toIsoTimestamp/, "notes-actions.ts should normalize created_at/updated_at/deleted_at at the server-to-client boundary");
   assert.doesNotMatch(source, /created_at: row\.created_at,\s*\n\s*updated_at: row\.updated_at,/, "the DTO must not pass raw pg row timestamps through unnormalized");
 });

@@ -4,7 +4,8 @@ import { FormEvent, KeyboardEvent, useEffect, useId, useMemo, useRef, useState }
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CalendarDays, Check, Circle, ListChecks, ListTodo, Pencil, Plus, Trash2, X } from "lucide-react";
 
-import { useStore } from "@/shared/store/store-provider";
+import { useTaskActions } from "@/features/tasks/client";
+import { useApplicationStore } from "@/shared/store/application-store";
 import type { Store } from "@/components/store/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
@@ -22,7 +23,8 @@ const categoryMeta = {
 } as const;
 
 export function TasksView() {
-  const { store, actions } = useStore();
+  const { store } = useApplicationStore();
+  const actions = useTaskActions();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

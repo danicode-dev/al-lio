@@ -5,8 +5,13 @@ import { Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { insertDb, updateDb, deleteDb } from "@/lib/db";
-import { fetchBlocNotes, migrateLocalBlocNotes } from "@/lib/bloc/notes-actions";
+import {
+  createBlocNoteAction,
+  deleteBlocNoteAction,
+  fetchBlocNotes,
+  migrateLocalBlocNotes,
+  updateBlocNoteAction,
+} from "@/features/bloc/server/actions";
 import { sortByRecentFirst } from "@/lib/bloc/notes-sort";
 import { buildNoteExportHtml } from "@/lib/bloc/note-export";
 import {
@@ -266,7 +271,10 @@ export function BlocNotepad() {
       if (dbSyncEnabledRef.current) {
         const current = notes.find((note) => note.id === activeIdRef.current);
         if (current) {
-          void updateDb("bloc_notes", current.id, { title: current.title, content_html: current.contentHtml, content_text: current.contentText }, []);
+          void updateBlocNoteAction({
+            id: current.id,
+            patch: { title: current.title, contentHtml: current.contentHtml, contentText: current.contentText },
+          });
         }
       }
     }, 450);
@@ -343,7 +351,7 @@ export function BlocNotepad() {
     if (dbSyncEnabledRef.current) {
       const contentHtml = overrides.contentHtml ?? base.contentHtml;
       const favorite = overrides.favorite ?? base.favorite;
-      void insertDb("bloc_notes", { id, title, content_html: contentHtml, content_text: contentText, is_favorite: favorite, deleted_at: null }, []);
+      void createBlocNoteAction({ id, title, contentHtml, contentText, favorite });
     }
     return true;
   }
@@ -361,7 +369,9 @@ export function BlocNotepad() {
     const nextFavorite = !target.favorite;
     const promoted = promotePhantomIfNeeded(id, { favorite: nextFavorite }, true);
     setNotes((current) => current.map((note) => (note.id === id ? { ...note, favorite: nextFavorite } : note)));
-    if (!promoted && dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { is_favorite: nextFavorite }, []);
+    if (!promoted && dbSyncEnabledRef.current) {
+      void updateBlocNoteAction({ id, patch: { favorite: nextFavorite } });
+    }
   }
 
   function recordEditorContent(preserveEmptyFormatting = false) {
@@ -438,7 +448,15 @@ export function BlocNotepad() {
     setListTab("todas");
     showNotice("Nota creada");
     if (dbSyncEnabledRef.current) {
-      void insertDb("bloc_notes", { id: note.id, title: note.title, content_html: note.contentHtml, content_text: note.contentText, is_favorite: false, deleted_at: null }, []);
+      void createBlocNoteAction({
+        id: note.id,
+        title: note.title,
+        contentHtml: note.contentHtml,
+        contentText: note.contentText,
+        favorite: false,
+        createdAt: note.created_at,
+        updatedAt: note.updated_at,
+      });
     }
   }
 
@@ -454,7 +472,15 @@ export function BlocNotepad() {
     setSearchTerm("");
     showNotice("Nota duplicada");
     if (dbSyncEnabledRef.current) {
-      void insertDb("bloc_notes", { id: copy.id, title: copy.title, content_html: copy.contentHtml, content_text: copy.contentText, is_favorite: false, deleted_at: null }, []);
+      void createBlocNoteAction({
+        id: copy.id,
+        title: copy.title,
+        contentHtml: copy.contentHtml,
+        contentText: copy.contentText,
+        favorite: false,
+        createdAt: copy.created_at,
+        updatedAt: copy.updated_at,
+      });
     }
   }
 
@@ -484,7 +510,9 @@ export function BlocNotepad() {
       if (activeId === id) setActiveId(next[0].id);
     }
     showNotice("Nota movida a la papelera");
-    if (dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { deleted_at: nowIso() }, []);
+    if (dbSyncEnabledRef.current) {
+      void updateBlocNoteAction({ id, patch: { deletedAt: nowIso() } });
+    }
   }
 
   function restoreNote(id: string) {
@@ -503,7 +531,9 @@ export function BlocNotepad() {
     setNotes((current) => [restored, ...current]);
     setActiveId(restored.id);
     showNotice("Nota restaurada");
-    if (dbSyncEnabledRef.current) void updateDb("bloc_notes", id, { deleted_at: null }, []);
+    if (dbSyncEnabledRef.current) {
+      void updateBlocNoteAction({ id, patch: { deletedAt: null } });
+    }
   }
 
   function purgeNote(id: string) {
@@ -512,7 +542,7 @@ export function BlocNotepad() {
     if (!window.confirm(`Eliminar definitivamente "${target.title || defaultTitle}"? No se puede deshacer.`)) return;
     setTrashedNotes((current) => current.filter((note) => note.id !== id));
     showNotice("Nota eliminada definitivamente");
-    if (dbSyncEnabledRef.current) void deleteDb("bloc_notes", id, []);
+    if (dbSyncEnabledRef.current) void deleteBlocNoteAction(id);
   }
 
   function handlePaste(event: React.ClipboardEvent<HTMLDivElement>) {

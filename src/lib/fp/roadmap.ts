@@ -1,5 +1,5 @@
 import type { FpCompetencyEtapa } from "@/lib/db/types";
-import type { CycleSkill } from "@/lib/db/repositories/fp_catalog";
+import type { CycleSkill } from "@/features/learning/server/catalogue-repository";
 
 export type RoadmapSkillStatus = "completado" | "en_progreso" | "pendiente" | "sin_contenido";
 

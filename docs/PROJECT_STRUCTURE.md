@@ -6,7 +6,9 @@
 - `src/features/`: named product features with explicit public entry points.
 - `src/shared/`: cross-feature UI composition and utilities with multiple consumers.
 - `src/components/`: established shared React components being adopted by features.
-- `src/lib/`: authentication, repositories, domain services, server actions and integrations.
+- `src/lib/`: shared authentication, database primitives and integrations that
+  do not yet have one product owner. Product repositories and actions belong to
+  `src/features/<feature>/server/`.
 - `src/middleware.ts`: protected-route and session boundary.
 - `public/`: static assets served by Next.js.
 - `tests/`: Node test-runner suites; see `tests/README.md`.
@@ -71,7 +73,11 @@ material in `infra`, repeatable operator commands in `scripts`, reviewed import
 inputs in `csv` and maintained explanations in `docs`. Generated artifacts do
 not belong in the repository unless they are an intentional public asset.
 
-App Router pages compose features through `@/features/<feature>`. Product code
-must not introduce view-string routing shells or import another feature's
-internal `client`, `domain` or `server` directories. ADR-0007 defines the full
-dependency rule and `npm run check:boundaries` enforces it.
+App Router pages compose feature UI through `@/features/<feature>`. When a route
+or another feature needs a narrower contract, it may import the explicit public
+barrels `@/features/<feature>/client`, `/domain`, `/presentation`, or `/server`.
+Client code may import `/server/actions` as the one explicit Next.js Server
+Action boundary; repository barrels must never be re-exported through it.
+Other concrete files below those barrels remain private. Product code must not
+introduce view-string routing shells. ADR-0007 defines the full dependency rule
+and `npm run check:boundaries` enforces it.

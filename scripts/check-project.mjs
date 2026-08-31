@@ -80,11 +80,14 @@ if (!blocTypes.includes("techlife.bloc.D1OS.v1")) fail("Bloc debe conservar la c
 if (!settingsFeature.includes("techlife.app.settings.D1OS.v1")) fail("Settings debe conservar la clave local heredada");
 if (!coursesFeature.includes("techOpportunities")) fail("Courses debe combinar el catalogo de oportunidades");
 
-const guestStore = readFileSync(join(root, "src/shared/store/store-provider.tsx"), "utf8");
-for (const text of ["progress_notes", "export function StoreProvider", "export function useStore"]) {
-  if (!guestStore.includes(text)) {
-    fail(`shared/store/store-provider.tsx deberia contener: ${text}`);
+const applicationStore = readFileSync(join(root, "src/shared/store/application-store.tsx"), "utf8");
+for (const text of ["export function ApplicationStoreProvider", "export function useApplicationStore"]) {
+  if (!applicationStore.includes(text)) {
+    fail(`shared/store/application-store.tsx deberia contener: ${text}`);
   }
+}
+if (applicationStore.includes("server/actions") || applicationStore.includes("toast.")) {
+  fail("El store compartido debe ser un contenedor de datos sin mutaciones de producto");
 }
 
 if (packageJson.scripts?.dev !== "next dev -p 3000") {
@@ -105,9 +108,9 @@ for (const text of ["CalendarHeader", "CalendarMonthGrid", "TaskCalendar", "Cale
   }
 }
 
-const actions = readFileSync(join(root, "src/lib/actions.ts"), "utf8");
-if (actions.includes('revalidatePath("/dashboard")')) {
-  fail('src/lib/actions.ts no debe revalidar "/dashboard"; rompe foco y refresca el layout completo');
+const taskActions = readFileSync(join(root, "src/features/tasks/server/actions.ts"), "utf8");
+if (taskActions.includes('revalidatePath("/dashboard")')) {
+  fail('Las acciones de Tasks no deben revalidar "/dashboard"; rompe foco y refresca el layout completo');
 }
 
 const companiesMd = readFileSync(join(root, "public/data/empresas_tech_granada.md"), "utf8");

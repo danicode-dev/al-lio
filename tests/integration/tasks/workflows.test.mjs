@@ -19,14 +19,14 @@ test("Task editing preserves critical priority and optional due time", async () 
 test("Task edit waits for persistence and keeps the dialog open after failure", async () => {
   const [viewSource, storeSource] = await Promise.all([
     readFile(new URL("../../../src/features/tasks/client/tasks-view.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/tasks/client/use-task-actions.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(viewSource, /await actions\.updateTask\(dialogTask\.id, data\);\s+setTaskDialog\(null\);/);
   assert.match(viewSource, /No se pudo guardar la tarea/);
   assert.match(viewSource, /\{saving \? "Guardando…" : "Guardar"\}/);
 
-  assert.match(storeSource, /if \(!response\?\.result\) throw new Error\("Task update was not persisted"\)/);
+  assert.match(storeSource, /if \(!response\.ok\) throw new Error\(response\.error\)/);
   assert.match(storeSource, /patchById\(current\.tasks, id, previousTask\)/);
   assert.match(storeSource, /throw error;/);
 });

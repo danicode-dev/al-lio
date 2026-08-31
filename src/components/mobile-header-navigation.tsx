@@ -21,7 +21,7 @@ import { forwardRef, useEffect, useId, useRef, useState, type ReactNode } from "
 
 import { MobileAccountMenu } from "@/components/auth/user-menu";
 import { StudentHeaderActions } from "@/components/student-header-actions";
-import { useStore } from "@/shared/store/store-provider";
+import { useApplicationStore } from "@/shared/store/application-store";
 import { cn } from "@/lib/utils";
 
 // The same three groups the sidebar uses, under the same headings. They used
@@ -52,7 +52,7 @@ const menuTriggerClass =
 
 export function MobileHeaderNavigation() {
   const pathname = usePathname();
-  const { store } = useStore();
+  const { store } = useApplicationStore();
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const menuRootRef = useRef<HTMLDivElement>(null);

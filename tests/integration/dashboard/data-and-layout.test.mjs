@@ -7,51 +7,31 @@ import test from "node:test";
 
 import { buildFeaturedHackathonCards, buildUpcomingFeed, selectDashboardTodoTasks } from "../../../src/lib/dashboard/upcoming-feed.ts";
 
-test("insertDb enforces authorization and scopes every write to the current user (issue #92)", async () => {
-  const dbSource = await readFile(new URL("../../../src/lib/db.ts", import.meta.url), "utf8");
-  const fnSource = dbSource.slice(dbSource.indexOf("export async function insertDb"), dbSource.indexOf("export async function updateDb"));
-
-  assert.match(fnSource, /const userId = await tryGetCurrentUserId\(\);/);
-  assert.match(fnSource, /if \(!userId\) return null;/);
-  assert.match(fnSource, /user_id: userId/);
-  assert.match(fnSource, /RETURNING \*/);
+test("product writes use feature-owned, user-scoped repositories instead of a generic table/column action (issue #92, #275)", async () => {
+  await assert.rejects(readFile(new URL("../../../src/lib/db.ts", import.meta.url), "utf8"), /ENOENT/);
+  for (const feature of ["tasks", "courses", "events"]) {
+    const repository = await readFile(new URL(`../../../src/features/${feature}/server/repository.ts`, import.meta.url), "utf8");
+    const actions = await readFile(new URL(`../../../src/features/${feature}/server/actions.ts`, import.meta.url), "utf8");
+    assert.match(repository, /user_id = \$\d|user_id,/, `${feature} repository must scope writes to user_id`);
+    assert.doesNotMatch(repository, /Object\.keys\(data\)|\$\{table\}/, `${feature} repository must not derive SQL identifiers from client data`);
+    assert.match(actions, /getCurrentUserId\(\)/, `${feature} actions must derive identity from the live session`);
+    assert.match(actions, /\.strict\(\)/, `${feature} action payloads must reject unknown fields`);
+  }
 });
 
-test("Quick Add course and event creation normalize empty optional fields to null and roll back on failure (issue #92)", async () => {
-  const storeSource = await readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8");
-
-  const addCourseSource = storeSource.slice(storeSource.indexOf("addCourse: async"), storeSource.indexOf("updateCourse: async"));
-  for (const field of [
-    'platform: data\\.platform \\|\\| null',
-    'url: data\\.url \\|\\| null',
-    'start_date: data\\.start_at \\|\\| null',
-    'deadline: data\\.deadline_at \\|\\| null',
-    'notes: data\\.notes \\|\\| null',
-  ]) {
-    assert.match(addCourseSource, new RegExp(field), `addCourse missing null normalization for ${field}`);
+test("Quick Add mutations validate optional fields and each feature rolls back optimistic creation on failure (issue #92, #275)", async () => {
+  const cases = [
+    ["courses", "course", "courses"],
+    ["events", "item", "hackathons"],
+    ["tasks", "task", "tasks"],
+  ];
+  for (const [feature, itemName, collection] of cases) {
+    const client = await readFile(new URL(`../../../src/features/${feature}/client/use-${feature === "events" ? "event" : feature === "courses" ? "course" : "task"}-actions.ts`, import.meta.url), "utf8");
+    const server = await readFile(new URL(`../../../src/features/${feature}/server/actions.ts`, import.meta.url), "utf8");
+    assert.match(server, /safeParse\(input\)/, `${feature} validates unknown input before persistence`);
+    assert.match(client, new RegExp(`${collection}: current\\.${collection}\\.filter\\(\\(${itemName}\\) => ${itemName}\\.id !== id\\)`));
+    assert.match(client, /throw error;/);
   }
-  assert.match(addCourseSource, /if \(!response\?\.result\) throw new Error/);
-  assert.match(addCourseSource, /courses: current\.courses\.filter\(\(course\) => course\.id !== id\)/);
-  assert.match(addCourseSource, /throw error;/);
-
-  const addHackathonSource = storeSource.slice(storeSource.indexOf("addHackathon: async"), storeSource.indexOf("updateHackathon: async"));
-  for (const field of [
-    'organizer: data\\.organizer \\|\\| null',
-    'city: data\\.city \\|\\| null',
-    'event_start_date: data\\.start_at \\|\\| null',
-    'event_end_date: data\\.end_at \\|\\| null',
-    'registration_deadline: data\\.registration_deadline_at \\|\\| null',
-    'url: data\\.url \\|\\| null',
-    'notes: data\\.notes \\|\\| null',
-  ]) {
-    assert.match(addHackathonSource, new RegExp(field), `addHackathon missing null normalization for ${field}`);
-  }
-  assert.match(addHackathonSource, /if \(!response\?\.result\) throw new Error/);
-  assert.match(addHackathonSource, /hackathons: current\.hackathons\.filter\(\(hackathon\) => hackathon\.id !== id\)/);
-
-  const addTaskSource = storeSource.slice(storeSource.indexOf("addTask: async"), storeSource.indexOf("updateTask: async"));
-  assert.match(addTaskSource, /if \(!response\?\.result\) throw new Error/);
-  assert.match(addTaskSource, /tasks: current\.tasks\.filter\(\(task\) => task\.id !== id\)/);
 });
 
 test("Quick Add awaits persistence, blocks duplicate submits and keeps entered values open on failure (issue #92)", async () => {

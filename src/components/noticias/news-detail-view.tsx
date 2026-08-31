@@ -18,7 +18,7 @@ import type { NewsItem } from "@/lib/news/types";
 import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import { CatalogNextLink, CatalogPanel } from "@/components/catalog/catalog-card";
-import { useStore } from "@/shared/store/store-provider";
+import { useTaskActions } from "@/features/tasks/client";
 import {
   EmptyState,
   KIND_LABELS,
@@ -69,7 +69,7 @@ const ARTICLE_STYLES = `
 `;
 
 export function NewsDetailView({ id }: { id: string }) {
-  const { actions } = useStore();
+  const actions = useTaskActions();
   const [state, setState] = useState<ViewState>({ status: "loading" });
   const [saving, setSaving] = useState(false);
   const [taskCreated, setTaskCreated] = useState(false);

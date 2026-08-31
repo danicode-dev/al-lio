@@ -5,8 +5,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { fpItemToHackathon, getHackathonPresentation } from "../../../src/lib/hackathons/hackathon-presentation.ts";
-import { fpItemToCourse, getCoursePresentation, isFpCourseLike, isTechCourse, resolveCourseById, techOpportunityToCourse } from "../../../src/lib/courses/course-presentation.ts";
+import { fpItemToHackathon, getHackathonPresentation } from "../../../src/features/events/presentation/event-presentation.ts";
+import { fpItemToCourse, getCoursePresentation, isFpCourseLike, isTechCourse, resolveCourseById, techOpportunityToCourse } from "../../../src/features/courses/presentation/course-presentation.ts";
 
 const fixtureTechCourseItem = {
   id: "t3", id_slug: "curso-frontend", categoria: "curso", nombre: "Curso Frontend",
@@ -111,7 +111,7 @@ test("isTechCourse/isFpCourseLike agree with resolveCourseById on category, and 
 });
 
 test("verified opportunities mode reads accepted canonical course/event facts and suppresses unclassified legacy rows (issue #200)", async () => {
-  const source = await readFile(new URL("../../../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/learning/server/catalogue-repository.ts", import.meta.url), "utf8");
   assert.match(source, /AL_LIO_VERIFIED_OPPORTUNITIES_ONLY/);
   assert.match(source, /LEFT JOIN public\.radar_content_occurrences canonical/);
   assert.match(source, /LEFT JOIN public\.radar_content_entities entity/);
@@ -126,7 +126,7 @@ test("verified opportunities mode reads accepted canonical course/event facts an
 });
 
 test("verified opportunities mode keeps a dated accepted course visible when the source does not state a lifecycle (issue #250)", async () => {
-  const source = await readFile(new URL("../../../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/learning/server/catalogue-repository.ts", import.meta.url), "utf8");
   assert.match(source, /entity\.destination = 'course'/);
   assert.match(source, /canonical\.source_lifecycle_status is null/);
   assert.match(
@@ -142,7 +142,7 @@ test("verified opportunities mode keeps a dated accepted course visible when the
 });
 
 test("verified opportunities mode bounds lifecycle-null events by their explicit dates (issue #252)", async () => {
-  const source = await readFile(new URL("../../../src/lib/db/repositories/fp_catalog.ts", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/learning/server/catalogue-repository.ts", import.meta.url), "utf8");
   assert.match(
     source,
     /entity\.destination = 'event'[\s\S]*canonical\.source_lifecycle_status is null[\s\S]*canonical\.starts_at is not null/,

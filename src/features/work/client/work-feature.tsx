@@ -9,14 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
 import { SPANISH_PROVINCES } from "@/lib/deeplinks/spanish-provinces";
-import { getQuickSearchesAction, saveQuickSearchAction, type SavedQuickSearch } from "@/lib/work/actions";
+import { getQuickSearchesAction, saveQuickSearchAction, type SavedQuickSearch } from "@/features/work/server/actions";
 import { toast } from "sonner";
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
 import { APPLICATION_STATUSES, STATUS_LABELS, STATUS_COLORS } from "@/lib/job-radar/types";
 import type { VerifiedJob, VerifiedJobPrivateAction } from "@/lib/jobs/types";
 import { VerifiedJobsView } from "@/components/jobs/verified-jobs-view";
-import { useStore } from "@/shared/store/store-provider";
-import type { Company, ReturnTypeActions, Store } from "@/components/store/types";
+import { useWorkActions, type WorkActions } from "@/features/work/client";
+import { useApplicationStore } from "@/shared/store/application-store";
+import type { Company, Store } from "@/components/store/types";
 import { FeaturePage } from "@/shared/ui/feature-page";
 
 const workBrandCss = `
@@ -396,7 +397,7 @@ const WORK_TABS: [Exclude<WorkTab, "verified">, string][] = [
   ["candidaturas", "Candidaturas"],
 ];
 
-function Work({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
+function Work({ store, actions }: { store: Store; actions: WorkActions }) {
   const [tab, setTab] = useState<WorkTab>("portals");
   const [expandedPortal, setExpandedPortal] = useState<JobPlatform | null>(null);
   const [companySearch, setCompanySearch] = useState("");
@@ -926,7 +927,8 @@ function CompanyCard({ company, onToggleFavorite }: { company: Company; onToggle
 }
 
 export function WorkFeature() {
-  const { store, actions } = useStore();
+  const { store } = useApplicationStore();
+  const actions = useWorkActions();
   return (
     <FeaturePage eyebrow="Empleo y candidaturas" title="Trabajo" subtitle="Portales de búsqueda, tus empresas guardadas y el seguimiento de tus candidaturas.">
       <Work store={store} actions={actions} />

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getGlobalStore } from "@/lib/data";
-import { resolveHackathonById } from "@/lib/hackathons/hackathon-presentation";
+import { resolveHackathonById } from "@/features/events/presentation";
 import { HackathonDetailView } from "@/features/events";
 import type { Store } from "@/components/store/types";
 

@@ -7,14 +7,15 @@ import { cn } from "@/lib/utils";
 import { getNextCatalogItem } from "@/lib/catalog/next-item";
 import { Badge } from "@/components/ui/badge";
 import { isSafeHttpUrl } from "@/lib/fp/event-cta";
-import { getCoursePresentation, isFpCourseLike, isTechCourse, fpItemToCourse, techOpportunityToCourse } from "@/lib/courses/course-presentation";
-import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
-import { useStore } from "@/shared/store/store-provider";
+import { getCoursePresentation, getDisplayCourses } from "@/features/courses/presentation";
+import { useCourseActions, type CourseActions } from "@/features/courses/client";
+import { useLearningActions, type LearningActions } from "@/features/learning/client";
+import { useApplicationStore } from "@/shared/store/application-store";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import { PageHeader } from "@/components/page-header";
 import { CatalogCard, CatalogFact, CatalogFavoriteButton, CatalogFeaturedCard, CatalogInfoGrid, CatalogNextLink, CatalogPanel } from "@/components/catalog/catalog-card";
 import { CollectionControls, FilterChips, FilterPanelCompact } from "@/components/catalog/collection-controls";
-import type { Course, FpCatalogItem, ReturnTypeActions, Store } from "@/components/store/types";
+import type { Course, Store } from "@/components/store/types";
 import { FeaturePage } from "@/shared/ui/feature-page";
 
 function courseStatusClass(status: string) {
@@ -121,7 +122,9 @@ function FilterDateRow({
   );
 }
 
-function Courses({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
+type CoursesActions = CourseActions & LearningActions;
+
+function Courses({ store, actions }: { store: Store; actions: CoursesActions }) {
   const allCourses = useMemo(
     () => getDisplayCourses(store.courses, store.techOpportunities, store.fpContent),
     [store.courses, store.techOpportunities, store.fpContent]
@@ -445,7 +448,7 @@ export function canToggleCourseFavorite(item: Course): boolean {
   return true;
 }
 
-export function toggleCourseFavoriteFor(item: Course, actions: ReturnTypeActions) {
+export function toggleCourseFavoriteFor(item: Course, actions: CoursesActions) {
   if (item.sourceTable === "fp_content_items") {
     actions.toggleFpFavorite(item.id_slug!, !item.is_favorite);
   } else {
@@ -454,7 +457,8 @@ export function toggleCourseFavoriteFor(item: Course, actions: ReturnTypeActions
 }
 
 export function CourseDetailView({ id }: { id: string }) {
-  const { store, actions } = useStore();
+  const { store } = useApplicationStore();
+  const actions = { ...useCourseActions(), ...useLearningActions() };
   const allCourses = useMemo(
     () => getDisplayCourses(store.courses, store.techOpportunities, store.fpContent),
     [store.courses, store.techOpportunities, store.fpContent]
@@ -655,58 +659,6 @@ export function CourseDetailView({ id }: { id: string }) {
   );
 }
 
-export function getDisplayCourses(courses: Course[], items: TechOpportunity[], fpItems: FpCatalogItem[] = []) {
-  const seen = new Set(courses.map(courseIdentityKey));
-  const fromTech = items
-    .filter(isTechCourse)
-    .map(techOpportunityToCourse)
-    .filter((course) => addUniqueIdentity(seen, courseIdentityKey(course)));
-
-  const fromFp = fpItems
-    .filter(isFpCourseLike)
-    .map(fpItemToCourse)
-    .filter((course) => addUniqueIdentity(seen, courseIdentityKey(course)));
-
-  return [...fromTech, ...fromFp, ...courses].sort(sortCoursesForDisplay);
-}
-
-function courseIdentityKey(course: Course) {
-  return normalizedIdentity(course.fuente_url, course.url, course.id_slug, course.title);
-}
-
-function normalizedIdentity(...values: Array<string | undefined | null>) {
-  const value = [...values].reverse().find((item) => item && String(item).trim());
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\b(edicion|edition)\s+\d+\b/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function addUniqueIdentity(seen: Set<string>, identity: string) {
-  if (!identity || seen.has(identity)) return false;
-  seen.add(identity);
-  return true;
-}
-
-function sortCoursesForDisplay(a: Course, b: Course) {
-  const priorityDiff = prioritySortValue(a.prioridad) - prioritySortValue(b.prioridad);
-  if (priorityDiff) return priorityDiff;
-  const dawDiff = (b.encaje_daw_1_5 ?? 0) - (a.encaje_daw_1_5 ?? 0);
-  if (dawDiff) return dawDiff;
-  return String(a.fecha_inicio || a.start_at || a.deadline_at || "9999").localeCompare(String(b.fecha_inicio || b.start_at || b.deadline_at || "9999"));
-}
-
-function prioritySortValue(value?: string) {
-  const normalized = normalizePriorityText(value);
-  if (normalized.includes("alta")) return 0;
-  if (normalized.includes("media")) return 1;
-  if (normalized.includes("baja")) return 2;
-  return 9;
-}
-
 function nowIso() {
   return new Date().toISOString();
 }
@@ -793,7 +745,8 @@ function pad(value: number) {
 }
 
 export function CoursesFeature() {
-  const { store, actions } = useStore();
+  const { store } = useApplicationStore();
+  const actions = { ...useCourseActions(), ...useLearningActions() };
   return (
     <FeaturePage eyebrow="Formación" title="Cursos" subtitle="Formación complementaria y recursos para avanzar en tu ciclo." catalogue>
       <Courses store={store} actions={actions} />

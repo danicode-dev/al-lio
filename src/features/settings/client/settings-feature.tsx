@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { useStore } from "@/shared/store/store-provider";
-import type { ReturnTypeActions } from "@/components/store/types";
+import { useTaskActions, type TaskActions } from "@/features/tasks/client";
+import { useApplicationStore } from "@/shared/store/application-store";
 import { FeaturePage } from "@/shared/ui/feature-page";
 
 type TaskBucket = "diario" | "urgente" | "semanal";
@@ -61,7 +61,7 @@ const taskBuckets: Array<{
   },
 ];
 
-function Settings({ reset, addTask }: { reset: () => void; addTask: ReturnTypeActions["addTask"] }) {
+function Settings({ reset, addTask }: { reset: () => void; addTask: TaskActions["addTask"] }) {
   const { settings, updateSettings } = useAppSettings();
   const [seeded, setSeeded] = useState(false);
 
@@ -194,10 +194,11 @@ function pad(value: number) {
 }
 
 export function SettingsFeature() {
-  const { actions } = useStore();
+  const { resetStore } = useApplicationStore();
+  const { addTask } = useTaskActions();
   return (
     <FeaturePage eyebrow="Administración" title="Configuración" subtitle="Ajustes del panel y datos de demostración.">
-      <Settings reset={actions.reset} addTask={actions.addTask} />
+      <Settings reset={resetStore} addTask={addTask} />
     </FeaturePage>
   );
 }

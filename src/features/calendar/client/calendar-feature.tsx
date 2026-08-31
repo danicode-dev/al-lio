@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { isFpCourseLike, isTechCourse } from "@/lib/courses/course-presentation";
-import { isTechHackathonOrEvent } from "@/lib/hackathons/hackathon-presentation";
+import { isFpCourseLike, isTechCourse } from "@/features/courses/presentation";
+import { isTechHackathonOrEvent } from "@/features/events/presentation";
 import { toast } from "sonner";
 import { CalendarView, sortCalendarEvents as sortEvents, type CalendarEvent } from "@/components/calendar/app-calendar";
 import { calendarHref } from "@/lib/dashboard/calendar-events";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
-import { useStore } from "@/shared/store/store-provider";
+import { useApplicationStore } from "@/shared/store/application-store";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import type { FpCatalogItem, Store } from "@/components/store/types";
 function GoogleCalendarStatusControl() {
@@ -196,7 +196,7 @@ function pad(value: number) {
 }
 
 export function CalendarFeature() {
-  const { store } = useStore();
+  const { store } = useApplicationStore();
   return (
     <div className="space-y-6 pb-6">
       <CalendarView

@@ -47,7 +47,7 @@ test("ProvinceCombobox shows its placeholder while disabled instead of a stale l
 test("Searching persists the platform's last query/location, and loading pre-fills it from the same source on the next visit (issue #123)", async () => {
   const source = await readFile(new URL("../../../src/features/work/client/work-feature.tsx", import.meta.url), "utf8");
 
-  assert.match(source, /import \{ getQuickSearchesAction, saveQuickSearchAction, type SavedQuickSearch \} from "@\/lib\/work\/actions";/);
+  assert.match(source, /import \{ getQuickSearchesAction, saveQuickSearchAction, type SavedQuickSearch \} from "@\/features\/work\/server\/actions";/);
   assert.match(source, /getQuickSearchesAction\(\)\.then\(/, "Work() loads saved searches once, not per-card");
   assert.match(source, /saveQuickSearchAction\(platform, keyword, location\)\.catch\(\(\) => \{\}\)/, "save is fire-and-forget - it must never block opening the search tab");
 
@@ -69,13 +69,15 @@ test("The empty-keyword state cannot fire a search or a save - the Buscar action
   assert.match(cardSource, /if \(!canSearch\) \{ event\.preventDefault\(\); return; \}/);
 });
 
-test("src/lib/work/actions.ts is session-scoped, never redirects (it runs from background effects/clicks, not a form submit), and works around createQuickSearch's dead category default (issue #123)", async () => {
-  const source = await readFile(new URL("../../../src/lib/work/actions.ts", import.meta.url), "utf8");
+test("Work's feature-owned actions are session-scoped, validated and never redirect from a background mutation (issue #123, #275)", async () => {
+  const source = await readFile(new URL("../../../src/features/work/server/actions.ts", import.meta.url), "utf8");
+  const repository = await readFile(new URL("../../../src/features/work/server/repository.ts", import.meta.url), "utf8");
 
   assert.match(source, /"use server";/);
   assert.match(source, /const session = await getValidatedSession\(\);/g);
   assert.doesNotMatch(source, /redirect\(/, "a background save/read must degrade to an error result, not throw a Next.js redirect");
-  assert.match(source, /category: "work"/, "createQuickSearch's `data.category ?? null` falls through to null unless this is passed explicitly, silently overriding the column's SQL default");
+  assert.match(source, /quickSearchSchema\.safeParse/, "the client cannot persist an arbitrary platform or oversized query");
+  assert.match(repository, /'work'/, "the repository owns the fixed category instead of accepting it from the client");
   assert.match(source, /\.filter\(\(row\) => row\.category === "work"\)/, "reads must not leak rows from an unrelated future category sharing this table");
 });
 

@@ -2,11 +2,13 @@
 
 import { TaskCalendar } from "@/components/calendar/app-calendar";
 import { DashboardView } from "@/components/dashboard/dashboard-view";
-import { useStore } from "@/shared/store/store-provider";
+import { useTaskActions } from "@/features/tasks/client";
+import { useApplicationStore } from "@/shared/store/application-store";
 import { getDashboardCalendarEvents } from "@/lib/dashboard/calendar-events";
 
 export function DashboardClient() {
-  const { store, actions } = useStore();
+  const { store } = useApplicationStore();
+  const actions = useTaskActions();
   return (
     <DashboardView
       store={store}

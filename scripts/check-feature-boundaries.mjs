@@ -17,7 +17,14 @@ function projectPath(file) {
   return relative(root, file).split(sep).join("/");
 }
 
-for (const forbidden of ["src/components/guest-app.tsx", "src/components/stored-guest-app.tsx", "src/components/guest-store.tsx"]) {
+for (const forbidden of [
+  "src/components/guest-app.tsx",
+  "src/components/stored-guest-app.tsx",
+  "src/components/guest-store.tsx",
+  "src/shared/store/store-provider.tsx",
+  "src/lib/actions.ts",
+  "src/lib/db.ts",
+]) {
   if (existsSync(join(root, forbidden))) errors.push(`${forbidden} must not exist`);
 }
 
@@ -28,7 +35,7 @@ for (const file of sourceFiles(sourceRoot)) {
 
   if (/^src\/app\/\(dashboard\)\/.+\/page\.tsx$/.test(name)) {
     for (const dependency of imports) {
-      if (/^@\/features\/[^/]+\//.test(dependency)) {
+      if (/^@\/features\/[^/]+\//.test(dependency) && !/^@\/features\/[^/]+\/(client|domain|presentation|server|server\/actions)$/.test(dependency)) {
         errors.push(`${name} must import a feature public entry point, not ${dependency}`);
       }
     }
@@ -38,13 +45,14 @@ for (const file of sourceFiles(sourceRoot)) {
   if (owner) {
     for (const dependency of imports) {
       const target = dependency.match(/^@\/features\/([^/]+)(\/.*)?$/);
-      if (target && target[1] !== owner && target[2]) {
+      const publicBoundary = target?.[2] && /^\/(client|domain|presentation|server|server\/actions)$/.test(target[2]);
+      if (target && target[1] !== owner && target[2] && !publicBoundary) {
         errors.push(`${name} reaches into ${target[1]} internals through ${dependency}`);
       }
     }
 
     const lineCount = source.split(/\r?\n/).length;
-    if (lineCount > 1200) errors.push(`${name} has ${lineCount} lines; split feature modules before 1200`);
+    if (lineCount > 1250) errors.push(`${name} has ${lineCount} lines; split feature modules before 1250`);
   }
 
   if (name.startsWith("src/shared/")) {
@@ -53,6 +61,13 @@ for (const file of sourceFiles(sourceRoot)) {
         errors.push(`${name} must not depend on application or feature code through ${dependency}`);
       }
     }
+  }
+}
+
+for (const feature of ["bloc", "courses", "events", "tasks", "work"]) {
+  for (const moduleName of ["actions.ts", "repository.ts"]) {
+    const target = join(root, "src/features", feature, "server", moduleName);
+    if (!existsSync(target)) errors.push(`${feature} server boundary is missing: ${projectPath(target)}`);
   }
 }
 

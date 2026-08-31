@@ -1,6 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { getGlobalStore } from "@/lib/data";
-import { StoreProvider } from "@/shared/store/store-provider";
+import { ApplicationStoreProvider } from "@/shared/store/application-store";
 import { DailyAlerts } from "@/components/daily-alerts";
 import { MobileHeaderNavigation } from "@/components/mobile-header-navigation";
 import { ProductTourShell } from "@/components/onboarding/tour/tour-provider";
@@ -32,7 +32,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <StoreProvider initialStore={store}>
+    <ApplicationStoreProvider initialStore={store}>
       <div className="flex min-h-[100dvh] bg-background">
         <AppSidebar
           userName={store.userName}
@@ -54,6 +54,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {tourState && <ProductTourShell initialState={tourState} />}
       </div>
       <Toaster position="bottom-right" richColors duration={3500} closeButton />
-    </StoreProvider>
+    </ApplicationStoreProvider>
   );
 }

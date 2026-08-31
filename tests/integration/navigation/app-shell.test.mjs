@@ -10,7 +10,7 @@ import { readFeatureSource, readProductFeatureSources } from "../../helpers/feat
 test("The authenticated student tree owns exactly one store provider (issue #90)", async () => {
   const [guestAppSource, guestStoreSource, storedGuestAppSource, dashboardClientSource, layoutSource] = await Promise.all([
     readProductFeatureSources(),
-    readFile(new URL("../../../src/shared/store/store-provider.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/shared/store/application-store.tsx", import.meta.url), "utf8"),
     Promise.resolve(""),
     readFile(new URL("../../../src/components/dashboard/dashboard-client.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
@@ -21,17 +21,19 @@ test("The authenticated student tree owns exactly one store provider (issue #90)
   assert.doesNotMatch(guestAppSource, /createContext/);
   assert.doesNotMatch(guestAppSource, /export function StoreProvider/);
   assert.doesNotMatch(guestAppSource, /export function useStore/);
-  assert.match(guestAppSource, /import \{ useStore \} from "@\/shared\/store\/store-provider";/);
+  assert.match(guestAppSource, /import \{ useApplicationStore \} from "@\/shared\/store\/application-store";/);
 
-  // store-provider.tsx is the sole canonical implementation.
-  assert.match(guestStoreSource, /export function StoreProvider/);
-  assert.match(guestStoreSource, /export function useStore/);
+  // application-store.tsx is the sole canonical data container. Product
+  // mutations are feature-owned hooks, not methods on this shared context.
+  assert.match(guestStoreSource, /export function ApplicationStoreProvider/);
+  assert.match(guestStoreSource, /export function useApplicationStore/);
+  assert.doesNotMatch(guestStoreSource, /server\/actions|toast\./);
 
   // Only the layout mounts a StoreProvider; StoredGuestApp and DashboardClient
   // are pure consumers of the ambient context, not additional mount points.
-  assert.match(layoutSource, /<StoreProvider initialStore=\{store\}>/);
-  assert.doesNotMatch(storedGuestAppSource, /StoreProvider/);
-  assert.doesNotMatch(dashboardClientSource, /StoreProvider/);
+  assert.match(layoutSource, /<ApplicationStoreProvider initialStore=\{store\}>/);
+  assert.doesNotMatch(storedGuestAppSource, /ApplicationStoreProvider/);
+  assert.doesNotMatch(dashboardClientSource, /ApplicationStoreProvider/);
 });
 
 test("The merged store fetch loads every section with fail-soft handling (issue #90)", async () => {

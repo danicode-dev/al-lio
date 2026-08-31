@@ -5,7 +5,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { AlarmClock, Bell, Plus, X } from "lucide-react";
 
-import { useStore } from "@/shared/store/store-provider";
+import { useCourseActions } from "@/features/courses/client";
+import { useEventActions } from "@/features/events/client";
+import { useTaskActions } from "@/features/tasks/client";
+import { useApplicationStore } from "@/shared/store/application-store";
 import { QuickAdd } from "@/components/quick-add";
 import type { Store } from "@/components/store/types";
 import {
@@ -43,7 +46,8 @@ type StudentHeaderActionsProps = {
 
 export function StudentHeaderActions({ size = "compact" }: StudentHeaderActionsProps = {}) {
   const pathname = usePathname();
-  const { store, actions } = useStore();
+  const { store } = useApplicationStore();
+  const actions = { ...useTaskActions(), ...useCourseActions(), ...useEventActions() };
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const iconButtonClass = `${iconButtonBaseClass} ${size === "touch" ? "h-11 w-11" : "h-9 w-9"}`;
 

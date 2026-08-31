@@ -8,14 +8,16 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
 import { isSafeHttpUrl } from "@/lib/fp/event-cta";
-import { canToggleHackathonFavorite, fpItemToHackathon, getHackathonPresentation, isFpHackathonLike, isTechHackathonOrEvent, techOpportunityToHackathon, toggleHackathonFavoriteFor } from "@/lib/hackathons/hackathon-presentation";
-import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
-import { useStore } from "@/shared/store/store-provider";
+import { canToggleHackathonFavorite, getDisplayHackathons, getHackathonPresentation, toggleHackathonFavoriteFor } from "@/features/events/presentation";
+import { useEventActions, type EventActions } from "@/features/events/client";
+import { useLearningActions, type LearningActions } from "@/features/learning/client";
+import { useTaskActions, type TaskActions } from "@/features/tasks/client";
+import { useApplicationStore } from "@/shared/store/application-store";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import { PageHeader } from "@/components/page-header";
 import { CatalogCard, CatalogFact, CatalogFavoriteButton, CatalogFeaturedCard, CatalogInfoGrid, CatalogNextLink, CatalogPanel } from "@/components/catalog/catalog-card";
 import { CollectionControls, FilterChips, FilterPanelCompact } from "@/components/catalog/collection-controls";
-import type { FpCatalogItem, Hackathon, RequiredCompetency, ReturnTypeActions, Store } from "@/components/store/types";
+import type { Hackathon, RequiredCompetency, Store } from "@/components/store/types";
 import { FeaturePage } from "@/shared/ui/feature-page";
 
 function hackathonStatusLabel(status: string) {
@@ -139,7 +141,9 @@ function opportunityLifecycleLabel(value?: string): string | undefined {
   return value ? labels[value] : undefined;
 }
 
-function Hackathons({ store, actions }: { store: Store; actions: ReturnTypeActions }) {
+type EventsActions = EventActions & LearningActions & Pick<TaskActions, "addTask">;
+
+function Hackathons({ store, actions }: { store: Store; actions: EventsActions }) {
   const allHackathons = useMemo(
     () => getDisplayHackathons(store.hackathons, store.techOpportunities, store.fpContent),
     [store.hackathons, store.techOpportunities, store.fpContent]
@@ -471,7 +475,7 @@ function hackathonStatusPillClass(status: Hackathon["status"]): string {
   return classes[status];
 }
 
-function RequirementRow({ competency, actions }: { competency: RequiredCompetency; actions: ReturnTypeActions }) {
+function RequirementRow({ competency, actions }: { competency: RequiredCompetency; actions: EventsActions }) {
   const done = isCompetencyDone(competency);
   const resources = competency.preparationResources ?? [];
   const roleLabel = { primary: "Principal", alternative: "Alternativa", extension: "Ampliación" } as const;
@@ -548,7 +552,8 @@ function RequirementRow({ competency, actions }: { competency: RequiredCompetenc
 }
 
 export function HackathonDetailView({ id }: { id: string }) {
-  const { store, actions } = useStore();
+  const { store } = useApplicationStore();
+  const actions = { ...useEventActions(), ...useLearningActions(), ...useTaskActions() };
   const allHackathons = useMemo(
     () => getDisplayHackathons(store.hackathons, store.techOpportunities, store.fpContent),
     [store.hackathons, store.techOpportunities, store.fpContent]
@@ -806,64 +811,8 @@ export function HackathonDetailView({ id }: { id: string }) {
   );
 }
 
-export function getDisplayHackathons(hackathons: Hackathon[], items: TechOpportunity[], fpItems: FpCatalogItem[] = []) {
-  const seen = new Set(hackathons.map(hackathonIdentityKey));
-  const fromTech = items
-    .filter(isTechHackathonOrEvent)
-    .map(techOpportunityToHackathon)
-    .filter((hackathon) => addUniqueIdentity(seen, hackathonIdentityKey(hackathon)));
-
-  const fromFp = fpItems
-    .filter(isFpHackathonLike)
-    .map(fpItemToHackathon)
-    .filter((hackathon) => addUniqueIdentity(seen, hackathonIdentityKey(hackathon)));
-
-  return [...fromTech, ...fromFp, ...hackathons].sort(sortHackathonsForDisplay);
-}
-
-function hackathonIdentityKey(hackathon: Hackathon) {
-  return normalizedIdentity(hackathon.url, hackathon.id_slug, hackathon.name);
-}
-
-function normalizedIdentity(...values: Array<string | undefined | null>) {
-  const value = [...values].reverse().find((item) => item && String(item).trim());
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\b(edicion|edition)\s+\d+\b/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function addUniqueIdentity(seen: Set<string>, identity: string) {
-  if (!identity || seen.has(identity)) return false;
-  seen.add(identity);
-  return true;
-}
-
-function sortHackathonsForDisplay(a: Hackathon, b: Hackathon) {
-  const priorityDiff = prioritySortValue(a.priority) - prioritySortValue(b.priority);
-  if (priorityDiff) return priorityDiff;
-  const dawDiff = (b.encaje_daw_1_5 ?? 0) - (a.encaje_daw_1_5 ?? 0);
-  if (dawDiff) return dawDiff;
-  return String(a.start_at || a.registration_deadline_at || "9999").localeCompare(String(b.start_at || b.registration_deadline_at || "9999"));
-}
-
-function prioritySortValue(value?: string) {
-  const normalized = normalizePriorityText(value);
-  if (normalized.includes("alta")) return 0;
-  if (normalized.includes("media")) return 1;
-  if (normalized.includes("baja")) return 2;
-  return 9;
-}
-
 function nowIso() {
   return new Date().toISOString();
-}
-
-function normalizePriorityText(value?: string) {
-  return String(value || "media").trim().toLowerCase();
 }
 
 function isHackathonArchived(hackathon: Pick<Hackathon, "status">) {
@@ -954,7 +903,8 @@ function pad(value: number) {
 }
 
 export function EventsFeature() {
-  const { store, actions } = useStore();
+  const { store } = useApplicationStore();
+  const actions = { ...useEventActions(), ...useLearningActions(), ...useTaskActions() };
   return (
     <FeaturePage eyebrow="Comunidad" title="Eventos y retos" subtitle="Hackathons, retos y convocatorias para poner a prueba lo que sabes." catalogue>
       <Hackathons store={store} actions={actions} />

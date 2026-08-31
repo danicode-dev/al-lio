@@ -20,9 +20,9 @@ const schema = read("infra/postgres/schema.sql");
 const coursesFeature = read("src/features/courses/client/courses-feature.tsx");
 const eventsFeature = read("src/features/events/client/events-feature.tsx");
 const calendarFeature = read("src/features/calendar/client/calendar-feature.tsx");
-const guestStore = read("src/shared/store/store-provider.tsx");
+const applicationStore = read("src/shared/store/application-store.tsx");
 const storeTypes = read("src/components/store/types.ts");
-const actions = read("src/lib/actions.ts");
+const taskActions = read("src/features/tasks/server/actions.ts");
 
 const requiredTables = [
   "tasks",
@@ -91,9 +91,9 @@ for (const column of ["cycle_code", "cycle_group", "academic_year", "interests",
 }
 
 requireIncludes("src/components/store/types.ts", storeTypes, 'export type TaskPriority = "alta" | "media" | "baja" | "critica"');
-requireIncludes("src/shared/store/store-provider.tsx", guestStore, 'return normalized === "critica" ? "alta" : normalized');
-requireIncludes("src/shared/store/store-provider.tsx", guestStore, "export function StoreProvider");
-requireIncludes("src/shared/store/store-provider.tsx", guestStore, "export function useStore");
+requireIncludes("src/features/tasks/server/actions.ts", taskActions, 'patch.priority === "critica" ? "alta" : patch.priority');
+requireIncludes("src/shared/store/application-store.tsx", applicationStore, "export function ApplicationStoreProvider");
+requireIncludes("src/shared/store/application-store.tsx", applicationStore, "export function useApplicationStore");
 requireIncludes("src/features/courses/client/courses-feature.tsx", coursesFeature, "getDisplayCourses(store.courses, store.techOpportunities, store.fpContent)");
 requireIncludes("src/features/events/client/events-feature.tsx", eventsFeature, "getDisplayHackathons(store.hackathons, store.techOpportunities, store.fpContent)");
 requireIncludes("src/features/calendar/client/calendar-feature.tsx", calendarFeature, "...store.techOpportunities.flatMap(techOpportunityToCalendarEvents)");
@@ -103,7 +103,7 @@ if (featureSources.includes("createContext") || featureSources.includes("functio
   fail("Las features no deben volver a definir el store autenticado");
 }
 
-if (actions.includes('revalidatePath("/dashboard")') || featureSources.includes('revalidatePath("/dashboard")')) {
+if (taskActions.includes('revalidatePath("/dashboard")') || featureSources.includes('revalidatePath("/dashboard")')) {
   fail('No debe existir revalidatePath("/dashboard"); rompe foco y refresca el layout completo');
 }
 
