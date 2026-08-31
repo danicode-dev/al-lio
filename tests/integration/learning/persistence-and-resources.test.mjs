@@ -73,7 +73,11 @@ test("A competency with no linked learning item can still be marked complete (is
 });
 
 test("markCompetencyCompleted optimistically completes and rolls back on failure (issue #96)", async () => {
-  const storeSource = await readFile(new URL("../../../src/features/learning/client/use-learning-actions.ts", import.meta.url), "utf8");
+  // Normalise CRLF to LF so the block-boundary locator below is newline-agnostic
+  // on a Windows checkout (core.autocrlf) as well as on CI (issue #307).
+  const storeSource = (
+    await readFile(new URL("../../../src/features/learning/client/use-learning-actions.ts", import.meta.url), "utf8")
+  ).replace(/\r\n/g, "\n");
   const start = storeSource.indexOf("markCompetencyCompleted: (skillId) =>");
   const end = storeSource.indexOf("\n    },\n  };", start);
   assert.ok(start > -1 && end > start, "could not locate the markCompetencyCompleted action body");
