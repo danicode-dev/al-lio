@@ -5,12 +5,14 @@ topology, trust boundaries, content governance and security controls so the
 final report can describe them accurately without publishing secrets or
 exploitable detail.
 
-Every claim below is `delivered` unless marked otherwise, and points to an
-architecture decision, executable configuration, test or release record. The
-consolidated evidence IDs for this section are owned by the evidence register
-([`02-evidence-register.md`](02-evidence-register.md), issue #296); until the
-final release is frozen, mechanism claims cite their primary source directly
-and release-dependent values stay `planned` (`VER-004`, `OPS-001`, `OPS-003`).
+Mechanism claims below describe the reviewed source baseline unless marked
+otherwise, and point to an architecture decision, executable configuration,
+test or release record. They do not prove that the final production release is
+already frozen or that an operator-owned control has already been exercised.
+This document assigns stable architecture, security and governance evidence
+IDs; the final integration task will add them to the consolidated evidence
+register ([`02-evidence-register.md`](02-evidence-register.md)).
+Release-dependent values stay `planned` (`VER-004`, `OPS-001`, `OPS-003`).
 
 Diagrams and topology below reflect the maintained architecture reference. The
 final report must reconfirm them against the frozen release
@@ -78,7 +80,8 @@ sequenceDiagram
     Radar->>Radar: Confirm batch and mark items delivered
     Student->>API: Request news with signed session
     API->>DB: Filter by profile cycle and expiry
-    DB-->>Student: Approved cycle-specific items
+    DB-->>API: Approved cycle-specific items
+    API-->>Student: Cycle-specific response
 ```
 
 Failure behaviour: a fetch or classification failure cannot create a published
@@ -131,7 +134,7 @@ Source: `src/lib/auth/`, `src/app/(dashboard)/layout.tsx`, ADR-0007,
 `tests/integration/auth/`, `tests/integration/onboarding/gate.test.mjs`.
 
 - Sign-in paths: Google OAuth (minimal `openid`/`email`/`profile` scope, PKCE)
-  and password access for provisioned accounts. Public registration creates an
+  and password access for confirmed accounts. Public registration creates an
   unconfirmed account; the account cannot sign in until the emailed
   confirmation link is used.
 - Rate limiting is applied to password login, registration, demo access and
@@ -218,11 +221,15 @@ Source: `src/lib/google/identity.ts`, `src/lib/google/calendar.ts`, ADR-0002,
 `docs/integrations/INTEGRATIONS_AND_DEEPLINKS.md`, auth and Calendar tests.
 
 - Identity sign-in and Calendar consent are separate flows with separate
-  cookies. Calendar endpoints require an existing validated AL-LIO session and
-  do not create or link an account.
-- Calendar is optional. Stored Google token material is encrypted at rest with
-  a dedicated key and is bound to the validated AL-LIO session that completed
-  consent; a legacy unbound credential is treated as disconnected.
+  cookies. Starting and completing Calendar consent require an existing
+  validated AL-LIO session and do not create or link an account.
+- Calendar is optional. Its access and refresh token material is encrypted with
+  a dedicated key inside an `HttpOnly`, `SameSite=Lax` browser cookie (`Secure`
+  in production); it is not stored in PostgreSQL or linked to the AL-LIO user
+  row. In the reviewed baseline, Calendar status and event operations rely on
+  possession of that cookie and do not independently revalidate the
+  application session. The final report must not describe the credential as
+  user-bound unless that boundary is strengthened and verified before release.
 - OAuth state is validated and return paths are normalised. A Calendar failure
   does not affect AL-LIO-owned data.
 
@@ -255,11 +262,13 @@ Source: `infra/postgres/schema.sql`, `docs/architecture/README.md`, ADR-0002.
 
 | Data | Owner | Notes |
 |---|---|---|
-| User identity, `role` and profile (email, display name, vocational cycle, academic year, onboarding state) | AL-LIO PostgreSQL | Password accounts store a bcrypt hash only |
-| Tasks, notes (Bloc), local calendar state, learning progress, saved items | AL-LIO PostgreSQL | User-scoped; server-side ownership |
-| Delivered news, courses, events, jobs, companies and per-user state | AL-LIO PostgreSQL | Subject to the same publication boundary as the student UI |
+| User identity, external-identity link, `role` and profile (email, display name, vocational cycle, academic year, onboarding state) | AL-LIO PostgreSQL | Password accounts store a bcrypt hash only |
+| Tasks, notes (Bloc), learning progress, saved items and application state | AL-LIO PostgreSQL | User-scoped; server-side ownership |
+| Personal task, course and event planning | AL-LIO PostgreSQL | User-owned records; the local calendar view is derived from these records rather than stored as a separate calendar |
+| Delivered news and Radar-managed opportunities | AL-LIO PostgreSQL | Governed by review, publication, expiry and withdrawal rules |
+| Curated learning resources and company catalogue entries | AL-LIO PostgreSQL | Curated catalogue data; companies are not represented as live vacancies |
 | Session material | Signed cookie in the browser; `security_stamp` in PostgreSQL | No server-side session store of contents |
-| Google token material (Calendar only, if consented) | AL-LIO PostgreSQL, encrypted, session-bound | Optional; revocable |
+| Google Calendar token material (only if consented) | Encrypted `HttpOnly` browser cookie | Optional and revocable; not persisted in PostgreSQL and not user-row-bound in the reviewed baseline |
 | Source catalogue, review decisions, delivery outbox | AL-LIO Radar SQLite volume | Separate backup and recovery procedure |
 
 Radar has no user authentication, no student UI and no AL-LIO database
@@ -296,8 +305,8 @@ they remain `planned` here.
 
 ## 7. Known limitations
 
-Stated without exploitable detail. These are `delivered`-state disclosures:
-the limitation exists in the frozen release.
+Stated without secrets or unnecessary exploit detail. These limitations exist
+in the reviewed source baseline; the final release must reconfirm them.
 
 - **Security / operational:** several production controls are operator
   responsibilities that the repository cannot contain — off-host encrypted
@@ -317,43 +326,69 @@ the limitation exists in the frozen release.
   motion, keyboard navigation and contrast, but full end-to-end accessibility
   and browser E2E verification across every flow is not claimed; treat
   accessibility conformance as `expected` pending an audit.
+- **Calendar session binding:** Calendar credentials are protected in an
+  encrypted, `HttpOnly` cookie, but status and event operations in the reviewed
+  baseline do not independently revalidate the AL-LIO session or bind the
+  credential to a user row. Describe Calendar as optional and cookie-scoped;
+  do not claim complete user-session binding without a later implementation
+  and verification record.
 - **Password reset for identity-only accounts:** an account that only ever
-  signed in with Google can now request a set-your-password link once that
-  change ships; confirm which release contains it before reporting it as
-  `delivered`.
+  signed in with Google cannot set a password through the reset flow in the
+  reviewed baseline; it must continue signing in with Google.
 
 ## 8. Claim-to-evidence map
 
-For the final report, each row becomes an evidence-register entry once
-collected against the frozen release. `Source` is the primary executable or
-documentary reference; `Register ID` names the register entry that will hold
-the collected value (existing IDs are reused, new mechanism IDs are assigned
-by issue #296).
+`Source` is the primary executable or documentary reference. The IDs below are
+stable within this report source: `ARC-*` covers architecture boundaries,
+`SEC-*` covers security controls, and `GOV-*` covers content governance. The
+integration task must copy these IDs into the consolidated register without
+renumbering them. Existing `DAT-*`, `QAL-*`, `OPS-*` and `VER-*` IDs are reused
+where those issues own the measured or release-dependent evidence.
 
 | Claim | Class | Source | Register ID |
 |---|---|---|---|
-| Explicit service trust boundaries with an internal-only database network and Radar excluded from it | delivered | `infra/docker-compose.prod.yml`; ADR-0002 | pending (`ARC` category to be defined by #296) |
-| Self-hosted PostgreSQL is the single product source of truth with a restricted runtime role and a separate migration credential | delivered | ADR-0001; `infra/postgres/`; `infra/docker-compose.prod.yml` | pending; relates to `ENG-004` |
-| Signed, `HttpOnly`, `SameSite` session with database-backed stamp revocation | delivered | `src/lib/auth/session.ts`; `src/lib/auth/session-token.ts`; auth tests | pending |
-| Single central onboarding gate on every private route | delivered | ADR-0007; `src/app/(dashboard)/layout.tsx`; `tests/integration/onboarding/gate.test.mjs` | pending; relates to `PRD-004` |
-| Server-side per-operation user scoping; no user id from the request | delivered | ADR-0008; `src/features/*/server/`; `tests/architecture/features/boundaries.test.mjs` | pending |
-| HMAC-SHA256 signed Radar webhook with replay window, schema-version enforcement, transactional ingest and delivery/item idempotency | delivered | ADR-0003; `src/lib/radar/webhook-auth.ts`; `src/app/api/radar/v1/ingest/route.ts`; Radar contract/signature tests | pending |
-| Human approval required before any currently enabled source publishes; autonomous publication off by default | delivered | ADR-0003; `docs/integrations/`; `infra/docker-compose.prod.yml` | pending; relates to `DAT-004` |
-| Google identity and Calendar are separate, optional flows; Calendar tokens encrypted and session-bound | delivered | `src/lib/google/identity.ts`; `src/lib/google/calendar.ts`; Calendar tests | pending |
+| Explicit service trust boundaries with an internal-only database network and Radar excluded from it | implemented in reviewed source | `infra/docker-compose.prod.yml`; ADR-0002 | `ARC-001` |
+| Self-hosted PostgreSQL is the product source of truth with a restricted runtime role and a separate migration credential | implemented in reviewed source | ADR-0001; `infra/postgres/`; `infra/docker-compose.prod.yml` | `ARC-002` |
+| Signed, `HttpOnly`, `SameSite` session with database-backed stamp revocation | implemented in reviewed source | `src/lib/auth/session.ts`; `src/lib/auth/session-token.ts`; auth tests | `SEC-001` |
+| Single central onboarding gate on every private route | implemented in reviewed source | ADR-0007; `src/app/(dashboard)/layout.tsx`; `tests/integration/onboarding/gate.test.mjs` | `SEC-002` |
+| Server-side per-operation user scoping; no user id accepted from the request | implemented in reviewed source | ADR-0008; `src/features/*/server/`; `tests/architecture/features/boundaries.test.mjs` | `SEC-003` |
+| HMAC-SHA256 signed Radar webhook with replay window, schema-version enforcement, transactional ingest and delivery/item idempotency | implemented in reviewed source | ADR-0003; `src/lib/radar/webhook-auth.ts`; `src/app/api/radar/v1/ingest/route.ts`; Radar contract/signature tests | `SEC-004` |
+| Human approval required before any currently enabled source publishes; autonomous publication off by default | implemented in reviewed source | ADR-0003; `docs/integrations/`; `infra/docker-compose.prod.yml` | `GOV-001` |
+| Google identity and Calendar are separate and optional; Calendar credentials are encrypted in a browser cookie but are not fully application-session-bound | implemented with documented limitation | `src/lib/google/identity.ts`; `src/lib/google/calendar.ts`; Calendar tests | `SEC-005` |
 | Backup, isolated restore rehearsal and image-based rollback are defined release gates | delivered (mechanism); measured (evidence) | ADR-0005; `docs/operations/backup-and-recovery.md`; `docs/operations/release-and-rollback.md` | `OPS-004` (issue #299) |
-| Post-merge CI gates the guarded production deploy | delivered | ADR-0006; `docs/operations/AUTONOMOUS_PRODUCTION_DEPLOY.md` | pending; relates to `QAL-001` |
-| Per-cycle content governance: provenance, approval, expiry, withdrawal, server-side cycle filter | delivered (mechanism); measured (counts) | `docs/integrations/`; `infra/postgres/migrations/`; `Q-DAT-001`–`Q-DAT-007` | `DAT-001`–`DAT-007` |
-| MIT licence, Aircury acknowledgement, operation-through-2027 commitment | delivered | `LICENSE`; `README.md`; `NOTICE.md` | `PRD-001`, `PRD-002`, `OPS-002` |
+| Post-merge CI gates the guarded production deploy | implemented in reviewed source; execution evidence pending | ADR-0006; `docs/operations/AUTONOMOUS_PRODUCTION_DEPLOY.md` | `QAL-001` |
+| Per-cycle content governance: provenance, approval, expiry, withdrawal and server-side cycle filter | implemented (mechanism); measured (counts) | `docs/integrations/`; `infra/postgres/migrations/`; `Q-DAT-001`–`Q-DAT-007` | `GOV-002`; measured values `DAT-001`–`DAT-007` |
 | One immutable AL-LIO and Radar release baseline for all identifiers | planned | `01-delivery-brief.md` | `VER-004` |
 | Final release live with a ready database boundary at the evidence cut-off | planned | `/api/health`, `/api/ready` | `OPS-001` |
+
+## 9. Extraction boundary for the final PDF
+
+The final technical report should extract only the information needed to
+explain the design and justify trust in it:
+
+- one concise system-context diagram with the web application, PostgreSQL,
+  Google, Radar, approved sources and the human reviewer;
+- one short reviewed-content flow showing collection, human approval, signed
+  delivery and cycle-filtered presentation;
+- the responsibility and data boundaries, the principal authentication,
+  authorisation and content-governance controls, and the material limitations;
+- final release evidence and measured values only after their register entries
+  are verified.
+
+Do not copy route names, header names, exact signature construction, cookie
+names, repository paths, test filenames, migration commands or this complete
+claim-to-evidence table into the PDF. They remain internal traceability
+material. The report should describe what the controls achieve, not reproduce
+an audit procedure or expose unnecessary operational detail.
 
 ## Open items for integration
 
 - The `docs/aircury-report/README.md` "Documents" table still marks this file
   as *Planned in issue #298*; the integration task (not this issue) should
   flip it to *Active*.
-- Issue #296 owns adding an architecture/security evidence category (for
-  example `ARC` or `SEC`) and the specific IDs referenced as "pending" above.
+- The integration task must add `ARC-001`–`ARC-002`, `SEC-001`–`SEC-005` and
+  `GOV-001`–`GOV-002` to the consolidated evidence register without changing
+  their meaning or numbering.
 - Release-dependent values (`VER-004`, `OPS-001`, `OPS-003`, `QAL-001`,
   `OPS-004`, all `DAT-*` counts) are completed by issues #299 and the
   final-compliance issue after the delivery release is frozen.
