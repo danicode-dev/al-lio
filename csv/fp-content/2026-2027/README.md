@@ -1,6 +1,9 @@
 # AL-LIO FP content catalog 2026-2027
 
-This folder stores the raw source CSVs for the FP personalization catalog.
+This folder stores the reviewed, versioned source material for the FP
+personalization catalog. The repository-wide ownership and retention contract
+is recorded in
+[`docs/integrations/CONTENT_SOURCE_INVENTORY.md`](../../../docs/integrations/CONTENT_SOURCE_INVENTORY.md).
 
 ## Files
 
@@ -11,7 +14,9 @@ This folder stores the raw source CSVs for the FP personalization catalog.
 
 ## Current scope
 
-These CSVs are versioned as raw input. They are not imported by the app yet.
+These CSVs are classified as `raw` because they preserve the editorial source
+shape. They are supported inputs to `import:fp-content`, but the application
+does not read them at runtime; delivered content lives in PostgreSQL.
 
 The intended MVP behavior is:
 

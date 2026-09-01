@@ -9,6 +9,11 @@ Las 120 filas se incorporaron directamente a `csv/fp-content/2026-2027/raw/*.csv
 importadas en `fp_content_items` / `fp_content_cycle_fit`. Catálogo total:
 250 -> 370 items.
 
+This directory is `retained evidence`, not a current importer input. The
+transformed rows under `../raw/` are the supported FP content source. See the
+[content source inventory](../../../../docs/integrations/CONTENT_SOURCE_INVENTORY.md)
+for the retention and removal boundary.
+
 ## Qué NO incluye todavía esta importación
 
 **Ninguno de los 120 tiene competencias asignadas** (`fp_item_competencies`).

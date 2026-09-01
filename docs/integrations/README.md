@@ -13,6 +13,9 @@ authoritative. A document here explains *why* a boundary or rule exists.
 
 ## Documents
 
+- [`CONTENT_SOURCE_INVENTORY.md`](CONTENT_SOURCE_INVENTORY.md): classification,
+  consumer, publication authority, sensitivity, retention and removal
+  conditions for repository-held datasets and evidence.
 - [`INTEGRATIONS_AND_DEEPLINKS.md`](INTEGRATIONS_AND_DEEPLINKS.md): the
   narrowest-reliable-integration policy for Google, job platforms and outbound
   deep links.
