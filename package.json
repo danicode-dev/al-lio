@@ -10,10 +10,10 @@
   "author": "Daniel Garcia",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/danicode-dev/al-lio.git"
+    "url": "git+https://github.com/danielgarciaortega-dev/al-lio.git"
   },
   "bugs": {
-    "url": "https://github.com/danicode-dev/al-lio/issues"
+    "url": "https://github.com/danielgarciaortega-dev/al-lio/issues"
   },
   "homepage": "https://al-lio.app",
   "keywords": [
