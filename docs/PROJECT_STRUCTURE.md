@@ -10,7 +10,8 @@
   do not yet have one product owner. Product repositories and actions belong to
   `src/features/<feature>/server/`.
 - `src/middleware.ts`: protected-route and session boundary.
-- `public/`: static assets served by Next.js.
+- `public/`: static assets served by Next.js; brand-asset ownership and
+  canonical variants are mapped in `public/assets/README.md`.
 - `tests/`: Node test-runner suites; see `tests/README.md`.
 
 ## Data and persistence
