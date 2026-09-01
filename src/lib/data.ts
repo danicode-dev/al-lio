@@ -1,14 +1,11 @@
-import { redirect } from "next/navigation";
 import { cache } from "react";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
-import { getSession } from "@/lib/auth/session";
+import { getAuthenticatedStudentContext } from "@/lib/auth/authenticated-student-context";
 import { getTasksByUser } from "@/features/tasks/server/repository";
 import { getCoursesByUser } from "@/features/courses/server/repository";
 import { getHackathonsByUser } from "@/features/events/server/repository";
 import { getAllTechOpportunities } from "@/lib/db/repositories/tech_opportunities";
 import { getCompaniesByCycleGroup, getFavoriteCompanyIds } from "@/features/work/server/repository";
-import { getUserById } from "@/lib/db/repositories/users";
-import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import { getInternalLearningTargetsForVideoUrls } from "@/features/learning/server/repository";
 import { getLearningOverview } from "@/features/learning/domain/overview";
 import {
@@ -29,34 +26,8 @@ export const FP_COURSE_APTITUDE_TYPES = new Set(["curso_basico", "curso_compleme
 export type StoreLoadSection = "tasks" | "courses" | "hackathons" | "opportunities" | "companies" | "roadmap";
 
 export const getGlobalStore = cache(async () => {
-  const session = await getSession();
-  if (!session) redirect("/login");
-
+  const { session, user, profile } = await getAuthenticatedStudentContext();
   const userId = session.uid;
-
-  const [profile, pgUser] = await Promise.all([
-    getProfileByUser(userId),
-    getUserById(userId),
-  ]);
-
-  // Real session revocation (issue #132): the signed cookie is otherwise
-  // stateless and stays cryptographically valid until it expires, so a
-  // password reset can only take effect by comparing the stamp it was
-  // issued with against the user's current one, here, where a database
-  // round trip for this exact row is already in flight. A mismatch (or a
-  // deleted user) means the session was revoked - treat it as logged out.
-  // Routed through /api/auth/logout-stale rather than clearing the cookie
-  // here directly: this runs inside a Server Component's render, and
-  // Next.js only allows cookie mutation from a Server Action or Route
-  // Handler (caught live - see the commit message). redirect() alone here
-  // would leave the stale-but-signature-valid cookie in place, which
-  // middleware (no database access, so it can't see the mismatch) would
-  // bounce straight back to /dashboard - an infinite loop.
-  if (!pgUser || pgUser.security_stamp !== session.sv) {
-    redirect("/api/auth/logout-stale");
-  }
-
-  if (!profile || !profile.onboarding_completed_at) redirect("/onboarding");
 
   const issues: StoreLoadSection[] = [];
 
@@ -126,7 +97,7 @@ export const getGlobalStore = cache(async () => {
   const userCompetencyStates = await getUserCompetencyStatesForSkills(userId, visibleCompetencyIds);
 
   const rawName =
-    pgUser?.display_name ||
+    user.display_name ||
     session.name ||
     session.email.split("@")[0] ||
     "Invitado";

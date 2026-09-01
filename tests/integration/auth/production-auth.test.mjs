@@ -119,20 +119,24 @@ test("confirmEmailToken confirms and immediately establishes a session (email co
 });
 
 test("Real session revocation: getGlobalStore compares the session's embedded stamp against the freshly-fetched user row (no extra database round trip) and redirects to the dedicated clearing route on a mismatch (issue #132)", async () => {
-  const source = await readFile(new URL("../../../src/lib/data.ts", import.meta.url), "utf8");
+  const [dataSource, contextSource, sessionSource] = await Promise.all([
+    readFile(new URL("../../../src/lib/data.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/lib/auth/authenticated-student-context.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/lib/auth/session.ts", import.meta.url), "utf8"),
+  ]);
 
-  assert.doesNotMatch(source, /clearSession/, "clearSession must not be called from this Server Component - Next.js only allows cookie mutation from a Server Action or Route Handler (caught live)");
-  const fnStart = source.indexOf("export const getGlobalStore");
-  const fnSource = source.slice(fnStart, fnStart + 1900);
-
-  assert.match(fnSource, /const \[profile, pgUser\] = await Promise\.all\(\[/, "pgUser must be fetched from the SAME Promise.all already in flight, not a second query");
-  assert.match(fnSource, /if \(!pgUser \|\| pgUser\.security_stamp !== session\.sv\) \{/);
-  assert.match(fnSource, /redirect\("\/api\/auth\/logout-stale"\);/, "must route through the dedicated Route Handler that can actually clear the cookie - redirect() alone here would leave a stale-but-signature-valid cookie that middleware (no database access) would bounce right back to /dashboard");
+  assert.doesNotMatch(`${dataSource}\n${contextSource}`, /clearSession/, "clearSession must not be called from a Server Component - Next.js only allows cookie mutation from a Server Action or Route Handler (caught live)");
+  assert.match(dataSource, /await getAuthenticatedStudentContext\(\)/, "the store must delegate identity loading to the shared private context");
+  assert.match(contextSource, /const \[user, profile\] = await Promise\.all\(\[/, "user and profile must share one request-scoped load");
+  assert.match(contextSource, /requireValidSessionUser\(session\)/);
+  assert.match(sessionSource, /if \(!user \|\| user\.security_stamp !== session\.sv\) \{/);
+  assert.match(sessionSource, /redirect\("\/api\/auth\/logout-stale"\);/, "must route through the dedicated Route Handler that can actually clear the cookie - redirect() alone here would leave a stale-but-signature-valid cookie that middleware (no database access) would bounce right back to /dashboard");
 });
 
 test("Real session revocation also guards direct Server Action and API calls, not only dashboard navigation (issue #132)", async () => {
   const sessionSource = await readFile(new URL("../../../src/lib/auth/session.ts", import.meta.url), "utf8");
   assert.match(sessionSource, /export async function getValidatedSession\(\): Promise<SessionPayload \| null>/);
+  assert.match(sessionSource, /await requireValidSessionUser\(session\);/);
   assert.match(sessionSource, /const user = await getUserById\(session\.uid\);/);
   assert.match(sessionSource, /if \(!user \|\| user\.security_stamp !== session\.sv\) \{/);
   assert.match(sessionSource, /redirect\("\/api\/auth\/logout-stale"\);/, "a stale signed cookie must be cleared, not redirected into a middleware loop");
