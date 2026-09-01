@@ -22,6 +22,7 @@ subfolders below.
 
 - [`architecture/README.md`](architecture/README.md): system boundaries and diagrams.
 - [`architecture/ARCHITECTURE_AND_STACK.md`](architecture/ARCHITECTURE_AND_STACK.md): concise runtime reference.
+- [`architecture/COMPATIBILITY_REGISTER.md`](architecture/COMPATIBILITY_REGISTER.md): retained compatibility routes, handlers and dormant runtime flags, with owners and removal conditions.
 - [`architecture/decisions/README.md`](architecture/decisions/README.md): accepted engineering decisions.
 
 ## `integrations/`
