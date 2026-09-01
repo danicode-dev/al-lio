@@ -1,3 +1,9 @@
+// COMPAT-REGISTER: nonprod-seed-endpoint (docs/architecture/COMPATIBILITY_REGISTER.md)
+//
+// Non-production demo-data endpoint. Returns 404 when NODE_ENV === "production"
+// and otherwise requires an authenticated user. Classified as a removal
+// candidate (owner confirmation required) by issue #357: no in-repo caller was
+// found. Removal is tracked in a follow-up issue; nothing is deleted here.
 import { NextResponse } from "next/server";
 import { tryGetCurrentUserId } from "@/lib/auth/current-user";
 import { deleteTasksByUserLike, createTask } from "@/features/tasks/server/repository";

@@ -6,6 +6,7 @@ import { FP_APTITUDE_GATED_TYPES } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
+// COMPAT-REGISTER: legacy-ruta-deeplink (docs/architecture/COMPATIBILITY_REGISTER.md)
 // /ruta/[slug] remains a legacy deep-link resolver, but it only resolves to
 // screens inside AL-LIO. YouTube and official event URLs are never returned.
 export default async function LegacyRutaRedirectPage({

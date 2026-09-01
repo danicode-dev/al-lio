@@ -1,3 +1,5 @@
+// COMPAT-REGISTER: retired-collector-trigger (docs/architecture/COMPATIBILITY_REGISTER.md)
+//
 // Retired public trigger.
 //
 // This endpoint previously ran four external job collectors on an
