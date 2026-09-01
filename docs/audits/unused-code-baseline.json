@@ -16,18 +16,6 @@
       ]
     },
     {
-      "classification": "confirmed-unused-runtime-dependency-candidates",
-      "owner": "Dependency retirement issue #387",
-      "reason": "No application, test, script, or configuration entry imports these runtime packages. Package removal is deferred to a focused follow-up with build validation.",
-      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/387",
-      "findings": [
-        "dependencies:package.json:@dnd-kit/core",
-        "dependencies:package.json:@dnd-kit/utilities",
-        "dependencies:package.json:class-variance-authority",
-        "dependencies:package.json:date-fns"
-      ]
-    },
-    {
       "classification": "dynamic-tooling-reference",
       "owner": "Engineering and CI under #276",
       "reason": "eslint-config-next is consumed by string through FlatCompat.extends in eslint.config.mjs, which static import analysis cannot resolve.",
