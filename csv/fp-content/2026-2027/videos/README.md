@@ -134,3 +134,49 @@ video/tramo y que `/ruta/[slug]` acepte un tramo opcional.
 `cola_revision_videos_parciales.csv` (tambien en `archive/source-2026-08-04/`)
 es el backlog editorial de competencias con cobertura solo parcial —
 util para priorizar que videos sustituir mas adelante.
+
+## Snapshots archivados (`archive/`) — referencia historica, no consumir en runtime
+
+Entregas de datos ya superadas, conservadas solo como evidencia de procedencia.
+**Ningun import, script, test ni codigo de la app las lee**:
+`npm run import:fp-resource-videos` solo lee `recursos_video.json` (la fuente
+canonica vigente de este dominio). Un `git grep` en todo el repo confirma que,
+fuera de `archive/` y de este README, nada referencia estas rutas.
+
+No editar estos ficheros como entrada canonica actual: son una foto congelada de
+una fecha concreta; los cambios de contenido van a `recursos_video.json`.
+
+### `archive/source-2026-08-04/`
+- **Contiene:** primera entrega de videos del roadmap FP
+  (`biblioteca_videos_youtube.csv`, `items_competencias_videos_youtube.csv`,
+  `importacion_reproductor_al_lio_todos.csv`,
+  `cola_revision_videos_parciales.csv`, `diccionario_archivos_youtube.csv`,
+  `README_INTEGRACION_YOUTUBE.md`).
+- **Procedencia / fecha:** `AL_LIO_ROADMAPS_FP_YOUTUBE_2026_08_04.zip`, ~2026-08-04.
+  Verificacion manual de canales, sin filtro de duracion ni de visitas.
+- **Estado:** evidencia historica; no es fuente de import.
+- **Fuente canonica vigente:** `recursos_video.json`.
+- **Por que se conserva:** modelo mas rico que el actual (varios videos por
+  recurso, con tramos por competencia); base pendiente de una posible extension
+  "video por competencia". Detalle en "### Origen anterior (2026-08-04, superado)".
+- **Consumidores:** ninguno en runtime; solo consulta humana.
+- **Condicion para retirar / externalizar:** que se descarte esa extension o se
+  rehaga desde `recursos_video.json`; entonces, mover fuera del repo por decision
+  del propietario dejando aqui el enlace.
+
+### `archive/source-2026-08-05-curado/`
+- **Contiene:** revision de curacion estricta
+  (`auditoria_youtube_estricta_todos_ciclos.csv`,
+  `candidatos_youtube_aprobados_todos_ciclos.csv`,
+  `resumen_curacion_youtube.csv`, `README_CURACION_YOUTUBE_ESTRICTA.md`).
+- **Procedencia / fecha:** `AL_LIO_ROADMAPS_FP_YOUTUBE_CURADO_2026_08_05.zip`,
+  metricas verificadas 2026-08-05 (5 filtros: >=45 min, >=300.000 visitas por
+  video, relacion directa con el ciclo, canal fiable, video unico auditable).
+- **Estado:** evidencia historica; superada por el lote de candidatos 2026-08-06
+  que origino las filas actuales.
+- **Fuente canonica vigente:** `recursos_video.json`.
+- **Por que se conserva:** documenta el criterio de aceptacion aplicado y que
+  recursos quedaron sin video por umbrales (cruzado con `PENDIENTES_VIDEO.md`).
+- **Consumidores:** ninguno en runtime.
+- **Condicion para retirar / externalizar:** que `PENDIENTES_VIDEO.md` deje de
+  citar esta auditoria como fuente del backlog, o decision del propietario.

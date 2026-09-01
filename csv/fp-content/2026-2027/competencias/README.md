@@ -60,3 +60,30 @@ npm run import:fp-competencias
 
 Rows in `item_competencias.csv` whose `item_id_slug` is not found in
 `fp_content_items` are skipped and reported, not silently dropped or fatal.
+
+## Archived snapshots (historical reference, not an import source)
+
+`archive/` keeps the superseded per-cycle competency model. It is retained as
+provenance only. **No import, script, test or application code reads it**:
+`npm run import:fp-competencias` reads only `habilidades.csv`,
+`ciclo_habilidades.csv` and `item_competencias.csv` from this directory. A
+repo-wide `git grep` confirms nothing outside `archive/` and this README
+references these files.
+
+Do not edit these files as if they were current canonical input. They are a
+frozen snapshot; current changes go to the three files listed under "Files".
+
+- **Contents:** `roadmap_competencias.csv`, `relaciones_competencias.csv`.
+- **Provenance / date:** the `AL_LIO_ROADMAPS_FP_2026_2027` package; added
+  2026-08-04, moved into `archive/` on 2026-08-06 when the model changed.
+- **Status:** historical evidence. Not an active import source.
+- **Current canonical source:** `habilidades.csv` (cycle-agnostic skills) plus
+  `ciclo_habilidades.csv` (per-cycle placement) plus `item_competencias.csv`
+  (item-to-skill links), imported by `npm run import:fp-competencias`.
+- **Why retained:** it records the earlier design, where every competency was
+  duplicated per cycle, so the migration to the current model stays auditable.
+- **Known consumers:** none. Runtime must not consume it.
+- **Removal / externalisation condition:** once the current skill model has had
+  a full release cycle in production and no open question references the old
+  per-cycle rows, these two files may be moved to external historical storage by
+  an explicit owner decision, leaving a pointer here.
