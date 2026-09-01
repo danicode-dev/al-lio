@@ -4,8 +4,7 @@ import { ApplicationStoreProvider } from "@/shared/store/application-store";
 import { DailyAlerts } from "@/components/daily-alerts";
 import { MobileHeaderNavigation } from "@/components/mobile-header-navigation";
 import { ProductTourShell } from "@/components/onboarding/tour/tour-provider";
-import { getValidatedSession } from "@/lib/auth/session";
-import { getProfileByUser } from "@/lib/db/repositories/profiles";
+import { getAuthenticatedStudentContext } from "@/lib/auth/authenticated-student-context";
 import { getProductTourState } from "@/lib/db/repositories/product_tour";
 import { shouldOfferProductTour, type ProductTourState } from "@/lib/onboarding/tour-state";
 import type { Store } from "@/components/store/types";
@@ -16,10 +15,10 @@ import { Toaster } from "sonner";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [globalStore, cookieStore, session] = await Promise.all([
+  const [globalStore, cookieStore, { session, profile }] = await Promise.all([
     getGlobalStore(),
     cookies(),
-    getValidatedSession(),
+    getAuthenticatedStudentContext(),
   ]);
   const store = globalStore as unknown as Store;
   const sidebarPreference = cookieStore.get("al-lio-sidebar-collapsed");
@@ -30,19 +29,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // reach the app until the questionnaire (cycle + academic year) is done.
   // A returning, fully-onboarded student passes straight through. /onboarding
   // sits outside this route group, so the redirect cannot loop.
-  let tourState: ProductTourState | null = null;
-  if (session) {
-    const [profile, state] = await Promise.all([
-      getProfileByUser(session.uid),
-      getProductTourState(session.uid),
-    ]);
-
-    if (!profile || !profile.onboarding_completed_at || !profile.cycle_code) {
-      redirect("/onboarding");
-    }
-
-    if (shouldOfferProductTour(state)) tourState = state;
+  if (!profile.cycle_code) {
+    redirect("/onboarding");
   }
+
+  let tourState: ProductTourState | null = null;
+  const state = await getProductTourState(session.uid);
+  if (shouldOfferProductTour(state)) tourState = state;
 
   return (
     <ApplicationStoreProvider initialStore={store}>

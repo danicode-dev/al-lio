@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SESSION_COOKIE, signSessionToken, verifySessionToken, type SessionPayload } from "@/lib/auth/session-token";
 import { getUserById } from "@/lib/db/repositories/users";
+import type { DbUser } from "@/lib/db/types";
 
 const SESSION_DAYS = 30;
 
@@ -32,6 +33,18 @@ export async function getSession(): Promise<SessionPayload | null> {
   return verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value);
 }
 
+export async function requireValidSessionUser(session: SessionPayload): Promise<DbUser> {
+  const user = await getUserById(session.uid);
+  if (!user || user.security_stamp !== session.sv) {
+    // Clear the still-valid signed cookie through a Route Handler. Sending a
+    // stale cookie straight to /login would loop because middleware can only
+    // see its valid signature and would redirect it back to /dashboard.
+    redirect("/api/auth/logout-stale");
+  }
+
+  return user;
+}
+
 // Use this at every authorization boundary outside middleware. Middleware
 // intentionally performs signature-only verification because the Edge
 // runtime has no PostgreSQL connection; server components, actions and route
@@ -41,14 +54,7 @@ export async function getValidatedSession(): Promise<SessionPayload | null> {
   const session = await getSession();
   if (!session) return null;
 
-  const user = await getUserById(session.uid);
-  if (!user || user.security_stamp !== session.sv) {
-    // Clear the still-valid signed cookie through a Route Handler. Sending a
-    // stale cookie straight to /login would loop because middleware can only
-    // see its valid signature and would redirect it back to /dashboard.
-    redirect("/api/auth/logout-stale");
-  }
-
+  await requireValidSessionUser(session);
   return session;
 }
 

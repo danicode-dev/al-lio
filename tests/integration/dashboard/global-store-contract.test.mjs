@@ -26,3 +26,25 @@ test("The global store omits dormant opportunity, quick-link and reminder fields
   assert.match(storeTypes, /^\s{2}techOpportunities: TechOpportunity\[\];/m);
   assert.match(storeTypes, /^\s{2}fpContent: FpCatalogItem\[\];/m);
 });
+
+test("The private layout and global store share one request-scoped identity context (issue #344)", async () => {
+  const [contextSource, dataSource, layoutSource] = await Promise.all([
+    readFile(new URL("../../../src/lib/auth/authenticated-student-context.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/lib/data.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(contextSource, /export const getAuthenticatedStudentContext = cache\(async \(\) => \{/);
+  assert.match(dataSource, /const \{ session, user, profile \} = await getAuthenticatedStudentContext\(\);/);
+  assert.match(layoutSource, /getAuthenticatedStudentContext\(\)/);
+
+  for (const duplicate of ["getSession", "getValidatedSession", "getUserById", "getProfileByUser"]) {
+    assert.doesNotMatch(dataSource, new RegExp(`\\b${duplicate}\\b`));
+    assert.doesNotMatch(layoutSource, new RegExp(`\\b${duplicate}\\b`));
+  }
+
+  assert.match(dataSource, /userName,/);
+  assert.match(dataSource, /userEmail: session\.email,/);
+  assert.match(layoutSource, /userName=\{store\.userName\}/);
+  assert.match(layoutSource, /userEmail=\{store\.userEmail\}/);
+});

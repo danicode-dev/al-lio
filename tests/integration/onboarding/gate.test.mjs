@@ -10,22 +10,27 @@ import test from "node:test";
 const readSource = (relativePath) => readFile(new URL(`../../../${relativePath}`, import.meta.url), "utf8");
 
 test("the (dashboard) layout redirects every session with an unfinished profile to /onboarding (issue #290)", async () => {
-  const layout = await readSource("src/app/(dashboard)/layout.tsx");
+  const [layout, context] = await Promise.all([
+    readSource("src/app/(dashboard)/layout.tsx"),
+    readSource("src/lib/auth/authenticated-student-context.ts"),
+  ]);
 
-  assert.match(layout, /import \{ getProfileByUser \} from "@\/lib\/db\/repositories\/profiles"/);
+  assert.match(layout, /import \{ getAuthenticatedStudentContext \} from "@\/lib\/auth\/authenticated-student-context"/);
   assert.match(layout, /import \{ redirect \} from "next\/navigation"/);
-  assert.match(
-    layout,
-    /!profile \|\| !profile\.onboarding_completed_at \|\| !profile\.cycle_code/,
-    "an absent profile, a missing completion timestamp or a missing cycle all count as not onboarded",
-  );
+  assert.match(context, /if \(!profile \|\| !profile\.onboarding_completed_at\) redirect\("\/onboarding"\)/);
+  assert.match(layout, /if \(!profile\.cycle_code\) \{/);
   assert.match(layout, /redirect\("\/onboarding"\)/);
 
-  // The gate must sit before the layout renders its children, and inside the
-  // authenticated branch so it never runs for a request with no session.
+  // Both halves of the gate must run before either server boundary returns.
+  const contextGateIndex = context.indexOf('redirect("/onboarding")');
   const gateIndex = layout.indexOf('redirect("/onboarding")');
+  assert.ok(contextGateIndex > 0 && contextGateIndex < context.indexOf("return {"), "the profile gate must run before the context returns");
   assert.ok(gateIndex > 0 && gateIndex < layout.indexOf("return ("), "the gate must run before the layout returns markup");
-  assert.ok(layout.slice(0, gateIndex).includes("if (session)"), "the gate must be guarded by an authenticated session");
+  assert.match(context, /if \(!session\) redirect\("\/login"\)/, "the private context must reject an absent session before loading profile data");
+
+  assert.match(layout, /getProductTourState\(session\.uid\)/);
+  assert.match(layout, /shouldOfferProductTour\(state\)/);
+  assert.match(layout, /tourState && <ProductTourShell initialState=\{tourState\} \/>/);
 });
 
 test("/onboarding sends an already-onboarded student back to /dashboard (issue #290)", async () => {
