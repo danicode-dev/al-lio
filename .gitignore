@@ -38,3 +38,11 @@ migration-artifacts/
 *.dump
 *.dump.sha256
 *.age
+
+# browser E2E harness (issue #329): reports, traces and the Playwright cache.
+# The suite writes under /output/ (already ignored); these are listed
+# explicitly so nothing generated is ever committed.
+/output/playwright/
+/playwright-report/
+/blob-report/
+/.playwright/
