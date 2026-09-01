@@ -13,7 +13,7 @@ test("The authenticated student tree owns exactly one store provider (issue #90)
     readFile(new URL("../../../src/shared/store/application-store.tsx", import.meta.url), "utf8"),
     Promise.resolve(""),
     readFile(new URL("../../../src/components/dashboard/dashboard-client.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/private-app-layout.tsx", import.meta.url), "utf8"),
   ]);
 
   // guest-app.tsx must not define its own context/provider/mutations anymore -
@@ -61,7 +61,7 @@ test("The merged store fetch loads every section with fail-soft handling (issue 
 test("The desktop navigation provides the branded expanded sidebar and persistent collapsed rail (issue #178)", async () => {
   const [sidebarSource, layoutSource, userMenuSource] = await Promise.all([
     readFile(new URL("../../../src/components/app-sidebar.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/private-app-layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/auth/user-menu.tsx", import.meta.url), "utf8"),
   ]);
 
@@ -104,7 +104,7 @@ test("The desktop navigation provides the branded expanded sidebar and persisten
 test("The mobile header menu replaces the bottom navigation without changing the desktop navigation contract (issue #182)", async () => {
   const [mobileSource, layoutSource, headerSource, guestAppSource, tasksSource] = await Promise.all([
     readFile(new URL("../../../src/components/mobile-header-navigation.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/private-app-layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/student-header-actions.tsx", import.meta.url), "utf8"),
     readProductFeatureSources(),
     readFile(new URL("../../../src/features/tasks/client/tasks-view.tsx", import.meta.url), "utf8"),
@@ -156,7 +156,7 @@ test("The mobile header menu replaces the bottom navigation without changing the
 test("Quick Add and Notifications form one shared header action group on mobile and desktop, while Calendar lives only in navigation (issue #91, issue #129, issue #182)", async () => {
   const [headerSource, layoutSource, mobileSource, guestAppSource, quickAddSource, dashboardClientSource, dashboardGreetingSource] = await Promise.all([
     readFile(new URL("../../../src/components/student-header-actions.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/private-app-layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/mobile-header-navigation.tsx", import.meta.url), "utf8"),
     readProductFeatureSources(),
     readFile(new URL("../../../src/components/quick-add.tsx", import.meta.url), "utf8"),
@@ -260,7 +260,7 @@ test("The shared page-header tokens in globals.css style the eyebrow/title/subti
 
 test("The dashboard layout keeps desktop actions inside each page header and delegates the new sticky mobile header to one component (issue #129, issue #182)", async () => {
   const [layoutSource, mobileSource] = await Promise.all([
-    readFile(new URL("../../../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/private-app-layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/mobile-header-navigation.tsx", import.meta.url), "utf8"),
   ]);
   assert.doesNotMatch(layoutSource, /pt-6 md:flex/, "the old standalone desktop actions row (the source of the excessive top gap) must be removed");
@@ -423,7 +423,7 @@ test("Calendar events open a detail dialog on click and its action deep-links to
     readFile(new URL("../../../src/lib/dashboard/calendar-events.ts", import.meta.url), "utf8"),
     readProductFeatureSources(),
     readFile(new URL("../../../src/features/tasks/client/tasks-view.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/app/(dashboard)/tasks/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/app/(tasks)/tasks/page.tsx", import.meta.url), "utf8"),
   ]);
 
   // Nothing navigates on the first click: both the pill and the agenda row

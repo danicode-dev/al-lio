@@ -39,13 +39,13 @@ export function TasksView() {
 
   // Deep link from the calendar / alerts: /tasks?task=<id> opens that task
   // in view mode, then the param is dropped so a refresh doesn't reopen it.
-  // Wait for the store to load before resolving the id, and consume it once.
+  // The page-scoped server store is complete before this client view mounts,
+  // including the valid empty-list case, so the parameter can be consumed
+  // immediately instead of using list length as a loading signal.
   const requestedTaskId = searchParams.get("task");
   const taskParamConsumed = useRef(false);
   useEffect(() => {
     if (!requestedTaskId || taskParamConsumed.current) return;
-    const tasksLoaded = store.tasks.length > 0 || store.loadIssues?.includes("tasks");
-    if (!tasksLoaded) return;
     taskParamConsumed.current = true;
     const match = store.tasks.find((task) => task.id === requestedTaskId);
     if (match) setTaskDialog({ taskId: match.id, mode: "view" });
