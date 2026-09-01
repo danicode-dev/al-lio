@@ -100,6 +100,22 @@ the baseline. A later focused issue should decide whether each symbol becomes
 module-private or is removed; this audit does not assume that an unused export
 means its implementation is unused inside the same file.
 
+## Focused follow-ups
+
+| Issue | Exact concern | Baseline findings |
+|---|---|---:|
+| [#376](https://github.com/danielgarciaortega-dev/al-lio/issues/376) | Evidence-gated tech-opportunities compatibility retirement | 1 file |
+| [#383](https://github.com/danielgarciaortega-dev/al-lio/issues/383) | Deprecated PostgreSQL setup shim | 1 file |
+| [#384](https://github.com/danielgarciaortega-dev/al-lio/issues/384) | Unreferenced UI primitives | 2 files |
+| [#385](https://github.com/danielgarciaortega-dev/al-lio/issues/385) | Unreachable persistence adapters | 4 files |
+| [#386](https://github.com/danielgarciaortega-dev/al-lio/issues/386) | Unreachable roadmap overview | 1 file |
+| [#387](https://github.com/danielgarciaortega-dev/al-lio/issues/387) | Unreferenced frontend dependencies | 4 dependencies |
+| [#388](https://github.com/danielgarciaortega-dev/al-lio/issues/388) | Unconsumed exported API and type surface | 60 exports and 27 types |
+
+These issues preserve one coherent concern per change, require before/after
+metrics and explicitly exclude unrelated deletion. Together with #376, they
+account for every confirmed candidate in the initial snapshot.
+
 ## Commands and drift policy
 
 ```bash

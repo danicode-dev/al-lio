@@ -16,26 +16,50 @@
       ]
     },
     {
-      "classification": "confirmed-unused-file-candidates",
-      "owner": "Repository hygiene parent #276",
-      "reason": "Knip found no reachable entry point or importer. Removal is intentionally deferred to exact-path follow-up issues so each change can be reviewed independently.",
-      "followUp": "Create and link focused removal issues from #276 before closing #333.",
+      "classification": "confirmed-unused-file-candidate",
+      "owner": "PostgreSQL setup shim issue #383",
+      "reason": "Knip found no reachable entry point or importer. The supported postgres:setup command delegates directly to scripts/postgres/migrate.mjs.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/383",
       "findings": [
-        "files:scripts/setup-postgres-schema.mjs",
+        "files:scripts/setup-postgres-schema.mjs"
+      ]
+    },
+    {
+      "classification": "confirmed-unused-ui-file-candidates",
+      "owner": "UI primitive retirement issue #384",
+      "reason": "Knip found no reachable entry point or importer for either standalone UI primitive module.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/384",
+      "findings": [
         "files:src/components/ui/separator.tsx",
-        "files:src/components/ui/table.tsx",
+        "files:src/components/ui/table.tsx"
+      ]
+    },
+    {
+      "classification": "confirmed-unused-repository-file-candidates",
+      "owner": "Repository adapter retirement issue #385",
+      "reason": "Knip found no reachable importer for these four persistence adapters after the dormant global-store fields were retired.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/385",
+      "findings": [
         "files:src/features/resources/server/repository.ts",
         "files:src/features/work/server/opportunity-repository.ts",
         "files:src/lib/db/repositories/reminders.ts",
-        "files:src/lib/db/repositories/sources.ts",
+        "files:src/lib/db/repositories/sources.ts"
+      ]
+    },
+    {
+      "classification": "confirmed-unused-file-candidate",
+      "owner": "Roadmap overview retirement issue #386",
+      "reason": "Knip found no reachable entry point or importer for the roadmap overview module; the active roadmap uses separate modules.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/386",
+      "findings": [
         "files:src/lib/fp/roadmap-overview.ts"
       ]
     },
     {
       "classification": "confirmed-unused-runtime-dependency-candidates",
-      "owner": "Repository hygiene parent #276",
+      "owner": "Dependency retirement issue #387",
       "reason": "No application, test, script, or configuration entry imports these runtime packages. Package removal is deferred to a focused follow-up with build validation.",
-      "followUp": "Create and link a dependency-removal issue from #276 before closing #333.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/387",
       "findings": [
         "dependencies:package.json:@dnd-kit/core",
         "dependencies:package.json:@dnd-kit/utilities",
@@ -54,9 +78,9 @@
     },
     {
       "classification": "confirmed-unused-export-candidates",
-      "owner": "Repository hygiene parent #276",
+      "owner": "Exported API-surface issue #388",
       "reason": "The containing modules are reachable, but these named runtime exports have no external consumer. De-exporting or deleting them is deferred to a focused API-surface issue.",
-      "followUp": "Create and link an exact-symbol API-surface issue from #276 before closing #333.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/388",
       "findings": [
         "exports:scripts/e2e/app-env.mjs:__testables",
         "exports:scripts/lib/company-catalogue.mjs:slugify",
@@ -122,9 +146,9 @@
     },
     {
       "classification": "confirmed-unused-type-export-candidates",
-      "owner": "Repository hygiene parent #276",
+      "owner": "Exported API-surface issue #388",
       "reason": "The containing modules are reachable, but these exported TypeScript types have no external consumer. De-exporting is deferred to the same focused API-surface review.",
-      "followUp": "Create and link an exact-symbol API-surface issue from #276 before closing #333.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/388",
       "findings": [
         "types:src/features/legal/types.ts:LegalDocumentVariant",
         "types:src/features/marketing/domain/modules.ts:ModuleKey",
