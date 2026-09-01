@@ -178,15 +178,15 @@ Verified/legacy tech-opportunity catalogue API.
 Non-production demo-data endpoint.
 
 - **Path**: `src/app/api/seed/route.ts`
-- **Class**: `removal-candidate` (owner confirmation required)
+- **Class**: `removal-candidate` (owner-confirmed)
 - **Owner domain**: Tasks / Events / Courses repositories (demo fixtures).
 - **Supported caller**: none found in the repository. The Settings screen's
   "Añadir datos de prueba" button (`seedDemoData` in
   `src/features/settings/client/settings-feature.tsx`) is a separate
   client-only helper: it calls the `addTask` store action directly, creates a
   different set of items, uses no `[Demo]` prefix, and never fetches
-  `/api/seed`. A manual owner or company-demo use on a local or staging
-  environment is plausible but unconfirmed.
+  `/api/seed`. On 2026-09-01 the owner confirmed that the endpoint is obsolete
+  and is not used manually for local, staging, or company demos.
 - **Authentication boundary**: `GET` returns `404` when
   `NODE_ENV === "production"` (fail-closed), otherwise requires
   `tryGetCurrentUserId()` and returns `401` without a session. Not matched by
@@ -197,10 +197,10 @@ Non-production demo-data endpoint.
 - **Observability**: response `{ success: true }` or an error status. No test
   covers it.
 - **Fallback behavior**: `404` in production; `401` without a session.
-- **Removal condition / follow-up**: #377 (exact-path) asks the owner to
-  confirm no manual reliance on `/api/seed` for demos. If confirmed unused,
-  delete the route; otherwise promote it to a documented, explicitly-guarded
-  developer tool. Nothing is removed in #357.
+- **Removal condition / follow-up**: owner confirmation is complete. #379
+  removes the route as part of the focused retirement of obsolete demo access
+  and sample-data tooling, and closes the original exact-path issue #377.
+  Nothing is removed in #357.
 
 ## Application configuration flags
 
@@ -214,7 +214,7 @@ separately below.
 | `AL_LIO_RADAR_V4_PROJECT_DESTINATIONS` | `src/lib/radar/v4-projection.ts` | dormant |
 | `AL_LIO_RADAR_LEARNING_INGEST_ENABLED` | `src/app/api/radar/v1/learning/route.ts` | dormant |
 | `AL_LIO_VERIFIED_OPPORTUNITIES_ONLY` | `src/lib/data.ts`, `src/features/learning/server/catalogue-repository.ts` | dormant |
-| `AL_LIO_DEMO_ACCESS_ENABLED` | `src/lib/auth/demo-access.ts` | active |
+| `AL_LIO_DEMO_ACCESS_ENABLED` | `src/lib/auth/demo-access.ts` | removal-candidate |
 
 - **`AL_LIO_RADAR_WEBHOOK_SECRET`** — `active`. The HMAC secret every Radar
   receiver route (`ingest`, `learning`) verifies. `scripts/validate-runtime-env.mjs`
@@ -239,11 +239,13 @@ separately below.
   catalogue to canonical accepted course/event rows. Kept off until canonical
   course/event parity is reviewed locally (`.env.example`).
   `validate-runtime-env.mjs` validates it is `true`/`false`.
-- **`AL_LIO_DEMO_ACCESS_ENABLED`** — `active` (operator config). Read by
-  `isDemoAccessEnabled()`. Production default `false`
-  (`.env.production.example`, `infra/docker-compose.prod.yml`); enabled only
-  during controlled company demos. It is a supported switch, not dormant code.
-  `validate-runtime-env.mjs` validates it is `true`/`false`.
+- **`AL_LIO_DEMO_ACCESS_ENABLED`** — `removal-candidate` (owner-confirmed).
+  Read by `isDemoAccessEnabled()` and disabled by default in production, but the
+  owner confirmed on 2026-09-01 that the five permanent demo identities and
+  passwordless demo picker are obsolete. #379 removes the flag, login action,
+  hard-coded profiles, seed command and sample-data tooling. Until that focused
+  change lands, `validate-runtime-env.mjs` continues to validate the flag as
+  `true`/`false` and the production default remains fail-closed.
 
 ## Radar and deployment passthrough
 
@@ -272,14 +274,16 @@ are out of scope for application compatibility classification.
   `AL_LIO_BASELINE_CONFIRMATION`, `AL_LIO_BASELINE_RECONCILIATION`,
   `AL_LIO_DB_ROLE_CONFIRMATION`.
 - **Demo-user seed script** (`scripts/seed-fp-demo-users.mjs`, not app runtime):
-  `AL_LIO_SEED_DEMO_CONFIRMATION`, `AL_LIO_DEMO_PASSWORD`.
+  `AL_LIO_SEED_DEMO_CONFIRMATION`, `AL_LIO_DEMO_PASSWORD`. These are also
+  owner-confirmed removal candidates tracked by #379.
 
 ## Removal candidates and follow-up
 
 | Surface | Follow-up |
 | --- | --- |
 | `src/app/api/tech-opportunities/route.ts` (+ orphaned `src/lib/tech-opportunities/tech-opportunities.ts`) | #376: confirm no external consumer via access logs, then remove both. Keep the `TechOpportunity` type and `getAllTechOpportunities`. |
-| `src/app/api/seed/route.ts` | #377: owner confirms no manual demo reliance, then remove; otherwise document as a guarded developer tool. |
+| `src/app/api/seed/route.ts` | #379: owner confirmed it is unused; remove it and close the original exact-path issue #377. |
+| Legacy demo access (`AL_LIO_DEMO_ACCESS_ENABLED`, five hard-coded profiles, passwordless picker and seed command) | #379: retire the obsolete demo boundary; retain only isolated sandbox/test fixtures and provide a guarded production cleanup command. |
 
 No route, flag, handler, or compatibility behavior is removed by #357.
 

@@ -2,8 +2,9 @@
 //
 // Non-production demo-data endpoint. Returns 404 when NODE_ENV === "production"
 // and otherwise requires an authenticated user. Classified as a removal
-// candidate (owner confirmation required) by issue #357: no in-repo caller was
-// found. Removal is tracked in a follow-up issue; nothing is deleted here.
+// candidate by issue #357: no in-repo caller was found, and the owner confirmed
+// on 2026-09-01 that it is obsolete. Removal is tracked in #379; nothing is
+// deleted in this classification slice.
 import { NextResponse } from "next/server";
 import { tryGetCurrentUserId } from "@/lib/auth/current-user";
 import { deleteTasksByUserLike, createTask } from "@/features/tasks/server/repository";

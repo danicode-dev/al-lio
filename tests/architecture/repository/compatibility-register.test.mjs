@@ -14,7 +14,7 @@ const registerPath = "docs/architecture/COMPATIBILITY_REGISTER.md";
 const register = readFileSync(join(root, registerPath), "utf8");
 
 const SURFACE_CLASSES = new Set(["active", "compatibility", "dormant", "removal-candidate"]);
-const FLAG_CLASSES = new Set(["active", "dormant", "operator-config"]);
+const FLAG_CLASSES = new Set(["active", "dormant", "removal-candidate"]);
 
 function section(title) {
   const start = register.indexOf(`## ${title}`);
@@ -145,6 +145,24 @@ test("issue #357: every registered flag is still read by a listed consumer", () 
       `no listed consumer of ${flag.name} still reads process.env.${flag.name} (checked: ${flag.consumers.join(", ")})`,
     );
   }
+});
+
+test("issue #357: every application AL_LIO flag is registered", () => {
+  const registeredFlags = new Set(flags.map((flag) => flag.name));
+  const sourceFlags = new Set();
+
+  for (const file of srcFiles) {
+    const source = readFileSync(file, "utf8");
+    for (const match of source.matchAll(/process\.env\.(AL_LIO_[A-Z0-9_]+)/g)) {
+      sourceFlags.add(match[1]);
+    }
+  }
+
+  assert.deepEqual(
+    [...registeredFlags].sort(),
+    [...sourceFlags].sort(),
+    "application-owned AL_LIO flags in src/ and the compatibility register must match exactly",
+  );
 });
 
 test("issue #357: the register separates application flags from Radar/deployment passthrough", () => {
