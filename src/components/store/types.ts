@@ -87,16 +87,6 @@ export type Task = {
   completed_at?: string;
 };
 
-export type Opportunity = {
-  id: string;
-  title: string;
-  company?: string;
-  url?: string;
-  status: string;
-  location?: string;
-  created_at: string;
-};
-
 export type Course = {
   id: string;
   id_slug?: string;
@@ -267,26 +257,15 @@ export type Company = {
   is_favorite: boolean;
 };
 
-export type QuickLink = {
-  id: string;
-  name: string;
-  url: string;
-  category?: string;
-  created_at: string;
-};
-
 export type Store = {
   version: 2;
   userName?: string;
   userEmail?: string;
   tasks: Task[];
-  opportunities: Opportunity[];
   techOpportunities: TechOpportunity[];
   courses: Course[];
   hackathons: Hackathon[];
   fpContent: FpCatalogItem[];
-  links: QuickLink[];
-  reminders: unknown[];
   roadmap: RoadmapOverview | null;
   companies: Company[];
   loadIssues?: Array<"tasks" | "courses" | "hackathons" | "opportunities" | "companies" | "roadmap">;
