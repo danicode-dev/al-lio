@@ -59,8 +59,8 @@ An authenticated student can:
   hash provisioned by an authorised operator.
 - Self-service email registration is not implemented; `/register` redirects to
   `/login`.
-- Demo profiles are controlled by an environment flag and disabled by default
-  in production.
+- Production accounts are individually owned; fictional review users exist
+  only in isolated shared-development, local or automated-test databases.
 - Protected pages require a valid signed session.
 
 The product must never imply that self-service registration, password recovery

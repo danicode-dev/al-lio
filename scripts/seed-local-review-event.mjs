@@ -5,13 +5,6 @@ const { loadEnvConfig } = nextEnv;
 
 const CONFIRMATION = "SEED_LOCAL_REVIEW_EVENT";
 const EVENT_SLUG = "local-review-hackathon-2026";
-const DEMO_USER_IDS = [
-  "10000000-0000-0000-0000-000000000001",
-  "10000000-0000-0000-0000-000000000002",
-  "10000000-0000-0000-0000-000000000003",
-  "10000000-0000-0000-0000-000000000004",
-  "10000000-0000-0000-0000-000000000005",
-];
 
 loadEnvConfig(process.cwd(), true);
 
@@ -34,6 +27,11 @@ async function main() {
     throw new Error("The review event can only be seeded into a localhost PostgreSQL database");
   }
 
+  const userEmail = process.env.AL_LIO_LOCAL_REVIEW_USER_EMAIL?.trim().toLowerCase();
+  if (!userEmail) {
+    throw new Error("Set AL_LIO_LOCAL_REVIEW_USER_EMAIL to one existing local test account");
+  }
+
   const client = new pg.Client({ connectionString: databaseUrl });
   await client.connect();
 
@@ -41,17 +39,18 @@ async function main() {
     await client.query("BEGIN");
     const users = await client.query(
       `SELECT id
-       FROM public.users
-       WHERE id = ANY($1::uuid[]) AND role = 'user'`,
-      [DEMO_USER_IDS],
+         FROM public.users
+        WHERE lower(email) = lower($1)
+          AND role = 'user'`,
+      [userEmail],
     );
 
-    if (users.rowCount !== DEMO_USER_IDS.length) {
-      throw new Error("All local demo profiles must exist before seeding the review event");
+    if (users.rowCount !== 1) {
+      throw new Error("The local review account does not exist or is not a standard user");
     }
 
-    for (const { id: userId } of users.rows) {
-      await client.query(
+    const userId = users.rows[0].id;
+    await client.query(
         `INSERT INTO public.hackathons
           (user_id, id_slug, categoria, name, organizer, province, city, type,
            modalidad, localidad, status, event_start_date, event_end_date,
@@ -89,12 +88,11 @@ async function main() {
            notes = excluded.notes,
            priority = excluded.priority,
            updated_at = now()`,
-        [userId, EVENT_SLUG],
-      );
-    }
+      [userId, EVENT_SLUG],
+    );
 
     await client.query("COMMIT");
-    console.log(`OK: local review event seeded for ${users.rowCount} demo profiles.`);
+    console.log("OK: local review event seeded for one isolated local account.");
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;

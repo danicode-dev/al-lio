@@ -26,12 +26,14 @@ test("Development startup loads Next.js env files and validates auth secrets bef
   assert.equal(packageJson.devDependencies["@next/env"], "15.5.23");
 });
 
-test("The review event seed is explicit, idempotent and restricted to local demo profiles", async () => {
+test("The review event seed is explicit, idempotent and restricted to one named local account", async () => {
   const source = await readFile(new URL("../../../scripts/seed-local-review-event.mjs", import.meta.url), "utf8");
 
   assert.match(source, /AL_LIO_SEED_LOCAL_REVIEW_EVENT/);
+  assert.match(source, /AL_LIO_LOCAL_REVIEW_USER_EMAIL/);
   assert.match(source, /\["localhost", "127\.0\.0\.1", "::1"\]\.includes\(hostname\)/);
-  assert.match(source, /WHERE id = ANY\(\$1::uuid\[\]\) AND role = 'user'/);
+  assert.match(source, /WHERE lower\(email\) = lower\(\$1\)/);
+  assert.match(source, /AND role = 'user'/);
   assert.match(source, /ON CONFLICT \(user_id, id_slug\) DO UPDATE SET/);
   assert.match(source, /await client\.query\("BEGIN"\);/);
   assert.match(source, /await client\.query\("COMMIT"\);/);

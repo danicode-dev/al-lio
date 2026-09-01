@@ -51,11 +51,10 @@ connect to a database or to production.
 | `validate-learning-competencies.mjs` | `validate:learning-competencies` |
 | `validate-learning-sources.mjs` | `validate:learning-sources` |
 
-## Seeds (local and demo only)
+## Seeds (local only)
 
 | Script | npm alias | Purpose |
 |---|---|---|
-| `seed-fp-demo-users.mjs` | `seed:fp-demo-users` | Demo login accounts for local work. |
 | `seed-local-review-event.mjs` | `seed:local-review-event` | One local Radar review event. |
 
 ## Deploy and release
@@ -74,6 +73,7 @@ connect to a database or to production.
 | `validate-migrations.mjs` | `validate:migrations` | Migration numbering, immutability and runbook references. |
 | `validate-postgres-app-integration.mjs` | `validate:postgres-app-integration` | App code talks to PostgreSQL through repositories, never a stray client. |
 | `validate-postgres-schema-sandbox.mjs` | `postgres:schema:validate-sandbox` | Apply the schema to a throwaway sandbox database. |
+| `postgres/remove-legacy-demo-users.mjs` | `postgres:legacy-demo-users:cleanup` | Audit the five exact retired demo identities by default; delete them only after backup and explicit dual confirmation. |
 
 ## Radar
 

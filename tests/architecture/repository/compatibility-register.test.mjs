@@ -69,15 +69,14 @@ const markedFiles = srcFiles
   .map((file) => ({ file: rel(file), id: (readFileSync(file, "utf8").match(markerRe) ?? [])[1] }))
   .filter((entry) => entry.id);
 
-test("issue #357: the register lists at least the five scoped runtime surfaces", () => {
-  assert.ok(surfaces.length >= 5, `expected >= 5 surfaces, parsed ${surfaces.length}`);
+test("issue #357/#379: the register lists the four retained scoped runtime surfaces", () => {
+  assert.equal(surfaces.length, 4, `expected 4 retained surfaces, parsed ${surfaces.length}`);
   const paths = new Set(surfaces.map((surface) => surface.path));
   for (const expected of [
     "src/app/api/news/sync/route.ts",
     "src/app/api/collect/route.ts",
     "src/app/(dashboard)/ruta/[slug]/page.tsx",
     "src/app/api/tech-opportunities/route.ts",
-    "src/app/api/seed/route.ts",
   ]) {
     assert.ok(paths.has(expected), `register does not list ${expected}`);
   }
@@ -131,8 +130,8 @@ test("issue #357: no unregistered 410 Gone route can be added", () => {
   }
 });
 
-test("issue #357: every registered flag is still read by a listed consumer", () => {
-  assert.ok(flags.length >= 5, `expected >= 5 application flags, parsed ${flags.length}`);
+test("issue #357/#379: every registered flag is still read by a listed consumer", () => {
+  assert.equal(flags.length, 4, `expected 4 application flags, parsed ${flags.length}`);
   for (const flag of flags) {
     assert.ok(FLAG_CLASSES.has(flag.klass), `unknown flag class "${flag.klass}" for ${flag.name}`);
     assert.ok(flag.consumers.length > 0, `flag ${flag.name} lists no consumer`);
@@ -167,7 +166,7 @@ test("issue #357: every application AL_LIO flag is registered", () => {
 
 test("issue #357: the register separates application flags from Radar/deployment passthrough", () => {
   const passthrough = section("Radar and deployment passthrough");
-  for (const appFlag of ["AL_LIO_RADAR_WEBHOOK_SECRET", "AL_LIO_VERIFIED_OPPORTUNITIES_ONLY", "AL_LIO_DEMO_ACCESS_ENABLED"]) {
+  for (const appFlag of ["AL_LIO_RADAR_WEBHOOK_SECRET", "AL_LIO_VERIFIED_OPPORTUNITIES_ONLY"]) {
     assert.ok(flags.some((flag) => flag.name === appFlag), `${appFlag} must be in the application-flag table`);
   }
   for (const radarFlag of ["AL_LIO_RADAR_AUTONOMOUS_PUBLICATION_ENABLED", "AL_LIO_RADAR_JOB_RADAR_ENABLED", "AL_LIO_RADAR_YOUTUBE_API_KEY"]) {
@@ -194,11 +193,6 @@ test("issue #357: authentication, ownership and fail-closed guards are unchanged
   assert.match(techOpp, /tryGetCurrentUserId\(\)/);
   assert.match(techOpp, /status:\s*401/);
   assert.match(techOpp, /private, no-store/);
-
-  const seed = read("src/app/api/seed/route.ts");
-  assert.match(seed, /process\.env\.NODE_ENV === "production"/);
-  assert.match(seed, /status:\s*404/);
-  assert.match(seed, /tryGetCurrentUserId\(\)/);
 
   const ruta = read("src/app/(dashboard)/ruta/[slug]/page.tsx");
   assert.match(ruta, /getValidatedSession\(\)/);

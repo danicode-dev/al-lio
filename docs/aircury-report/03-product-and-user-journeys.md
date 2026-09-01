@@ -120,9 +120,9 @@ the account surface, a student can:
 - replace the password and revoke previous signed sessions;
 - sign out from the authenticated account menu.
 
-All private product routes require a valid signed session. Public demo access
-is controlled by configuration and disabled by default in production; it is
-not a public access method.
+All private product routes require a valid signed session. Production uses
+individually owned identities; the obsolete passwordless demo-profile boundary
+was retired and is not a public access method.
 
 Decision value: the student receives a private workspace with an accountable
 identity boundary, so personal planning and progress can persist safely.

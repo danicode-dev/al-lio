@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { GoogleLoginButton } from "@/components/auth/google-login-button";
-import { DemoProfilePicker } from "@/components/auth/demo-profile-picker";
 import { loginWithPasswordAction, type PasswordLoginState } from "@/lib/auth/password-login";
 
 const errorCopy: Record<string, string> = {
@@ -23,14 +22,12 @@ const errorCopy: Record<string, string> = {
   confirm_invalid: "Este enlace de confirmación no es válido.",
   confirm_expired: "Este enlace de confirmación ha caducado. Regístrate de nuevo para recibir uno nuevo.",
   confirm_already_used: "Este enlace de confirmación ya se ha usado. Si ya confirmaste tu cuenta, inicia sesión.",
-  demo_disabled: "El acceso a los perfiles demo está desactivado temporalmente.",
-  demo_unavailable: "Este perfil demo no está disponible ahora mismo.",
   rate_limited: "Demasiados intentos seguidos. Espera unos minutos antes de volver a probar.",
 };
 
 const initialPasswordLoginState: PasswordLoginState = { error: null };
 
-export function LoginForm({ error, demoAccessEnabled = false }: { error?: string | null; demoAccessEnabled?: boolean }) {
+export function LoginForm({ error }: { error?: string | null }) {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordLoginState, passwordLoginAction, isPasswordLoginPending] = useActionState(
     loginWithPasswordAction,
@@ -380,8 +377,6 @@ export function LoginForm({ error, demoAccessEnabled = false }: { error?: string
               <Link href="/register">Crear cuenta</Link>
             </p>
           </form>
-
-          {demoAccessEnabled && <DemoProfilePicker />}
         </main>
 
         <p className="login-foot">

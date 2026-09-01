@@ -66,11 +66,6 @@ if (production && configuredResendValues !== resendValues.length) {
   errors.push("El envío de correo transaccional (Resend) debe estar configurado en producción");
 }
 
-const demoFlag = process.env.AL_LIO_DEMO_ACCESS_ENABLED?.trim().toLowerCase();
-if (demoFlag && demoFlag !== "true" && demoFlag !== "false") {
-  errors.push("AL_LIO_DEMO_ACCESS_ENABLED debe ser true o false");
-}
-
 const verifiedOpportunitiesFlag = process.env.AL_LIO_VERIFIED_OPPORTUNITIES_ONLY?.trim().toLowerCase();
 if (verifiedOpportunitiesFlag && verifiedOpportunitiesFlag !== "true" && verifiedOpportunitiesFlag !== "false") {
   errors.push("AL_LIO_VERIFIED_OPPORTUNITIES_ONLY debe ser true o false");

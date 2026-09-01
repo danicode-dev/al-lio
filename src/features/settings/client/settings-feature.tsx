@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { useTaskActions, type TaskActions } from "@/features/tasks/client";
 import { useApplicationStore } from "@/shared/store/application-store";
 import { FeaturePage } from "@/shared/ui/feature-page";
 
@@ -61,24 +60,8 @@ const taskBuckets: Array<{
   },
 ];
 
-function Settings({ reset, addTask }: { reset: () => void; addTask: TaskActions["addTask"] }) {
+function Settings({ reset }: { reset: () => void }) {
   const { settings, updateSettings } = useAppSettings();
-  const [seeded, setSeeded] = useState(false);
-
-  function seedDemoData() {
-    const now = new Date();
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
-    const today2h = new Date(now);
-    today2h.setHours(now.getHours() + 2);
-
-    addTask({ title: "Revisar correos urgentes", status: "pendiente", priority: "critica", category: "urgente", due_at: toDatetimeLocalValue(yesterday) });
-    addTask({ title: "Preparar presentación del proyecto", status: "pendiente", priority: "alta", category: "diario", due_at: toDatetimeLocalValue(today2h) });
-    addTask({ title: "Llamar al cliente sobre el presupuesto", status: "pendiente", priority: "alta", category: "diario", due_at: toDatetimeLocalValue(now) });
-    addTask({ title: "Subir entrega a la plataforma", status: "pendiente", priority: "alta", category: "semanal", due_at: toDatetimeLocalValue(today2h) });
-    addTask({ title: "Revisar PR del compañero", status: "pendiente", priority: "media", category: "pendiente" });
-    setSeeded(true);
-  }
 
   return (
     <Section title="Configuración">
@@ -132,19 +115,6 @@ function Settings({ reset, addTask }: { reset: () => void; addTask: TaskActions[
         </div>
       </Card>
 
-      <Card className="p-5">
-        <p className="text-sm font-medium">Datos de prueba</p>
-        <p className="mt-1 text-xs text-muted-foreground">Crea tareas urgentes de ejemplo para probar el resumen diario y las alertas.</p>
-        <Button
-          className="mt-4"
-          variant="outline"
-          onClick={seedDemoData}
-          disabled={seeded}
-        >
-          {seeded ? "Datos añadidos" : "Añadir datos de prueba"}
-        </Button>
-      </Card>
-
       <Card className="p-5 border-destructive/40">
         <p className="text-sm font-medium text-destructive">Zona de peligro</p>
         <p className="mt-1 text-xs text-muted-foreground">Elimina todos los datos del store local (tareas, cursos, etc.). Esta acción no se puede deshacer.</p>
@@ -185,20 +155,11 @@ function safeJson(raw: string) {
   }
 }
 
-function toDatetimeLocalValue(date: Date) {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function pad(value: number) {
-  return String(value).padStart(2, "0");
-}
-
 export function SettingsFeature() {
   const { resetStore } = useApplicationStore();
-  const { addTask } = useTaskActions();
   return (
-    <FeaturePage eyebrow="Administración" title="Configuración" subtitle="Ajustes del panel y datos de demostración.">
-      <Settings reset={resetStore} addTask={addTask} />
+    <FeaturePage eyebrow="Administración" title="Configuración" subtitle="Ajustes del panel.">
+      <Settings reset={resetStore} />
     </FeaturePage>
   );
 }
