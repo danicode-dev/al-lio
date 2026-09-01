@@ -22,16 +22,12 @@ console.log("\n── Repositorios PostgreSQL ──");
 const REPOS = [
   "src/lib/db/repositories/users.ts",
   "src/lib/db/repositories/profiles.ts",
-  "src/lib/db/repositories/sources.ts",
-  "src/lib/db/repositories/reminders.ts",
   "src/lib/db/repositories/tech_opportunities.ts",
   "src/features/tasks/server/repository.ts",
   "src/features/courses/server/repository.ts",
   "src/features/events/server/repository.ts",
   "src/features/bloc/server/repository.ts",
   "src/features/work/server/repository.ts",
-  "src/features/work/server/opportunity-repository.ts",
-  "src/features/resources/server/repository.ts",
   "src/features/learning/server/catalogue-repository.ts",
   "src/features/learning/server/repository.ts",
 ];

@@ -16,18 +16,6 @@
       ]
     },
     {
-      "classification": "confirmed-unused-repository-file-candidates",
-      "owner": "Repository adapter retirement issue #385",
-      "reason": "Knip found no reachable importer for these four persistence adapters after the dormant global-store fields were retired.",
-      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/385",
-      "findings": [
-        "files:src/features/resources/server/repository.ts",
-        "files:src/features/work/server/opportunity-repository.ts",
-        "files:src/lib/db/repositories/reminders.ts",
-        "files:src/lib/db/repositories/sources.ts"
-      ]
-    },
-    {
       "classification": "confirmed-unused-file-candidate",
       "owner": "Roadmap overview retirement issue #386",
       "reason": "Knip found no reachable entry point or importer for the roadmap overview module; the active roadmap uses separate modules.",
