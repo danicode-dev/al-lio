@@ -17,7 +17,7 @@ cycle-specific relevance and production safety.
 ## Local setup
 
 ```bash
-git clone https://github.com/danicode-dev/al-lio.git
+git clone https://github.com/danielgarciaortega-dev/al-lio.git
 cd al-lio
 npm ci
 cp .env.example .env.local
