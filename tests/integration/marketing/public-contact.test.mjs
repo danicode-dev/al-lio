@@ -7,47 +7,33 @@ import test from "node:test";
 const readSource = (path) => readFile(new URL(`../../../${path}`, import.meta.url), "utf8");
 
 const publicContactSurfaces = [
-  "src/app/(legal)/accesibilidad/page.tsx",
-  "src/app/(legal)/contacto/page.tsx",
-  "src/app/(legal)/privacidad/page.tsx",
-  "src/app/en/accesibilidad/page.tsx",
-  "src/app/en/contacto/page.tsx",
-  "src/app/en/privacidad/page.tsx",
+  "src/features/legal/content/accessibility.tsx",
+  "src/features/legal/content/contact.tsx",
+  "src/features/legal/content/privacy.tsx",
   "src/components/landing/landing-footer.tsx",
   "README.md",
 ];
 
 test("the public site publishes each verified AL-LÍO contact address for its intended purpose", async () => {
-  const [contacts, esContact, enContact, esPrivacy, enPrivacy, esAccessibility, enAccessibility, footer] =
-    await Promise.all([
-      readSource("src/lib/public-contact.ts"),
-      readSource("src/app/(legal)/contacto/page.tsx"),
-      readSource("src/app/en/contacto/page.tsx"),
-      readSource("src/app/(legal)/privacidad/page.tsx"),
-      readSource("src/app/en/privacidad/page.tsx"),
-      readSource("src/app/(legal)/accesibilidad/page.tsx"),
-      readSource("src/app/en/accesibilidad/page.tsx"),
-      readSource("src/components/landing/landing-footer.tsx"),
-    ]);
+  const [contacts, contact, privacy, accessibility, footer] = await Promise.all([
+    readSource("src/lib/public-contact.ts"),
+    readSource("src/features/legal/content/contact.tsx"),
+    readSource("src/features/legal/content/privacy.tsx"),
+    readSource("src/features/legal/content/accessibility.tsx"),
+    readSource("src/components/landing/landing-footer.tsx"),
+  ]);
 
   assert.match(contacts, /general: "hola@al-lio\.app"/);
   assert.match(contacts, /support: "soporte@al-lio\.app"/);
   assert.match(contacts, /privacy: "privacidad@al-lio\.app"/);
 
-  for (const source of [esContact, enContact]) {
-    assert.match(source, /PUBLIC_CONTACT_EMAILS\.general/);
-    assert.match(source, /PUBLIC_CONTACT_EMAILS\.support/);
-    assert.match(source, /PUBLIC_CONTACT_EMAILS\.privacy/);
-    assert.match(source, /mailto:summerofcode@aircury\.es/);
-  }
+  assert.equal(contact.match(/PUBLIC_CONTACT_EMAILS\.general/g)?.length, 4);
+  assert.equal(contact.match(/PUBLIC_CONTACT_EMAILS\.support/g)?.length, 4);
+  assert.equal(contact.match(/PUBLIC_CONTACT_EMAILS\.privacy/g)?.length, 4);
+  assert.equal(contact.match(/mailto:summerofcode@aircury\.es/g)?.length, 2);
 
-  for (const source of [esPrivacy, enPrivacy]) {
-    assert.match(source, /PUBLIC_CONTACT_EMAILS\.privacy/);
-  }
-
-  for (const source of [esAccessibility, enAccessibility]) {
-    assert.match(source, /PUBLIC_CONTACT_EMAILS\.support/);
-  }
+  assert.equal(privacy.match(/PUBLIC_CONTACT_EMAILS\.privacy/g)?.length, 4);
+  assert.equal(accessibility.match(/PUBLIC_CONTACT_EMAILS\.support/g)?.length, 4);
 
   assert.match(footer, /PUBLIC_CONTACT_EMAILS\.general/);
 });
