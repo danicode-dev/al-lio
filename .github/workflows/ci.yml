@@ -36,6 +36,55 @@ jobs:
       - name: Run repository verification
         run: npm run ci
 
+  e2e:
+    name: Browser E2E (auth + Tasks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: al_lio_e2e
+          POSTGRES_PASSWORD: al_lio_e2e
+          POSTGRES_DB: al_lio_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U al_lio_e2e -d al_lio_e2e"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      # An ephemeral, loopback-only database and a local app port. No
+      # production secret is read; tests/e2e/support/env.ts fails the job if
+      # any of these ever point somewhere real.
+      E2E_MANAGE_DB: "false"
+      E2E_DATABASE_URL: postgresql://al_lio_e2e:al_lio_e2e@127.0.0.1:5432/al_lio_e2e
+      E2E_BASE_URL: http://127.0.0.1:3210
+      E2E_APP_PORT: "3210"
+      CI: "true"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the isolated E2E suite
+        run: npm run e2e
+
   dependency-review:
     name: Dependency review
     if: github.event_name == 'pull_request'
