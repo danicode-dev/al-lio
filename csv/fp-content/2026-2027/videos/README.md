@@ -81,56 +81,12 @@ entre grupos de ciclo distintos** (AF/MP/TSAF/DEV) — verificado con consulta
 directa a la base de datos tras cada import, no solo contra el archivo de
 origen.
 
-### Origen 2026-08-05 (curacion estricta, superado por el lote 2026-08-06)
+### Origen previo (lotes pre-Radar 2026-08-04 / 2026-08-05, retirados)
 
-Las filas actuales de `recursos_video.csv` vienen de
-`archive/source-2026-08-05-curado/` (`AL_LIO_ROADMAPS_FP_YOUTUBE_CURADO_2026_08_05.zip`),
-que sustituye a la entrega del 2026-08-04. Un video solo entra en
-`recursos_video.csv` si pasa los 5 filtros de `auditoria_youtube_estricta_todos_ciclos.csv`
-(duracion >=45 min, >=300.000 visitas en ese video concreto, relacion
-directa con el ciclo/competencia, canal fiable, video unico auditable
-— nunca playlist). Ver `PENDIENTES_VIDEO.md` para el detalle completo
-de reglas y la lista de recursos que todavia no tienen un video que
-las cumpla.
-
-Ademas, ningun video se reutiliza como principal en mas de 5 recursos
-distintos (tope fijado a proposito para no repetir el mismo video en
-decenas de tarjetas, ver `_tmp-build-curated-videos.mjs` en el
-historial de commits para el criterio exacto — no forma parte del
-repo, era un script puntual). Los recursos que se quedaron sin video
-por el tope de reuso (no porque no hubiera ningun video valido) tambien
-aparecen en `PENDIENTES_VIDEO.md`.
-
-### Origen anterior (2026-08-04, superado)
-
-`archive/source-2026-08-04/` (`AL_LIO_ROADMAPS_FP_YOUTUBE_2026_08_04.zip`) fue
-la primera entrega: 47 videos/playlists reales verificados manualmente
-(canales oficiales, fabricantes, organismos publicos y creadores
-profesionales reconocidos), pero sin verificar duracion ni visitas por
-video. Se mantiene en el repo solo como referencia historica — ya no
-es la fuente de `recursos_video.csv`.
-
-Ese paquete relaciona cada recurso con **varios** videos distintos segun
-la competencia desde la que se mire (a veces el mismo video con tramos
-de inicio/fin distintos por competencia) — mas rico que el modelo actual
-de `recursos_video.csv`, que solo admite un video por recurso.
-
-`csv/fp-content/2026-2027/videos/../scripts` no incluye el script que
-genero `recursos_video.csv` desde ese paquete (fue un script puntual, no
-commiteado); el criterio de seleccion por recurso fue: preferir la fila
-`obligatoria_para_item = si`, luego menor `orden_preparacion`, luego
-mayor `fiabilidad_1_5`. Al ser el primer video "principal" del recurso,
-en algunos casos no es el mas obvio tematicamente (ej. un recurso de
-Docker mostrando un video de diseno de bases de datos, porque asi quedo
-etiquetada su competencia principal en la importacion de competencias
-original) — pendiente de revisar caso a caso si hace falta.
-
-Extension futura pendiente: usar `items_competencias_videos_youtube.csv`
-(en `archive/source-2026-08-04/`) para mostrar el video **especifico de cada
-competencia** con su tramo de inicio/fin exacto, en vez de un unico video
-por recurso. Requiere ampliar `fp_item_competencies` con columnas de
-video/tramo y que `/ruta/[slug]` acepte un tramo opcional.
-
-`cola_revision_videos_parciales.csv` (tambien en `archive/source-2026-08-04/`)
-es el backlog editorial de competencias con cobertura solo parcial —
-util para priorizar que videos sustituir mas adelante.
+Las entregas de arranque anteriores a Radar (los lotes `source-2026-08-04` y
+`source-2026-08-05-curado`, antes bajo `archive/`) se han retirado del arbol
+actual. Siguen
+siendo recuperables por el historial de Git y **no son fuentes de runtime**. La
+fuente canonica vigente de este dominio es `recursos_video.json`; el catalogo de
+competencias vive en `habilidades.csv`, `ciclo_habilidades.csv` e
+`item_competencias.csv`.

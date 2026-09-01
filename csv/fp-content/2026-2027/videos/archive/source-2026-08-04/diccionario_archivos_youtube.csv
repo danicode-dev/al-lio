@@ -1,8 +1,0 @@
-﻿archivo,clave,uso
-biblioteca_videos_youtube.csv,video_recurso_id,Catálogo único de vídeos/playlists y fiabilidad.
-competencias_videos_youtube_todos.csv,ciclo_siglas + competencia_id + video_recurso_id,Asigna vídeos y tramos a cada aptitud.
-criterios_videos_youtube_todos.csv,criterio_id,Permite mostrar qué vídeo apoya cada criterio de superación.
-items_competencias_videos_youtube.csv,item_id_slug + competencia_id,"Modal de requisitos de hackatones, cursos y oportunidades."
-importacion_reproductor_al_lio_todos.csv,leccion_id,"Pantalla interna de vídeo, notas, progreso y evidencia."
-rutas_youtube_oportunidades_todos.csv,ruta_id + orden_leccion,"Rutas internas de hackatones, eventos, prácticas, becas y empleo."
-cola_revision_videos_parciales.csv,competencia_id,Backlog editorial para sustituir coberturas parciales.
