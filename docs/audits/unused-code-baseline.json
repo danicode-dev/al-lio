@@ -28,15 +28,6 @@
       ]
     },
     {
-      "classification": "confirmed-unused-file-candidate",
-      "owner": "Roadmap overview retirement issue #386",
-      "reason": "Knip found no reachable entry point or importer for the roadmap overview module; the active roadmap uses separate modules.",
-      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/386",
-      "findings": [
-        "files:src/lib/fp/roadmap-overview.ts"
-      ]
-    },
-    {
       "classification": "confirmed-unused-runtime-dependency-candidates",
       "owner": "Dependency retirement issue #387",
       "reason": "No application, test, script, or configuration entry imports these runtime packages. Package removal is deferred to a focused follow-up with build validation.",
