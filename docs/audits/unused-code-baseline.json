@@ -16,15 +16,6 @@
       ]
     },
     {
-      "classification": "confirmed-unused-file-candidate",
-      "owner": "PostgreSQL setup shim issue #383",
-      "reason": "Knip found no reachable entry point or importer. The supported postgres:setup command delegates directly to scripts/postgres/migrate.mjs.",
-      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/383",
-      "findings": [
-        "files:scripts/setup-postgres-schema.mjs"
-      ]
-    },
-    {
       "classification": "confirmed-unused-repository-file-candidates",
       "owner": "Repository adapter retirement issue #385",
       "reason": "Knip found no reachable importer for these four persistence adapters after the dormant global-store fields were retired.",
