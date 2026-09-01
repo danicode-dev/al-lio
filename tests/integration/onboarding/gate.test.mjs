@@ -1,7 +1,7 @@
 // Source-level assertion rationale: the onboarding gate is two server-component
 // redirects that the plain Node runner cannot execute (they need the Next.js
 // request context and a database). Until an integration harness renders the
-// (dashboard) layout, these assertions pin the redirect wiring so a refactor
+// shared private layout, these assertions pin the redirect wiring so a refactor
 // cannot quietly drop it and let a profile-less student into the app.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -9,9 +9,9 @@ import test from "node:test";
 
 const readSource = (relativePath) => readFile(new URL(`../../../${relativePath}`, import.meta.url), "utf8");
 
-test("the (dashboard) layout redirects every session with an unfinished profile to /onboarding (issue #290)", async () => {
+test("the shared private layout redirects every session with an unfinished profile to /onboarding (issue #290)", async () => {
   const [layout, context] = await Promise.all([
-    readSource("src/app/(dashboard)/layout.tsx"),
+    readSource("src/components/private-app-layout.tsx"),
     readSource("src/lib/auth/authenticated-student-context.ts"),
   ]);
 
@@ -29,8 +29,8 @@ test("the (dashboard) layout redirects every session with an unfinished profile 
   assert.match(context, /if \(!session\) redirect\("\/login"\)/, "the private context must reject an absent session before loading profile data");
 
   assert.match(layout, /getProductTourState\(session\.uid\)/);
-  assert.match(layout, /shouldOfferProductTour\(state\)/);
-  assert.match(layout, /tourState && <ProductTourShell initialState=\{tourState\} \/>/);
+  assert.match(layout, /shouldOfferProductTour\(tourState\)/);
+  assert.match(layout, /<ProductTourShell initialState=\{tourState\} \/>/);
 });
 
 test("/onboarding sends an already-onboarded student back to /dashboard (issue #290)", async () => {

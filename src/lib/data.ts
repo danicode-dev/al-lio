@@ -2,6 +2,7 @@ import { cache } from "react";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 import { getAuthenticatedStudentContext } from "@/lib/auth/authenticated-student-context";
 import { getTasksByUser } from "@/features/tasks/server/repository";
+import { serializeTasks } from "@/features/tasks/server/presentation";
 import { getCoursesByUser } from "@/features/courses/server/repository";
 import { getHackathonsByUser } from "@/features/events/server/repository";
 import { getAllTechOpportunities } from "@/lib/db/repositories/tech_opportunities";
@@ -247,20 +248,6 @@ async function loadStoreSection<T>(
     console.error(`[store] No se pudo cargar ${section}`, error);
     return fallback;
   }
-}
-
-function serializeTasks(tasks: Awaited<ReturnType<typeof getTasksByUser>>) {
-  return tasks.map((task) => ({
-    ...task,
-    due_date: ymd(task.due_date),
-    due_at: ymd(task.due_date),
-    category: task.category ?? "diario",
-    reminder_at: iso(task.reminder_at),
-    progress_notes: Array.isArray(task.progress_notes) ? task.progress_notes : [],
-    completed_at: iso(task.completed_at),
-    created_at: iso(task.created_at),
-    updated_at: iso(task.updated_at),
-  }));
 }
 
 function serializeCourses(courses: Awaited<ReturnType<typeof getCoursesByUser>>) {

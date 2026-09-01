@@ -1,9 +1,10 @@
 import { Suspense } from "react";
-import { TasksView } from "@/features/tasks";
+
+import { TasksLoading, TasksView } from "@/features/tasks";
 
 export default function TasksPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<TasksLoading />}>
       <TasksView />
     </Suspense>
   );

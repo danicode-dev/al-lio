@@ -31,7 +31,7 @@ test("The private layout and global store share one request-scoped identity cont
   const [contextSource, dataSource, layoutSource] = await Promise.all([
     readFile(new URL("../../../src/lib/auth/authenticated-student-context.ts", import.meta.url), "utf8"),
     readFile(new URL("../../../src/lib/data.ts", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/app/(dashboard)/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/private-app-layout.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(contextSource, /export const getAuthenticatedStudentContext = cache\(async \(\) => \{/);
