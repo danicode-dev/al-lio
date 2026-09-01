@@ -8,6 +8,18 @@ Import scripts need a reachable PostgreSQL (`DATABASE_URL` / migration URL).
 Validation scripts are static: they read repository files only and never
 connect to a database or to production.
 
+## Repository hygiene
+
+| Script | npm alias | Purpose |
+|---|---|---|
+| `check-unused-code.mjs` | `audit:unused` | Compare Knip's exact findings with the reviewed baseline; fail on new or stale findings. |
+
+Run `npm run audit:unused:raw` to inspect Knip's unclassified JSON/text report.
+The reviewed baseline lives at `docs/audits/unused-code-baseline.json`; every
+group must keep an owner, reason and follow-up. The audit config deliberately
+uses explicit Next.js, script and test entry boundaries instead of broad
+ignore patterns.
+
 ## Dev and app lifecycle
 
 | Script | npm alias | Purpose |

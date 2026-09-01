@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "knip",
+    "version": "6.34.0"
+  },
+  "sourceRevision": "6bc4509",
+  "groups": [
+    {
+      "classification": "registered-compatibility-removal",
+      "owner": "Compatibility register issue #376",
+      "reason": "This legacy tech-opportunities helper is already registered for evidence-gated removal after production access logs are available.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/376",
+      "findings": [
+        "files:src/lib/tech-opportunities/tech-opportunities.ts"
+      ]
+    },
+    {
+      "classification": "confirmed-unused-file-candidate",
+      "owner": "PostgreSQL setup shim issue #383",
+      "reason": "Knip found no reachable entry point or importer. The supported postgres:setup command delegates directly to scripts/postgres/migrate.mjs.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/383",
+      "findings": [
+        "files:scripts/setup-postgres-schema.mjs"
+      ]
+    },
+    {
+      "classification": "confirmed-unused-ui-file-candidates",
+      "owner": "UI primitive retirement issue #384",
+      "reason": "Knip found no reachable entry point or importer for either standalone UI primitive module.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/384",
+      "findings": [
+        "files:src/components/ui/separator.tsx",
+        "files:src/components/ui/table.tsx"
+      ]
+    },
+    {
+      "classification": "confirmed-unused-repository-file-candidates",
+      "owner": "Repository adapter retirement issue #385",
+      "reason": "Knip found no reachable importer for these four persistence adapters after the dormant global-store fields were retired.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/385",
+      "findings": [
+        "files:src/features/resources/server/repository.ts",
+        "files:src/features/work/server/opportunity-repository.ts",
+        "files:src/lib/db/repositories/reminders.ts",
+        "files:src/lib/db/repositories/sources.ts"
+      ]
+    },
+    {
+      "classification": "confirmed-unused-file-candidate",
+      "owner": "Roadmap overview retirement issue #386",
+      "reason": "Knip found no reachable entry point or importer for the roadmap overview module; the active roadmap uses separate modules.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/386",
+      "findings": [
+        "files:src/lib/fp/roadmap-overview.ts"
+      ]
+    },
+    {
+      "classification": "confirmed-unused-runtime-dependency-candidates",
+      "owner": "Dependency retirement issue #387",
+      "reason": "No application, test, script, or configuration entry imports these runtime packages. Package removal is deferred to a focused follow-up with build validation.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/387",
+      "findings": [
+        "dependencies:package.json:@dnd-kit/core",
+        "dependencies:package.json:@dnd-kit/utilities",
+        "dependencies:package.json:class-variance-authority",
+        "dependencies:package.json:date-fns"
+      ]
+    },
+    {
+      "classification": "dynamic-tooling-reference",
+      "owner": "Engineering and CI under #276",
+      "reason": "eslint-config-next is consumed by string through FlatCompat.extends in eslint.config.mjs, which static import analysis cannot resolve.",
+      "followUp": "Retain while eslint.config.mjs extends next/core-web-vitals and next/typescript.",
+      "findings": [
+        "devDependencies:package.json:eslint-config-next"
+      ]
+    },
+    {
+      "classification": "confirmed-unused-export-candidates",
+      "owner": "Exported API-surface issue #388",
+      "reason": "The containing modules are reachable, but these named runtime exports have no external consumer. De-exporting or deleting them is deferred to a focused API-surface issue.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/388",
+      "findings": [
+        "exports:scripts/e2e/app-env.mjs:__testables",
+        "exports:scripts/lib/company-catalogue.mjs:slugify",
+        "exports:src/components/onboarding/tour/tour-spotlight-geometry.ts:CARD_GAP",
+        "exports:src/components/onboarding/tour/tour-spotlight-geometry.ts:CARD_WIDTH",
+        "exports:src/components/onboarding/tour/tour-spotlight-geometry.ts:EDGE",
+        "exports:src/components/ui/card.tsx:CardContent",
+        "exports:src/components/ui/card.tsx:CardDescription",
+        "exports:src/components/ui/card.tsx:CardFooter",
+        "exports:src/components/ui/card.tsx:CardHeader",
+        "exports:src/components/ui/card.tsx:CardTitle",
+        "exports:src/features/bloc/client/bloc-editor-toolbar.tsx:BlocFontSizeControl",
+        "exports:src/features/bloc/client/bloc-editor-toolbar.tsx:BlocListSelect",
+        "exports:src/features/bloc/client/bloc-editor-toolbar.tsx:BlocToolButton",
+        "exports:src/features/bloc/client/bloc-editor-toolbar.tsx:MobileAlignmentSelect",
+        "exports:src/features/bloc/client/bloc-editor-toolbar.tsx:MobileFontSizeSelect",
+        "exports:src/features/bloc/client/bloc-editor-toolbar.tsx:mobileFontSizes",
+        "exports:src/features/bloc/client/bloc-export.ts:escapeHtml",
+        "exports:src/features/bloc/client/bloc-note-menus.tsx:useDismissableMenu",
+        "exports:src/features/bloc/client/bloc-persistence.ts:escapeHtml",
+        "exports:src/features/bloc/client/bloc-persistence.ts:htmlToText",
+        "exports:src/features/bloc/client/bloc-persistence.ts:isRecord",
+        "exports:src/features/bloc/client/bloc-persistence.ts:makeId",
+        "exports:src/features/bloc/client/bloc-persistence.ts:stringValue",
+        "exports:src/features/tasks/server/repository.ts:deleteTasksByUserLike",
+        "exports:src/features/tasks/server/repository.ts:updateTaskStatus",
+        "exports:src/lib/auth/authorization.ts:getCurrentUser",
+        "exports:src/lib/auth/authorization.ts:isCurrentUserAdmin",
+        "exports:src/lib/catalog/date-filters.ts:formatShortDateTime",
+        "exports:src/lib/catalog/date-filters.ts:startOfDay",
+        "exports:src/lib/db/pool.ts:end",
+        "exports:src/lib/deeplinks/job-search-urls.ts:initialQuickSearches",
+        "exports:src/lib/fp/roadmap.ts:buildRoadmapModules",
+        "exports:src/lib/google/calendar.ts:isGoogleCalendarConnected",
+        "exports:src/lib/job-radar/store.ts:getNewCount",
+        "exports:src/lib/news/text.ts:decodeHtmlEntities",
+        "exports:src/lib/onboarding/tour-actions.ts:readProductTourStateAction",
+        "exports:src/lib/onboarding/tour-actions.ts:resetProductTourAction",
+        "exports:src/lib/onboarding/tour-state.ts:PRODUCT_TOUR_STATUSES",
+        "exports:src/lib/onboarding/tour-state.ts:isProductTourStatus",
+        "exports:src/lib/radar/contract.ts:RADAR_CYCLE_CODES",
+        "exports:src/lib/radar/contract.ts:RADAR_DESTINATIONS",
+        "exports:src/lib/radar/contract.ts:RADAR_LEGACY_SCHEMA_VERSION",
+        "exports:src/lib/radar/contract.ts:RADAR_SCHEMA_VERSION",
+        "exports:src/lib/radar/contract.ts:RADAR_TRUST_TIERS",
+        "exports:src/lib/radar/contract.ts:RADAR_V4_DERIVED_FIELDS",
+        "exports:src/lib/radar/contract.ts:RADAR_V4_DESTINATIONS",
+        "exports:src/lib/radar/contract.ts:RADAR_V4_EVIDENCE_FIELDS",
+        "exports:src/lib/radar/contract.ts:RADAR_V4_FACT_OBSERVATION_STATES",
+        "exports:src/lib/radar/contract.ts:RADAR_V4_JOB_EVIDENCE_FIELDS",
+        "exports:src/lib/radar/contract.ts:RADAR_V4_OPPORTUNITY_TYPES",
+        "exports:src/lib/radar/contract.ts:RADAR_V4_PUBLICATION_DECISIONS",
+        "exports:src/lib/radar/contract.ts:RADAR_V4_SOURCE_LIFECYCLE_STATUSES",
+        "exports:src/lib/radar/contract.ts:radarDeliveryV4Schema",
+        "exports:src/lib/radar/contract.ts:radarItemSchema",
+        "exports:src/lib/radar/contract.ts:radarV4ItemSchema",
+        "exports:src/lib/radar/contract.ts:radarV4JobFactsSchema",
+        "exports:src/lib/utils.ts:asString",
+        "exports:src/lib/utils.ts:greeting",
+        "exports:tests/e2e/support/env.ts:DEFAULT_APP_PORT",
+        "exports:tests/e2e/support/env.ts:DEFAULT_DATABASE_URL"
+      ]
+    },
+    {
+      "classification": "confirmed-unused-type-export-candidates",
+      "owner": "Exported API-surface issue #388",
+      "reason": "The containing modules are reachable, but these exported TypeScript types have no external consumer. De-exporting is deferred to the same focused API-surface review.",
+      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/388",
+      "findings": [
+        "types:src/features/legal/types.ts:LegalDocumentVariant",
+        "types:src/features/marketing/domain/modules.ts:ModuleKey",
+        "types:src/lib/dashboard/upcoming-feed.ts:FeedItemKind",
+        "types:src/lib/db/types.ts:DbFpContentCycleFit",
+        "types:src/lib/db/types.ts:DbFpItemCompetency",
+        "types:src/lib/db/types.ts:DbFpResourceNote",
+        "types:src/lib/db/types.ts:DbJobApplication",
+        "types:src/lib/db/types.ts:DbOpportunity",
+        "types:src/lib/db/types.ts:DbQuickLink",
+        "types:src/lib/db/types.ts:DbRadarDestination",
+        "types:src/lib/db/types.ts:DbRadarLifecycle",
+        "types:src/lib/db/types.ts:DbReminder",
+        "types:src/lib/db/types.ts:DbSource",
+        "types:src/lib/db/types.ts:EntityStatus",
+        "types:src/lib/db/types.ts:FpLearningAvailability",
+        "types:src/lib/db/types.ts:FpLearningLevel",
+        "types:src/lib/db/types.ts:FpLearningRequirement",
+        "types:src/lib/db/types.ts:FpLearningResourceType",
+        "types:src/lib/db/types.ts:HackathonSeed",
+        "types:src/lib/deeplinks/spanish-provinces.ts:SpanishProvince",
+        "types:src/lib/fp/roadmap.ts:RoadmapSkill",
+        "types:src/lib/fp/roadmap.ts:RoadmapSkillStatus",
+        "types:src/lib/news/types.ts:NewsKind",
+        "types:src/lib/onboarding/tour-steps.ts:TourViewport",
+        "types:src/lib/radar/contract.ts:RadarDestination",
+        "types:src/lib/radar/contract.ts:RadarV4JobEvidenceField",
+        "types:src/lib/radar/contract.ts:RadarV4JobField"
+      ]
+    }
+  ]
+}
