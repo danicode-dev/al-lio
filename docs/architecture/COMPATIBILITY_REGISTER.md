@@ -166,7 +166,7 @@ Verified/legacy tech-opportunity catalogue API.
   distinguishes its traffic.
 - **Fallback behavior**: `401` when unauthenticated; otherwise the full
   projected catalogue.
-- **Removal condition / follow-up**: exact-path issue to (a) confirm via
+- **Removal condition / follow-up**: #376 (exact-path). (a) Confirm via
   access logs that there is no external consumer, then (b) delete
   `src/app/api/tech-opportunities/route.ts` together with the orphaned
   `src/lib/tech-opportunities/tech-opportunities.ts` helper. The
@@ -197,7 +197,7 @@ Non-production demo-data endpoint.
 - **Observability**: response `{ success: true }` or an error status. No test
   covers it.
 - **Fallback behavior**: `404` in production; `401` without a session.
-- **Removal condition / follow-up**: exact-path issue asking the owner to
+- **Removal condition / follow-up**: #377 (exact-path) asks the owner to
   confirm no manual reliance on `/api/seed` for demos. If confirmed unused,
   delete the route; otherwise promote it to a documented, explicitly-guarded
   developer tool. Nothing is removed in #357.
@@ -278,8 +278,8 @@ are out of scope for application compatibility classification.
 
 | Surface | Follow-up |
 | --- | --- |
-| `src/app/api/tech-opportunities/route.ts` (+ orphaned `src/lib/tech-opportunities/tech-opportunities.ts`) | Exact-path issue: confirm no external consumer via access logs, then remove both. Keep the `TechOpportunity` type and `getAllTechOpportunities`. |
-| `src/app/api/seed/route.ts` | Exact-path issue: owner confirms no manual demo reliance, then remove; otherwise document as a guarded developer tool. |
+| `src/app/api/tech-opportunities/route.ts` (+ orphaned `src/lib/tech-opportunities/tech-opportunities.ts`) | #376: confirm no external consumer via access logs, then remove both. Keep the `TechOpportunity` type and `getAllTechOpportunities`. |
+| `src/app/api/seed/route.ts` | #377: owner confirms no manual demo reliance, then remove; otherwise document as a guarded developer tool. |
 
 No route, flag, handler, or compatibility behavior is removed by #357.
 
