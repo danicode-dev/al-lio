@@ -29,7 +29,7 @@ export function todayKey(now: Date = new Date()): string {
   return dateKey(now.toISOString());
 }
 
-export function startOfDay(date: Date): Date {
+function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
@@ -80,7 +80,7 @@ export function isWithinUpcomingWindow(
   return day >= todayKey(now) && day <= dateKey(addDays(now, days).toISOString());
 }
 
-export function formatShortDateTime(value?: string | null): string {
+function formatShortDateTime(value?: string | null): string {
   const date = parseDate(value ?? undefined);
   if (!date) return "sin fecha";
   return new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(date);

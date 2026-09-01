@@ -1,24 +1,5 @@
 // ── PostgreSQL row types (matches infra/postgres/schema.sql) ──────────────────
 
-export interface DbJobApplication {
-  id: string;
-  user_id: string;
-  company_name: string;
-  company_url: string;
-  job_title: string;
-  job_url: string | null;
-  source: string;
-  page_hash: string | null;
-  status: string;
-  detected_at: string;
-  applied_at: string | null;
-  notes: Array<{ text: string; created_at: string }>;
-  is_new: boolean;
-  is_saved: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface DbCompany {
   id: string;
   id_slug: string;
@@ -34,7 +15,6 @@ export interface DbCompany {
   created_at: string;
   updated_at: string;
 }
-
 export interface DbUser {
   id: string;
   email: string;
@@ -130,8 +110,8 @@ export interface DbFpContentItem {
   updated_at: string;
 }
 
-export type DbRadarDestination = "news" | "course" | "event" | "job";
-export type DbRadarLifecycle =
+type DbRadarDestination = "news" | "course" | "event" | "job";
+type DbRadarLifecycle =
   | "announced"
   | "registration_open"
   | "registration_closed"
@@ -183,23 +163,13 @@ export interface DbCanonicalOpportunityFacts {
   canonical_source_verified_at: string | null;
 }
 
-export interface DbFpResourceNote {
-  id: string;
-  user_id: string;
-  content_item_id: string;
-  timestamp_seconds: number;
-  body: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export type FpLearningRequirement = "essential" | "recommended";
-export type FpLearningLevel = "inicial" | "intermedio" | "avanzado";
+type FpLearningRequirement = "essential" | "recommended";
+type FpLearningLevel = "inicial" | "intermedio" | "avanzado";
 export type FpLearningStatus = "started" | "completed";
 export type FpLearningCompletionMethod = "observed" | "self_declared" | "legacy_unspecified";
-export type FpLearningResourceType = "youtube_video" | "youtube_playlist" | "internal_course" | "internal_lesson";
+type FpLearningResourceType = "youtube_video" | "youtube_playlist" | "internal_course" | "internal_lesson";
 export type FpLearningResourceRole = "primary" | "alternative" | "extension";
-export type FpLearningAvailability = "unknown" | "available" | "unavailable" | "restricted";
+type FpLearningAvailability = "unknown" | "available" | "unavailable" | "restricted";
 
 export interface DbFpLearningCompetency {
   id: string;
@@ -268,17 +238,6 @@ export interface DbFpLearningNote {
   resource_id: string;
   timestamp_seconds: number;
   body: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DbFpContentCycleFit {
-  content_item_id: string;
-  cycle_code: FpCycleCode;
-  cycle_group: FpCycleGroup;
-  priority: "Alta" | "Media" | "Baja";
-  fit_score: number;
-  audience_year: FpAcademicYear | null;
   created_at: string;
   updated_at: string;
 }
@@ -356,33 +315,6 @@ export interface DbFpCycleSkill {
   updated_at: string;
 }
 
-export interface DbFpItemCompetency {
-  content_item_id: string;
-  skill_id: string;
-  tipo_relacion: FpItemCompetencyRelation;
-  orden_preparacion: number | null;
-  nivel_minimo_recomendado: number | null;
-  obligatoria_para_item: boolean;
-  motivo_relacion: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DbSource {
-  id: string;
-  user_id: string;
-  name: string;
-  slug: string;
-  source_type: "api" | "rss" | "deeplink" | "manual";
-  status: "active" | "planned" | "disabled";
-  logo_url: string | null;
-  base_url: string | null;
-  last_checked_at: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface DbQuickSearch {
   id: string;
   user_id: string;
@@ -393,34 +325,6 @@ export interface DbQuickSearch {
   generated_url: string;
   category: string | null;
   is_favorite: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DbOpportunity {
-  id: string;
-  user_id: string;
-  source: string;
-  source_type: string | null;
-  title: string;
-  company: string | null;
-  description: string | null;
-  location: string | null;
-  province: string | null;
-  remote: boolean | null;
-  url: string;
-  published_at: string | null;
-  detected_at: string | null;
-  category: string | null;
-  tags: string[] | null;
-  level: string | null;
-  salary_min: number | null;
-  salary_max: number | null;
-  status: string;
-  score: number | null;
-  external_id: string | null;
-  unique_hash: string | null;
-  notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -531,31 +435,6 @@ export interface DbBlocNote {
   updated_at: string;
 }
 
-export interface DbReminder {
-  id: string;
-  user_id: string;
-  title: string;
-  remind_at: string;
-  related_type: string | null;
-  related_id: string | null;
-  sent: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DbQuickLink {
-  id: string;
-  user_id: string;
-  name: string;
-  url: string;
-  category: string | null;
-  icon: string | null;
-  description: string | null;
-  is_favorite: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface DbTechOpportunity {
   id: string;
   id_slug: string;
@@ -584,24 +463,3 @@ export interface DbTechOpportunity {
   created_at: string;
   updated_at: string;
 }
-
-// ── App domain types ──────────────────────────────────────────────────────────
-
-export type EntityStatus = {
-  opportunity: "guardada" | "pendiente_revision" | "aplicada" | "entrevista" | "rechazada" | "descartada";
-  hackathon: "inscripcion_abierta" | "pendiente" | "realizado" | "revisar_futura_edicion" | "descartado";
-  task: "pendiente" | "en_progreso" | "completada" | "pospuesta" | "cancelada";
-  course: "pendiente" | "empezado" | "terminado" | "pausado" | "descartado";
-};
-
-export type HackathonSeed = {
-  name: string;
-  organizer: string;
-  province: string;
-  city: string;
-  type: string;
-  status: EntityStatus["hackathon"];
-  url: string;
-  notes: string;
-  priority: "alta" | "media" | "baja";
-};

@@ -137,9 +137,9 @@ export function BlocEditorEmptyState() {
   );
 }
 
-export const mobileFontSizes = Array.from({ length: 41 }, (_, index) => index + 8).concat([54, 60, 72, 96]);
+const mobileFontSizes = Array.from({ length: 41 }, (_, index) => index + 8).concat([54, 60, 72, 96]);
 
-export function MobileFontSizeSelect({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+function MobileFontSizeSelect({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   const options = mobileFontSizes.includes(value) ? mobileFontSizes : [...mobileFontSizes, value].sort((a, b) => a - b);
   return (
     <label className="al-bloc-mobile-size-select" title="Tamaño de letra en píxeles">
@@ -151,7 +151,7 @@ export function MobileFontSizeSelect({ value, onChange }: { value: number; onCha
   );
 }
 
-export function MobileAlignmentSelect({ alignment, onCommand }: { alignment: EditorFormatState["alignment"]; onCommand: (command: string) => void }) {
+function MobileAlignmentSelect({ alignment, onCommand }: { alignment: EditorFormatState["alignment"]; onCommand: (command: string) => void }) {
   const AlignmentIcon = alignment === "center" ? AlignCenter : alignment === "right" ? AlignRight : alignment === "justify" ? AlignJustify : AlignLeft;
   const commandByAlignment: Record<EditorFormatState["alignment"], string> = {
     left: "justifyLeft",
@@ -174,7 +174,7 @@ export function MobileAlignmentSelect({ alignment, onCommand }: { alignment: Edi
   );
 }
 
-export function BlocFontSizeControl({ value, onChange, panel = false }: { value: number; onChange: (value: number) => void; panel?: boolean }) {
+function BlocFontSizeControl({ value, onChange, panel = false }: { value: number; onChange: (value: number) => void; panel?: boolean }) {
   const [draft, setDraft] = useState(String(value));
 
   useEffect(() => {
@@ -301,7 +301,7 @@ export function MobileEditorFormatPanel({
   );
 }
 
-export function BlocListSelect({ compact = false, panel = false, list, onCommand }: { compact?: boolean; panel?: boolean; list: EditorFormatState["list"]; onCommand: (command: string) => void }) {
+function BlocListSelect({ compact = false, panel = false, list, onCommand }: { compact?: boolean; panel?: boolean; list: EditorFormatState["list"]; onCommand: (command: string) => void }) {
   function selectList(value: string) {
     if (value === "unordered") onCommand("insertUnorderedList");
     else if (value === "ordered") onCommand("insertOrderedList");
@@ -340,7 +340,7 @@ export function BlocListSelect({ compact = false, panel = false, list, onCommand
   );
 }
 
-export function BlocToolButton({ label, active = false, onClick, children }: { label: string; active?: boolean; onClick: () => void; children: React.ReactNode }) {
+function BlocToolButton({ label, active = false, onClick, children }: { label: string; active?: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
       type="button"

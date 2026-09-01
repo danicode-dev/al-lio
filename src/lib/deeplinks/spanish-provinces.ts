@@ -55,5 +55,3 @@ export const SPANISH_PROVINCES = [
   "Zamora",
   "Zaragoza",
 ] as const;
-
-export type SpanishProvince = (typeof SPANISH_PROVINCES)[number];

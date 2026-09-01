@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { Copy, Download, FileText, Files, MoreVertical, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function useDismissableMenu(open: boolean, onClose: () => void) {
+function useDismissableMenu(open: boolean, onClose: () => void) {
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 

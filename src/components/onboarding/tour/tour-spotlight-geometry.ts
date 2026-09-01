@@ -7,9 +7,9 @@ import type { TourStepSide } from "@/lib/onboarding/tour-steps";
 
 export type Rect = { top: number; left: number; width: number; height: number };
 
-export const CARD_WIDTH = 320;
-export const CARD_GAP = 16;
-export const EDGE = 12;
+const CARD_WIDTH = 320;
+const CARD_GAP = 16;
+const EDGE = 12;
 export const MOBILE_BREAKPOINT = 768;
 
 // A step with nothing to point at: the card sits in the middle of the screen,

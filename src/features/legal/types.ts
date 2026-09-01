@@ -10,7 +10,7 @@ export type LegalDocumentName =
   | "project"
   | "terms";
 
-export type LegalDocumentVariant = {
+type LegalDocumentVariant = {
   metadataTitle: string;
   href: string;
   altHref: string;

@@ -2,7 +2,7 @@ import type { FpCycleCode } from "@/lib/db/types";
 
 export type NewsStatus = "new" | "read" | "saved";
 export type NewsTrustTier = "official" | "institutional" | "first_party" | "sector" | "reference";
-export type NewsKind = "news" | "event" | "call" | "legal";
+type NewsKind = "news" | "event" | "call" | "legal";
 
 export type NewsItem = {
   id: string;

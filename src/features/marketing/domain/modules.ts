@@ -10,7 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type ModuleKey =
+type ModuleKey =
   | "tareas"
   | "calendario"
   | "cursos"

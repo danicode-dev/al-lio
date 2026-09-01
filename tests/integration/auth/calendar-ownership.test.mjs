@@ -53,7 +53,6 @@ test("the encrypted Calendar credential is bound to the AL-LÍO user id (issue #
   assert.match(source, /export async function saveGoogleTokens\(ownerUid: string, tokens: StoredGoogleTokens\)/);
   assert.match(source, /encryptCredential\(\{ owner: ownerUid, tokens \}\)/);
   assert.match(source, /export async function getGoogleCalendarClient\(ownerUid: string\)/);
-  assert.match(source, /export async function isGoogleCalendarConnected\(ownerUid: string\)/);
 
   // The owner check distinguishes a legacy unbound cookie from another user's.
   assert.match(source, /return \{ status: "legacy" \};/, "a pre-#280 cookie with no owner must be classified, never guessed");

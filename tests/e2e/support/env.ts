@@ -11,8 +11,8 @@ const FORBIDDEN_SUBSTRINGS = ["al-lio.app"];
 const REQUIRED_DB_MARKER = "e2e";
 const RESERVED_PORTS = new Set([3000, 3200]);
 
-export const DEFAULT_APP_PORT = 3210;
-export const DEFAULT_DATABASE_URL = "postgresql://al_lio_e2e:al_lio_e2e@127.0.0.1:54339/al_lio_e2e";
+const DEFAULT_APP_PORT = 3210;
+const DEFAULT_DATABASE_URL = "postgresql://al_lio_e2e:al_lio_e2e@127.0.0.1:54339/al_lio_e2e";
 
 export type E2eConfig = {
   databaseUrl: string;

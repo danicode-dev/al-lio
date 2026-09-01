@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 
-export const RADAR_SCHEMA_VERSION = 3;
+const RADAR_SCHEMA_VERSION = 3;
 export const RADAR_V4_SCHEMA_VERSION = 4;
-export const RADAR_LEGACY_SCHEMA_VERSION = 2;
+const RADAR_LEGACY_SCHEMA_VERSION = 2;
 export const RADAR_SUPPORTED_SCHEMA_VERSIONS = [
   RADAR_LEGACY_SCHEMA_VERSION,
   RADAR_SCHEMA_VERSION,
@@ -13,12 +13,12 @@ export const RADAR_MAX_BATCH_ITEMS = 100;
 export const RADAR_MAX_BODY_BYTES = 1_000_000;
 export const RADAR_TIMESTAMP_TOLERANCE_MS = 5 * 60_000;
 
-export const RADAR_CYCLE_CODES = ["DAW", "DAM", "AF", "TSAF", "MP"] as const;
-export const RADAR_TRUST_TIERS = ["official", "institutional", "first_party", "sector", "reference"] as const;
-export const RADAR_DESTINATIONS = ["news", "course", "event"] as const;
-export const RADAR_V4_DESTINATIONS = ["news", "course", "event", "job"] as const;
-export const RADAR_V4_PUBLICATION_DECISIONS = ["accepted", "rejected", "quarantined"] as const;
-export const RADAR_V4_SOURCE_LIFECYCLE_STATUSES = [
+const RADAR_CYCLE_CODES = ["DAW", "DAM", "AF", "TSAF", "MP"] as const;
+const RADAR_TRUST_TIERS = ["official", "institutional", "first_party", "sector", "reference"] as const;
+const RADAR_DESTINATIONS = ["news", "course", "event"] as const;
+const RADAR_V4_DESTINATIONS = ["news", "course", "event", "job"] as const;
+const RADAR_V4_PUBLICATION_DECISIONS = ["accepted", "rejected", "quarantined"] as const;
+const RADAR_V4_SOURCE_LIFECYCLE_STATUSES = [
   "announced",
   "registration_open",
   "registration_closed",
@@ -28,14 +28,14 @@ export const RADAR_V4_SOURCE_LIFECYCLE_STATUSES = [
   "postponed",
   "evergreen",
 ] as const;
-export const RADAR_V4_FACT_OBSERVATION_STATES = [
+const RADAR_V4_FACT_OBSERVATION_STATES = [
   "verified",
   "not_stated",
   "extraction_failed",
   "source_unavailable",
   "verified_removed",
 ] as const;
-export const RADAR_V4_OPPORTUNITY_TYPES = [
+const RADAR_V4_OPPORTUNITY_TYPES = [
   "article",
   "legal_update",
   "course",
@@ -91,9 +91,9 @@ export const RADAR_V4_FACT_FIELDS = [
   "sourceLifecycleStatus",
 ] as const;
 export type RadarV4FactField = (typeof RADAR_V4_FACT_FIELDS)[number];
-export const RADAR_V4_EVIDENCE_FIELDS = RADAR_V4_FACT_FIELDS.map((field) => `facts.${field}` as const);
+const RADAR_V4_EVIDENCE_FIELDS = RADAR_V4_FACT_FIELDS.map((field) => `facts.${field}` as const);
 export type RadarV4EvidenceField = (typeof RADAR_V4_EVIDENCE_FIELDS)[number];
-export const RADAR_V4_DERIVED_FIELDS = [
+const RADAR_V4_DERIVED_FIELDS = [
   "derived.aboutSummary",
   "derived.learningOutcomes",
   "derived.skillsTested",
@@ -125,9 +125,8 @@ export const RADAR_V4_JOB_FIELDS = [
   "sourcePublishedAt",
   "sourceUpdatedAt",
 ] as const;
-export type RadarV4JobField = (typeof RADAR_V4_JOB_FIELDS)[number];
-export const RADAR_V4_JOB_EVIDENCE_FIELDS = RADAR_V4_JOB_FIELDS.map((field) => `job.${field}` as const);
-export type RadarV4JobEvidenceField = (typeof RADAR_V4_JOB_EVIDENCE_FIELDS)[number];
+const RADAR_V4_JOB_EVIDENCE_FIELDS = RADAR_V4_JOB_FIELDS.map((field) => `job.${field}` as const);
+type RadarV4JobEvidenceField = (typeof RADAR_V4_JOB_EVIDENCE_FIELDS)[number];
 
 const httpsUrl = z.string().url().refine((value) => new URL(value).protocol === "https:", "URL must use HTTPS");
 const nullableDateTime = z.string().datetime({ offset: true }).nullable();
@@ -167,7 +166,7 @@ const itemFields = {
 
 const radarItemV2Schema = z.object({ schemaVersion: z.literal(RADAR_LEGACY_SCHEMA_VERSION), ...itemFields }).strict();
 
-export const radarItemSchema = z.object({
+const radarItemSchema = z.object({
   schemaVersion: z.literal(RADAR_SCHEMA_VERSION),
   ...itemFields,
   destination: z.enum(RADAR_DESTINATIONS),
@@ -282,7 +281,7 @@ const radarV4EvidenceSchema = z.object({
   authorityRank: z.number().int().min(1).max(100),
 }).strict();
 
-export const radarV4JobFactsSchema = z.object({
+const radarV4JobFactsSchema = z.object({
   employer: z.string().trim().min(1).max(300),
   sourceVacancyId: z.string().trim().min(1).max(500),
   applicationUrl: httpsUrl,
@@ -376,7 +375,7 @@ const radarV4DerivedSchema = z.object({
   }).strict()).max(RADAR_V4_DERIVED_FIELDS.length),
 }).strict();
 
-export const radarV4ItemSchema = z.object({
+const radarV4ItemSchema = z.object({
   schemaVersion: z.literal(RADAR_V4_SCHEMA_VERSION),
   source: radarV4SourceSchema,
   identity: radarV4IdentitySchema,
@@ -514,7 +513,7 @@ const radarDeliveryV3Schema = z.object({
   items: z.array(radarItemSchema).min(1).max(RADAR_MAX_BATCH_ITEMS),
 }).strict();
 
-export const radarDeliveryV4Schema = z.object({
+const radarDeliveryV4Schema = z.object({
   schemaVersion: z.literal(RADAR_V4_SCHEMA_VERSION),
   deliveryId: z.string().uuid(),
   items: z.array(radarV4ItemSchema).min(1).max(RADAR_MAX_BATCH_ITEMS),
@@ -583,4 +582,4 @@ export type RadarV4Destination = (typeof RADAR_V4_DESTINATIONS)[number];
 export type RadarDelivery = RadarDeliveryV3 | RadarDeliveryV4;
 export type RadarDeliveryItem = z.infer<typeof radarItemSchema>;
 export type RadarCycleCode = (typeof RADAR_CYCLE_CODES)[number];
-export type RadarDestination = (typeof RADAR_DESTINATIONS)[number];
+type RadarDestination = (typeof RADAR_DESTINATIONS)[number];
