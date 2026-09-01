@@ -10,9 +10,11 @@ A skill is canonical and cycle-agnostic: if DAW and DAM both need "Git", it is
 **one** row in `habilidades.csv`, not two. What differs per cycle (which
 skills apply, in what order, at what stage/module) lives in
 `ciclo_habilidades.csv`. This replaced an earlier model where every
-competency was duplicated per cycle (see `archive/` for the old
-`roadmap_competencias.csv` / `relaciones_competencias.csv` — kept for
-history, no longer imported).
+competency was duplicated per cycle. The old `roadmap_competencias.csv` and
+`relaciones_competencias.csv` (pre-Radar bootstrap) were removed from the tree,
+remain recoverable through Git history, and are not runtime sources. The current
+canonical inputs are `habilidades.csv`, `ciclo_habilidades.csv` and
+`item_competencias.csv`.
 
 ## Files
 
