@@ -76,6 +76,9 @@ Legacy JSON news files are not a production source of truth.
 - [`AUTH_AND_ONBOARDING_FLOWS.md`](AUTH_AND_ONBOARDING_FLOWS.md): how a visitor
   becomes an authenticated student, the four entry points and the single
   onboarding gate.
+- [`COMPATIBILITY_REGISTER.md`](COMPATIBILITY_REGISTER.md): the classification,
+  owner, observable behavior and removal condition for every retained
+  compatibility route, handler and dormant runtime flag.
 
 ## Diagrams
 

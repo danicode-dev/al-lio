@@ -5,10 +5,16 @@ import type { DbTechOpportunity } from "@/lib/db/types";
 import { getAllTechOpportunities } from "@/lib/db/repositories/tech_opportunities";
 import type { TechOpportunity } from "@/lib/tech-opportunities/tech-opportunity-types";
 
-// The verified/legacy tech-opportunity catalogue. Its consumer lives inside the
-// authenticated product, so this route now requires a validated AL-LÍO session,
-// returns an explicit projection that matches the `TechOpportunity` contract -
-// never the raw database row shape - and is not publicly cacheable (issue #282).
+// COMPAT-REGISTER: tech-opportunities-catalogue-api (docs/architecture/COMPATIBILITY_REGISTER.md)
+//
+// The verified/legacy tech-opportunity catalogue API. Hardened in issue #282:
+// it requires a validated AL-LÍO session, returns an explicit projection that
+// matches the `TechOpportunity` contract - never the raw database row shape -
+// and is not publicly cacheable. Classified as a removal candidate by issue
+// #357: its only in-repo fetcher (`src/lib/tech-opportunities/tech-opportunities.ts`)
+// has no importers, and the product reads the `tech_opportunities` table
+// server-side through `src/lib/data.ts`. Removal is tracked in a follow-up
+// issue; nothing is deleted here.
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 

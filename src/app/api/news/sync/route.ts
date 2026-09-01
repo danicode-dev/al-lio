@@ -1,3 +1,4 @@
+// COMPAT-REGISTER: news-json-sync (docs/architecture/COMPATIBILITY_REGISTER.md)
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
