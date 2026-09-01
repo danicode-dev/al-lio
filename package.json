@@ -62,7 +62,7 @@
     "verify:prod": "npm run stop:app && npm run build:clean && node scripts/smoke-production.mjs",
     "test:taxonomy": "node scripts/check-test-taxonomy.mjs",
     "e2e": "node scripts/e2e/run.mjs",
-    "e2e:app": "next dev -H 127.0.0.1 -p 3210",
+    "e2e:app": "node scripts/e2e/app.mjs",
     "e2e:test": "playwright test --config playwright.config.ts",
     "test:unit": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/unit/**/*.test.mjs\"",
     "test:contracts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/contracts/**/*.test.mjs\"",

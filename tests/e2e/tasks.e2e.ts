@@ -10,17 +10,17 @@ const TASK_TITLE = `${E2E_TASK_PREFIX}-${RUN_ID}-created`;
 const EDITED_TITLE = `${E2E_TASK_PREFIX}-${RUN_ID}-edited`;
 
 // Wait for the Tasks server action's own POST response before trusting the UI.
-async function commit(page: Page, action: Promise<unknown> | (() => Promise<unknown>)): Promise<void> {
-  const run = typeof action === "function" ? action() : action;
-  await Promise.all([
-    page.waitForResponse(
-      (response) =>
-        response.request().method() === "POST" &&
-        new URL(response.url()).pathname === "/tasks" &&
-        response.ok(),
-    ),
-    run,
-  ]);
+// The response listener is registered first; only then is the mutation
+// triggered, so a fast round trip can never resolve before the wait is armed.
+async function commit(page: Page, trigger: () => Promise<unknown> | unknown): Promise<void> {
+  const responsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/tasks" &&
+      response.ok(),
+  );
+  await trigger();
+  await responsePromise;
 }
 
 async function openTasks(page: Page): Promise<void> {
@@ -41,7 +41,7 @@ test.describe.serial("Tasks critical path", () => {
     await page.getByRole("button", { name: "Nueva tarea" }).click();
     const composer = page.locator("form", { has: page.getByPlaceholder("¿Qué necesitas hacer?") });
     await composer.getByPlaceholder("¿Qué necesitas hacer?").fill(TASK_TITLE);
-    await commit(page, composer.getByRole("button", { name: "Guardar" }).click());
+    await commit(page, () => composer.getByRole("button", { name: "Guardar" }).click());
 
     await page.reload();
     await expect(taskOpener(page, TASK_TITLE)).toBeVisible();
@@ -51,7 +51,7 @@ test.describe.serial("Tasks critical path", () => {
     const dialog = page.getByRole("dialog", { name: "Editar tarea" });
     await expect(dialog).toBeVisible();
     await dialog.getByPlaceholder("¿Qué necesitas hacer?").fill(EDITED_TITLE);
-    await commit(page, dialog.getByRole("button", { name: "Guardar" }).click());
+    await commit(page, () => dialog.getByRole("button", { name: "Guardar" }).click());
     await expect(dialog).toBeHidden();
     await expect(taskOpener(page, EDITED_TITLE)).toBeVisible();
 
@@ -70,7 +70,7 @@ test.describe.serial("Tasks critical path", () => {
     await expect(taskOpener(page, EDITED_TITLE)).toBeVisible();
 
     // 6. Mark it complete.
-    await commit(page, page.getByRole("button", { name: `Completar ${EDITED_TITLE}`, exact: true }).click());
+    await commit(page, () => page.getByRole("button", { name: `Completar ${EDITED_TITLE}`, exact: true }).click());
 
     // It leaves the pending list...
     await page.reload();

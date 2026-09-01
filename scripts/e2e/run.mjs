@@ -7,6 +7,13 @@
  *   3. run the Playwright suite (which starts and stops the app on port 3210),
  *   4. always tear the database down again, even on failure.
  *
+ * Failure handling lives in scripts/e2e/lifecycle.mjs: `run()` and
+ * `waitForDatabase()` throw instead of calling process.exit(), so control
+ * always reaches the lifecycle's `finally` and `docker compose ... down -v`
+ * runs whenever the Docker lifecycle was even attempted (including a partially
+ * successful `up`). The original failing exit code is preserved where
+ * practical.
+ *
  * The authoritative fail-closed checks live in tests/e2e/support/env.ts and run
  * inside Playwright; the light checks here just stop this script before it
  * touches Docker with an obviously wrong target.
@@ -15,6 +22,8 @@
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { createRequire } from "node:module";
+
+import { runManagedE2e } from "./lifecycle.mjs";
 
 const require = createRequire(import.meta.url);
 const { Client } = require("pg");
@@ -31,33 +40,28 @@ const manageDb = process.env.E2E_MANAGE_DB !== "false";
 
 lightGuard();
 
+// This env reaches the Playwright runner and the migration tool - not the
+// application under test. scripts/e2e/app.mjs rebuilds the app's environment
+// from an allowlist, so nothing here leaks into the E2E `next dev` process.
 const childEnv = {
   ...process.env,
   E2E_DATABASE_URL: databaseUrl,
   E2E_BASE_URL: baseURL,
   E2E_APP_PORT: String(appPort),
+  E2E_APP_HOST: "127.0.0.1",
   // Fresh, in-memory only, never logged.
   E2E_SYNTHETIC_PASSWORD: process.env.E2E_SYNTHETIC_PASSWORD || `e2e-${randomBytes(24).toString("base64url")}`,
   E2E_SESSION_SECRET: process.env.E2E_SESSION_SECRET || `e2e-secret-${randomBytes(24).toString("base64url")}`,
 };
 
-let exitCode = 1;
-try {
-  if (manageDb) {
-    run("docker", ["compose", "-f", COMPOSE_FILE, "up", "-d", "--wait"]);
-  }
-  await waitForDatabase(databaseUrl);
-  run("node", ["scripts/postgres/migrate.mjs"], {
-    ...childEnv,
-    DATABASE_URL: databaseUrl,
-    DATABASE_MIGRATION_URL: databaseUrl,
-  });
-  exitCode = run("npx", ["playwright", "test", "--config", "playwright.config.ts"], childEnv, { allowFailure: true });
-} finally {
-  if (manageDb) {
-    run("docker", ["compose", "-f", COMPOSE_FILE, "down", "-v"], process.env, { allowFailure: true });
-  }
-}
+const exitCode = await runManagedE2e({
+  composeFile: COMPOSE_FILE,
+  manageDb,
+  databaseUrl,
+  childEnv,
+  exec: run,
+  waitForDatabase,
+});
 
 process.exit(exitCode);
 
@@ -87,11 +91,23 @@ function lightGuard() {
   }
 }
 
-function run(command, args, env = process.env, { allowFailure = false } = {}) {
+/**
+ * Run a child process synchronously. Returns its exit status. Throws an Error
+ * carrying a numeric `exitCode` on failure unless `allowFailure` is set - the
+ * caller's lifecycle turns that into a teardown-then-exit, never a bypass.
+ */
+function run(command, args, { env = process.env, allowFailure = false } = {}) {
   const result = spawnSync(command, args, { stdio: "inherit", env, shell: process.platform === "win32" });
+  if (result.error) {
+    if (allowFailure) return 1;
+    throw Object.assign(new Error(`"${command} ${args.join(" ")}" could not be spawned: ${result.error.message}`), {
+      exitCode: 1,
+    });
+  }
   if (result.status !== 0 && !allowFailure) {
-    console.error(`[e2e] "${command} ${args.join(" ")}" exited with ${result.status ?? result.signal}`);
-    process.exit(result.status ?? 1);
+    throw Object.assign(new Error(`"${command} ${args.join(" ")}" exited with ${result.status ?? result.signal}`), {
+      exitCode: typeof result.status === "number" ? result.status : 1,
+    });
   }
   return result.status ?? 1;
 }
@@ -112,6 +128,7 @@ async function waitForDatabase(connectionString) {
       await new Promise((resolve) => setTimeout(resolve, 1_000));
     }
   }
-  console.error(`[e2e] Database did not become reachable: ${lastError?.message ?? "unknown error"}`);
-  process.exit(1);
+  throw Object.assign(new Error(`Database did not become reachable: ${lastError?.message ?? "unknown error"}`), {
+    exitCode: 1,
+  });
 }

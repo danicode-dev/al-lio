@@ -10,14 +10,30 @@ local database only. It is the first, deliberately small E2E slice (issue #329).
 npm run e2e
 ```
 
-That command:
+That command (`scripts/e2e/run.mjs` + `scripts/e2e/lifecycle.mjs`):
 
 1. starts a throwaway PostgreSQL (`infra/docker-compose.e2e.yml`, container
    `al_lio_postgres_e2e`, `127.0.0.1:54339`, in-memory `tmpfs`, no volume),
 2. applies the existing migrations to it (`scripts/postgres/migrate.mjs`),
 3. runs the Playwright suite - Chromium headless - which starts the application
-   with `next dev` on `127.0.0.1:3210` and stops it when the run ends,
+   through `scripts/e2e/app.mjs` (`next dev` on `127.0.0.1:3210`) and stops it
+   when the run ends,
 4. always runs `docker compose ... down -v` afterwards, including on failure.
+
+### Guaranteed database teardown
+
+The lifecycle in `scripts/e2e/lifecycle.mjs` never calls `process.exit()` from
+inside its work: `run()` and `waitForDatabase()` throw an `Error` carrying an
+`exitCode`, which propagates to the lifecycle's own `finally`. A flag is set
+the moment `docker compose ... up` is *attempted*, so a migration failure, a
+database-readiness failure, a Playwright failure, or a partially successful
+`up` (network created, container unhealthy, `--wait` times out) all still run
+`docker compose ... down -v`. The original failing exit code is preserved
+where practical; a failing teardown is reported and, if the suite itself
+passed, becomes the process exit code rather than being swallowed.
+
+`tests/operations/e2e-harness/runner-cleanup.test.mjs` covers this without
+Docker, Playwright or any database - `exec` and `waitForDatabase` are stubbed.
 
 Requirements: Docker running locally, and the Node version in `package.json`
 `engines`. Nothing else. The suite never reads `.env`, the developer database,
@@ -52,6 +68,49 @@ service container and a loopback port; if any guard fails, the job fails.
 The owner review server on port `3200` is never used or started: the E2E
 application is a separate `next dev` process pinned to `127.0.0.1:3210`, torn
 down by Playwright at the end of the run.
+
+### Application environment isolation
+
+Playwright's `webServer.command` is `node scripts/e2e/app.mjs`, not
+`next dev`. `scripts/e2e/app-env.mjs` rebuilds the child environment from
+scratch so the E2E `next dev` process can only receive synthetic
+configuration:
+
+1. **No parent-shell passthrough.** Only a fixed operating-system bootstrap
+   allowlist (`PATH`, `SystemRoot`, `TEMP`, `APPDATA`, `HOME`, ... - all
+   non-secret) is copied from `process.env`. The parent environment is never
+   spread in, so a `DATABASE_URL`, `SESSION_SECRET`, `GOOGLE_*`, `RESEND_*`,
+   `RADAR_*`, `SUPABASE_*`, `INFOJOBS_*`, `ADZUNA_*`, `JOOBLE_*` or any other
+   value exported in the developer's shell simply is not present.
+2. **No dotenv.** Every key declared by any `.env`, `.env.local`,
+   `.env.development` or `.env.development.local` in the project root that is
+   not on the approved list is pinned to an empty string in the child
+   environment. `@next/env` does not override a variable that is already
+   defined, so it cannot load the real value. As a second layer,
+   `__NEXT_PROCESSED_ENV=true` disables `@next/env` dotenv processing
+   entirely.
+3. **Approved variables only.** The child receives exactly `NODE_ENV`
+   (`development`), `PORT`, `HOSTNAME`, `DATABASE_URL` (the disposable E2E
+   database), `SESSION_SECRET` (the per-run secret), `BASE_URL`,
+   `AL_LIO_DEMO_ACCESS_ENABLED=false`, plus `NEXT_TELEMETRY_DISABLED`. These
+   are the variables the login -> dashboard -> Tasks routes read; database,
+   session, Google, Resend, OAuth, Radar, import and other integration
+   secrets are not among them.
+4. **Fail closed.** Before spawning `next dev`, `app.mjs` re-runs the loopback
+   and `e2e`-marker guards on `DATABASE_URL` / `BASE_URL` and calls
+   `assertNoIntegrationSecrets()`, which throws if any known secret marker
+   still carries a value. A hostile target or a leaked secret aborts the
+   launch.
+
+This is a launcher only. It adds no authentication bypass, no test-only
+application route, no production code branch and no change to application
+runtime behaviour.
+
+`tests/operations/e2e-harness/app-env-isolation.test.mjs` builds the child
+environment from a deliberately hostile parent (real-looking production
+secrets) and a temporary project with secret-laden `.env` / `.env.local`
+files, and asserts that none of it reaches the result, that synthetic values
+win, and that every hostile target is refused.
 
 ## Synthetic users, fixtures and cleanup
 

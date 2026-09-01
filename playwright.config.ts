@@ -39,19 +39,22 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "npm run e2e:app",
+    // scripts/e2e/app.mjs starts `next dev` with an environment rebuilt from
+    // an allowlist (scripts/e2e/app-env.mjs): the parent shell env is not
+    // forwarded and `.env` / `.env.local` cannot reach the process, so the
+    // E2E server receives only these synthetic per-run values.
+    command: "node scripts/e2e/app.mjs",
     url: `${baseURL}/login`,
     reuseExistingServer: false,
     timeout: 120_000,
     stdout: "pipe",
     stderr: "pipe",
     env: {
-      NODE_ENV: "development",
-      DATABASE_URL: databaseUrl,
-      SESSION_SECRET: sessionSecret,
-      BASE_URL: baseURL,
-      AL_LIO_DEMO_ACCESS_ENABLED: "false",
-      PORT: String(appPort),
+      E2E_DATABASE_URL: databaseUrl,
+      E2E_SESSION_SECRET: sessionSecret,
+      E2E_BASE_URL: baseURL,
+      E2E_APP_PORT: String(appPort),
+      E2E_APP_HOST: "127.0.0.1",
     },
   },
 });
