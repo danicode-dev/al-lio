@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
 import { isSafeHttpUrl } from "@/lib/fp/event-cta";
+import { addMonths, buildMonthCells, dateKey, formatDateLabel, isPastActionDate, isWithinUpcomingWindow, pad, parseDate, startOfMonth, todayKey } from "@/lib/catalog/date-filters";
 import { canToggleHackathonFavorite, getDisplayHackathons, getHackathonPresentation, toggleHackathonFavoriteFor } from "@/features/events/presentation";
 import { useEventActions, type EventActions } from "@/features/events/client";
 import { useLearningActions, type LearningActions } from "@/features/learning/client";
@@ -185,12 +186,8 @@ function Hackathons({ store, actions }: { store: Store; actions: EventsActions }
   const guardados = useMemo(() => sorted.filter((h) => h.is_favorite), [sorted]);
   const abiertos = useMemo(() => total.filter((h) => h.status === "inscripcion_abierta"), [total]);
   const proximos = useMemo(() => {
-    const t = todayKey();
-    const i30 = dateKey(addDays(new Date(), 30).toISOString());
-    return total.filter((h) => {
-      const d = (h.start_at || "").slice(0, 10);
-      return d >= t && d <= i30;
-    });
+    const now = new Date();
+    return total.filter((h) => isWithinUpcomingWindow(h.start_at, now));
   }, [total]);
   const tabBase = useMemo(
     () => viewTab === "abiertos" ? abiertos : viewTab === "proximos" ? proximos : viewTab === "guardados" ? guardados : total,
@@ -811,27 +808,12 @@ export function HackathonDetailView({ id }: { id: string }) {
   );
 }
 
-function nowIso() {
-  return new Date().toISOString();
-}
-
 function isHackathonArchived(hackathon: Pick<Hackathon, "status">) {
   return hackathon.status === "realizado" || hackathon.status === "descartado";
 }
 
 function isHackathonPast(hackathon: Pick<Hackathon, "inscripcion_hasta" | "registration_deadline_at" | "end_at" | "start_at">) {
   return isPastActionDate(hackathon.inscripcion_hasta || hackathon.registration_deadline_at || hackathon.end_at || hackathon.start_at);
-}
-
-function isPastActionDate(value?: string | null) {
-  const date = parseDate(value ?? undefined);
-  return Boolean(date) && startOfDay(date!) < startOfDay(new Date());
-}
-
-function parseDate(value?: string) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function toDatetimeLocalValue(date: Date) {
@@ -842,64 +824,6 @@ function addDaysKeepingTime(value: string | undefined, days: number) {
   const base = parseDate(value) ?? new Date();
   base.setDate(base.getDate() + days);
   return toDatetimeLocalValue(base);
-}
-
-function dateKey(value?: string) {
-  const date = parseDate(value);
-  if (!date) return "";
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-function todayKey() {
-  return dateKey(nowIso());
-}
-
-function startOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function startOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-function addDays(date: Date, days: number) {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
-}
-
-function addMonths(date: Date, months: number) {
-  return new Date(date.getFullYear(), date.getMonth() + months, 1);
-}
-
-function buildMonthCells(month: Date) {
-  const first = startOfMonth(month);
-  const leading = (first.getDay() + 6) % 7;
-  const start = addDays(first, -leading);
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = addDays(start, index);
-    return { date, key: dateKey(date.toISOString()), inMonth: date.getMonth() === month.getMonth() };
-  });
-}
-
-function formatShortDateTime(value?: string) {
-  const date = parseDate(value);
-  if (!date) return "sin fecha";
-  return new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(date);
-}
-
-function formatDateLabel(value?: string) {
-  if (!value) return "sin fecha";
-  const dateOnly = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (dateOnly) {
-    const [, year, month, day] = dateOnly;
-    return new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(Number(year), Number(month) - 1, Number(day)));
-  }
-  return formatShortDateTime(value);
-}
-
-function pad(value: number) {
-  return String(value).padStart(2, "0");
 }
 
 export function EventsFeature() {

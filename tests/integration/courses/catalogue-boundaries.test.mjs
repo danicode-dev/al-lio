@@ -396,7 +396,7 @@ test("Cursos merges its stats and status tabs into one clickable row (Total / Em
   assert.match(fnSource, /\["terminado", "Terminado"\]/, "finished courses must stay filterable via the Estado control");
   // Empezados / Próx. inicio are subsets of Total, so their counts stay coherent with it.
   assert.match(fnSource, /const empezados = useMemo\(\(\) => total\.filter/);
-  assert.match(fnSource, /return total\.filter\(\(c\) => \{/);
+  assert.match(fnSource, /return total\.filter\(\(c\) => isWithinUpcomingWindow\(/);
 });
 
 test("Phones: Cursos / Eventos y retos pull the control strip up under the header so the featured card is not fully below the fold - a specificity-matched globals rule, not a plain class (owner-reported follow-up, issue #189)", async () => {
