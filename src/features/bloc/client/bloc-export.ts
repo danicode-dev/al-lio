@@ -36,7 +36,7 @@ export function findCanvasPageBreak(
   return maxSliceHeight;
 }
 
-export function escapeHtml(value: string) {
+function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 

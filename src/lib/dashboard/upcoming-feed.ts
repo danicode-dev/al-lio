@@ -7,7 +7,7 @@ const DASHBOARD_TODO_LIMIT = 4;
 // feature tree into this plain dashboard data module.
 const FP_EVENT_TYPES = new Set(["hackathon", "evento", "reto", "convocatoria_practicas"]);
 
-export type FeedItemKind = "task" | "course" | "hackathon" | "fp_event";
+type FeedItemKind = "task" | "course" | "hackathon" | "fp_event";
 
 export type FeedItem = {
   id: string;

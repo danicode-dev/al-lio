@@ -7,7 +7,7 @@ const ENTITY_MAP: Record<string, string> = {
   nbsp: " ",
 };
 
-export function decodeHtmlEntities(value: string): string {
+function decodeHtmlEntities(value: string): string {
   return value
     .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) =>
       String.fromCodePoint(Number.parseInt(hex, 16)),

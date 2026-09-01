@@ -273,5 +273,3 @@ export function assertNoIntegrationSecrets(env) {
   }
   return env;
 }
-
-export const __testables = { assertIsolatedDatabaseUrl, assertIsolatedBaseUrl, DOTENV_FILES, INTEGRATION_SECRET_MARKERS };

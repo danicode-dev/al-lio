@@ -239,7 +239,3 @@ export async function getGoogleCalendarClient(ownerUid: string) {
   if (!auth) return null;
   return google.calendar({ version: "v3", auth });
 }
-
-export async function isGoogleCalendarConnected(ownerUid: string): Promise<boolean> {
-  return (await readCalendarCredential(ownerUid)).status === "ok";
-}

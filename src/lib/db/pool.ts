@@ -37,10 +37,6 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
   return getPool().query<T>(text, params);
 }
 
-export async function end() {
-  if (_pool) await _pool.end();
-}
-
 export async function checkDatabaseConnection(): Promise<void> {
   const result = await getPool().query<{ radar_items: string | null; learning_competencies: string | null }>(
     `SELECT to_regclass('public.radar_items')::text AS radar_items,

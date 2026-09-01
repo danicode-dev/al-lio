@@ -2,7 +2,7 @@
 // the client provider, the server actions and the tests all import from here
 // so "should this student see the tour" has exactly one definition.
 
-export const PRODUCT_TOUR_STATUSES = ["not_started", "in_progress", "completed", "skipped"] as const;
+const PRODUCT_TOUR_STATUSES = ["not_started", "in_progress", "completed", "skipped"] as const;
 
 export type ProductTourStatus = (typeof PRODUCT_TOUR_STATUSES)[number];
 
@@ -18,7 +18,7 @@ export type ProductTourState = {
   step: string | null;
 };
 
-export function isProductTourStatus(value: unknown): value is ProductTourStatus {
+function isProductTourStatus(value: unknown): value is ProductTourStatus {
   return typeof value === "string" && (PRODUCT_TOUR_STATUSES as readonly string[]).includes(value);
 }
 

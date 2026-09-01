@@ -63,11 +63,11 @@ export function normalizeBlocSettings(value: unknown): BlocSettings {
   return { fontSize, defaultTitle: nextDefaultTitle };
 }
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
 
-export function stringValue(value: unknown) {
+function stringValue(value: unknown) {
   return typeof value === "string" ? value : "";
 }
 
@@ -75,11 +75,11 @@ export function textToHtml(text: string) {
   return escapeHtml(text).replace(/\r?\n/g, "<br>");
 }
 
-export function escapeHtml(value: string) {
+function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-export function htmlToText(html: string) {
+function htmlToText(html: string) {
   if (typeof document === "undefined") return html.replace(/<[^>]+>/g, " ");
   const element = document.createElement("div");
   element.innerHTML = sanitizeEditorHtml(html);
@@ -94,7 +94,7 @@ export function safeJson(raw: string) {
   }
 }
 
-export function makeId() {
+function makeId() {
   return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 }
 

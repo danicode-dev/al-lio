@@ -95,24 +95,10 @@ export async function appendTaskNote(userId: string, id: string, text: string): 
   return result.rows[0] ?? null;
 }
 
-export async function updateTaskStatus(userId: string, id: string, status: string): Promise<void> {
-  await query(
-    `UPDATE public.tasks SET status = $1, updated_at = now() WHERE id = $2 AND user_id = $3`,
-    [status, id, userId],
-  );
-}
-
 export async function deleteTask(userId: string, id: string): Promise<boolean> {
   const result = await query(
     `DELETE FROM public.tasks WHERE id = $1 AND user_id = $2`,
     [id, userId],
   );
   return (result.rowCount ?? 0) > 0;
-}
-
-export async function deleteTasksByUserLike(userId: string, pattern: string): Promise<void> {
-  await query(
-    `DELETE FROM public.tasks WHERE user_id = $1 AND title LIKE $2`,
-    [userId, pattern],
-  );
 }

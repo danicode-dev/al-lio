@@ -95,16 +95,3 @@ export function buildJobSearchUrl(platform: string, keyword: string, location = 
       return `https://www.google.com/search?q=${q}+${l}`;
   }
 }
-
-export const initialQuickSearches = [
-  ["Desarrollador Web Junior", "Granada"],
-  ["Java Junior", "Granada"],
-  ["Backend Junior", "Granada"],
-  ["Practicas DAW", "Granada"],
-  ["React Junior", "Granada"],
-  ["Desarrollador Full Stack Junior", "Granada"],
-  ["Spring Boot Junior", "Granada"],
-  ["Programador Junior", "Granada"],
-  ["Frontend Junior", "Granada"],
-  ["SQL Junior", "Granada"],
-];

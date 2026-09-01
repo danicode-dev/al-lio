@@ -10,14 +10,6 @@ export async function getApplications(userId: string): Promise<JobApplication[]>
   return res.rows;
 }
 
-export async function getNewCount(userId: string): Promise<number> {
-  const res = await query<{ count: string }>(
-    `SELECT COUNT(*) AS count FROM public.job_applications WHERE user_id = $1 AND is_new = true`,
-    [userId]
-  );
-  return parseInt(res.rows[0]?.count ?? "0", 10);
-}
-
 export async function upsertScrapedJob(
   userId: string,
   job: {

@@ -11,7 +11,7 @@
 // No JSX and no DOM access here, so the whole recorrido can be asserted in a
 // plain unit test.
 
-export type TourViewport = "desktop" | "mobile";
+type TourViewport = "desktop" | "mobile";
 
 export type ProductTourStep = {
   id: string;
