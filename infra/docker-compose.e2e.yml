@@ -1,0 +1,28 @@
+# Disposable PostgreSQL for the browser E2E harness (issue #329).
+#
+# Deliberately separate from docker-compose.postgres-sandbox.yml: a different
+# container name, a different loopback port, and NO named volume, so the whole
+# database lives in the container's writable layer and disappears on `down`.
+# `tmpfs` keeps it in memory for speed and guarantees nothing is left on disk.
+#
+# Bound to 127.0.0.1 only. Never point application or CI configuration that can
+# reach real data at this file.
+name: al-lio-e2e
+
+services:
+  al_lio_postgres_e2e:
+    image: postgres:17-alpine
+    container_name: al_lio_postgres_e2e
+    environment:
+      POSTGRES_USER: al_lio_e2e
+      POSTGRES_PASSWORD: al_lio_e2e
+      POSTGRES_DB: al_lio_e2e
+    ports:
+      - "127.0.0.1:54339:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U al_lio_e2e -d al_lio_e2e"]
+      interval: 3s
+      timeout: 3s
+      retries: 20

@@ -61,6 +61,9 @@
     "verify:cheap": "npm run verify:startup && npm run lint",
     "verify:prod": "npm run stop:app && npm run build:clean && node scripts/smoke-production.mjs",
     "test:taxonomy": "node scripts/check-test-taxonomy.mjs",
+    "e2e": "node scripts/e2e/run.mjs",
+    "e2e:app": "next dev -H 127.0.0.1 -p 3210",
+    "e2e:test": "playwright test --config playwright.config.ts",
     "test:unit": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/unit/**/*.test.mjs\"",
     "test:contracts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/contracts/**/*.test.mjs\"",
     "test:integration": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/integration/**/*.test.mjs\"",
@@ -111,8 +114,9 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@next/env": "15.5.23",
     "@eslint/eslintrc": "^3.3.5",
+    "@next/env": "15.5.23",
+    "@playwright/test": "1.62.1",
     "@types/node": "^22.14.0",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.0.12",
