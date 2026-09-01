@@ -16,6 +16,10 @@ remain recoverable through Git history, and are not runtime sources. The current
 canonical inputs are `habilidades.csv`, `ciclo_habilidades.csv` and
 `item_competencias.csv`.
 
+These three CSV files form one `canonical` dataset family in the
+[content source inventory](../../../../docs/integrations/CONTENT_SOURCE_INVENTORY.md).
+The README is metadata for that family, not an additional importer input.
+
 ## Files
 
 - `habilidades.csv`: the canonical skill catalog. One row per distinct

@@ -34,7 +34,7 @@ connect to a database or to production.
 | `import-tech-opportunities.mjs` | `import:opportunities` | `csv/oportunidades_tech_combinado.csv` |
 | `import-courses.mjs` | `import:courses` | `csv/cursos_formacion_granada_online.csv` |
 | `import-hackathons.mjs` | `import:hackathons` | `csv/eventos_hackathons_actualizado.csv` |
-| `import-companies.mjs` | `import:companies` | `--source` dataset under `data/companies/` |
+| `import-companies.mjs` | `import:companies` | `--source` dataset under `data/companies/`, or the grandfathered DEV source `public/data/empresas_tech_granada.md` |
 | `import-fp-content.mjs` | `import:fp-content` | `csv/fp-content/2026-2027/raw/*.csv` |
 | `import-fp-competencies.mjs` | `import:fp-competencias` | `csv/fp-content/2026-2027/competencias/*.csv` |
 | `import-fp-resource-videos.mjs` | `import:fp-resource-videos` | `csv/fp-content/2026-2027/videos/recursos_video.json` |
