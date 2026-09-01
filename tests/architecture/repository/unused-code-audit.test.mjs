@@ -43,6 +43,6 @@ test("baseline entries are exact, uniquely classified, and actionable", () => {
     }
   }
 
-  assert.equal(findings.length, 97);
+  assert.equal(findings.length, 93);
   assert.equal(new Set(findings).size, findings.length);
 });
