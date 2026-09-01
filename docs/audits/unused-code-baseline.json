@@ -16,16 +16,6 @@
       ]
     },
     {
-      "classification": "confirmed-unused-ui-file-candidates",
-      "owner": "UI primitive retirement issue #384",
-      "reason": "Knip found no reachable entry point or importer for either standalone UI primitive module.",
-      "followUp": "https://github.com/danielgarciaortega-dev/al-lio/issues/384",
-      "findings": [
-        "files:src/components/ui/separator.tsx",
-        "files:src/components/ui/table.tsx"
-      ]
-    },
-    {
       "classification": "confirmed-unused-repository-file-candidates",
       "owner": "Repository adapter retirement issue #385",
       "reason": "Knip found no reachable importer for these four persistence adapters after the dormant global-store fields were retired.",
