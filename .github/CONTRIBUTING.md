@@ -45,7 +45,15 @@ Run at least:
 
 ```bash
 npm run verify:cheap
+npm run audit:unused
 ```
+
+`audit:unused` compares Knip's current findings with the exact classified
+baseline in `docs/audits/unused-code-baseline.json`. It fails for both new
+findings and stale baseline entries; a same-count replacement cannot pass.
+Use `npm run audit:unused:raw` while investigating. Update the baseline only
+after recording an owner, reason and focused follow-up for every changed
+finding. Do not add broad ignore patterns to make the audit pass.
 
 Before a release-affecting merge, run:
 

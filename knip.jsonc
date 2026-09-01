@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+  "entry": [
+    "playwright.config.ts",
+    "tests/{unit,contracts,integration,architecture,operations}/**/*.test.mjs",
+    "tests/e2e/**/*.e2e.ts",
+    "tests/e2e/global-{setup,teardown}.ts"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "scripts/**/*.mjs",
+    "tests/**/*.{ts,mjs}",
+    "*.{ts,mjs}"
+  ],
+  // The Playwright config intentionally throws unless the isolated E2E runner
+  // supplies synthetic secrets. Static entries above model the same files
+  // without executing that guarded configuration during repository audits.
+  "playwright": false
+}

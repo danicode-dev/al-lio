@@ -35,6 +35,8 @@
     "build:clean": "npm run clean:next && next build",
     "prod:local": "node scripts/run-production.mjs",
     "restart:prod": "npm run stop:app && npm run build:clean && node scripts/smoke-production.mjs && npm run prod:local",
+    "audit:unused": "node scripts/check-unused-code.mjs",
+    "audit:unused:raw": "knip",
     "lint": "eslint src --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "check:project": "node scripts/check-project.mjs",
@@ -70,7 +72,7 @@
     "test:operations": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/operations/**/*.test.mjs\"",
     "test:all": "npm run test:taxonomy && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/**/*.test.mjs\"",
     "test": "npm run check:project && npm run validate:fp-content && npm run validate:learning-competencies && npm run test:all && npm run typecheck",
-    "ci": "npm run lint && npm run test && npm run validate:radar && npm run validate:production-deploy && npm run validate:postgres-app-integration && npm run validate:migrations && npm run build",
+    "ci": "npm run audit:unused && npm run lint && npm run test && npm run validate:radar && npm run validate:production-deploy && npm run validate:postgres-app-integration && npm run validate:migrations && npm run build",
     "validate:deploy": "npm run validate:production-deploy",
     "validate:runtime": "node scripts/validate-runtime-env.mjs",
     "postgres:setup": "npm run postgres:migrate",
@@ -109,6 +111,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.2.8",
     "resend": "^6.24.0",
+    "server-only": "0.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^2.5.5",
     "zod": "^3.24.2"
@@ -123,6 +126,7 @@
     "@types/react-dom": "^19.2.4",
     "eslint": "^9.24.0",
     "eslint-config-next": "15.5.23",
+    "knip": "6.34.0",
     "postcss": "^8.5.26",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3"
