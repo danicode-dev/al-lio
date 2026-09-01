@@ -65,8 +65,8 @@ The application is deployed on a VPS and currently provides:
 - a separate, persistent Radar scheduler and review queue.
 
 Self-service email registration is deliberately unavailable: `/register`
-redirects to `/login`. Demo profile access is disabled by default in production
-and must never be presented as a public authentication mechanism.
+redirects to `/login`. Production contains individually owned accounts only;
+the retired passwordless demo-profile mechanism is not an authentication path.
 
 ## Architecture
 
@@ -133,9 +133,10 @@ Git worktrees do not copy ignored environment files. Before starting a new
 worktree, copy or securely link the configured local `.env`/`.env.local` files
 into it; never commit those files.
 
-To add the single review-only event to every local demo profile, run
+To add the single review-only event to one existing local test account, run
 `npm run seed:local-review-event` with
-`AL_LIO_SEED_LOCAL_REVIEW_EVENT=SEED_LOCAL_REVIEW_EVENT`. The command refuses
+`AL_LIO_SEED_LOCAL_REVIEW_EVENT=SEED_LOCAL_REVIEW_EVENT` and
+`AL_LIO_LOCAL_REVIEW_USER_EMAIL=<local-account>`. The command refuses
 non-local databases and never runs during normal startup or deployment.
 
 Run the same startup validation directly with `npm run verify:startup`.

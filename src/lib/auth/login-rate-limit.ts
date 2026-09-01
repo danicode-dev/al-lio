@@ -10,7 +10,6 @@ import { query } from "@/lib/db/pool";
 // is a salted SHA-256 digest - the table never stores a raw email or IP.
 export type AuthRateLimitScope =
   | "password"
-  | "demo"
   | "register"
   | "email_confirm_resend"
   | "password_reset_request"

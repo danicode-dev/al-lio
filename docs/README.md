@@ -47,6 +47,7 @@ Everything about releasing and running the production deployment.
 - [`operations/GITHUB_PRODUCTION_DEPLOY.md`](operations/GITHUB_PRODUCTION_DEPLOY.md): automatic post-merge production deployment, configuration and failure handling.
 - [`operations/AUTONOMOUS_PRODUCTION_DEPLOY.md`](operations/AUTONOMOUS_PRODUCTION_DEPLOY.md): owner-facing one-command routine release guide.
 - [`operations/DEPLOY_VPS.md`](operations/DEPLOY_VPS.md): controlled VPS deployment, backup, smoke test and rollback.
+- [`operations/ENVIRONMENT_AND_ACCOUNT_ISOLATION.md`](operations/ENVIRONMENT_AND_ACCOUNT_ISOLATION.md): separate production, shared-development and local data/account boundaries, plus the guarded legacy-demo cleanup.
 - [`operations/PRIMARY_DOMAIN_MIGRATION.md`](operations/PRIMARY_DOMAIN_MIGRATION.md): one-time blue/green cutover to `al-lio.app` without replacing PostgreSQL or Radar.
 - [`operations/PRODUCTION_READINESS.md`](operations/PRODUCTION_READINESS.md): repository capabilities and per-release gates.
 - [`operations/release-records/`](operations/release-records/TEMPLATE.md): evidence recorded for each production change.

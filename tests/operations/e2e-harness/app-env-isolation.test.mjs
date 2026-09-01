@@ -25,7 +25,6 @@ const SYNTHETIC = Object.freeze({
   DATABASE_URL: "postgresql://al_lio_e2e:al_lio_e2e@127.0.0.1:54339/al_lio_e2e",
   SESSION_SECRET: "e2e-secret-0123456789abcdef0123456789abcdef",
   BASE_URL: "http://127.0.0.1:3210",
-  AL_LIO_DEMO_ACCESS_ENABLED: "false",
 });
 
 // A parent shell carrying real developer/production secrets.
@@ -47,8 +46,6 @@ const HOSTILE_PARENT = Object.freeze({
   INFOJOBS_CLIENT_SECRET: "real-infojobs-secret",
   ADZUNA_APP_KEY: "real-adzuna-key",
   JOOBLE_API_KEY: "real-jooble-key",
-  AL_LIO_SEED_DEMO_CONFIRMATION: "SEED_FP_DEMO_USERS",
-  AL_LIO_DEMO_PASSWORD: "real-demo-password",
   TARGET_USER_EMAIL: "owner@al-lio.app",
   PUBLIC_ASSET_BASE_URL: "https://al-lio.app",
 });
@@ -119,7 +116,6 @@ test("synthetic config wins over the hostile parent", () => {
     assert.equal(env.DATABASE_URL, SYNTHETIC.DATABASE_URL);
     assert.equal(env.SESSION_SECRET, SYNTHETIC.SESSION_SECRET);
     assert.equal(env.BASE_URL, SYNTHETIC.BASE_URL);
-    assert.equal(env.AL_LIO_DEMO_ACCESS_ENABLED, "false");
     assert.equal(env.__NEXT_PROCESSED_ENV, "true", "dotenv processing is disabled as a second layer");
   });
 });

@@ -179,13 +179,10 @@ test("SessionPayload requires a security stamp (sv) and verifySessionToken rejec
   assert.match(sessionSource, /sv: user\.securityStamp,/);
 });
 
-test("Every existing createSession caller (password login, demo login) was updated to pass securityStamp - none were left calling the old two-argument-shaped signature (issue #132)", async () => {
+test("The password-login createSession caller passes the security stamp and rejects unconfirmed accounts (issues #132 and #379)", async () => {
   const passwordSource = await readFile(new URL("../../../src/lib/auth/password-login.ts", import.meta.url), "utf8");
   assert.match(passwordSource, /securityStamp: authenticatedUser\.security_stamp,/);
   assert.match(passwordSource, /if \(!authenticatedUser\.email_confirmed_at\) \{\s*\n\s*return \{ error: "email_not_confirmed" \};\s*\n\s*\}/, "an unconfirmed account must not be able to log in with the right password");
-
-  const demoSource = await readFile(new URL("../../../src/lib/auth/demo-login.ts", import.meta.url), "utf8");
-  assert.match(demoSource, /securityStamp: user\.security_stamp,/);
 });
 
 test("Calendar consent (src/app/api/google/calendar/*) now requires an existing AL-LÍO session and no longer creates or links an account - identity creation is the separate /api/auth/google/* flow's job (issue #132)", async () => {

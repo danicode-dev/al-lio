@@ -140,15 +140,16 @@ Source: `src/lib/auth/`, `src/app/(dashboard)/layout.tsx`, ADR-0007,
   and password access for confirmed accounts. Public registration creates an
   unconfirmed account; the account cannot sign in until the emailed
   confirmation link is used.
-- Rate limiting is applied to password login, registration, demo access and
-  password-reset requests, backed by a shared database table rather than
+- Rate limiting is applied to password login, registration and password-reset
+  requests, backed by a shared database table rather than
   process memory.
 - The dashboard layout is a single onboarding gate: every private route
   renders through it, and a session whose profile has no completed
   questionnaire (vocational cycle and academic year) is redirected to
   `/onboarding` before any application content renders. A fully onboarded user
   passes straight through.
-- Production demo access is disabled by default.
+- Production uses individually owned accounts; passwordless demo access is not
+  part of the authentication boundary.
 
 ### 4.3 Server-side authorisation and user ownership
 

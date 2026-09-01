@@ -3618,11 +3618,12 @@
     },
     {
       "legacyIndex": 246,
-      "currentName": "Every existing createSession caller (password login, demo login) was updated to pass securityStamp - none were left calling the old two-argument-shaped signature (issue #132)",
+      "currentName": "The password-login createSession caller passes the security stamp and rejects unconfirmed accounts (issues #132 and #379)",
       "originatingIssues": [
-        132
+        132,
+        379
       ],
-      "protectedRisk": "Every existing createSession caller (password login, demo login) was updated to pass securityStamp - none were left calling the old two-argument-shaped signature (issue #132)",
+      "protectedRisk": "The password-login createSession caller passes the security stamp and rejects unconfirmed accounts (issues #132 and #379)",
       "domain": "auth",
       "layer": "integration",
       "currentStyle": "source-string",
@@ -3796,9 +3797,11 @@
     },
     {
       "legacyIndex": 258,
-      "currentName": "The review event seed is explicit, idempotent and restricted to local demo profiles",
-      "originatingIssues": [],
-      "protectedRisk": "The review event seed is explicit, idempotent and restricted to local demo profiles",
+      "currentName": "The review event seed is explicit, idempotent and restricted to one named local account",
+      "originatingIssues": [
+        379
+      ],
+      "protectedRisk": "The review event seed is explicit, idempotent and restricted to one named local account",
       "domain": "auth",
       "layer": "operations",
       "currentStyle": "source-string",

@@ -123,7 +123,6 @@ AL_LIO_RADAR_YOUTUBE_WATCH_ENABLED=false
 AL_LIO_RADAR_LEARNING_DELIVERY_ENABLED=false
 AL_LIO_RADAR_YOUTUBE_API_KEY=
 AL_LIO_RADAR_JOB_RADAR_ENABLED=false
-AL_LIO_DEMO_ACCESS_ENABLED=false
 NODE_ENV=production
 ```
 
@@ -133,7 +132,7 @@ docker compose -f infra/docker-compose.prod.yml --env-file .env config --quiet
 ```
 
 `DATABASE_MIGRATION_URL` must never be added to the web service environment.
-Demo access remains disabled unless a controlled test explicitly enables it.
+The retired passwordless demo-access boundary must not be reintroduced.
 The Radar values above are the dormant defaults. Follow
 [`OPENWEBINARS_NEWS_PILOT.md`](OPENWEBINARS_NEWS_PILOT.md) for the separate,
 owner-approved news activation; never activate another vertical by association.
@@ -350,7 +349,7 @@ Verify at minimum:
 - Work, Courses, and Events/Challenges;
 - persistence after restarting only `al_lio_web`.
 
-Do not enable public demo access merely to simplify a smoke test. Watch redacted
+Use only individually owned production accounts for smoke tests. Watch redacted
 logs through the release observation window.
 
 ## Application rollback

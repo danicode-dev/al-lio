@@ -46,13 +46,3 @@ npm run import:fp-content
 ```
 
 The importer upserts every raw row into the FP catalog tables. `empleo_busqueda` rows are imported so the source is preserved, but the MVP repository keeps them hidden by default because they expire quickly.
-
-## Demo Users
-
-For local or sandbox testing:
-
-```bash
-AL_LIO_SEED_DEMO_CONFIRMATION=SEED_FP_DEMO_USERS npm run seed:fp-demo-users
-```
-
-For non-local databases, also set `AL_LIO_DEMO_PASSWORD` to an explicit secure password. The seed creates four demo accounts: DEV, AF, TSAF and MP.

@@ -5,9 +5,9 @@ free of personal data.
 
 ## Demo dataset rules
 
-- Use purpose-built fictional accounts and fictional notes, tasks, and profile details.
+- Use purpose-built fictional accounts and fictional notes, tasks, and profile details only in shared development or local environments.
 - Never capture a real student's name, email, calendar, company favourite, or activity history.
-- Use one clean account per supported cycle when demonstrating filtering.
+- Use one clean non-production account per supported cycle when demonstrating filtering.
 - Reset the account before recording a first-use or empty-state journey.
 - Do not publish reusable production credentials in the repository or presentation.
 

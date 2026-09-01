@@ -40,9 +40,6 @@ try {
       DATABASE_URL: requireEnv("E2E_DATABASE_URL"),
       SESSION_SECRET: requireEnv("E2E_SESSION_SECRET"),
       BASE_URL: requireEnv("E2E_BASE_URL"),
-      // Public one-click demo access stays off: the suite signs in with a
-      // synthetic password, never the demo shortcut.
-      AL_LIO_DEMO_ACCESS_ENABLED: "false",
     },
   });
   assertNoIntegrationSecrets(env);

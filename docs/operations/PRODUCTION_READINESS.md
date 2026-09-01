@@ -12,8 +12,8 @@ is not evidence for a new one.
 - Separate web, PostgreSQL, Radar and migrator service boundaries.
 - Liveness and PostgreSQL readiness endpoints.
 - Signed sessions and secure production cookie settings.
-- Password and demo-access rate limiting.
-- Production demo access disabled by default.
+- Password, registration and password-reset rate limiting.
+- Individually owned production accounts with no passwordless demo shortcut.
 - Ordered, transactional and checksummed PostgreSQL migrations.
 - Explicit rejection of unaudited legacy databases.
 - Restricted application database role and separate migration credentials.

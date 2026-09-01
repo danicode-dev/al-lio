@@ -91,8 +91,8 @@ configuration:
    entirely.
 3. **Approved variables only.** The child receives exactly `NODE_ENV`
    (`development`), `PORT`, `HOSTNAME`, `DATABASE_URL` (the disposable E2E
-   database), `SESSION_SECRET` (the per-run secret), `BASE_URL`,
-   `AL_LIO_DEMO_ACCESS_ENABLED=false`, plus `NEXT_TELEMETRY_DISABLED`. These
+   database), `SESSION_SECRET` (the per-run secret), `BASE_URL`, plus
+   `NEXT_TELEMETRY_DISABLED`. These
    are the variables the login -> dashboard -> Tasks routes read; database,
    session, Google, Resend, OAuth, Radar, import and other integration
    secrets are not among them.
