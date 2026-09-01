@@ -18,10 +18,14 @@
 - `infra/postgres/schema.sql`: immutable PostgreSQL baseline.
 - `infra/postgres/migrations/`: ordered, checksummed database changes.
 - `csv/`: reviewed import inputs and editorial working datasets; see
-  `csv/fp-content/2026-2027/README.md`.
+  `csv/fp-content/2026-2027/README.md` and the
+  [content source inventory](integrations/CONTENT_SOURCE_INVENTORY.md).
 - `data/`: hand-maintained JSON import sources (learning competencies and the
   Work-tab company catalogues); see `data/README.md`. Nothing is written here
   at runtime — delivered content lives in PostgreSQL.
+- `docs/audits/`: reproducible, dated review evidence. An audit snapshot is not
+  runtime or publication authority; its inputs and retention reason must be
+  recorded in the content source inventory.
 
 ## Operations
 

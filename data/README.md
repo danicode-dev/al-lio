@@ -4,6 +4,10 @@ Hand-maintained JSON datasets that feed importers or are bundled into the app.
 Nothing writes to this folder at runtime; every file here is a reviewed source
 input, edited by hand and imported explicitly.
 
+The classification, consumers, publication authority and removal conditions
+for these datasets are maintained in
+[`docs/integrations/CONTENT_SOURCE_INVENTORY.md`](../docs/integrations/CONTENT_SOURCE_INVENTORY.md).
+
 For the bulk CSV catalogue sources see `csv/`. For delivered/runtime content
 see PostgreSQL — this folder is inputs only.
 

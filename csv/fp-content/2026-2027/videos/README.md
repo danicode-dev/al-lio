@@ -10,6 +10,12 @@ No reemplaza ni modifica el catalogo base — es un mapa de referencias
 para ese recurso. Un `id_slug` sin entrada aqui simplemente no tiene video
 todavia; la app muestra el recurso igual, sin reproductor.
 
+`recursos_video.json` is the `canonical` importer input. The dated
+`source-2026-08-06-video-candidates/` batches are `candidate` evidence and have
+no publication authority. Their retention and removal conditions are defined
+in the
+[content source inventory](../../../../docs/integrations/CONTENT_SOURCE_INVENTORY.md).
+
 ## Formato: JSON desde 2026-08-06
 
 `recursos_video.json` es la fuente activa. Objeto con un array `recursos`,
