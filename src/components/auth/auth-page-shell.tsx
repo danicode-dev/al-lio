@@ -117,8 +117,9 @@ export function AuthPageShell({ children }: { children: ReactNode }) {
         }
         .auth-submit:hover:not(:disabled) { background: #174938; border-color: #174938; transform: translateY(-1px); }
         .auth-submit:active:not(:disabled) { transform: translateY(0); }
-        .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .auth-submit:disabled { opacity: var(--al-disabled-opacity); cursor: not-allowed; }
         .auth-submit:focus-visible { outline: 2px solid rgba(31, 91, 70, 0.5); outline-offset: 2px; }
+        .auth-submit .al-spinner { color: #ffffff; }
 
         .auth-alt {
           text-align: center;
@@ -133,16 +134,6 @@ export function AuthPageShell({ children }: { children: ReactNode }) {
           text-underline-offset: 3px;
         }
         .auth-alt a:hover { color: #174938; }
-
-        .auth-error {
-          border-radius: 12px;
-          border: 1px solid #fecaca;
-          background: #fef2f2;
-          padding: 10px 14px;
-          font-size: 14px;
-          color: #dc2626;
-          margin-bottom: 16px;
-        }
 
         .auth-note { text-align: center; }
         .auth-note .auth-heading { margin-bottom: 12px; }

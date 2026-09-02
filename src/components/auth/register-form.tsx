@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { FormAlert } from "@/components/ui/form-alert";
+import { Spinner } from "@/components/ui/spinner";
 import { registerAction, type RegisterState } from "@/lib/auth/register";
 
 const errorCopy: Record<string, string> = {
@@ -19,7 +21,7 @@ export function RegisterForm() {
       <div className="auth-note">
         <h1 className="auth-heading">Revisa tu correo</h1>
         <p className="auth-sub">
-          Si el correo es válido, te hemos enviado un enlace para confirmar tu cuenta. El enlace caduca en 24 horas.
+          Si ese correo puede usarse, te hemos enviado un mensaje con los siguientes pasos. Revisa tu bandeja de entrada; cualquier enlace de confirmación caduca en 24 horas.
         </p>
         <p className="auth-alt">
           <Link href="/login">Volver a inicio de sesión</Link>
@@ -33,11 +35,8 @@ export function RegisterForm() {
       <h1 className="auth-heading">Crear cuenta</h1>
       <p className="auth-sub">Te enviaremos un correo para confirmar tu cuenta.</p>
 
-      {state.error && (
-        <div role="alert" className="auth-error">
-          {errorCopy[state.error] ?? state.error}
-        </div>
-      )}
+      <FormAlert message={state.error ? (errorCopy[state.error] ?? "No se pudo completar el registro. Vuelve a intentarlo.") : null} />
+
 
       <form action={formAction} className="auth-form">
         <div>
@@ -68,7 +67,7 @@ export function RegisterForm() {
         </div>
 
         <button type="submit" disabled={isPending} className="auth-submit">
-          {isPending ? "Creando cuenta..." : "Crear cuenta"}
+          {isPending ? <Spinner label="Creando cuenta..." /> : "Crear cuenta"}
         </button>
 
         <p className="auth-alt">

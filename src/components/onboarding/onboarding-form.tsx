@@ -6,6 +6,8 @@ import { completeOnboardingAction, type OnboardingState } from "@/lib/profile/on
 import type { DbFpCycle, DbProfile } from "@/lib/db/types";
 import { OnboardingBrandPanel } from "@/components/onboarding/onboarding-brand-panel";
 import { FieldListbox, type FieldListboxOption } from "@/components/ui/field-listbox";
+import { FormAlert } from "@/components/ui/form-alert";
+import { Spinner } from "@/components/ui/spinner";
 
 const errorCopy: Record<string, string> = {
   onboarding_invalid: "Revisa los datos e inténtalo de nuevo.",
@@ -113,28 +115,18 @@ export function OnboardingForm({
         .onboarding-heading {
           font-size: clamp(1.7rem, 2.6vw, 2.1rem);
           font-weight: 800;
-          color: var(--alio-graphite);
+          color: var(--al-text-strong);
           margin: 0 0 8px 0;
           line-height: 1.15;
           font-family: var(--font-barlow, sans-serif);
         }
 
         .onboarding-subheading {
-          color: #6b6f72;
+          color: var(--al-text-muted);
           font-size: 14.5px;
           line-height: 1.55;
           margin: 0 0 28px 0;
           max-width: 42ch;
-        }
-
-        .onboarding-error {
-          margin: 0 0 16px 0;
-          border-radius: 12px;
-          border: 1px solid #fecaca;
-          background: #fef2f2;
-          padding: 10px 14px;
-          font-size: 14px;
-          color: #dc2626;
         }
 
         .onboarding-form {
@@ -162,7 +154,7 @@ export function OnboardingForm({
         .onboarding-submit:hover:not(:disabled) { border-color: var(--al-action-soft-border-hover); background: var(--al-action-soft-bg-hover); color: var(--al-action-soft-text-hover); transform: translateY(-1px); }
         .onboarding-submit:active:not(:disabled) { transform: translateY(0); }
         .onboarding-submit:focus-visible { outline: 3px solid var(--al-action-soft-focus); outline-offset: 2px; }
-        .onboarding-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .onboarding-submit:disabled { opacity: var(--al-disabled-opacity); cursor: not-allowed; }
 
         .onboarding-submit-icon { width: 17px; height: 17px; }
 
@@ -173,7 +165,7 @@ export function OnboardingForm({
           gap: 6px;
           margin: 4px 0 0 0;
           font-size: 12.5px;
-          color: #9a9589;
+          color: var(--al-text-faint);
         }
 
         .onboarding-helper-icon { width: 12px; height: 12px; }
@@ -201,7 +193,8 @@ export function OnboardingForm({
             <h1 className="onboarding-heading">Cuéntanos qué estudias</h1>
             <p className="onboarding-subheading">Así te mostramos lo que encaja con tu ciclo. Tarda menos de un minuto.</p>
 
-            {state.error && <p className="onboarding-error">{errorCopy[state.error] ?? "No se pudo guardar. Inténtalo de nuevo."}</p>}
+            <FormAlert message={state.error ? (errorCopy[state.error] ?? "No se pudo guardar. Inténtalo de nuevo.") : null} />
+
 
             <form action={formAction} className="onboarding-form">
               <FieldListbox
@@ -230,7 +223,7 @@ export function OnboardingForm({
 
               <button type="submit" disabled={isPending || !cycleCode || !academicYear} className="onboarding-submit">
                 {isPending ? (
-                  "Guardando..."
+                  <Spinner label="Guardando..." />
                 ) : (
                   <>
                     Continuar

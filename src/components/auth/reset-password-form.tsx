@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { FormAlert } from "@/components/ui/form-alert";
+import { Spinner } from "@/components/ui/spinner";
 import { resetPasswordAction, type PasswordResetState } from "@/lib/auth/password-reset";
 
 const errorCopy: Record<string, string> = {
@@ -35,11 +37,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
       <h1 className="auth-heading">Restablecer contraseña</h1>
       <p className="auth-sub">Se cerrará el acceso en cualquier otro dispositivo.</p>
 
-      {state.error && (
-        <div role="alert" className="auth-error">
-          {errorCopy[state.error] ?? state.error}
-        </div>
-      )}
+      <FormAlert message={state.error ? (errorCopy[state.error] ?? "No se pudo restablecer la contraseña. Vuelve a intentarlo.") : null} />
 
       <form action={formAction} className="auth-form">
         <input type="hidden" name="token" value={token} />
@@ -72,7 +70,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         </div>
 
         <button type="submit" disabled={isPending} className="auth-submit">
-          {isPending ? "Guardando..." : "Restablecer contraseña"}
+          {isPending ? <Spinner label="Guardando..." /> : "Restablecer contraseña"}
         </button>
 
         <p className="auth-alt">
