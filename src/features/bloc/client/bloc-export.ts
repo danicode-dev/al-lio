@@ -1,8 +1,10 @@
 "use client";
 
+import { buildNoteExportHtml } from "@/lib/bloc/note-export";
 import { sanitizeEditorHtml } from "./bloc-editor-helpers";
+import { textToHtml } from "./bloc-persistence";
 
-export function findCanvasPageBreak(
+function findCanvasPageBreak(
   canvas: HTMLCanvasElement,
   pixels: Uint8ClampedArray | null,
   startY: number,
@@ -68,7 +70,7 @@ export function downloadTextFile(filename: string, text: string) {
   URL.revokeObjectURL(url);
 }
 
-export function downloadWordFile(filename: string, title: string, html: string) {
+function downloadWordFile(filename: string, title: string, html: string) {
   const documentHtml = `<!doctype html>
 <html>
 <head>
@@ -84,7 +86,7 @@ export function downloadWordFile(filename: string, title: string, html: string) 
   downloadBlob(filename, blob);
 }
 
-export function downloadBlob(filename: string, blob: Blob) {
+function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -97,4 +99,103 @@ export function downloadBlob(filename: string, blob: Blob) {
 
 export function sanitizeFilename(value: string) {
   return value.trim().replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, "-").slice(0, 80) || "nota";
+}
+
+type ExportableActiveNote = { title: string; contentHtml: string; contentText: string };
+
+// PDF and Word export flows, lifted out of bloc-notepad.tsx so the editor
+// orchestrator only wires the ExportMenu handlers. The caller passes the
+// active note plus the feedback / in-flight hooks; success is only reported
+// once generation actually completes.
+export async function exportActivePdf(options: {
+  note: ExportableActiveNote | null;
+  defaultTitle: string;
+  exportingRef: { current: boolean };
+  setExporting: (value: boolean) => void;
+  showNotice: (text: string, tone?: "info" | "error") => void;
+}) {
+  const { note, defaultTitle, exportingRef, setExporting, showNotice } = options;
+  if (!note || exportingRef.current) return;
+  exportingRef.current = true;
+  setExporting(true);
+  const container = document.createElement("div");
+  try {
+    const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([import("jspdf"), import("html2canvas")]);
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 40;
+    const contentWidth = pageWidth - margin * 2;
+
+    container.className = "al-bloc-export-doc-root";
+    // Keep the export surface laid out at the canvas origin. Moving it far
+    // off-screen makes jsPDF/html2canvas preserve that negative offset and
+    // produces correctly-sized but blank pages. A negative stacking level
+    // keeps the temporary surface behind the application while it is
+    // rasterized without hiding it from layout/paint.
+    container.style.cssText = "position: fixed; top: 0; left: 0; z-index: -1; width: 800px; background: #ffffff; pointer-events: none;";
+    container.innerHTML = buildNoteExportHtml({ title: note.title || defaultTitle, contentHtml: note.contentHtml });
+    document.body.appendChild(container);
+
+    await document.fonts.ready;
+    const renderScale = Math.min(Math.max(window.devicePixelRatio, 1), 2);
+    const canvas = await html2canvas(container, {
+      scale: renderScale,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      logging: false,
+    });
+    const pixelsPerPoint = canvas.width / contentWidth;
+    const printableHeight = doc.internal.pageSize.getHeight() - margin * 2;
+    const maxSliceHeight = Math.max(1, Math.floor(printableHeight * pixelsPerPoint));
+    const sourceContext = canvas.getContext("2d");
+    const sourcePixels = sourceContext?.getImageData(0, 0, canvas.width, canvas.height).data ?? null;
+    let sourceY = 0;
+    let pageIndex = 0;
+
+    while (sourceY < canvas.height) {
+      const sliceHeight = findCanvasPageBreak(canvas, sourcePixels, sourceY, maxSliceHeight);
+      const pageCanvas = document.createElement("canvas");
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = sliceHeight;
+      const pageContext = pageCanvas.getContext("2d");
+      if (!pageContext) throw new Error("No se pudo preparar la página del PDF");
+      pageContext.fillStyle = "#ffffff";
+      pageContext.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+      pageContext.drawImage(canvas, 0, sourceY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+
+      if (pageIndex > 0) doc.addPage();
+      doc.addImage(
+        pageCanvas.toDataURL("image/png"),
+        "PNG",
+        margin,
+        margin,
+        contentWidth,
+        sliceHeight / pixelsPerPoint,
+        undefined,
+        "FAST",
+      );
+      sourceY += sliceHeight;
+      pageIndex += 1;
+    }
+
+    downloadBlob(`${sanitizeFilename(note.title || "nota")}.pdf`, doc.output("blob"));
+    showNotice("PDF exportado");
+  } catch {
+    showNotice("No se pudo exportar el PDF. Inténtalo de nuevo.", "error");
+  } finally {
+    container.remove();
+    exportingRef.current = false;
+    setExporting(false);
+  }
+}
+
+export function exportActiveWord(options: {
+  note: ExportableActiveNote | null;
+  defaultTitle: string;
+  showNotice: (text: string, tone?: "info" | "error") => void;
+}) {
+  const { note, defaultTitle, showNotice } = options;
+  if (!note) return;
+  downloadWordFile(`${sanitizeFilename(note.title || "nota")}.doc`, note.title || defaultTitle, note.contentHtml || textToHtml(note.contentText));
+  showNotice("Word exportado");
 }

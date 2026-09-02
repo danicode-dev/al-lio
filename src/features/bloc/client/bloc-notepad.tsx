@@ -13,7 +13,6 @@ import {
   updateBlocNoteAction,
 } from "@/features/bloc/server/actions";
 import { countFavorites, dropPhantomNote, searchNotes, selectTabNotes } from "@/lib/bloc/note-selection";
-import { buildNoteExportHtml } from "@/lib/bloc/note-export";
 import {
   clampEditorFontSize,
   editorFormatAfterCommand,
@@ -25,10 +24,10 @@ import {
   sanitizeEditorHtml,
 } from "./bloc-editor-helpers";
 import { BlocEditorEmptyState, BlocEditorToolbar, MobileEditorFormatPanel } from "./bloc-editor-toolbar";
-import { downloadBlob, downloadTextFile, downloadWordFile, findCanvasPageBreak, sanitizeFilename, writeClipboardText } from "./bloc-export";
+import { downloadTextFile, exportActivePdf, exportActiveWord, sanitizeFilename, writeClipboardText } from "./bloc-export";
 import { emptyListMessage, formatBlocEditedTime, formatBlocNoteCardDate, MobileNoteCard, MobileSheet, MobileSheetRow, TrashSheet, countWords } from "./bloc-note-list";
 import { ExportMenu, NoteOverflowMenu, SlidersIcon } from "./bloc-note-menus";
-import { createBlocNote, normalizeBlocNotes, normalizeBlocSettings, normalizeBlocTrashed, nowIso, safeJson, textToHtml } from "./bloc-persistence";
+import { createBlocNote, normalizeBlocNotes, normalizeBlocSettings, normalizeBlocTrashed, nowIso, safeJson } from "./bloc-persistence";
 import { BLOC_STYLES } from "./bloc-styles";
 import {
   blocKey,
@@ -599,87 +598,6 @@ export function BlocNotepad() {
     showNotice("Descarga preparada");
   }
 
-  async function exportActivePdf() {
-    if (!activeNote || exportingPdfRef.current) return;
-    exportingPdfRef.current = true;
-    setExportingPdf(true);
-    const container = document.createElement("div");
-    try {
-      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([import("jspdf"), import("html2canvas")]);
-      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 40;
-      const contentWidth = pageWidth - margin * 2;
-
-      container.className = "al-bloc-export-doc-root";
-      // Keep the export surface laid out at the canvas origin. Moving it far
-      // off-screen makes jsPDF/html2canvas preserve that negative offset and
-      // produces correctly-sized but blank pages. A negative stacking level
-      // keeps the temporary surface behind the application while it is
-      // rasterized without hiding it from layout/paint.
-      container.style.cssText = "position: fixed; top: 0; left: 0; z-index: -1; width: 800px; background: #ffffff; pointer-events: none;";
-      container.innerHTML = buildNoteExportHtml({ title: activeNote.title || defaultTitle, contentHtml: activeNote.contentHtml });
-      document.body.appendChild(container);
-
-      await document.fonts.ready;
-      const renderScale = Math.min(Math.max(window.devicePixelRatio, 1), 2);
-      const canvas = await html2canvas(container, {
-        scale: renderScale,
-        backgroundColor: "#ffffff",
-        useCORS: true,
-        logging: false,
-      });
-      const pixelsPerPoint = canvas.width / contentWidth;
-      const printableHeight = doc.internal.pageSize.getHeight() - margin * 2;
-      const maxSliceHeight = Math.max(1, Math.floor(printableHeight * pixelsPerPoint));
-      const sourceContext = canvas.getContext("2d");
-      const sourcePixels = sourceContext?.getImageData(0, 0, canvas.width, canvas.height).data ?? null;
-      let sourceY = 0;
-      let pageIndex = 0;
-
-      while (sourceY < canvas.height) {
-        const sliceHeight = findCanvasPageBreak(canvas, sourcePixels, sourceY, maxSliceHeight);
-        const pageCanvas = document.createElement("canvas");
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = sliceHeight;
-        const pageContext = pageCanvas.getContext("2d");
-        if (!pageContext) throw new Error("No se pudo preparar la página del PDF");
-        pageContext.fillStyle = "#ffffff";
-        pageContext.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-        pageContext.drawImage(canvas, 0, sourceY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
-
-        if (pageIndex > 0) doc.addPage();
-        doc.addImage(
-          pageCanvas.toDataURL("image/png"),
-          "PNG",
-          margin,
-          margin,
-          contentWidth,
-          sliceHeight / pixelsPerPoint,
-          undefined,
-          "FAST",
-        );
-        sourceY += sliceHeight;
-        pageIndex += 1;
-      }
-
-      downloadBlob(`${sanitizeFilename(activeNote.title || "nota")}.pdf`, doc.output("blob"));
-      showNotice("PDF exportado");
-    } catch {
-      showNotice("No se pudo exportar el PDF. Inténtalo de nuevo.", "error");
-    } finally {
-      container.remove();
-      exportingPdfRef.current = false;
-      setExportingPdf(false);
-    }
-  }
-
-  function exportActiveWord() {
-    if (!activeNote) return;
-    downloadWordFile(`${sanitizeFilename(activeNote.title || "nota")}.doc`, activeNote.title || defaultTitle, activeNote.contentHtml || textToHtml(activeNote.contentText));
-    showNotice("Word exportado");
-  }
-
   if (!loaded) {
     return (
       <div className="flex h-64 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
@@ -808,8 +726,8 @@ export function BlocNotepad() {
               noteTitle={activeNote?.title || defaultTitle}
               disabled={!activeNote}
               exporting={exportingPdf}
-              onExportPdf={exportActivePdf}
-              onExportWord={exportActiveWord}
+              onExportPdf={() => exportActivePdf({ note: activeNote, defaultTitle, exportingRef: exportingPdfRef, setExporting: setExportingPdf, showNotice })}
+              onExportWord={() => exportActiveWord({ note: activeNote, defaultTitle, showNotice })}
               onExportTxt={downloadActiveNote}
             />
             <NoteOverflowMenu
@@ -895,8 +813,8 @@ export function BlocNotepad() {
               noteTitle={activeNote?.title || defaultTitle}
               disabled={!activeNote}
               exporting={exportingPdf}
-              onExportPdf={exportActivePdf}
-              onExportWord={exportActiveWord}
+              onExportPdf={() => exportActivePdf({ note: activeNote, defaultTitle, exportingRef: exportingPdfRef, setExporting: setExportingPdf, showNotice })}
+              onExportWord={() => exportActiveWord({ note: activeNote, defaultTitle, showNotice })}
               onExportTxt={downloadActiveNote}
             />
             <NoteOverflowMenu
