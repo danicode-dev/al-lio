@@ -3,12 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Building2, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ExternalLink, Flame, Heart, MapPin, Plus, Search, Trophy, Youtube } from "lucide-react";
+import { BookOpen, Building2, CalendarDays, Check, CheckCircle2, ChevronLeft, ExternalLink, Flame, Heart, MapPin, Plus, Search, Trophy, Youtube } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { isPreparationComplete, selectFeaturedHackathon } from "@/lib/fp/event-lifecycle";
 import { isSafeHttpUrl } from "@/lib/fp/event-cta";
-import { addMonths, buildMonthCells, dateKey, formatDateLabel, isPastActionDate, isWithinUpcomingWindow, pad, parseDate, startOfMonth, todayKey } from "@/lib/catalog/date-filters";
+import { dateKey, formatDateLabel, isPastActionDate, isWithinUpcomingWindow, pad, parseDate } from "@/lib/catalog/date-filters";
 import { canToggleHackathonFavorite, getDisplayHackathons, getHackathonPresentation, toggleHackathonFavoriteFor } from "@/features/events/presentation";
 import { useEventActions, type EventActions } from "@/features/events/client";
 import { useLearningActions, type LearningActions } from "@/features/learning/client";
@@ -20,127 +20,17 @@ import { CatalogCard, CatalogFact, CatalogFavoriteButton, CatalogFeaturedCard, C
 import { CollectionControls, FilterChips, FilterPanelCompact } from "@/components/catalog/collection-controls";
 import type { Hackathon, RequiredCompetency, Store } from "@/components/store/types";
 import { FeaturePage } from "@/shared/ui/feature-page";
-
-function hackathonStatusLabel(status: string) {
-  const m: Record<string, string> = {
-    inscripcion_abierta: "Inscripción abierta",
-    pendiente: "Pendiente",
-    realizado: "Realizado",
-    revisar_futura_edicion: "Revisar",
-    descartado: "Descartado",
-  };
-  return m[status] ?? status;
-}
-
-function FilterCalendar({
-  datesWithItems,
-  dayFilter,
-  onDaySelect,
-}: {
-  datesWithItems: Set<string>;
-  dayFilter: string;
-  onDaySelect: (day: string) => void;
-}) {
-  const [calMonth, setCalMonth] = useState(startOfMonth(new Date()));
-  const cells = buildMonthCells(calMonth);
-  const monthLabel = calMonth.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
-  const today = todayKey();
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <button type="button" onClick={() => setCalMonth((c) => addMonths(c, -1))} className="rounded p-1 hover:bg-muted">
-          <ChevronLeft className="h-3 w-3" />
-        </button>
-        <span className="text-xs font-medium capitalize">{monthLabel}</span>
-        <button type="button" onClick={() => setCalMonth((c) => addMonths(c, 1))} className="rounded p-1 hover:bg-muted">
-          <ChevronRight className="h-3 w-3" />
-        </button>
-      </div>
-      <div className="grid grid-cols-7 text-center">
-        {["L", "M", "X", "J", "V", "S", "D"].map((d) => (
-          <div key={d} className="py-0.5 text-[10px] font-medium text-muted-foreground">{d}</div>
-        ))}
-        {cells.map((cell) => {
-          const key = dateKey(cell.date.toISOString());
-          const hasItem = datesWithItems.has(key);
-          const isSelected = dayFilter === key;
-          const isToday = key === today;
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onDaySelect(isSelected ? "" : key)}
-              className={cn(
-                "relative flex flex-col items-center py-0.5 text-[11px] leading-5 transition-colors",
-                !cell.inMonth && "text-muted-foreground/40",
-                isSelected && "al-filter-day-selected rounded",
-                isToday && !isSelected && "al-filter-day-today font-bold",
-                !isSelected && cell.inMonth && "cursor-pointer rounded hover:bg-muted",
-              )}
-            >
-              {cell.date.getDate()}
-              {hasItem && !isSelected && (
-                <span className="al-filter-dot absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-        <span className="al-filter-dot inline-block h-1.5 w-1.5 rounded-full" />
-        con cursos
-      </div>
-    </div>
-  );
-}
-
-function FilterDateRow({
-  dayFilter,
-  datesWithItems,
-  onDaySelect,
-}: {
-  dayFilter: string;
-  datesWithItems: Set<string>;
-  onDaySelect: (day: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div>
-      <div className="flex items-center">
-        <button type="button" className="al-fp-date-toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-          <CalendarDays />
-          {dayFilter ? formatDateLabel(dayFilter) : "Cualquier fecha"}
-          <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
-        </button>
-        {dayFilter && (
-          <button type="button" className="al-fp-date-clear" onClick={() => onDaySelect("")}>
-            Quitar
-          </button>
-        )}
-      </div>
-      {open && (
-        <div className="al-fp-date-cal">
-          <FilterCalendar datesWithItems={datesWithItems} dayFilter={dayFilter} onDaySelect={onDaySelect} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function opportunityLifecycleLabel(value?: string): string | undefined {
-  const labels: Record<string, string> = {
-    announced: "Anunciado",
-    registration_open: "Inscripción abierta",
-    registration_closed: "Inscripción cerrada",
-    ongoing: "En curso",
-    completed: "Finalizado",
-    cancelled: "Cancelado",
-    postponed: "Aplazado",
-    evergreen: "Disponible sin convocatoria",
-  };
-  return value ? labels[value] : undefined;
-}
+import {
+  HACK_EMPTY_STYLES,
+  hackathonAptitudeProgress,
+  hackathonStatusLabel,
+  hackathonStatusPillClass,
+  isCompetencyDone,
+  isHackathonArchived,
+  opportunityLifecycleLabel,
+  sortHackathonsByStart,
+} from "./event-catalogue-model";
+import { FilterDateRow } from "./events-filter-controls";
 
 type EventsActions = EventActions & LearningActions & Pick<TaskActions, "addTask">;
 
@@ -166,14 +56,7 @@ function Hackathons({ store, actions }: { store: Store; actions: EventsActions }
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const sorted = useMemo(() => [...allHackathons].sort((a, b) => {
-    const da = (a.start_at || "").slice(0, 10);
-    const db = (b.start_at || "").slice(0, 10);
-    if (!da && !db) return 0;
-    if (!da) return 1;
-    if (!db) return -1;
-    return da.localeCompare(db);
-  }), [allHackathons]);
+  const sorted = useMemo(() => sortHackathonsByStart(allHackathons), [allHackathons]);
 
   // Mirrors Cursos: the four control-row entries are both the KPI counts
   // and the filter tabs. Total is the current events (not finished, not
@@ -246,16 +129,7 @@ function Hackathons({ store, actions }: { store: Store; actions: EventsActions }
 
   return (
     <>
-      <style>{`
-        .al-hack-empty-wrap { display: grid; gap: 14px; grid-template-columns: 1fr; }
-        @media (min-width: 640px) { .al-hack-empty-wrap.al-hack-empty-two { grid-template-columns: 1fr 1fr; } }
-        .al-hack-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .al-hack-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
-        .al-hack-empty-illustration { width: 100%; max-width: 280px; height: auto; }
-        .al-hack-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
-        .al-hack-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
-        .al-hack-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: var(--al-action-soft-bg); color: var(--al-action-soft-text); font-size: 12.5px; font-weight: 700; border: 1px solid var(--al-action-soft-border); cursor: pointer; }
-      `}</style>
+      <style>{HACK_EMPTY_STYLES}</style>
       <div className="al-catalog-view space-y-4">
         <div className="al-cc-shell">
           <CollectionControls
@@ -438,40 +312,6 @@ function HackathonsEmptyState({ variant, onClearFilters }: { variant: "sin_resul
   );
 }
 
-function isCompetencyDone(competency: RequiredCompetency): boolean {
-  return !!competency.completed;
-}
-
-function hackathonAptitudeProgress(item: Hackathon) {
-  const competencies = item.requiredCompetencies ?? [];
-  const required = competencies.filter((competency) => competency.obligatoria_para_item);
-  const recommended = competencies.filter((competency) => !competency.obligatoria_para_item);
-  const resources = [...new Map(
-    competencies.flatMap((competency) => competency.preparationResources ?? []).map((resource) => [resource.id, resource]),
-  ).values()];
-  return {
-    done: required.filter(isCompetencyDone).length,
-    total: required.length,
-    requiredDone: required.filter(isCompetencyDone).length,
-    requiredTotal: required.length,
-    recommendedDone: recommended.filter(isCompetencyDone).length,
-    recommendedTotal: recommended.length,
-    resourcesStarted: resources.filter((resource) => resource.user_status === "started").length,
-    resourcesCompleted: resources.filter((resource) => resource.user_status === "completed").length,
-  };
-}
-
-function hackathonStatusPillClass(status: Hackathon["status"]): string {
-  const classes: Record<Hackathon["status"], string> = {
-    inscripcion_abierta: "al-catalog-status-open",
-    pendiente: "al-catalog-status-pending",
-    realizado: "al-catalog-status-complete",
-    revisar_futura_edicion: "al-catalog-status-review",
-    descartado: "al-catalog-status-dismissed",
-  };
-  return classes[status];
-}
-
 function RequirementRow({ competency, actions }: { competency: RequiredCompetency; actions: EventsActions }) {
   const done = isCompetencyDone(competency);
   const resources = competency.preparationResources ?? [];
@@ -561,13 +401,7 @@ export function HackathonDetailView({ id }: { id: string }) {
   if (!item) {
     return (
       <div className="space-y-4">
-        <style>{`
-          .al-hack-empty { min-height: 320px; background: white; border: 1px solid #ece7dc; box-shadow: 0 12px 32px rgba(17, 17, 17, 0.05); border-radius: 20px; padding: 32px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-          .al-hack-empty-icon { width: 56px; height: 56px; border-radius: 16px; background: #fbe7dd; display: flex; align-items: center; justify-content: center; color: #E15D2D; }
-          .al-hack-empty-title { color: #111111; font-weight: 700; font-size: 15px; }
-          .al-hack-empty-desc { color: #6b6f72; font-size: 12.5px; max-width: 32ch; }
-          .al-hack-empty-btn { margin-top: 4px; display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 11px; background: var(--al-action-soft-bg); color: var(--al-action-soft-text); font-size: 12.5px; font-weight: 700; border: 1px solid var(--al-action-soft-border); cursor: pointer; text-decoration: none; }
-        `}</style>
+        <style>{HACK_EMPTY_STYLES}</style>
         <PageHeader
           eyebrow="Eventos y retos"
           title="Evento no disponible"
@@ -806,10 +640,6 @@ export function HackathonDetailView({ id }: { id: string }) {
       </div>
     </div>
   );
-}
-
-function isHackathonArchived(hackathon: Pick<Hackathon, "status">) {
-  return hackathon.status === "realizado" || hackathon.status === "descartado";
 }
 
 function isHackathonPast(hackathon: Pick<Hackathon, "inscripcion_hasta" | "registration_deadline_at" | "end_at" | "start_at">) {

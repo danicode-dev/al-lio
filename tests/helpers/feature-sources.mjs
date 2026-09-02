@@ -10,7 +10,14 @@ const featureFiles = {
     "courses/client/courses-feature.tsx",
     "courses/client/course-detail-view.tsx",
   ],
-  events: ["events/client/events-feature.tsx"],
+  events: [
+    // events-feature.tsx first so `function Hackathons(` / `HackathonDetailView`
+    // slice anchors resolve inside it; the pure model is concatenated last so it
+    // never lands inside a `CourseDetailView` -> `function Hackathons(` slice.
+    "events/client/events-feature.tsx",
+    "events/client/events-filter-controls.tsx",
+    "events/client/event-catalogue-model.ts",
+  ],
   calendar: ["calendar/client/calendar-feature.tsx"],
   resources: ["resources/client/sources-feature.tsx"],
   settings: ["settings/client/settings-feature.tsx"],
