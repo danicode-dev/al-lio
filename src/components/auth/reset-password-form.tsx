@@ -7,6 +7,7 @@ import { resetPasswordAction, type PasswordResetState } from "@/lib/auth/passwor
 const errorCopy: Record<string, string> = {
   reset_token_invalid: "Este enlace no es válido. Solicita uno nuevo.",
   reset_token_expired: "Este enlace ha caducado. Solicita uno nuevo.",
+  reset_token_used: "Este enlace ya se ha utilizado. Solicita uno nuevo.",
   reset_failed: "No se pudo restablecer la contraseña. Vuelve a intentarlo.",
 };
 
@@ -14,6 +15,20 @@ const initialState: PasswordResetState = { error: null };
 
 export function ResetPasswordForm({ token }: { token: string }) {
   const [state, formAction, isPending] = useActionState(resetPasswordAction, initialState);
+
+  if (state.ok) {
+    return (
+      <div className="auth-note">
+        <h1 className="auth-heading">Contraseña actualizada</h1>
+        <p className="auth-sub">
+          Hemos cambiado tu contraseña y cerrado la sesión en los demás dispositivos. Ya has iniciado sesión en este.
+        </p>
+        <p className="auth-alt">
+          <Link href="/dashboard">Ir a mi panel</Link>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>

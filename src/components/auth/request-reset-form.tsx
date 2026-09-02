@@ -14,7 +14,7 @@ export function RequestResetForm() {
       <div className="auth-note">
         <h1 className="auth-heading">Revisa tu correo</h1>
         <p className="auth-sub">
-          Si el correo tiene una cuenta con contraseña, te hemos enviado un enlace para restablecerla. El enlace caduca en 1 hora.
+          Si ese correo tiene una cuenta, te hemos enviado un enlace para elegir una contraseña nueva. Caduca en 1 hora. Si normalmente entras con Google, puedes seguir haciéndolo.
         </p>
         <p className="auth-alt">
           <Link href="/login">Volver a inicio de sesión</Link>
