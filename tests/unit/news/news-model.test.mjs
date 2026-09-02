@@ -1,5 +1,5 @@
 // Executable coverage for the pure News presentation/list model extracted from
-// src/components/noticias/noticias-view.tsx in issue #371.
+// src/features/news/client/news-view.tsx in issue #371.
 
 import assert from "node:assert/strict";
 import test from "node:test";

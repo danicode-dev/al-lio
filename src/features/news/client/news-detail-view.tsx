@@ -19,7 +19,7 @@ import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import { CatalogNextLink, CatalogPanel } from "@/components/catalog/catalog-card";
 import { useTaskActions } from "@/features/tasks/client";
-import { EmptyState } from "@/components/noticias/noticias-view";
+import { EmptyState } from "./news-view";
 import {
   formatDate,
   formatModule,

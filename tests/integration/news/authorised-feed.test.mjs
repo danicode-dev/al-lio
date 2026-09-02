@@ -79,7 +79,7 @@ test("audited legacy Radar withdrawals hide content without deleting rows or pri
 });
 
 test("News cards route into the internal detail page, never straight to the source, and never inject raw HTML", async () => {
-  const source = await readFile(new URL("../../../src/components/noticias/noticias-view.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/news/client/news-view.tsx", import.meta.url), "utf8");
 
   // Both the featured item and every grid card carry the catalogue detail
   // action, the single way into an item.
@@ -93,7 +93,7 @@ test("News cards route into the internal detail page, never straight to the sour
 });
 
 test("News detail view offers a clear Spanish source action and never injects raw HTML", async () => {
-  const source = await readFile(new URL("../../../src/components/noticias/news-detail-view.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/news/client/news-detail-view.tsx", import.meta.url), "utf8");
   assert.match(source, /Leer noticia original/);
   assert.match(source, /Volver a Noticias/);
   assert.match(source, /Datos confirmados/);
@@ -130,7 +130,7 @@ test("Read/save mutations require the live-feed boundary before a first save, an
 });
 
 test("News detail view separates unavailable content from a temporary failure, with retry only for the latter", async () => {
-  const source = await readFile(new URL("../../../src/components/noticias/news-detail-view.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/news/client/news-detail-view.tsx", import.meta.url), "utf8");
 
   // Distinct states instead of collapsing every failure into one null/loading pair.
   for (const status of ["loading", "loaded", "unavailable", "unauthenticated", "profile-incomplete", "error"]) {
@@ -155,8 +155,8 @@ test("News detail view separates unavailable content from a temporary failure, w
 });
 
 test("The read mutation is owned by the detail route alone, never fired from the list", async () => {
-  const listSource = await readFile(new URL("../../../src/components/noticias/noticias-view.tsx", import.meta.url), "utf8");
-  const detailSource = await readFile(new URL("../../../src/components/noticias/news-detail-view.tsx", import.meta.url), "utf8");
+  const listSource = await readFile(new URL("../../../src/features/news/client/news-view.tsx", import.meta.url), "utf8");
+  const detailSource = await readFile(new URL("../../../src/features/news/client/news-detail-view.tsx", import.meta.url), "utf8");
 
   // The detail route is the only way into an item, so it is the only place
   // that marks one read - the list cannot double-fire the mutation.

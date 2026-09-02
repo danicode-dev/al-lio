@@ -1,4 +1,4 @@
-import { NewsDetailView } from "@/components/noticias/news-detail-view";
+import { NewsDetailView } from "@/features/news";
 
 export const dynamic = "force-dynamic";
 
