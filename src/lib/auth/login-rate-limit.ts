@@ -2,7 +2,12 @@ import "server-only";
 
 import { createHmac } from "node:crypto";
 import { headers } from "next/headers";
+import type { QueryResult } from "pg";
 import { query } from "@/lib/db/pool";
+import {
+  RATE_LIMIT_STORE_UNAVAILABLE_RESULT,
+  reportRateLimitStoreUnavailable,
+} from "@/lib/auth/rate-limit-store";
 
 // Backed by public.rate_limit_buckets (see 0009_production_authentication.sql)
 // instead of an in-process Map, so limits survive a process restart and
@@ -25,15 +30,23 @@ export async function consumeAuthRateLimit(
   const key = digest(`${scope}:${address}:${identity.trim().toLowerCase()}`);
   const resetAt = new Date(Date.now() + windowMs).toISOString();
 
-  const res = await query<{ count: number; reset_at: string }>(
-    `INSERT INTO public.rate_limit_buckets (bucket_key, count, reset_at)
-     VALUES ($1, 1, $2)
-     ON CONFLICT (bucket_key) DO UPDATE SET
-       count = CASE WHEN public.rate_limit_buckets.reset_at <= now() THEN 1 ELSE public.rate_limit_buckets.count + 1 END,
-       reset_at = CASE WHEN public.rate_limit_buckets.reset_at <= now() THEN EXCLUDED.reset_at ELSE public.rate_limit_buckets.reset_at END
-     RETURNING count, reset_at`,
-    [key, resetAt]
-  );
+  let res: QueryResult<{ count: number; reset_at: string }>;
+  try {
+    res = await query<{ count: number; reset_at: string }>(
+      `INSERT INTO public.rate_limit_buckets (bucket_key, count, reset_at)
+       VALUES ($1, 1, $2)
+       ON CONFLICT (bucket_key) DO UPDATE SET
+         count = CASE WHEN public.rate_limit_buckets.reset_at <= now() THEN 1 ELSE public.rate_limit_buckets.count + 1 END,
+         reset_at = CASE WHEN public.rate_limit_buckets.reset_at <= now() THEN EXCLUDED.reset_at ELSE public.rate_limit_buckets.reset_at END
+       RETURNING count, reset_at`,
+      [key, resetAt]
+    );
+  } catch (error) {
+    // The backing store is unreachable. Fail open so an infra blip does not
+    // take down every sign-in method - see rate-limit-store.ts (issue #155).
+    reportRateLimitStoreUnavailable("consume", scope, error);
+    return RATE_LIMIT_STORE_UNAVAILABLE_RESULT;
+  }
 
   const row = res.rows[0];
   if (row.count > limit) {
@@ -49,7 +62,14 @@ export async function consumeAuthRateLimit(
 export async function clearAuthRateLimit(scope: AuthRateLimitScope, identity: string): Promise<void> {
   const address = await getClientAddress();
   const key = digest(`${scope}:${address}:${identity.trim().toLowerCase()}`);
-  await query(`DELETE FROM public.rate_limit_buckets WHERE bucket_key = $1`, [key]);
+  try {
+    await query(`DELETE FROM public.rate_limit_buckets WHERE bucket_key = $1`, [key]);
+  } catch (error) {
+    // Best-effort reset after a successful sign-in. If the store is down the
+    // caller's earlier failed attempts just stay counted until the window
+    // expires; never propagate this to the sign-in response (issue #155).
+    reportRateLimitStoreUnavailable("clear", scope, error);
+  }
 }
 
 async function getClientAddress(): Promise<string> {
@@ -66,5 +86,7 @@ function digest(value: string): string {
 }
 
 function opportunisticCleanup(): void {
-  query(`DELETE FROM public.rate_limit_buckets WHERE reset_at < now() - interval '1 day'`).catch(() => {});
+  query(`DELETE FROM public.rate_limit_buckets WHERE reset_at < now() - interval '1 day'`).catch(
+    (error: unknown) => reportRateLimitStoreUnavailable("cleanup", "all", error),
+  );
 }
