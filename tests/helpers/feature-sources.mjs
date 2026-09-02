@@ -31,6 +31,7 @@ const featureFiles = {
   settings: ["settings/client/settings-feature.tsx"],
   bloc: [
     "bloc/client/bloc-notepad.tsx",
+    "bloc/client/bloc-styles.ts",
     "bloc/client/bloc-editor-toolbar.tsx",
     "bloc/client/bloc-note-list.tsx",
     "bloc/client/bloc-note-menus.tsx",
