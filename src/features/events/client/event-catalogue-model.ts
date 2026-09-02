@@ -1,14 +1,24 @@
 import type { Hackathon, RequiredCompetency } from "@/components/store/types";
+import type { EventActions } from "@/features/events/client";
+import type { LearningActions } from "@/features/learning/client";
+import type { TaskActions } from "@/features/tasks/client";
 
 /**
  * Framework-free catalogue model for the Events and challenges feature: status
  * labels/classes, lifecycle labels, ordering, and the aptitude-progress
- * calculation. Nothing here imports React or a runtime module alias, so
+ * calculation. Nothing here imports React or a runtime module alias (only
+ * `import type`, which strip-types erases), so
  * tests/unit/events/catalogue-model.test.mjs can execute it directly. Featured
  * selection lives in `@/lib/fp/event-lifecycle`; date-aware helpers (the
- * collection filter, the past-date check) stay next to their only caller in
- * events-feature.tsx, where the shared date-filter contract is in scope.
+ * collection filter, the past-date check) live in `./hackathon-dates`, next to
+ * their component callers, where the shared date-filter contract is in scope.
  */
+
+/**
+ * The combined action surface both Events views dispatch: the catalogue
+ * container and the detail view (which also owns the aptitude checklist).
+ */
+export type EventsActions = EventActions & LearningActions & Pick<TaskActions, "addTask">;
 
 export function hackathonStatusLabel(status: string): string {
   const m: Record<string, string> = {
