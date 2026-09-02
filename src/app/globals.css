@@ -880,3 +880,36 @@
     white-space: normal;
   }
 }
+
+/* Shared auth / onboarding form state primitives (issue #373). One error
+   surface and one pending affordance across login, register, recovery, reset
+   and onboarding, so every flow announces failure the same accessible way and
+   never re-declares a red box. The error colours are the #362 semantic status
+   tokens, not the green login accent (which stays local and intentional). */
+.al-form-alert {
+  margin-bottom: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--al-error-text);
+  background: var(--al-error-surface);
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--al-error-text);
+}
+.al-form-alert:focus-visible {
+  outline: 2px solid var(--al-error-text);
+  outline-offset: 2px;
+}
+
+@keyframes al-spin {
+  to { transform: rotate(360deg); }
+}
+.al-spinner {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  animation: al-spin 1s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .al-spinner { animation-duration: 0s; }
+}

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { requestPasswordResetAction, type PasswordResetRequestState } from "@/lib/auth/password-reset";
 
 const initialState: PasswordResetRequestState = { submitted: false };
@@ -43,7 +44,7 @@ export function RequestResetForm() {
         </div>
 
         <button type="submit" disabled={isPending} className="auth-submit">
-          {isPending ? "Enviando..." : "Enviar enlace"}
+          {isPending ? <Spinner label="Enviando..." /> : "Enviar enlace"}
         </button>
 
         <p className="auth-alt">

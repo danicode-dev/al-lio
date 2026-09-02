@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { GoogleLoginButton } from "@/components/auth/google-login-button";
+import { FormAlert } from "@/components/ui/form-alert";
+import { Spinner } from "@/components/ui/spinner";
 import { loginWithPasswordAction, type PasswordLoginState } from "@/lib/auth/password-login";
 
 const errorCopy: Record<string, string> = {
@@ -193,7 +195,7 @@ export function LoginForm({ error }: { error?: string | null }) {
         }
         .al-btn-submit:hover:not(:disabled) { background: #174938; border-color: #174938; transform: translateY(-1px); }
         .al-btn-submit:active:not(:disabled) { transform: translateY(0); }
-        .al-btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .al-btn-submit:disabled { opacity: var(--al-disabled-opacity); cursor: not-allowed; }
         .al-btn-submit:focus-visible { outline: 2px solid rgba(31, 91, 70, 0.5); outline-offset: 2px; }
 
         .al-divider { display: flex; align-items: center; gap: 12px; }
@@ -297,14 +299,8 @@ export function LoginForm({ error }: { error?: string | null }) {
         <main className="login-card">
           <h1 className="al-card-heading">Bienvenido de nuevo</h1>
 
-          {visibleError && (
-            <div
-              role="alert"
-              style={{ marginBottom: 16, borderRadius: 12, border: "1px solid #fecaca", background: "#fef2f2", padding: "10px 14px", fontSize: 14, color: "#dc2626" }}
-            >
-              {errorCopy[visibleError] ?? "No se pudo iniciar sesión. Vuelve a intentarlo."}
-            </div>
-          )}
+          <FormAlert message={visibleError ? (errorCopy[visibleError] ?? "No se pudo iniciar sesión. Vuelve a intentarlo.") : null} />
+
 
           <form action={passwordLoginAction} noValidate className="al-form">
             <div>
@@ -351,17 +347,7 @@ export function LoginForm({ error }: { error?: string | null }) {
             </div>
 
             <button type="submit" disabled={isPasswordLoginPending} className="al-btn-submit">
-              {isPasswordLoginPending ? (
-                <>
-                  <svg style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.3" />
-                    <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                  </svg>
-                  Iniciando sesión...
-                </>
-              ) : (
-                "Iniciar sesión"
-              )}
+              {isPasswordLoginPending ? <Spinner label="Iniciando sesión..." /> : "Iniciar sesión"}
             </button>
 
             <div className="al-divider">
@@ -387,8 +373,6 @@ export function LoginForm({ error }: { error?: string | null }) {
           </span>
         </p>
       </div>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </>
   );
 }
