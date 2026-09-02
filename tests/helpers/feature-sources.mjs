@@ -3,7 +3,13 @@ import { readFile } from "node:fs/promises";
 const featureFiles = {
   work: ["work/client/work-feature.tsx"],
   tasks: ["tasks/client/tasks-view.tsx"],
-  courses: ["courses/client/courses-feature.tsx"],
+  courses: [
+    "courses/client/course-catalogue-model.ts",
+    "courses/client/courses-filter-controls.tsx",
+    "courses/client/courses-catalogue.tsx",
+    "courses/client/courses-feature.tsx",
+    "courses/client/course-detail-view.tsx",
+  ],
   events: ["events/client/events-feature.tsx"],
   calendar: ["calendar/client/calendar-feature.tsx"],
   resources: ["resources/client/sources-feature.tsx"],
