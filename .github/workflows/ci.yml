@@ -37,7 +37,7 @@ jobs:
         run: npm run ci
 
   e2e:
-    name: Browser E2E (auth + Tasks)
+    name: Browser E2E
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
