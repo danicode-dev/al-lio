@@ -1,12 +1,9 @@
+import { LEGAL_ROUTES } from "../routes";
 import type { LegalDocument } from "../types";
 
 export const projectDocument: LegalDocument = {
   es: {
-    metadataTitle: "El proyecto",
-    href: "/proyecto",
-    altHref: "/en/proyecto",
-    title: "El proyecto",
-    kicker: "Sobre AL-LÍO",
+    ...LEGAL_ROUTES.project.es,
     lead: "AL-LÍO responde a un problema concreto de la Formación Profesional: la información y las tareas del curso repartidas en demasiados sitios. Es una herramienta para el curso, no un feed más.",
     aside: (
       <>
@@ -38,11 +35,7 @@ export const projectDocument: LegalDocument = {
     ),
   },
   en: {
-    metadataTitle: "The project",
-    href: "/en/proyecto",
-    altHref: "/proyecto",
-    title: "The project",
-    kicker: "About AL-LÍO",
+    ...LEGAL_ROUTES.project.en,
     lead: "AL-LÍO answers a concrete problem in vocational training: course information and tasks scattered across too many places. It is a tool for the course, not one more feed.",
     aside: (
       <>

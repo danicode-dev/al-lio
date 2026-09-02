@@ -1,14 +1,11 @@
 import { PUBLIC_CONTACT_EMAILS } from "@/lib/public-contact";
 
+import { LEGAL_ROUTES } from "../routes";
 import type { LegalDocument } from "../types";
 
 export const privacyDocument: LegalDocument = {
   es: {
-    metadataTitle: "Privacidad",
-    href: "/privacidad",
-    altHref: "/en/privacidad",
-    title: "Privacidad",
-    kicker: "Protección de datos",
+    ...LEGAL_ROUTES.privacy.es,
     lead: "AL-LÍO es una plataforma para estudiantes de Formación Profesional. Tratamos los datos mínimos para que la herramienta funcione y no compartimos tu información con terceros con fines comerciales.",
     aside: (
       <>
@@ -67,11 +64,7 @@ export const privacyDocument: LegalDocument = {
     ),
   },
   en: {
-    metadataTitle: "Privacy",
-    href: "/en/privacidad",
-    altHref: "/privacidad",
-    title: "Privacy",
-    kicker: "Data protection",
+    ...LEGAL_ROUTES.privacy.en,
     lead: "AL-LÍO is a platform for vocational-training students. We handle the minimum data needed for the tool to work and we do not share your information with third parties for commercial purposes.",
     aside: (
       <>

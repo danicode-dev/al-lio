@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
 
 import type { Lang } from "@/components/landing/i18n";
-import { legalDocuments } from "@/features/legal/content";
+import { LEGAL_ROUTES } from "@/features/legal/routes";
 import type { LegalDocumentName } from "@/features/legal/types";
 
 export function getLegalMetadata(name: LegalDocumentName, lang: Lang): Metadata {
-  const document = legalDocuments[name];
-  const variant = document[lang];
+  const route = LEGAL_ROUTES[name];
 
   return {
-    title: variant.metadataTitle,
+    title: route[lang].metadataTitle,
     alternates: {
-      canonical: variant.href,
+      canonical: route[lang].href,
       languages: {
-        es: document.es.href,
-        en: document.en.href,
+        es: route.es.href,
+        en: route.en.href,
       },
     },
   };

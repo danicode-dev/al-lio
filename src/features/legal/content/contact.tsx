@@ -1,14 +1,11 @@
 import { PUBLIC_CONTACT_EMAILS } from "@/lib/public-contact";
 
+import { LEGAL_ROUTES } from "../routes";
 import type { LegalDocument } from "../types";
 
 export const contactDocument: LegalDocument = {
   es: {
-    metadataTitle: "Contacto",
-    href: "/contacto",
-    altHref: "/en/contacto",
-    title: "Contacto",
-    kicker: "Hablemos",
+    ...LEGAL_ROUTES.contact.es,
     lead: "¿Dudas, fallos o ideas? Nos ayuda todo. Escríbenos por correo o abre un issue en el repositorio.",
     aside: (
       <>
@@ -40,11 +37,7 @@ export const contactDocument: LegalDocument = {
     ),
   },
   en: {
-    metadataTitle: "Contact",
-    href: "/en/contacto",
-    altHref: "/contacto",
-    title: "Contact",
-    kicker: "Get in touch",
+    ...LEGAL_ROUTES.contact.en,
     lead: "Questions, bugs or ideas? It all helps. Write to us by email or open an issue in the repository.",
     aside: (
       <>

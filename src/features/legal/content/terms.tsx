@@ -1,12 +1,9 @@
+import { LEGAL_ROUTES } from "../routes";
 import type { LegalDocument } from "../types";
 
 export const termsDocument: LegalDocument = {
   es: {
-    metadataTitle: "Términos",
-    href: "/terminos",
-    altHref: "/en/terminos",
-    title: "Términos de uso",
-    kicker: "Condiciones",
+    ...LEGAL_ROUTES.terms.es,
     lead: "Al usar AL-LÍO aceptas estos términos. Es un proyecto educativo sin ánimo de lucro: no es un producto comercial y se ofrece tal cual, sin garantías.",
     aside: (
       <>
@@ -51,11 +48,7 @@ export const termsDocument: LegalDocument = {
     ),
   },
   en: {
-    metadataTitle: "Terms",
-    href: "/en/terminos",
-    altHref: "/terminos",
-    title: "Terms of use",
-    kicker: "Conditions",
+    ...LEGAL_ROUTES.terms.en,
     lead: "By using AL-LÍO you accept these terms. It is a non-profit educational project: it is not a commercial product and it is offered as is, without warranties.",
     aside: (
       <>
