@@ -9,6 +9,7 @@ import { useYouTubePlayer } from "@/components/ruta/use-youtube-player";
 import type { LearningResourceDetail } from "@/features/learning/server/repository";
 import type { DbFpLearningNote, FpLearningStatus } from "@/lib/db/types";
 import { formatTimestamp } from "@/lib/learning/time";
+import { insertNoteSorted, resolveInitialSeekSeconds, shouldSaveProgress } from "@/features/learning/domain/player-progress";
 
 export function LearningPlayer({
   resource,
@@ -28,18 +29,15 @@ export function LearningPlayer({
   // An explicit "Ir al momento" (initialSeekSeconds) always wins and always
   // seeks. Falling back to the saved position only makes sense once the
   // student is past the first few seconds and has not finished the video.
-  const resumeSeconds = resource.status === "completed" || resource.last_position_seconds <= 5
-    ? 0
-    : resource.last_position_seconds;
   const { youtubeRef, playerContainerRef, playerReady, playerError, currentTime, duration, playerState, seekTo, retryPlayer } = useYouTubePlayer(
     resource.youtube_url,
-    initialSeekSeconds ?? resumeSeconds,
+    resolveInitialSeekSeconds(initialSeekSeconds, resource),
   );
 
   const persist = useCallback(async (nextStatus: FpLearningStatus = "started", force = false) => {
     if (savingRef.current || status === "completed") return;
     const position = Math.max(0, Math.floor(currentTime));
-    if (!force && position - lastSavedRef.current < 15) return;
+    if (!shouldSaveProgress(position, lastSavedRef.current, force)) return;
     savingRef.current = true;
     try {
       const result = await saveLearningProgressAction(resource.slug, position, duration > 0 ? Math.floor(duration) : resource.duration_seconds, nextStatus);
@@ -80,7 +78,7 @@ export function LearningPlayer({
         toast.error("No se pudo guardar la nota.");
         return;
       }
-      setNotes((current) => [...current, result.note as DbFpLearningNote].sort((a, b) => a.timestamp_seconds - b.timestamp_seconds));
+      setNotes((current) => insertNoteSorted(current, result.note as DbFpLearningNote));
       setNoteBody("");
       if (status !== "completed") setStatus("started");
       toast.success("Nota guardada en Bloc");
