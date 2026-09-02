@@ -75,10 +75,10 @@ for (const text of ["AL-LÍO", "npm run verify:startup", "docs/README.md"]) {
 
 const blocTypes = readFileSync(join(root, "src/features/bloc/client/bloc-types.ts"), "utf8");
 const settingsFeature = readFileSync(join(root, "src/features/settings/client/settings-feature.tsx"), "utf8");
-const coursesFeature = readFileSync(join(root, "src/features/courses/client/courses-feature.tsx"), "utf8");
+const coursesCatalogue = readFileSync(join(root, "src/features/courses/client/courses-catalogue.tsx"), "utf8");
 if (!blocTypes.includes("techlife.bloc.D1OS.v1")) fail("Bloc debe conservar la clave de migracion local heredada");
 if (!settingsFeature.includes("techlife.app.settings.D1OS.v1")) fail("Settings debe conservar la clave local heredada");
-if (!coursesFeature.includes("techOpportunities")) fail("Courses debe combinar el catalogo de oportunidades");
+if (!coursesCatalogue.includes("techOpportunities")) fail("Courses debe combinar el catalogo de oportunidades");
 
 const applicationStore = readFileSync(join(root, "src/shared/store/application-store.tsx"), "utf8");
 for (const text of ["export function ApplicationStoreProvider", "export function useApplicationStore"]) {
