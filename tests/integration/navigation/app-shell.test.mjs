@@ -253,8 +253,11 @@ test("PageHeader anchors its actions slot to the top of the text block (items-st
 
 test("The shared page-header tokens in globals.css style the eyebrow/title/subtitle with Inter (the default body font), not --font-barlow (issue #129)", async () => {
   const source = await readFile(new URL("../../../src/app/globals.css", import.meta.url), "utf8");
-  assert.match(source, /\.al-page-header-title \{[^}]*color: #111111/, "the title must be black, matching the Tareas/Competencias reference");
-  assert.match(source, /\.al-page-header-eyebrow \{[^}]*color: #e15d2d/, "the eyebrow must be the brand terracotta orange");
+  // #362: the header consumes the semantic text contract; contrast is measured
+  // in tests/architecture/design-system/visual-token-contract.test.mjs.
+  assert.match(source, /\.al-page-header-title \{[^}]*color: var\(--al-text-strong\)/, "the title must read the strong text token");
+  assert.match(source, /\.al-page-header-eyebrow \{[^}]*color: var\(--al-text-brand-strong\)/, "the eyebrow must read the accessible brand text token");
+  assert.match(source, /\.al-page-header-subtitle \{[^}]*color: var\(--al-text-muted\)/, "the subtitle must read the muted text token");
   assert.doesNotMatch(source, /\.al-page-header[^}]*font-barlow/);
 });
 
