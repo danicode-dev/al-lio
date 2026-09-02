@@ -104,8 +104,16 @@ test("resetPasswordAction revokes prior sessions via resetPasswordAndRevokeSessi
   const fnSource = source.slice(fnStart);
 
   assert.doesNotMatch(fnSource, /\bupdatePasswordHash\(/, "must use the revoking variant, not the plain password-only update");
-  assert.match(fnSource, /const newStamp = await resetPasswordAndRevokeSessions\(consumed\.userId, passwordHash\);/);
-  assert.match(fnSource, /securityStamp: newStamp,/, "the new session must carry the freshly regenerated stamp, not the pre-reset one");
+  // The password is hashed before the token is inspected or claimed, so a
+  // slow or failing hash can never burn an otherwise-valid link (issue #272).
+  assert.ok(
+    fnSource.indexOf("bcrypt.hash(") < fnSource.indexOf("resetPasswordAndRevokeSessions("),
+    "the password must be hashed before the reset token is touched",
+  );
+  // The token claim and the password/stamp write are one call (one
+  // transaction), and the new session carries the stamp it returns.
+  assert.match(fnSource, /const \{ applied, securityStamp \} = await resetPasswordAndRevokeSessions\(\{\s*\n\s*resetTokenId: token\.tokenId,\s*\n\s*userId: token\.userId,\s*\n\s*passwordHash,\s*\n\s*\}\);/);
+  assert.match(fnSource, /securityStamp,\s*\n\s*\}\);/, "the new session must carry the freshly regenerated stamp, not the pre-reset one");
 });
 
 test("confirmEmailToken confirms and immediately establishes a session (email confirmation doubles as first login) and distinguishes expired/already_used/invalid outcomes (issue #132)", async () => {

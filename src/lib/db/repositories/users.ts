@@ -1,5 +1,5 @@
 import "server-only";
-import { query } from "@/lib/db/pool";
+import { query, withTransaction } from "@/lib/db/pool";
 import type { DbUser } from "@/lib/db/types";
 
 export async function getUserById(id: string): Promise<DbUser | null> {
@@ -77,16 +77,28 @@ export async function updatePasswordHash(id: string, hash: string): Promise<void
 
 // Regenerating security_stamp invalidates every previously issued session
 // cookie (see getGlobalStore in src/lib/data.ts, which compares the
-// signed-in stamp against this column). Used after a password reset, and
-// bundled into the same statement as the new password hash so the two can
-// never be applied separately.
-export async function resetPasswordAndRevokeSessions(id: string, hash: string): Promise<string> {
-  const res = await query<{ security_stamp: string }>(
-    `UPDATE public.users
-     SET password_hash = $1, security_stamp = gen_random_uuid()
-     WHERE id = $2
-     RETURNING security_stamp`,
-    [hash, id]
-  );
-  return res.rows[0].security_stamp;
+// signed-in stamp against this column). The new password hash and the new
+// stamp are set in one statement so the two can never be applied
+// separately, and that statement runs in the same transaction as the
+// token claim: a failure after the claim can no longer burn an otherwise
+// valid reset link, and a second concurrent submission that loses the
+// `used_at IS NULL` race commits nothing. Returns applied=false when the
+// token was already spent (issues #132, #272).
+export async function resetPasswordAndRevokeSessions(params: { resetTokenId: string; userId: string; passwordHash: string }): Promise<{ applied: boolean; securityStamp: string | null }> {
+  return withTransaction(async (client) => {
+    const claim = await client.query(
+      `UPDATE public.auth_tokens SET used_at = now() WHERE id = $1 AND used_at IS NULL`,
+      [params.resetTokenId]
+    );
+    if ((claim.rowCount ?? 0) === 0) return { applied: false, securityStamp: null };
+
+    const res = await client.query<{ security_stamp: string }>(
+      `UPDATE public.users
+       SET password_hash = $1, security_stamp = gen_random_uuid()
+       WHERE id = $2
+       RETURNING security_stamp`,
+      [params.passwordHash, params.userId]
+    );
+    return { applied: true, securityStamp: res.rows[0].security_stamp };
+  });
 }

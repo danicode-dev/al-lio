@@ -40,6 +40,23 @@ export async function issueAuthToken(userId: string, purpose: AuthTokenPurpose):
   return rawToken;
 }
 
+export type AuthTokenState =
+  | { status: "valid"; tokenId: string; userId: string }
+  | { status: "not_found" | "expired" | "already_used" };
+
+// Read-only classification of a raw token. Lets a page decide whether to
+// render an actionable form, and lets a server action reject an invented,
+// expired or already-used link before it hashes a password or opens a
+// transaction (issue #272). It never mutates the token - claiming stays
+// the job of consumeAuthToken and resetPasswordAndRevokeSessions.
+export async function inspectAuthToken(rawToken: string, purpose: AuthTokenPurpose): Promise<AuthTokenState> {
+  const record = await findValidAuthToken(hashToken(rawToken), purpose);
+  if (!record) return { status: "not_found" };
+  if (record.used_at) return { status: "already_used" };
+  if (new Date(record.expires_at).getTime() < Date.now()) return { status: "expired" };
+  return { status: "valid", tokenId: record.id, userId: record.user_id };
+}
+
 export type ConsumeTokenResult =
   | { ok: true; userId: string }
   | { ok: false; reason: "not_found" | "expired" | "already_used" };
