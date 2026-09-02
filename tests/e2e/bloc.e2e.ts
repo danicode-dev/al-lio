@@ -61,7 +61,7 @@ test.describe.serial("Bloc note persistence and recovery", () => {
     await openBloc(page);
     await expect(noteCard(page)).toBeVisible();
 
-    const row = sidebar(page).locator(".al-bloc-note-row", { has: noteCard(page) });
+    const row = sidebar(page).locator(".al-bloc-note-row", { hasText: NOTE_TITLE });
     await waitForBlocSync(page, () => row.getByRole("button", { name: "Eliminar nota" }).click());
 
     await page.reload();
