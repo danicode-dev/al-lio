@@ -3,52 +3,23 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BookOpen,
-  Briefcase,
-  CalendarDays,
-  Flag,
-  GraduationCap,
-  Home,
-  ListChecks,
-  Menu,
-  Newspaper,
-  SlidersHorizontal,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { Menu, X, type LucideIcon } from "lucide-react";
 import { forwardRef, useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { MobileAccountMenu } from "@/components/auth/user-menu";
+import { NAV_GROUPS, isNavRouteActive } from "@/components/nav-destinations";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import { useApplicationStore } from "@/shared/store/application-store";
 import { cn } from "@/lib/utils";
 
-// The same three groups the sidebar uses, under the same headings. They used
-// to be split differently here (one "Navegación" column and one "Estudio y
-// oportunidades" column), which meant the app explained itself one way on a
-// phone and another way on a desktop - and left the product tour with no
-// equivalent block to point at.
-const MAIN_ITEMS = [
-  { href: "/dashboard", label: "Inicio", icon: Home },
-  { href: "/roadmap", label: "Competencias", icon: SlidersHorizontal },
-  { href: "/tasks", label: "Tareas", icon: ListChecks },
-  { href: "/bloc", label: "Bloc", icon: BookOpen },
-] as const;
-
-const COMMUNICATION_ITEMS = [
-  { href: "/noticias", label: "Noticias", icon: Newspaper },
-  { href: "/work", label: "Trabajo", icon: Briefcase },
-] as const;
-
-const LEARNING_ITEMS = [
-  { href: "/courses", label: "Cursos", icon: GraduationCap },
-  { href: "/hackathons", label: "Eventos y retos", icon: Flag },
-  { href: "/calendar", label: "Calendario", icon: CalendarDays },
-] as const;
+// The sheet renders the shared NAV_GROUPS model in the same order the sidebar
+// uses, so the app is never organised one way on a phone and another way on a
+// desktop. Group 0 ("Principal") takes the left column; the rest stack on the
+// right. Each group is one contiguous block the product tour can spotlight.
+const [MAIN_GROUP, ...SIDE_GROUPS] = NAV_GROUPS;
 
 const menuTriggerClass =
-  "inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#e8e2d8] bg-white text-[#45494f] shadow-[0_2px_8px_rgba(17,17,17,0.04)] outline-none transition-[border-color,background-color,color,transform] duration-200 hover:border-[#f4b398] hover:bg-[#fff7f3] hover:text-[#d65327] active:scale-95 focus-visible:ring-2 focus-visible:ring-[#f06a37] motion-reduce:transition-none";
+  "inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#e8e2d8] bg-white text-[#45494f] shadow-[0_2px_8px_rgba(17,17,17,0.04)] outline-none transition-[border-color,background-color,color,transform] duration-200 hover:border-[#f4b398] hover:bg-[#fff7f3] hover:text-[#d65327] active:scale-95 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none";
 
 export function MobileHeaderNavigation() {
   const pathname = usePathname();
@@ -144,48 +115,39 @@ export function MobileHeaderNavigation() {
                   aria-label="Navegación móvil"
                   className="fixed inset-x-0 top-14 z-10 max-h-[calc(100dvh-3.5rem)] overflow-y-auto overscroll-contain rounded-b-[24px] border-b border-[#e9e3d8] bg-[#fffefa] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5 shadow-[0_20px_45px_rgba(35,29,24,0.16)]"
                 >
-                  {/* Principal on the left, the other two stacked on the right:
-                      three contiguous blocks, so each is a shape the tour can
-                      highlight on its own, exactly like the sidebar. */}
+                  {/* Principal on the left, the rest stacked on the right: one
+                      contiguous block per group, so each is a shape the tour
+                      can highlight on its own, exactly like the sidebar. */}
                   <div className="grid grid-cols-2 gap-x-3">
                     <MobileMenuGroup
-                      label="Principal"
-                      tourId="mobile-nav-principal"
+                      label={MAIN_GROUP.label}
+                      tourId={MAIN_GROUP.mobileTourId}
                       className="border-r border-[#e9e3d8] pr-3"
                     >
-                      {MAIN_ITEMS.map((item, index) => (
+                      {MAIN_GROUP.items.map((item, index) => (
                         <MobileMenuLink
                           key={item.href}
                           ref={index === 0 ? firstLinkRef : undefined}
                           {...item}
-                          active={isMobileRouteActive(pathname, item.href)}
+                          active={isNavRouteActive(pathname, item.href)}
                           onNavigate={() => setOpen(false)}
                         />
                       ))}
                     </MobileMenuGroup>
 
                     <div className="space-y-3">
-                      <MobileMenuGroup label="Comunicación" tourId="mobile-nav-communication">
-                        {COMMUNICATION_ITEMS.map((item) => (
-                          <MobileMenuLink
-                            key={item.href}
-                            {...item}
-                            active={isMobileRouteActive(pathname, item.href)}
-                            onNavigate={() => setOpen(false)}
-                          />
-                        ))}
-                      </MobileMenuGroup>
-
-                      <MobileMenuGroup label="Aprendizaje" tourId="mobile-nav-learning">
-                        {LEARNING_ITEMS.map((item) => (
-                          <MobileMenuLink
-                            key={item.href}
-                            {...item}
-                            active={isMobileRouteActive(pathname, item.href)}
-                            onNavigate={() => setOpen(false)}
-                          />
-                        ))}
-                      </MobileMenuGroup>
+                      {SIDE_GROUPS.map((group) => (
+                        <MobileMenuGroup key={group.label} label={group.label} tourId={group.mobileTourId}>
+                          {group.items.map((item) => (
+                            <MobileMenuLink
+                              key={item.href}
+                              {...item}
+                              active={isNavRouteActive(pathname, item.href)}
+                              onNavigate={() => setOpen(false)}
+                            />
+                          ))}
+                        </MobileMenuGroup>
+                      ))}
                     </div>
                   </div>
 
@@ -239,7 +201,7 @@ const MobileMenuLink = forwardRef<HTMLAnchorElement, MobileMenuLinkProps>(functi
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex min-h-12 items-center gap-2.5 rounded-xl px-2 text-[13px] font-semibold leading-tight text-[#303238] outline-none transition-[background-color,color] duration-200 hover:bg-[#f8f4ee] active:bg-[#f2ede5] focus-visible:ring-2 focus-visible:ring-[#e15d2d]/35 motion-reduce:transition-none",
+        "flex min-h-12 items-center gap-2.5 rounded-xl px-2 text-[13px] font-semibold leading-tight text-[#303238] outline-none transition-[background-color,color] duration-200 hover:bg-[#f8f4ee] active:bg-[#f2ede5] focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
         active && "bg-[#fdf0ea] text-[#d65327] hover:bg-[#fbe8df]",
       )}
     >
@@ -248,7 +210,3 @@ const MobileMenuLink = forwardRef<HTMLAnchorElement, MobileMenuLinkProps>(functi
     </Link>
   );
 });
-
-function isMobileRouteActive(pathname: string, href: string) {
-  return pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
-}

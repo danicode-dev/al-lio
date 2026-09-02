@@ -59,17 +59,23 @@ test("The merged store fetch loads every section with fail-soft handling (issue 
 });
 
 test("The desktop navigation provides the branded expanded sidebar and persistent collapsed rail (issue #178)", async () => {
-  const [sidebarSource, layoutSource, userMenuSource] = await Promise.all([
+  const [sidebarSource, navModelSource, layoutSource, userMenuSource] = await Promise.all([
     readFile(new URL("../../../src/components/app-sidebar.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/nav-destinations.ts", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/private-app-layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/auth/user-menu.tsx", import.meta.url), "utf8"),
   ]);
 
+  // The sidebar renders the one shared destination model - it does not keep
+  // its own copy of the groups, labels, routes or the active-route predicate.
+  assert.match(sidebarSource, /import \{ NAV_GROUPS, isNavRouteActive \} from "@\/components\/nav-destinations"/);
+  assert.match(sidebarSource, /NAV_GROUPS\.map\(/);
+  assert.doesNotMatch(sidebarSource, /const NAV_GROUPS =/, "the desktop navigation must not re-declare the shared model");
   for (const group of ["Principal", "Comunicación", "Aprendizaje"]) {
-    assert.match(sidebarSource, new RegExp(`label: "${group}"`), `missing desktop navigation group: ${group}`);
+    assert.match(navModelSource, new RegExp(`label: "${group}"`), `missing navigation group: ${group}`);
   }
   for (const route of ["/dashboard", "/roadmap", "/tasks", "/bloc", "/noticias", "/work", "/courses", "/hackathons", "/calendar"]) {
-    assert.match(sidebarSource, new RegExp(`href: "${route}"`), `missing desktop navigation route: ${route}`);
+    assert.match(navModelSource, new RegExp(`href: "${route}"`), `missing navigation route: ${route}`);
   }
 
   assert.match(sidebarSource, /collapsed \? "w-\[76px\]" : "w-\[272px\]"/);
@@ -83,7 +89,8 @@ test("The desktop navigation provides the branded expanded sidebar and persisten
   assert.match(sidebarSource, /aria-label=\{collapsed \? "Expandir navegación" : "Contraer navegación"\}/);
   assert.match(sidebarSource, /function SidebarTooltip/);
   assert.match(sidebarSource, /group-hover:visible[\s\S]*group-focus-visible:visible/);
-  assert.match(sidebarSource, /pathname === href \|\| \(href !== "\/dashboard" && pathname\.startsWith\(`\$\{href\}\/`\)\)/);
+  assert.match(sidebarSource, /isNavRouteActive\(pathname, item\.href\)/, "the sidebar must use the shared active-route predicate");
+  assert.match(navModelSource, /pathname === href \|\| \(href !== "\/dashboard" && pathname\.startsWith\(`\$\{href\}\/`\)\)/);
   // The sidebar footer delegates identity to the shared account menu, which
   // is the one place a student reaches their profile or signs out - a
   // deliberate two-step menu, never a standalone logout nav item.
@@ -102,8 +109,9 @@ test("The desktop navigation provides the branded expanded sidebar and persisten
 });
 
 test("The mobile header menu replaces the bottom navigation without changing the desktop navigation contract (issue #182)", async () => {
-  const [mobileSource, layoutSource, headerSource, guestAppSource, tasksSource] = await Promise.all([
+  const [mobileSource, navModelSource, layoutSource, headerSource, guestAppSource, tasksSource] = await Promise.all([
     readFile(new URL("../../../src/components/mobile-header-navigation.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/nav-destinations.ts", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/private-app-layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/student-header-actions.tsx", import.meta.url), "utf8"),
     readProductFeatureSources(),
@@ -127,19 +135,18 @@ test("The mobile header menu replaces the bottom navigation without changing the
   // /profile is reached through the shared account menu at the foot of the
   // sheet (issue #256), which also carries the deliberate two-step sign-out.
   assert.match(mobileSource, /<MobileAccountMenu[\s\S]*onNavigate=\{\(\) => setOpen\(false\)\}/);
-  for (const route of ["/dashboard", "/roadmap", "/tasks", "/bloc", "/noticias", "/work", "/courses", "/hackathons", "/calendar", "/profile"]) {
-    const reachable =
-      mobileSource.includes(`href: "${route}"`) ||
-      mobileSource.includes(`href="${route}"`) ||
-      (route === "/profile" && /<MobileAccountMenu/.test(mobileSource));
-    assert.ok(reachable, `missing mobile navigation route: ${route}`);
+
+  // The sheet renders the one shared destination model, in the same order the
+  // sidebar uses - it keeps no parallel copy of the routes, labels or groups.
+  assert.match(mobileSource, /import \{ NAV_GROUPS, isNavRouteActive \} from "@\/components\/nav-destinations"/);
+  assert.match(mobileSource, /NAV_GROUPS/);
+  assert.doesNotMatch(mobileSource, /MAIN_ITEMS|COMMUNICATION_ITEMS|LEARNING_ITEMS/, "the mobile menu must not re-declare its own destination arrays");
+  for (const route of ["/dashboard", "/roadmap", "/tasks", "/bloc", "/noticias", "/work", "/courses", "/hackathons", "/calendar"]) {
+    assert.match(navModelSource, new RegExp(`href: "${route}"`), `missing navigation route: ${route}`);
   }
-  // The sheet repeats the sidebar's own three groups, under the same
-  // headings, so the app is not organised one way on a phone and another way
-  // on a desktop - and each block is something the product tour can point at
-  // in either format.
+  assert.match(navModelSource, /"\/profile"/, "the account route stays reachable through NAV_ACTION_ROUTES");
   for (const group of ["Principal", "Comunicación", "Aprendizaje"]) {
-    assert.ok(mobileSource.includes(`label="${group}"`), `missing mobile navigation group: ${group}`);
+    assert.match(navModelSource, new RegExp(`label: "${group}"`), `missing navigation group: ${group}`);
   }
 
   assert.match(mobileSource, /aria-expanded=\{open\}/);
@@ -150,12 +157,14 @@ test("The mobile header menu replaces the bottom navigation without changing the
   assert.match(mobileSource, /document\.body\.style\.overflow = "hidden"/);
   assert.match(mobileSource, /firstLinkRef\.current\?\.focus\(\)/);
   assert.match(mobileSource, /triggerRef\.current\?\.focus\(\)/);
-  assert.match(mobileSource, /pathname === href \|\| \(href !== "\/dashboard" && pathname\.startsWith\(`\$\{href\}\/`\)\)/);
+  assert.match(mobileSource, /isNavRouteActive\(pathname, item\.href\)/, "the mobile menu must use the shared active-route predicate");
+  assert.match(navModelSource, /pathname === href \|\| \(href !== "\/dashboard" && pathname\.startsWith\(`\$\{href\}\/`\)\)/);
 });
 
 test("Quick Add and Notifications form one shared header action group on mobile and desktop, while Calendar lives only in navigation (issue #91, issue #129, issue #182)", async () => {
-  const [headerSource, layoutSource, mobileSource, guestAppSource, quickAddSource, dashboardClientSource, dashboardGreetingSource] = await Promise.all([
+  const [headerSource, navModelSource, layoutSource, mobileSource, guestAppSource, quickAddSource, dashboardClientSource, dashboardGreetingSource] = await Promise.all([
     readFile(new URL("../../../src/components/student-header-actions.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/nav-destinations.ts", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/private-app-layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/mobile-header-navigation.tsx", import.meta.url), "utf8"),
     readProductFeatureSources(),
@@ -171,12 +180,16 @@ test("Quick Add and Notifications form one shared header action group on mobile 
   assert.ok(quickAddIdx > -1 && notifIdx > quickAddIdx, "expected Quick Add followed by Notifications");
   assert.doesNotMatch(headerSource, /aria-label="Abrir calendario"|CalendarDays/);
 
-  // Every required student page is covered by the route allowlist.
+  // The action cluster reuses the shared allowlist (NAV_ACTION_ROUTES) and the
+  // shared active-route predicate - it keeps no parallel route array of its own.
+  assert.match(headerSource, /import \{ NAV_ACTION_ROUTES, isNavRouteActive \} from "@\/components\/nav-destinations"/);
+  assert.match(headerSource, /NAV_ACTION_ROUTES\.some\(\(route\) => isNavRouteActive\(pathname, route\)\)/);
+  assert.doesNotMatch(headerSource, /const VISIBLE_ROUTES =/, "the header must not re-declare its own visible-route list");
   for (const route of ["/dashboard", "/roadmap", "/tasks", "/bloc", "/noticias", "/work", "/courses", "/hackathons", "/calendar", "/profile"]) {
-    assert.match(headerSource, new RegExp(`"${route}"`), `missing route in allowlist: ${route}`);
+    assert.match(navModelSource, new RegExp(`"${route}"|href: "${route}"`), `missing route in the shared allowlist: ${route}`);
   }
-  // Admin-only /settings is not part of the allowlist.
-  assert.doesNotMatch(headerSource, /"\/settings"/);
+  // Admin-only /settings is not a navigation destination or an action route.
+  assert.doesNotMatch(navModelSource, /"\/settings"/);
 
   // issue #129 and #182: the layout owns neither a detached desktop action row
   // nor a second mobile copy. The mobile shell composes the shared action group

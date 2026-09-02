@@ -9,6 +9,7 @@ import { useCourseActions } from "@/features/courses/client";
 import { useEventActions } from "@/features/events/client";
 import { useTaskActions } from "@/features/tasks/client";
 import { useApplicationStore } from "@/shared/store/application-store";
+import { NAV_ACTION_ROUTES, isNavRouteActive } from "@/components/nav-destinations";
 import { QuickAdd } from "@/components/quick-add";
 import type { Store } from "@/components/store/types";
 import {
@@ -21,23 +22,12 @@ import {
 import { getDashboardCalendarEvents } from "@/lib/dashboard/calendar-events";
 
 const iconButtonBaseClass =
-  "relative inline-flex items-center justify-center rounded-xl border border-[#ece7dc] bg-white text-[#5f6368] shadow-[0_2px_8px_rgba(17,17,17,0.04)] transition hover:border-[#f4b398] hover:bg-[#fff7f3] hover:text-[#e15d2d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f06a37]";
+  "relative inline-flex items-center justify-center rounded-xl border border-[#ece7dc] bg-white text-[#5f6368] shadow-[0_2px_8px_rgba(17,17,17,0.04)] transition hover:border-[#f4b398] hover:bg-[#fff7f3] hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-const VISIBLE_ROUTES = [
-  "/dashboard",
-  "/roadmap",
-  "/tasks",
-  "/bloc",
-  "/noticias",
-  "/work",
-  "/courses",
-  "/hackathons",
-  "/calendar",
-  "/profile",
-];
-
-function isVisibleRoute(pathname: string) {
-  return VISIBLE_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+// Shown on every first-level navigation destination plus the account area
+// (NAV_ACTION_ROUTES), and nowhere else - admin-only /settings is not in it.
+function isActionRoute(pathname: string) {
+  return NAV_ACTION_ROUTES.some((route) => isNavRouteActive(pathname, route));
 }
 
 type StudentHeaderActionsProps = {
@@ -51,7 +41,7 @@ export function StudentHeaderActions({ size = "compact" }: StudentHeaderActionsP
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const iconButtonClass = `${iconButtonBaseClass} ${size === "touch" ? "h-11 w-11" : "h-9 w-9"}`;
 
-  if (!isVisibleRoute(pathname)) return null;
+  if (!isActionRoute(pathname)) return null;
 
   return (
     <div className="flex items-center gap-1.5">

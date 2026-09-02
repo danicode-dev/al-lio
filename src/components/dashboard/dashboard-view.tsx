@@ -35,17 +35,17 @@ export function DashboardView({ store, actions, calendar }: DashboardViewProps) 
       <DashboardGreeting userName={store.userName} />
 
       {loadIssues.length > 0 && (
-        <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 sm:flex-row sm:items-center sm:justify-between">
+        <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-[var(--al-warning-border)] bg-[var(--al-warning-surface)] px-4 py-3 text-[var(--al-warning-text)] sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 gap-3">
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--al-warning-text)]" />
             <div>
               <p className="text-sm font-bold">Parte del Dashboard no se ha podido cargar</p>
-              <p className="mt-0.5 text-xs leading-5 text-amber-800">
+              <p className="mt-0.5 text-xs leading-5">
                 Revisa {loadIssues.map((issue) => issueLabels[issue]).join(", ")}. El resto de la información sigue disponible.
               </p>
             </div>
           </div>
-          <button type="button" onClick={() => router.refresh()} className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-white px-3 text-xs font-bold text-amber-900 transition hover:bg-amber-100">
+          <button type="button" onClick={() => router.refresh()} className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-[var(--al-warning-border)] bg-white px-3 text-xs font-bold text-[var(--al-warning-text)] transition hover:bg-[var(--al-warning-surface)]">
             <RefreshCw className="h-3.5 w-3.5" /> Reintentar
           </button>
         </div>

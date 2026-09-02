@@ -189,6 +189,9 @@ test("every anchor the steps ask for exists in the sidebar, the header or the mo
     read("../../../src/components/app-sidebar.tsx"),
     read("../../../src/components/student-header-actions.tsx"),
     read("../../../src/components/mobile-header-navigation.tsx"),
+    // The navigation group anchors (nav-principal / mobile-nav-principal ...)
+    // live on the shared destination model the sidebar and sheet both render.
+    read("../../../src/components/nav-destinations.ts"),
   ])).join("\n");
 
   for (const step of productTourSteps) {
