@@ -165,7 +165,7 @@ test("Routine actions share the quiet terracotta treatment while semantic states
     readFile(new URL("../../../src/components/daily-alerts.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/auth/login-form.tsx", import.meta.url), "utf8"),
     readFeatureSource("bloc"),
-    readFile(new URL("../../../src/components/roadmap/roadmap-view.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/learning/client/roadmap-view.tsx", import.meta.url), "utf8"),
   ]);
 
   // The login page is deliberately on its own green treatment (issue #264),

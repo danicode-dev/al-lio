@@ -3,7 +3,7 @@ import { getValidatedSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import { getLearningNotes, getLearningResourceForCycle } from "@/features/learning/server";
 import { parseLearningSeekParam } from "@/features/learning/domain";
-import { LearningPlayer } from "@/components/learning/learning-player";
+import { LearningPlayer } from "@/features/learning/client";
 
 export const dynamic = "force-dynamic";
 
