@@ -319,3 +319,38 @@ test("news language and deterministic match reasons are persisted with each cano
   assert.match(repository, /item\.classification\.language/);
   assert.match(repository, /item\.classification\.matchReasons/);
 });
+
+test("a news revision reuses the same legacy radar_items row so read/saved state survives (issue #201)", () => {
+  const repository = readFileSync(join(process.cwd(), "src", "lib", "db", "repositories", "radar-v4.ts"), "utf8");
+  const projectNews = repository.slice(
+    repository.indexOf("async function projectNews"),
+    repository.indexOf("function legacyNewsValues"),
+  );
+  assert.ok(projectNews.length > 0, "could not locate projectNews");
+
+  // The occurrence keeps the stable bridge to the compatibility identity, taken
+  // under a row lock so concurrent revisions cannot fork it.
+  assert.match(projectNews, /SELECT legacy_radar_item_id::text FROM public\.radar_content_occurrences WHERE id = \$1 FOR UPDATE/);
+
+  // A brand new occurrence inserts one radar_items row; a revision (the id is
+  // already linked) skips the insert entirely and only updates that same row.
+  assert.match(projectNews, /if \(!radarItemId\) \{[\s\S]*INSERT INTO public\.radar_items[\s\S]*\}/);
+  assert.match(projectNews, /UPDATE public\.radar_items SET[\s\S]*WHERE id = \$29/);
+  assert.match(projectNews, /ON CONFLICT \(source_id, canonical_url\) DO UPDATE SET\s*\n\s*entity_key = excluded\.entity_key/);
+
+  // The projector never deletes/recreates the article and never touches the
+  // user's private read/saved state.
+  assert.doesNotMatch(projectNews, /DELETE FROM public\.radar_items/);
+  assert.doesNotMatch(projectNews, /(UPDATE|DELETE FROM|INSERT INTO) public\.radar_item_user_states/);
+});
+
+test("the verified-news contract documents the shared authorisation boundary and revision/user-state ownership (issue #201)", () => {
+  const doc = readFileSync(join(process.cwd(), "docs", "integrations", "VERIFIED_NEWS_DETAILS.md"), "utf8");
+  assert.match(doc, /listRadarItemsForCycle`, `getRadarItemDetailForUser`, `getNextRadarNewsItem`/);
+  assert.match(doc, /The next item is selected from the exact same ordered list/);
+  assert.match(doc, /compact `summaryShort` for cards/);
+  assert.match(doc, /source-backed `summaryExpanded` and `keyFacts` for detail/);
+  assert.match(doc, /derived `whyRelevant`, rendered in a separate section/);
+  assert.match(doc, /Optional sections disappear when absent/);
+  assert.match(doc, /reuses the legacy `radar_items\.id`, so a new material revision updates the same logical article without replacing the user's status row/);
+});
