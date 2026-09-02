@@ -2,16 +2,10 @@ import { notFound, redirect } from "next/navigation";
 import { getValidatedSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import { getLearningNotes, getLearningResourceForCycle } from "@/features/learning/server";
+import { parseLearningSeekParam } from "@/features/learning/domain";
 import { LearningPlayer } from "@/components/learning/learning-player";
 
 export const dynamic = "force-dynamic";
-
-function parseInitialSeek(value: string | string[] | undefined) {
-  const candidate = Array.isArray(value) ? value[0] : value;
-  if (!candidate || !/^\d+$/.test(candidate)) return null;
-  const seconds = Number(candidate);
-  return Number.isSafeInteger(seconds) && seconds >= 0 && seconds <= 60 * 60 * 48 ? seconds : null;
-}
 
 export default async function LearningResourcePage({
   params,
@@ -29,5 +23,5 @@ export default async function LearningResourcePage({
   const resource = await getLearningResourceForCycle(session.uid, profile.cycle_code, slug);
   if (!resource) notFound();
   const notes = await getLearningNotes(session.uid, resource.id);
-  return <LearningPlayer resource={resource} initialNotes={notes} initialSeekSeconds={parseInitialSeek(at)} />;
+  return <LearningPlayer resource={resource} initialNotes={notes} initialSeekSeconds={parseLearningSeekParam(at)} />;
 }
