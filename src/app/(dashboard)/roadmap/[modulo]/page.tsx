@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getValidatedSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import { getLearningCompetencyForCycle } from "@/features/learning/server";
-import { CompetencyCoursesView } from "@/components/learning/competency-courses-view";
+import { CompetencyCoursesView } from "@/features/learning/client";
 
 export const dynamic = "force-dynamic";
 

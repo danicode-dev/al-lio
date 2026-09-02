@@ -3,7 +3,7 @@ import { getValidatedSession } from "@/lib/auth/session";
 import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import { getActiveFpCycles, getLearningCompetenciesForCycle } from "@/features/learning/server";
 import { LEARNING_CATALOG_DISCLAIMER } from "@/lib/learning/catalog";
-import { CompetenciesView } from "@/components/learning/competencies-view";
+import { CompetenciesView } from "@/features/learning/client";
 
 export const dynamic = "force-dynamic";
 

@@ -180,7 +180,7 @@ test("legacy video URLs are matched only to active Spanish courses from the user
 test("/roadmap/[modulo] never depended on, and still does not depend on, the retired ruta-path/ruta-path-view modules (issue #112)", async () => {
   const [pageSource, viewSource] = await Promise.all([
     readFile(new URL("../../../src/app/(dashboard)/roadmap/[modulo]/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/learning/competency-courses-view.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/learning/client/competency-courses-view.tsx", import.meta.url), "utf8"),
   ]);
   for (const source of [pageSource, viewSource]) {
     assert.doesNotMatch(source, /ruta-path/, "must not depend on the removed Eventos ruta-path module");
@@ -252,7 +252,7 @@ test("manual competency and resource completion stay distinct from observed play
     readFile(new URL("../../../src/features/learning/server/catalogue-repository.ts", import.meta.url), "utf8"),
     readFile(new URL("../../../src/features/learning/server/repository.ts", import.meta.url), "utf8"),
     readFile(new URL("../../../src/features/learning/server/player-actions.ts", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/learning/learning-player.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/learning/client/learning-player.tsx", import.meta.url), "utf8"),
   ]);
   const completionStart = catalogSource.indexOf("export async function markUserCompetencyCompleted");
   const completionSource = catalogSource.slice(completionStart);
@@ -290,7 +290,7 @@ test("the learning Radar receiver is independently disabled and accepts no publi
 });
 
 test("the learning player embeds YouTube without offering an external YouTube exit", async () => {
-  const source = await readFile(new URL("../../../src/components/learning/learning-player.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/learning/client/learning-player.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(source, /Abrir en YouTube|target="_blank"|href=\{resource\.youtube_url\}/);
   assert.match(source, /ref=\{playerContainerRef\}/, "the internal embedded player must remain available");
 });

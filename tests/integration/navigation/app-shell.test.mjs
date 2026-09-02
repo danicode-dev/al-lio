@@ -215,7 +215,7 @@ test("Quick Add and Notifications form one shared header action group on mobile 
 test("Each page's own header mounts StudentHeaderActions exactly once for its desktop actions slot - relocated, not lost or duplicated (issue #129)", async () => {
   const files = [
     "../../../src/components/dashboard/dashboard-greeting.tsx",
-    "../../../src/components/learning/competencies-view.tsx",
+    "../../../src/features/learning/client/competencies-view.tsx",
     "../../../src/features/tasks/client/tasks-view.tsx",
     "../../../src/features/news/client/news-view.tsx",
     "../../../src/components/profile/profile-form.tsx",
@@ -289,7 +289,7 @@ test("The dashboard layout keeps desktop actions inside each page header and del
 test("Every first-level authenticated route renders the shared PageHeader instead of a bespoke ad-hoc heading (issue #129)", async () => {
   const routes = [
     { file: "../../../src/components/dashboard/dashboard-greeting.tsx", label: "Inicio" },
-    { file: "../../../src/components/learning/competencies-view.tsx", label: "Competencias" },
+    { file: "../../../src/features/learning/client/competencies-view.tsx", label: "Competencias" },
     { file: "../../../src/features/tasks/client/tasks-view.tsx", label: "Tareas" },
     { file: "../../../src/features/news/client/news-view.tsx", label: "Noticias" },
     { file: "../../../src/components/calendar/app-calendar.tsx", label: "Calendario" },
@@ -347,7 +347,7 @@ test("Calendario, Noticias and Competencias each compose StudentHeaderActions in
   const [calendar, noticias, competencies] = await Promise.all([
     readFile(new URL("../../../src/components/calendar/app-calendar.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/features/news/client/news-view.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/learning/competencies-view.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/learning/client/competencies-view.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(calendar, /headerActions/);
   assert.match(noticias, /StudentHeaderActions/);
@@ -476,7 +476,7 @@ test("Calendar events open a detail dialog on click and its action deep-links to
 });
 
 test("Competencias' progress card sits inside PageHeader's own actions, glued to the +/calendar/bell icon cluster in the same top row - not stacked below it in its own row leaving an empty gap (owner-reported follow-up)", async () => {
-  const source = await readFile(new URL("../../../src/components/learning/competencies-view.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/learning/client/competencies-view.tsx", import.meta.url), "utf8");
 
   // The old two-row stack (a dedicated space-y wrapper around PageHeader
   // plus a sibling card row below it) is exactly what left the large,
