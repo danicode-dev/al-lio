@@ -11,15 +11,19 @@ import {
 import { updateProfileAction, type ProfileUpdateState } from "@/lib/profile/onboarding-actions";
 import type { DbFpCycle, DbProfile } from "@/lib/db/types";
 import type { RoadmapOverview } from "@/lib/fp/roadmap";
-import { FieldListbox, type FieldListboxOption } from "@/components/ui/field-listbox";
+import { FieldListbox } from "@/components/ui/field-listbox";
 import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import { SavedHub } from "@/components/profile/saved-hub";
-
-const errorCopy: Record<string, string> = {
-  onboarding_invalid: "Revisa los datos e inténtalo de nuevo.",
-  onboarding_save_failed: "No se pudo guardar tu perfil. Inténtalo de nuevo.",
-};
+import {
+  ACADEMIC_YEAR_OPTIONS,
+  buildCycleOptions,
+  canSubmitProfileChanges,
+  deriveInitials,
+  describeProfileSaveState,
+  resolveAccountDisplayName,
+  resolveProfileErrorCopy,
+} from "@/features/account/account-model";
 
 const initialState: ProfileUpdateState = { error: null, savedAt: null };
 
@@ -37,15 +41,13 @@ export function ProfileForm({
   const [state, formAction, isPending] = useActionState(updateProfileAction, initialState);
   const [cycleCode, setCycleCode] = useState(profile.cycle_code ?? "");
   const [academicYear, setAcademicYear] = useState(profile.academic_year ? String(profile.academic_year) : "");
-  const displayName = account.displayName?.trim() || account.email.split("@")[0] || "Estudiante";
-  const initials = displayName.split(/\s+/).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("");
+  const displayName = resolveAccountDisplayName(account);
+  const initials = deriveInitials(displayName);
   const selectedCycle = cycles.find((cycle) => cycle.code === cycleCode);
+  const saveState = describeProfileSaveState(state, isPending);
 
-  const cycleOptions: FieldListboxOption[] = cycles.map((cycle) => ({ value: cycle.code, label: cycle.name }));
-  const yearOptions: FieldListboxOption[] = [
-    { value: "1", label: "1º curso" },
-    { value: "2", label: "2º curso" },
-  ];
+  const cycleOptions = buildCycleOptions(cycles);
+  const yearOptions = ACADEMIC_YEAR_OPTIONS;
 
   return (
     <>
@@ -251,7 +253,7 @@ export function ProfileForm({
               </div>
             </div>
           </div>
-          {state.error && <p className="al-profile-error">{errorCopy[state.error] ?? "No se pudo guardar. Inténtalo de nuevo."}</p>}
+          {saveState === "error" && <p className="al-profile-error">{resolveProfileErrorCopy(state.error)}</p>}
 
           <form action={formAction} className="al-profile-form">
             <FieldListbox
@@ -279,10 +281,14 @@ export function ProfileForm({
             />
 
             <div className="al-profile-actions">
-              <button type="submit" disabled={isPending || !cycleCode || !academicYear} className="al-profile-submit">
+              <button
+                type="submit"
+                disabled={!canSubmitProfileChanges({ cycleCode, academicYear, isPending })}
+                className="al-profile-submit"
+              >
                 {isPending ? "Guardando..." : "Guardar cambios"}
               </button>
-              {state.savedAt && !isPending && !state.error && (
+              {saveState === "saved" && (
                 <span className="al-profile-saved">
                   <CheckCircle2 className="al-profile-saved-icon" aria-hidden="true" />
                   Guardado
