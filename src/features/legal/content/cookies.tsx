@@ -1,12 +1,9 @@
+import { LEGAL_ROUTES } from "../routes";
 import type { LegalDocument } from "../types";
 
 export const cookiesDocument: LegalDocument = {
   es: {
-    metadataTitle: "Cookies",
-    href: "/cookies",
-    altHref: "/en/cookies",
-    title: "Política de cookies",
-    kicker: "Cookies",
+    ...LEGAL_ROUTES.cookies.es,
     lead: (
       <>
         AL-LÍO usa <strong>solo cookies técnicas necesarias</strong> para que la plataforma funcione. No hay cookies
@@ -47,11 +44,7 @@ export const cookiesDocument: LegalDocument = {
     ),
   },
   en: {
-    metadataTitle: "Cookies",
-    href: "/en/cookies",
-    altHref: "/cookies",
-    title: "Cookie policy",
-    kicker: "Cookies",
+    ...LEGAL_ROUTES.cookies.en,
     lead: (
       <>
         AL-LÍO uses <strong>only the strictly necessary technical cookies</strong> for the platform to work. There are no

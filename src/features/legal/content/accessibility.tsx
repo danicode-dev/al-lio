@@ -1,14 +1,11 @@
 import { PUBLIC_CONTACT_EMAILS } from "@/lib/public-contact";
 
+import { LEGAL_ROUTES } from "../routes";
 import type { LegalDocument } from "../types";
 
 export const accessibilityDocument: LegalDocument = {
   es: {
-    metadataTitle: "Accesibilidad",
-    href: "/accesibilidad",
-    altHref: "/en/accesibilidad",
-    title: "Accesibilidad",
-    kicker: "Compromiso",
+    ...LEGAL_ROUTES.accessibility.es,
     lead: (
       <>
         Queremos que AL-LÍO sea usable por todo el mundo. Nuestro objetivo es cumplir las pautas{" "}
@@ -45,11 +42,7 @@ export const accessibilityDocument: LegalDocument = {
     ),
   },
   en: {
-    metadataTitle: "Accessibility",
-    href: "/en/accesibilidad",
-    altHref: "/accesibilidad",
-    title: "Accessibility",
-    kicker: "Commitment",
+    ...LEGAL_ROUTES.accessibility.en,
     lead: (
       <>
         We want AL-LÍO to be usable by everyone. Our goal is to meet the{" "}
