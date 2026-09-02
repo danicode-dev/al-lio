@@ -1,0 +1,20 @@
+{
+  "_comment": "Critical-route first-load-JS baseline and budgets, enforced by scripts/check-route-budgets.mjs after `npm run build`. See docs/operations/PERFORMANCE_BASELINE.md for the method. `baselineKb` is the gzipped first-load JS computed from .next/ manifests at the recorded commit; `warnKb` and `failKb` are the budgets (baseline x1.10 and x1.25, rounded). Update `baselineKb` only with a reviewed reason.",
+  "generatedFrom": {
+    "node": "v24.11.1",
+    "next": "15.5.23",
+    "commit": "1a4edd3",
+    "date": "2026-09-02",
+    "command": "npm run build && npm run perf:budgets"
+  },
+  "sharedBaselineKb": 100.1,
+  "routes": {
+    "/": { "manifestKey": "/page", "role": "public landing", "baselineKb": 115.8, "warnKb": 127, "failKb": 145 },
+    "/login": { "manifestKey": "/(auth)/login/page", "role": "authentication entry", "baselineKb": 113.9, "warnKb": 125, "failKb": 142 },
+    "/dashboard": { "manifestKey": "/(dashboard)/dashboard/page", "role": "authenticated home", "baselineKb": 143.7, "warnKb": 158, "failKb": 180 },
+    "/tasks": { "manifestKey": "/(tasks)/tasks/page", "role": "Tasks workflow", "baselineKb": 141.0, "warnKb": 155, "failKb": 176 },
+    "/bloc": { "manifestKey": "/(dashboard)/bloc/page", "role": "Bloc editor", "baselineKb": 159.2, "warnKb": 175, "failKb": 199 },
+    "/calendar": { "manifestKey": "/(dashboard)/calendar/page", "role": "Calendar", "baselineKb": 142.6, "warnKb": 157, "failKb": 178 },
+    "/profile": { "manifestKey": "/(dashboard)/profile/page", "role": "Profile / account", "baselineKb": 172.4, "warnKb": 190, "failKb": 215 }
+  }
+}
