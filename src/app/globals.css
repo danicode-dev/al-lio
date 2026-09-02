@@ -27,6 +27,54 @@
     --al-action-soft-text: #b94720;
     --al-action-soft-text-hover: #a63f1a;
     --al-action-soft-focus: rgba(225, 93, 45, 0.2);
+
+    /* ── Semantic visual-token contract (issue #362) ──────────────────────────
+       The authoritative palette for authenticated product UI. Shared primitive
+       CSS below reads these names; the Tailwind HSL tokens above are the same
+       roles for utility classes:
+         primary action .......... bg-primary / text-primary-foreground
+         quiet routine action .... --al-action-soft-* (one shared treatment)
+         focus ring on fields .... ring-ring (--ring)
+         focus ring on quiet ..... --al-action-soft-focus
+         text on a filled surface  --primary-foreground / --destructive-foreground (white)
+       Marketing and Legal presentation keep their own brand treatment (Barlow
+       display type, landing greens) and the login card its standalone green
+       (#1F5B46); those are intentional and out of this contract. Contrast
+       intent for every value is AA against the surface it names.
+       Old-value → token mapping: docs/architecture/ARCHITECTURE_AND_STACK.md. */
+
+    /* Application surfaces */
+    --al-surface-raised: #ffffff;   /* cards, panels, menus, fields */
+    --al-surface-sunken: #f7f4ee;   /* hover fill and quiet inset rows on cream */
+
+    /* Text hierarchy (AA on --al-surface-raised and the cream page) */
+    --al-text-strong: #111111;      /* headings, field labels, primary values */
+    --al-text-body: #4b4740;        /* running copy and descriptions */
+    --al-text-muted: #6b6f72;       /* subtitles, secondary meta, inert-state text */
+    --al-text-faint: #9a958a;       /* placeholders and quiet glyphs */
+    --al-text-brand: #e15d2d;       /* terracotta accent text and active marks */
+
+    /* Non-terracotta accent */
+    --al-accent-strong: #4c7a68;    /* sage icon / accent tone */
+
+    /* Borders */
+    --al-border: #e4dfd5;           /* default hairline on warm surfaces */
+    --al-border-strong: #d8d1c2;    /* hover / emphasis hairline */
+
+    /* Feedback families — surface + AA text. Warning also carries a hairline
+       for the bordered chip variant; other families have no bordered element. */
+    --al-success-surface: #e7f5ee;  --al-success-text: #1f7a4d;
+    --al-warning-surface: #fdf1dd;  --al-warning-text: #97620f;  --al-warning-border: rgba(180, 121, 31, 0.3);
+    --al-error-surface: #f6e4e0;    --al-error-text: #b23b2e;
+    --al-info-surface: #e6eefc;     --al-info-text: #2f5fac;
+
+    /* Lifecycle states — kept distinct from feedback even where a colour matches today */
+    --al-saved-surface: #fbe7dd;      --al-saved-text: #b94720;      /* bookmarked / awaiting review; reuses the quiet-action terracotta tint */
+    --al-completed-surface: #e7f5ee;  --al-completed-text: #1f7a4d;  --al-completed-border: rgba(31, 122, 77, 0.3); /* finished / ready; shares success green for now */
+    --al-state-neutral-surface: #f2ece1; /* paused / read / inert; text is --al-text-muted */
+
+    /* Disabled — one shared treatment (primitives also use disabled:opacity-50) */
+    --al-disabled-opacity: 0.5;
   }
   * {
     @apply border-border;
@@ -69,7 +117,7 @@
 .al-field-label {
   font-size: 14px;
   font-weight: 600;
-  color: #111111;
+  color: var(--al-text-strong);
 }
 
 .al-listbox {
@@ -83,22 +131,22 @@
   align-items: center;
   gap: 10px;
   border-radius: 12px;
-  border: 1px solid #e4dfd5;
-  background: white;
+  border: 1px solid var(--al-border);
+  background: var(--al-surface-raised);
   padding: 0 14px;
   cursor: pointer;
   font-size: 14.5px;
-  color: #111111;
+  color: var(--al-text-strong);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .al-listbox-trigger:hover {
-  border-color: #d8d1c2;
+  border-color: var(--al-border-strong);
 }
 
 .al-listbox-trigger[aria-expanded="true"] {
-  border-color: rgba(225, 93, 45, 0.5);
-  box-shadow: 0 0 0 3px rgba(225, 93, 45, 0.12);
+  border-color: var(--al-action-soft-border-hover);
+  box-shadow: 0 0 0 3px var(--al-action-soft-focus);
 }
 
 .al-listbox-icon-svg {
@@ -108,11 +156,11 @@
 }
 
 .al-listbox-icon-terracotta {
-  color: #e15d2d;
+  color: var(--al-text-brand);
 }
 
 .al-listbox-icon-sage {
-  color: #4c7a68;
+  color: var(--al-accent-strong);
 }
 
 .al-listbox-value {
@@ -121,13 +169,13 @@
 }
 
 .al-listbox-placeholder {
-  color: #a39d8e;
+  color: var(--al-text-faint);
 }
 
 .al-listbox-chevron {
   width: 16px;
   height: 16px;
-  color: #9a9589;
+  color: var(--al-text-faint);
   transition: transform 0.15s;
   flex-shrink: 0;
 }
@@ -142,8 +190,8 @@
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: white;
-  border: 1px solid #ece7dc;
+  background: var(--al-surface-raised);
+  border: 1px solid var(--al-border);
   border-radius: 14px;
   box-shadow: 0 16px 40px rgba(17, 17, 17, 0.12);
   padding: 6px;
@@ -164,17 +212,17 @@
   border: none;
   background: transparent;
   font-size: 14px;
-  color: #111111;
+  color: var(--al-text-strong);
   cursor: pointer;
 }
 
 .al-listbox-option:hover {
-  background: #f7f4ee;
+  background: var(--al-surface-sunken);
 }
 
 .al-listbox-option-selected {
-  background: #fbe7dd;
-  color: #e15d2d;
+  background: var(--al-action-soft-bg-hover);
+  color: var(--al-text-brand);
   font-weight: 600;
 }
 
@@ -198,7 +246,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #e15d2d;
+  color: var(--al-text-brand);
 }
 
 .al-page-header-title {
@@ -207,14 +255,14 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.2;
-  color: #111111;
+  color: var(--al-text-strong);
 }
 
 .al-page-header-subtitle {
   margin: 4px 0 0;
   font-size: 14px;
   line-height: 1.5;
-  color: #6b6f72;
+  color: var(--al-text-muted);
   max-width: 64ch;
 }
 
@@ -391,7 +439,7 @@
 }
 
 .al-catalog-featured-desc {
-  color: #4b4740;
+  color: var(--al-text-body);
   font-size: 12.5px;
   line-height: 1.5;
 }
@@ -447,8 +495,8 @@
   min-height: 22px;
   padding: 3px 9px 3px 8px;
   border-radius: 999px;
-  background: #f2ece1;
-  color: #6b6f72;
+  background: var(--al-state-neutral-surface);
+  color: var(--al-text-muted);
   font-size: 10.5px;
   font-weight: 700;
   line-height: 1;
@@ -464,33 +512,36 @@
   background: currentColor;
 }
 
-.al-catalog-status-pending { background: #fdf1dd; color: #97620f; }
-.al-catalog-status-active { background: #e6eefc; color: #2f5fac; }
-.al-catalog-status-open { background: #e7f5ee; color: #1f7a4d; }
-.al-catalog-status-complete { background: #e7f5ee; color: #1f7a4d; }
-.al-catalog-status-muted { background: #f2ece1; color: #6b6f72; }
-.al-catalog-status-review { background: #fbe7dd; color: #b94720; }
-.al-catalog-status-dismissed { background: #f6e4e0; color: #b23b2e; }
+/* Status pills consumed through the shared Badge primitive (courseStatusClass,
+   the events/news status maps). Each reads one semantic family so a later
+   feature-polish slice never re-picks a colour. */
+.al-catalog-status-pending { background: var(--al-warning-surface); color: var(--al-warning-text); }
+.al-catalog-status-active { background: var(--al-info-surface); color: var(--al-info-text); }
+.al-catalog-status-open { background: var(--al-success-surface); color: var(--al-success-text); }
+.al-catalog-status-complete { background: var(--al-completed-surface); color: var(--al-completed-text); }
+.al-catalog-status-muted { background: var(--al-state-neutral-surface); color: var(--al-text-muted); }
+.al-catalog-status-review { background: var(--al-saved-surface); color: var(--al-saved-text); }
+.al-catalog-status-dismissed { background: var(--al-error-surface); color: var(--al-error-text); }
 
 .al-course-chip-terracotta,
 .al-hack-chip-terracotta {
-  border-color: rgba(225, 93, 45, 0.3) !important;
-  background: #fbe7dd !important;
-  color: #c94f21 !important;
+  border-color: var(--al-action-soft-border) !important;
+  background: var(--al-saved-surface) !important;
+  color: var(--al-saved-text) !important;
 }
 
 .al-course-chip-amber,
 .al-hack-chip-amber {
-  border-color: rgba(180, 121, 31, 0.3) !important;
-  background: #fdf1dd !important;
-  color: #8a5c14 !important;
+  border-color: var(--al-warning-border) !important;
+  background: var(--al-warning-surface) !important;
+  color: var(--al-warning-text) !important;
 }
 
 .al-course-chip-green,
 .al-hack-chip-green {
-  border-color: rgba(31, 122, 77, 0.3) !important;
-  background: #e7f5ee !important;
-  color: #1f7a4d !important;
+  border-color: var(--al-completed-border) !important;
+  background: var(--al-completed-surface) !important;
+  color: var(--al-completed-text) !important;
 }
 
 .al-hack-prep-ready {
@@ -668,7 +719,7 @@
 }
 
 .al-catalog-action:disabled {
-  opacity: 0.6;
+  opacity: var(--al-disabled-opacity);
   cursor: not-allowed;
 }
 

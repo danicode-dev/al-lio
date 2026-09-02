@@ -66,3 +66,75 @@ test("UI primitives keep the brand focus token while the default Button consumes
   assert.match(textarea, /focus-visible:ring-ring/);
   assert.match(featureSources, /al-action-soft-selected/);
 });
+
+test("globals.css declares the semantic visual-token contract and shared primitives consume it, not retired or framework-default colours (issue #362)", async () => {
+  const [css, button, badge, input, select, textarea, card] = await Promise.all([
+    readFile(new URL("../../../src/app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/ui/button.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/ui/badge.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/ui/input.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/ui/select.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/ui/textarea.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/components/ui/card.tsx", import.meta.url), "utf8"),
+  ]);
+
+  const root = css.slice(css.indexOf(":root {"), css.indexOf("\n  }"));
+
+  // The contract exists as one authoritative block and names every semantic
+  // role issue #362 lists. Values live here only; downstream files reference
+  // the names, never a second copy of the value.
+  assert.match(css, /Semantic visual-token contract \(issue #362\)/);
+  for (const token of [
+    "--al-surface-raised", "--al-surface-sunken",
+    "--al-text-strong", "--al-text-body", "--al-text-muted", "--al-text-faint", "--al-text-brand",
+    "--al-border", "--al-border-strong",
+    "--al-success-surface", "--al-success-text",
+    "--al-warning-surface", "--al-warning-text", "--al-warning-border",
+    "--al-error-surface", "--al-error-text",
+    "--al-info-surface", "--al-info-text",
+    "--al-saved-surface", "--al-saved-text",
+    "--al-completed-surface", "--al-completed-text", "--al-completed-border",
+    "--al-state-neutral-surface",
+    "--al-disabled-opacity",
+  ]) {
+    assert.ok(new RegExp(`${token}:\\s*\\S`).test(root), `contract is missing ${token}`);
+  }
+
+  // Lifecycle "completed" stays its own token even though it shares success's
+  // green today - issue #362 forbids collapsing distinct states by colour.
+  assert.notEqual(css.indexOf("--al-completed-surface"), -1);
+  assert.notEqual(css.indexOf("--al-success-surface"), -1);
+  assert.notEqual(css.indexOf("--al-completed-surface"), css.indexOf("--al-success-surface"));
+
+  // The brand accent text is the terracotta, aligned with --primary; the
+  // retired shadcn blue must not reappear anywhere in the file.
+  assert.match(root, /--al-text-brand:\s*#e15d2d;/i);
+  assert.doesNotMatch(css, /214\s+84%\s+38%/);
+
+  // Shared primitive CSS reads token names, not raw values.
+  for (const [rule, tokenRef] of [
+    [".al-page-header-title", "var(--al-text-strong)"],
+    [".al-page-header-eyebrow", "var(--al-text-brand)"],
+    [".al-page-header-subtitle", "var(--al-text-muted)"],
+    [".al-field-label", "var(--al-text-strong)"],
+    [".al-listbox-trigger", "var(--al-border)"],
+    [".al-catalog-status-pending", "var(--al-warning-surface)"],
+    [".al-catalog-status-open", "var(--al-success-surface)"],
+    [".al-catalog-status-dismissed", "var(--al-error-surface)"],
+    [".al-catalog-status-review", "var(--al-saved-surface)"],
+    [".al-catalog-status-complete", "var(--al-completed-surface)"],
+  ]) {
+    const start = css.indexOf(`${rule} {`);
+    assert.notEqual(start, -1, `${rule} rule not found`);
+    assert.ok(css.slice(start, start + 400).includes(tokenRef), `${rule} must consume ${tokenRef}`);
+  }
+
+  // Shared .tsx primitives carry no raw hex and no framework-default palette;
+  // they route through the Tailwind token utilities.
+  for (const [name, source] of [["button", button], ["badge", badge], ["input", input], ["select", select], ["textarea", textarea], ["card", card]]) {
+    assert.doesNotMatch(source, /#[0-9a-fA-F]{3,8}\b/, `${name}.tsx must not hardcode a hex colour`);
+  }
+  assert.match(button, /bg-destructive text-destructive-foreground/, "destructive stays a distinct treatment");
+  assert.match(badge, /text-muted-foreground/);
+  assert.match(card, /bg-card text-card-foreground/);
+});

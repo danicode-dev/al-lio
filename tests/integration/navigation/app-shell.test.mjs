@@ -251,10 +251,13 @@ test("PageHeader anchors its actions slot to the top of the text block (items-st
   assert.match(source, /flex shrink-0 flex-wrap items-center gap-2/, "the actions cluster must never be compressed by a long title/subtitle next to it");
 });
 
-test("The shared page-header tokens in globals.css style the eyebrow/title/subtitle with Inter (the default body font), not --font-barlow (issue #129)", async () => {
+test("The shared page-header reads the semantic text contract (strong title, brand eyebrow, muted subtitle) and stays on Inter, not --font-barlow (issues #129, #362)", async () => {
   const source = await readFile(new URL("../../../src/app/globals.css", import.meta.url), "utf8");
-  assert.match(source, /\.al-page-header-title \{[^}]*color: #111111/, "the title must be black, matching the Tareas/Competencias reference");
-  assert.match(source, /\.al-page-header-eyebrow \{[^}]*color: #e15d2d/, "the eyebrow must be the brand terracotta orange");
+  // Durable boundary: the header consumes the token contract; the literal
+  // values are pinned once in tests/architecture/design-system/tokens.test.mjs.
+  assert.match(source, /\.al-page-header-title \{[^}]*color: var\(--al-text-strong\)/, "the title must read the strong text token");
+  assert.match(source, /\.al-page-header-eyebrow \{[^}]*color: var\(--al-text-brand\)/, "the eyebrow must read the brand text token");
+  assert.match(source, /\.al-page-header-subtitle \{[^}]*color: var\(--al-text-muted\)/, "the subtitle must read the muted text token");
   assert.doesNotMatch(source, /\.al-page-header[^}]*font-barlow/);
 });
 
