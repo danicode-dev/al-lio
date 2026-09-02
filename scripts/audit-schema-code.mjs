@@ -17,8 +17,8 @@ function requireIncludes(file, content, expected) {
 }
 
 const schema = read("infra/postgres/schema.sql");
-const coursesFeature = read("src/features/courses/client/courses-feature.tsx");
-const eventsFeature = read("src/features/events/client/events-feature.tsx");
+const coursesFeature = read("src/features/courses/client/courses-catalogue.tsx");
+const eventsFeature = read("src/features/events/client/hackathons-catalogue.tsx");
 const calendarFeature = read("src/features/calendar/client/calendar-feature.tsx");
 const applicationStore = read("src/shared/store/application-store.tsx");
 const storeTypes = read("src/components/store/types.ts");
@@ -94,8 +94,8 @@ requireIncludes("src/components/store/types.ts", storeTypes, 'export type TaskPr
 requireIncludes("src/features/tasks/server/actions.ts", taskActions, 'patch.priority === "critica" ? "alta" : patch.priority');
 requireIncludes("src/shared/store/application-store.tsx", applicationStore, "export function ApplicationStoreProvider");
 requireIncludes("src/shared/store/application-store.tsx", applicationStore, "export function useApplicationStore");
-requireIncludes("src/features/courses/client/courses-feature.tsx", coursesFeature, "getDisplayCourses(store.courses, store.techOpportunities, store.fpContent)");
-requireIncludes("src/features/events/client/events-feature.tsx", eventsFeature, "getDisplayHackathons(store.hackathons, store.techOpportunities, store.fpContent)");
+requireIncludes("src/features/courses/client/courses-catalogue.tsx", coursesFeature, "getDisplayCourses(store.courses, store.techOpportunities, store.fpContent)");
+requireIncludes("src/features/events/client/hackathons-catalogue.tsx", eventsFeature, "getDisplayHackathons(store.hackathons, store.techOpportunities, store.fpContent)");
 requireIncludes("src/features/calendar/client/calendar-feature.tsx", calendarFeature, "...store.techOpportunities.flatMap(techOpportunityToCalendarEvents)");
 
 const featureSources = coursesFeature + eventsFeature + calendarFeature;

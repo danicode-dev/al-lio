@@ -19,11 +19,19 @@ const featureFiles = {
     "courses/client/course-detail-view.tsx",
   ],
   events: [
-    // events-feature.tsx first so `function Hackathons(` / `HackathonDetailView`
-    // slice anchors resolve inside it; the pure model is concatenated last so it
-    // never lands inside a `CourseDetailView` -> `function Hackathons(` slice.
+    // events-feature.tsx first (it holds the EventsFeature wrapper the
+    // navigation tests key off). hackathon-dates.ts precedes the catalogue so
+    // its helpers never land inside a `CourseDetailView` -> `function
+    // Hackathons(` slice; hackathons-catalogue.tsx then hackathon-detail-view.tsx
+    // carry the `function Hackathons(` / `RequirementRow` / `HackathonDetailView`
+    // slice anchors in the order the lifecycle tests expect; the pure model is
+    // concatenated last so it never lands inside a `CourseDetailView` ->
+    // `function Hackathons(` slice either.
     "events/client/events-feature.tsx",
     "events/client/events-filter-controls.tsx",
+    "events/client/hackathon-dates.ts",
+    "events/client/hackathons-catalogue.tsx",
+    "events/client/hackathon-detail-view.tsx",
     "events/client/event-catalogue-model.ts",
   ],
   calendar: ["calendar/client/calendar-feature.tsx"],
