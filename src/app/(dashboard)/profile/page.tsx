@@ -4,7 +4,7 @@ import { getProfileByUser } from "@/lib/db/repositories/profiles";
 import { getActiveFpCycles } from "@/features/learning/server";
 import { getUserById } from "@/lib/db/repositories/users";
 import { getLearningOverview } from "@/features/learning/domain";
-import { ProfileForm } from "@/components/profile/profile-form";
+import { ProfileForm } from "@/features/account";
 
 export const dynamic = "force-dynamic";
 

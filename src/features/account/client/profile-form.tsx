@@ -14,7 +14,7 @@ import type { RoadmapOverview } from "@/lib/fp/roadmap";
 import { FieldListbox } from "@/components/ui/field-listbox";
 import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
-import { SavedHub } from "@/components/profile/saved-hub";
+import { SavedHub } from "./saved-hub";
 import {
   ACADEMIC_YEAR_OPTIONS,
   buildCycleOptions,

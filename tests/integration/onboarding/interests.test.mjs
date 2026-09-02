@@ -8,7 +8,7 @@ import test from "node:test";
 test("Inactive interest questions are absent from onboarding and Profile without erasing the stored field (issue #192)", async () => {
   const [onboardingSource, profileSource, actionsSource, optionsSource, catalogSource, schemaSource] = await Promise.all([
     readFile(new URL("../../../src/components/onboarding/onboarding-form.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/profile/profile-form.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/account/client/profile-form.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/lib/profile/onboarding-actions.ts", import.meta.url), "utf8"),
     readFile(new URL("../../../src/lib/profile/onboarding-options.ts", import.meta.url), "utf8"),
     readFile(new URL("../../../src/features/learning/server/catalogue-repository.ts", import.meta.url), "utf8"),
