@@ -14,11 +14,13 @@ connect to a database or to production.
 |---|---|---|
 | `check-unused-code.mjs` | `audit:unused` | Compare Knip's exact findings with the reviewed baseline; fail on new or stale findings. |
 
-Run `npm run audit:unused:raw` to inspect Knip's unclassified JSON/text report.
-The reviewed baseline lives at `docs/audits/unused-code-baseline.json`; every
-group must keep an owner, reason and follow-up. The audit config deliberately
-uses explicit Next.js, script and test entry boundaries instead of broad
-ignore patterns.
+`npm run audit:unused:raw` prints Knip's unclassified report for
+investigation. The classification workflow, the live baseline
+(`docs/audits/unused-code-baseline.json`) versus the frozen snapshot
+(`docs/audits/unused-code-audit.md`), and the periodic hygiene review are
+defined once in [`docs/PROJECT_STRUCTURE.md`](../docs/PROJECT_STRUCTURE.md).
+The audit config deliberately uses explicit Next.js, script and test entry
+boundaries instead of broad ignore patterns.
 
 ## Dev and app lifecycle
 

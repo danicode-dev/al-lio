@@ -6,7 +6,9 @@ input, edited by hand and imported explicitly.
 
 The classification, consumers, publication authority and removal conditions
 for these datasets are maintained in
-[`docs/integrations/CONTENT_SOURCE_INVENTORY.md`](../docs/integrations/CONTENT_SOURCE_INVENTORY.md).
+[`docs/integrations/CONTENT_SOURCE_INVENTORY.md`](../docs/integrations/CONTENT_SOURCE_INVENTORY.md);
+the file-class homes and retention rules that govern it are in
+[`docs/PROJECT_STRUCTURE.md`](../docs/PROJECT_STRUCTURE.md).
 
 For the bulk CSV catalogue sources see `csv/`. For delivered/runtime content
 see PostgreSQL — this folder is inputs only.

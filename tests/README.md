@@ -3,6 +3,10 @@
 AL-LÍO uses Node's built-in test runner (`node:test`) and groups tests by executable
 boundary first, then by the product domain that owns the risk.
 
+Repository-wide file placement, retention and the hygiene review live in
+[`docs/PROJECT_STRUCTURE.md`](../docs/PROJECT_STRUCTURE.md); this document covers
+the test tree and its fixtures specifically.
+
 ## Taxonomy
 
 ```text

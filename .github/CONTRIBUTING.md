@@ -9,6 +9,12 @@ cycle-specific relevance and production safety.
 - Use private security reporting for vulnerabilities.
 - Never commit real personal data, credentials, tokens, dumps or production
   evidence.
+- Place new files by [`docs/PROJECT_STRUCTURE.md`](../docs/PROJECT_STRUCTURE.md)
+  — one owner per file class — and update the matching inventory in the same
+  change: `docs/integrations/CONTENT_SOURCE_INVENTORY.md` for datasets and
+  retained evidence, `docs/architecture/COMPATIBILITY_REGISTER.md` (with a
+  consumer, owner, observability line and exit condition) for retained routes,
+  handlers or flags, and `public/assets/README.md` for public assets.
 - Keep the Spanish product experience and the English engineering convention
   separate: UI copy may be Spanish; code, comments and technical documents are
   English.
@@ -48,12 +54,14 @@ npm run verify:cheap
 npm run audit:unused
 ```
 
-`audit:unused` compares Knip's current findings with the exact classified
-baseline in `docs/audits/unused-code-baseline.json`. It fails for both new
-findings and stale baseline entries; a same-count replacement cannot pass.
-Use `npm run audit:unused:raw` while investigating. Update the baseline only
-after recording an owner, reason and focused follow-up for every changed
-finding. Do not add broad ignore patterns to make the audit pass.
+`audit:unused` compares Knip's findings with the exact classified baseline and
+fails on new *and* stale entries; a same-count replacement cannot pass. The
+classification and focused-removal workflow, the live baseline
+(`docs/audits/unused-code-baseline.json`) versus the frozen snapshot
+(`docs/audits/unused-code-audit.md`), and the periodic hygiene review are
+defined once in
+[`docs/PROJECT_STRUCTURE.md`](../docs/PROJECT_STRUCTURE.md). Follow it instead
+of adding broad ignore patterns.
 
 Before a release-affecting merge, run:
 
