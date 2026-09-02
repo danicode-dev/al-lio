@@ -60,6 +60,7 @@ export async function cleanupE2eData(): Promise<void> {
     // explicitly so the predicate is always the reserved-id list and never a
     // heuristic over titles or emails.
     await client.query(`DELETE FROM public.tasks WHERE user_id = ANY($1::uuid[])`, [E2E_USER_IDS]);
+    await client.query(`DELETE FROM public.bloc_notes WHERE user_id = ANY($1::uuid[])`, [E2E_USER_IDS]);
     await client.query(`DELETE FROM public.auth_tokens WHERE user_id = ANY($1::uuid[])`, [E2E_USER_IDS]);
     await client.query(`DELETE FROM public.external_identities WHERE user_id = ANY($1::uuid[])`, [E2E_USER_IDS]);
     await client.query(`DELETE FROM public.profiles WHERE user_id = ANY($1::uuid[])`, [E2E_USER_IDS]);
