@@ -28,6 +28,7 @@ and the per-release evidence under [`release-records/`](release-records/TEMPLATE
 - [`release-and-rollback.md`](release-and-rollback.md): release approval and recovery decisions.
 - [`release-records/TEMPLATE.md`](release-records/TEMPLATE.md): evidence template for every production change.
 - [`PRODUCTION_READINESS.md`](PRODUCTION_READINESS.md): repository capabilities versus per-release gates.
+- [`PERFORMANCE_BASELINE.md`](PERFORMANCE_BASELINE.md): critical-route build baseline, first-load-JS budgets (`npm run perf:budgets`), and the measured optimisation backlog.
 
 ## Repository versus operator responsibilities
 
