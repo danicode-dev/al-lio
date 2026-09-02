@@ -6,19 +6,28 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { buildJobSearchUrl, jobPlatforms, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
+import { buildJobSearchUrl, type JobPlatform } from "@/lib/deeplinks/job-search-urls";
 import { SPANISH_PROVINCES } from "@/lib/deeplinks/spanish-provinces";
 import { getQuickSearchesAction, saveQuickSearchAction, type SavedQuickSearch } from "@/features/work/server/actions";
 import { toast } from "sonner";
 import type { JobApplication, ApplicationStatus } from "@/lib/job-radar/types";
-import { APPLICATION_STATUSES, STATUS_LABELS, STATUS_COLORS } from "@/lib/job-radar/types";
+import { APPLICATION_STATUSES, STATUS_LABELS } from "@/lib/job-radar/types";
 import type { VerifiedJob, VerifiedJobPrivateAction } from "@/lib/jobs/types";
 import { VerifiedJobsView } from "@/components/jobs/verified-jobs-view";
 import { useWorkActions, type WorkActions } from "@/features/work/client";
 import { useApplicationStore } from "@/shared/store/application-store";
-import type { Company, Store } from "@/components/store/types";
+import type { Store } from "@/components/store/types";
 import { FeaturePage } from "@/shared/ui/feature-page";
+import { CandidaturaCard } from "./work-candidatura-card";
+import { CompanyCard } from "./work-company-card";
+import { OTHER_JOB_PLATFORMS, PortalLinkCard, PortalMark, WORKING_JOB_PLATFORMS } from "./work-portal-cards";
+import {
+  deriveQuickSearchFields,
+  filterApplicationsByStatus,
+  filterCompanies,
+  firstQuickSearchPerPlatform,
+  normalizeVerifiedJobsPayload,
+} from "./work-model";
 
 const workBrandCss = `
   .al-work-tabs { display: inline-flex; align-items: center; gap: 2px; background: #f5f2ea; border-radius: 10px; padding: 3px; }
@@ -227,13 +236,10 @@ const QuickJobSearchCard = memo(function QuickJobSearchCard({
   useEffect(() => {
     if (hydrated.current || !saved) return;
     hydrated.current = true;
-    setQuery(saved.keyword);
-    const location = saved.location ?? "";
-    if (normalizeForProvinceSearch(location) === "teletrabajo") {
-      setRemote(true);
-    } else if (location) {
-      setProvince(location);
-    }
+    const fields = deriveQuickSearchFields(saved);
+    setQuery(fields.keyword);
+    setProvince(fields.province);
+    setRemote(fields.remote);
   }, [saved]);
 
   const effectiveLocation = remote ? "Teletrabajo" : province;
@@ -296,99 +302,6 @@ const QuickJobSearchCard = memo(function QuickJobSearchCard({
   );
 });
 
-const PORTAL_DOMAINS: Record<JobPlatform, string> = {
-  LinkedIn: "linkedin.com",
-  InfoJobs: "infojobs.net",
-  Indeed: "indeed.com",
-  Tecnoempleo: "tecnoempleo.com",
-  Glassdoor: "glassdoor.com",
-  Infoempleo: "infoempleo.com",
-  Computrabajo: "computrabajo.es",
-  Adzuna: "adzuna.es",
-  Monster: "monster.com",
-  Jobtome: "jobtome.com",
-  Jooble: "jooble.org",
-  Randstad: "randstad.es",
-  Manpower: "manpower.es",
-  Adecco: "adecco.es",
-  Wellfound: "wellfound.com",
-  Remotive: "remotive.com",
-  "We Work Remotely": "weworkremotely.com",
-  JobToday: "jobtoday.com",
-  "Talent.com": "talent.com",
-  "Welcome to the Jungle": "welcometothejungle.com",
-};
-
-const PORTAL_COLORS: Partial<Record<JobPlatform, string>> = {
-  LinkedIn: "bg-[#0A66C2] text-white",
-  InfoJobs: "bg-[#167DB7] text-white",
-  Tecnoempleo: "bg-[#F97316] text-white",
-  Indeed: "bg-[#2557A7] text-white",
-  Glassdoor: "bg-[#0CAA41] text-white",
-  Infoempleo: "bg-[#CC1515] text-white",
-  Computrabajo: "bg-[#FF5A00] text-white",
-  Adzuna: "bg-[#E74C3C] text-white",
-  Monster: "bg-[#6D29D9] text-white",
-  Jobtome: "bg-[#2F80ED] text-white",
-  Jooble: "bg-[#1AAB9B] text-white",
-  Randstad: "bg-[#2B6CB0] text-white",
-  Manpower: "bg-[#E31837] text-white",
-  Adecco: "bg-[#E4002B] text-white",
-  Wellfound: "bg-[#1A1A1A] text-white",
-  Remotive: "bg-[#10B981] text-white",
-  "We Work Remotely": "bg-[#1B9F4B] text-white",
-  JobToday: "bg-[#3B82F6] text-white",
-  "Talent.com": "bg-[#8B5CF6] text-white",
-  "Welcome to the Jungle": "border border-[#e9d6cb] bg-[#fff8f4] text-[#a63f1a]",
-};
-
-function PortalMark({ platform }: { platform: JobPlatform }) {
-  const [failed, setFailed] = useState(false);
-  const domain = PORTAL_DOMAINS[platform];
-  const src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-
-  if (!failed) {
-    return (
-      <span className="al-work-portal-mark">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={platform}
-          width={28}
-          height={28}
-          className="h-7 w-7 object-contain"
-          onError={() => setFailed(true)}
-        />
-      </span>
-    );
-  }
-
-  return (
-    <span className={cn("al-work-portal-mark text-xs font-semibold", PORTAL_COLORS[platform] ?? "bg-muted text-foreground")}>
-      {platform.slice(0, 2)}
-    </span>
-  );
-}
-
-const WORKING_JOB_PLATFORMS: JobPlatform[] = ["LinkedIn", "InfoJobs", "Indeed", "Tecnoempleo", "Jooble"];
-
-const OTHER_JOB_PLATFORMS: JobPlatform[] = jobPlatforms.filter((platform) => !WORKING_JOB_PLATFORMS.includes(platform));
-
-const PortalLinkCard = memo(function PortalLinkCard({ platform }: { platform: JobPlatform }) {
-  return (
-    <a
-      href={`https://www.${PORTAL_DOMAINS[platform]}`}
-      target="_blank"
-      rel="noreferrer"
-      className="al-work-portal-link-card"
-    >
-      <PortalMark platform={platform} />
-      <span className="al-work-portal-link-title truncate">{platform}</span>
-      <ExternalLink className="al-work-portal-link-icon h-3.5 w-3.5" />
-    </a>
-  );
-});
-
 type WorkTab = "verified" | "portals" | "companies" | "candidaturas";
 
 const WORK_TABS: [Exclude<WorkTab, "verified">, string][] = [
@@ -426,9 +339,10 @@ function Work({ store, actions }: { store: Store; actions: WorkActions }) {
       .then(async (response) => response.ok ? response.json() : { enabled: false, jobs: [] })
       .then((payload) => {
         if (cancelled) return;
-        setVerifiedJobsEnabled(Boolean(payload.enabled));
-        setVerifiedJobs(Array.isArray(payload.jobs) ? payload.jobs : []);
-        if (payload.enabled && !workTabTouched.current) setTab("verified");
+        const { enabled, jobs } = normalizeVerifiedJobsPayload(payload);
+        setVerifiedJobsEnabled(enabled);
+        setVerifiedJobs(jobs);
+        if (enabled && !workTabTouched.current) setTab("verified");
       })
       .finally(() => { if (!cancelled) setVerifiedJobsLoaded(true); });
     return () => { cancelled = true; };
@@ -473,11 +387,7 @@ function Work({ store, actions }: { store: Store; actions: WorkActions }) {
     let cancelled = false;
     getQuickSearchesAction().then((rows) => {
       if (cancelled) return;
-      const map: Record<string, SavedQuickSearch> = {};
-      for (const row of rows) {
-        if (!map[row.platform]) map[row.platform] = row;
-      }
-      setSavedSearches(map);
+      setSavedSearches(firstQuickSearchPerPlatform(rows));
       setSavedSearchesLoaded(true);
     });
     return () => { cancelled = true; };
@@ -488,11 +398,10 @@ function Work({ store, actions }: { store: Store; actions: WorkActions }) {
     saveQuickSearchAction(platform, keyword, location).catch(() => {});
   }, []);
 
-  const filteredCompanies = useMemo(() => store.companies.filter((company) => {
-    if (companyView === "favorites" && !company.is_favorite) return false;
-    const haystack = `${company.nombre} ${company.categoria ?? ""}`.toLowerCase();
-    return !companySearch || haystack.includes(companySearch.toLowerCase());
-  }), [store.companies, companySearch, companyView]);
+  const filteredCompanies = useMemo(
+    () => filterCompanies(store.companies, { search: companySearch, favoritesOnly: companyView === "favorites" }),
+    [store.companies, companySearch, companyView],
+  );
   const favoriteCompanyCount = store.companies.filter((company) => company.is_favorite).length;
 
   const fetchApplications = useCallback(async () => {
@@ -563,7 +472,7 @@ function Work({ store, actions }: { store: Store; actions: WorkActions }) {
   }, [tab, appLoaded, fetchApplications]);
 
   const filteredApplications = useMemo(
-    () => applications.filter((a) => !appStatusFilter || a.status === appStatusFilter),
+    () => filterApplicationsByStatus(applications, appStatusFilter),
     [applications, appStatusFilter],
   );
   const workTabs = useMemo<[WorkTab, string][]>(
@@ -784,146 +693,8 @@ function Work({ store, actions }: { store: Store; actions: WorkActions }) {
   );
 }
 
-const CandidaturaCard = memo(function CandidaturaCard({
-  app,
-  noteValue,
-  onNoteChange,
-  onNoteSubmit,
-  onStatusChange,
-  onDelete,
-}: {
-  app: JobApplication;
-  noteValue: string;
-  onNoteChange: (v: string) => void;
-  onNoteSubmit: () => void;
-  onStatusChange: (id: string, status: ApplicationStatus) => void;
-  onDelete: (id: string) => void;
-}) {
-  const [showNotes, setShowNotes] = useState(false);
-  return (
-    <div className={cn("rounded-lg border bg-card p-4 space-y-2", app.is_new && "border-blue-400/50")}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{app.company_name}</p>
-          <p className="truncate text-xs text-muted-foreground">{app.job_title}</p>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {app.is_new && <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />}
-          <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STATUS_COLORS[app.status])}>
-            {STATUS_LABELS[app.status]}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="text-xs text-muted-foreground">
-          {new Date(app.detected_at).toLocaleDateString("es-ES")}
-          {app.source === "manual" && " · Manual"}
-        </span>
-        {app.job_url && (
-          <a
-            href={app.job_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground hover:underline"
-          >
-            <ExternalLink className="h-3 w-3" />
-            Ver oferta
-          </a>
-        )}
-        <a
-          href={app.company_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-muted-foreground hover:text-foreground hover:underline"
-        >
-          Pagina empleo
-        </a>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 pt-0.5">
-        <Select
-          value={app.status}
-          onChange={(e) => onStatusChange(app.id, e.target.value as ApplicationStatus)}
-          className="h-7 text-xs"
-        >
-          {APPLICATION_STATUSES.map((s) => (
-            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-          ))}
-        </Select>
-        <button
-          type="button"
-          onClick={() => setShowNotes((v) => !v)}
-          className="text-xs text-muted-foreground hover:text-foreground"
-        >
-          {app.notes?.length ? `${app.notes.length} nota${app.notes.length !== 1 ? "s" : ""}` : "Añadir nota"}
-        </button>
-        <button
-          type="button"
-          onClick={() => onDelete(app.id)}
-          className="ml-auto text-xs text-muted-foreground hover:text-destructive"
-        >
-          Eliminar
-        </button>
-      </div>
-
-      {showNotes && (
-        <div className="space-y-1.5 pt-1">
-          {app.notes?.map((n, i) => (
-            <p key={i} className="text-xs text-muted-foreground">· {n.text}</p>
-          ))}
-          <div className="flex gap-2">
-            <Input
-              className="h-7 text-xs"
-              placeholder="Escribe una nota..."
-              value={noteValue}
-              onChange={(e) => onNoteChange(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") onNoteSubmit(); }}
-            />
-            <Button size="sm" className="h-7 text-xs" onClick={onNoteSubmit}>
-              Guardar
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});
-
 function EmptyText({ children }: { children: React.ReactNode }) {
   return <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">{children}</div>;
-}
-
-function CompanyCard({ company, onToggleFavorite }: { company: Company; onToggleFavorite: () => void }) {
-  return (
-    <div className="al-work-company-card">
-      <div className="al-work-company-top">
-        <div className="min-w-0">
-          <p className="al-work-company-name">{company.nombre}</p>
-          {company.categoria && <p className="al-work-company-category">{company.categoria}</p>}
-        </div>
-        <button
-          type="button"
-          className={cn("al-work-company-fav", company.is_favorite && "al-work-company-fav-active")}
-          onClick={onToggleFavorite}
-          aria-label={company.is_favorite ? "Quitar de favoritos" : "Guardar como favorita"}
-          aria-pressed={company.is_favorite}
-        >
-          <Heart className="h-4 w-4" fill={company.is_favorite ? "currentColor" : "none"} />
-        </button>
-      </div>
-      {company.granada_note && <p className="al-work-company-note">{company.granada_note}</p>}
-      {company.web ? (
-        <div className="al-work-company-actions">
-          <a href={company.web} target="_blank" rel="noreferrer" className="al-work-company-btn al-work-company-btn-solid">
-            Visitar web <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        </div>
-      ) : (
-        <p className="al-work-company-hint">Todavía no tenemos web disponible para esta empresa.</p>
-      )}
-    </div>
-  );
 }
 
 export function WorkFeature() {

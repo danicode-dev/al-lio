@@ -1,7 +1,15 @@
 import { readFile } from "node:fs/promises";
 
 const featureFiles = {
-  work: ["work/client/work-feature.tsx"],
+  work: [
+    // work-feature.tsx first so the `function Work(` / `workBrandCss` /
+    // `WORK_DIACRITICS_PATTERN` slice anchors resolve inside it.
+    "work/client/work-feature.tsx",
+    "work/client/work-portal-cards.tsx",
+    "work/client/work-candidatura-card.tsx",
+    "work/client/work-company-card.tsx",
+    "work/client/work-model.ts",
+  ],
   tasks: ["tasks/client/tasks-view.tsx"],
   courses: [
     "courses/client/course-catalogue-model.ts",
