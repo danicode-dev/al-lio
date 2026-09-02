@@ -256,7 +256,7 @@ test("The shared page-header reads the semantic text contract (strong title, bra
   // Durable boundary: the header consumes the token contract; the literal
   // values are pinned once in tests/architecture/design-system/tokens.test.mjs.
   assert.match(source, /\.al-page-header-title \{[^}]*color: var\(--al-text-strong\)/, "the title must read the strong text token");
-  assert.match(source, /\.al-page-header-eyebrow \{[^}]*color: var\(--al-text-brand\)/, "the eyebrow must read the brand text token");
+  assert.match(source, /\.al-page-header-eyebrow \{[^}]*color: var\(--al-text-brand-strong\)/, "the eyebrow must read the accessible brand text token");
   assert.match(source, /\.al-page-header-subtitle \{[^}]*color: var\(--al-text-muted\)/, "the subtitle must read the muted text token");
   assert.doesNotMatch(source, /\.al-page-header[^}]*font-barlow/);
 });

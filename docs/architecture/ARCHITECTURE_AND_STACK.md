@@ -72,13 +72,22 @@ the Tailwind HSL tokens in the same block are the same roles for utility
 classes. `tests/architecture/design-system/tokens.test.mjs` guards it.
 
 Semantic roles: `--al-surface-raised` / `--al-surface-sunken`; text
-`--al-text-strong` / `-body` / `-muted` / `-faint` / `-brand`;
-`--al-border` / `--al-border-strong`; primary action `bg-primary`; one quiet
-routine action `--al-action-soft-*`; `--destructive` / `--destructive-foreground`;
-focus `ring-ring` on fields and `--al-action-soft-focus` on quiet controls;
-feedback `--al-success-*` / `--al-warning-*` / `--al-error-*` / `--al-info-*`;
-lifecycle `--al-saved-*` / `--al-completed-*` / `--al-state-neutral-surface`;
-`--al-disabled-opacity`.
+`--al-text-strong` / `-body` / `-muted` / `-brand-strong`; non-text accents
+`--al-text-faint` (glyphs) / `--al-text-brand` (bright terracotta icons and
+active marks) / `--al-accent-strong` (sage); `--al-border` / `--al-border-strong`
+(decorative hairlines); primary action `bg-primary`; one quiet routine action
+`--al-action-soft-*`; `--destructive` / `--destructive-foreground`; a solid
+`>=3:1` focus ring - `ring-ring` (`--ring`) on fields and `--al-action-soft-focus`
+(also `--ring`) on quiet controls; feedback `--al-success-*` / `--al-warning-*` /
+`--al-error-*` / `--al-info-*`; lifecycle `--al-saved-*` / `--al-completed-*` /
+`--al-state-neutral-surface`; `--al-disabled-opacity` (the single disabled
+source, consumed by name).
+
+**Accessibility:** every `*-text` token meets WCAG AA (>=4.5:1) on the surfaces
+it is documented for; `--al-text-brand`, `--al-text-faint`, `--al-accent-strong`
+and the focus ring are non-text and meet >=3:1. `tokens.test.mjs` recalculates
+these ratios from the canonical values. Terracotta used as text is
+`--al-text-brand-strong` (`#a8401b`), not the bright `--al-text-brand`.
 
 ### Intentional exclusions
 
@@ -99,23 +108,25 @@ values were consolidated to one token.
 |---|---|---|
 | `#111111` | `var(--al-text-strong)` | headings, labels, primary values |
 | `#4b4740` | `var(--al-text-body)` | running copy, descriptions |
-| `#6b6f72` | `var(--al-text-muted)` | subtitles, secondary meta, inert-state text |
-| `#9a958a`, `#9a9589`, `#a39d8e` | `var(--al-text-faint)` | placeholders, quiet glyphs |
-| `#e15d2d`, `#c94f21` | `var(--al-text-brand)` (text) / `--al-action-soft-text` (on tint) | terracotta accent text, active marks |
+| `#6b6f72` | `var(--al-text-muted)` | subtitles, secondary meta, inert-state text, placeholders |
+| `#9a958a`, `#9a9589`, `#a39d8e` on a **glyph** | `var(--al-text-faint)` | dropdown chevrons and quiet marks (never text) |
+| `#e15d2d`, `#c94f21` as **text** | `var(--al-text-brand-strong)` | terracotta used as a word or label (AA) |
+| `#e15d2d` on an **icon / active mark** | `var(--al-text-brand)` | bright terracotta glyphs (>=3:1, never text) |
 | `#4c7a68` | `var(--al-accent-strong)` | sage accent / icon tone |
 | `white` on a raised element | `var(--al-surface-raised)` | cards, panels, menus, fields |
 | `#f7f4ee`, `#f7f3ec` | `var(--al-surface-sunken)` | hover fill, quiet inset rows |
-| `#e4dfd5`, `#ece7dc` | `var(--al-border)` | default hairline |
+| `#e4dfd5`, `#ece7dc` | `var(--al-border)` | decorative hairline (not a control's state indicator) |
 | `#d8d1c2` | `var(--al-border-strong)` | hover / emphasis hairline |
-| `rgba(225,93,45,0.24-0.5)` edge, `0.12-0.2` glow | `--al-action-soft-border` / `-border-hover` / `-focus` | quiet-action brand edge and focus |
+| `rgba(225,93,45,0.24-0.5)` edge | `--al-action-soft-border` / `-border-hover` | quiet-action brand edge, open-state glow |
+| any focus outline / ring | `--al-action-soft-focus` (= `--ring`, a solid `>=3:1` terracotta) | keyboard focus on fields and quiet controls |
 | `#e7f5ee` / `#1f7a4d` as "open/available" | `var(--al-success-surface)` / `-text` | positive, open |
 | `#fdf1dd` / `#97620f` (or `#8a5c14`) | `var(--al-warning-surface)` / `-text` / `-border` | attention, pending |
 | `#f6e4e0` / `#b23b2e` | `var(--al-error-surface)` / `-text` | failure, discarded |
 | `#e6eefc` / `#2f5fac` | `var(--al-info-surface)` / `-text` | in progress, informational |
-| `#fbe7dd` / `#b94720` as "saved/review" | `var(--al-saved-surface)` / `-text` | bookmarked, awaiting review |
+| `#fbe7dd` tint / `#b94720` terracotta text as "saved/review" | `var(--al-saved-surface)` / `-text` (= `--al-text-brand-strong`) | bookmarked, awaiting review |
 | `#e7f5ee` / `#1f7a4d` as "finished/ready" | `var(--al-completed-surface)` / `-text` / `-border` | completed (own token; shares success green today) |
 | `#f2ece1` neutral pill fill | `var(--al-state-neutral-surface)` + `var(--al-text-muted)` | paused, read, inert |
-| `opacity: 0.6` on a disabled control | `var(--al-disabled-opacity)` (`0.5`) | one disabled treatment |
+| `opacity: 0.5` / `0.6` on a disabled control | `var(--al-disabled-opacity)` | the one disabled treatment |
 | light-tint icon badge `#FBE7DD` (Tailwind opacity cannot reproduce it) | keep hardcoded; documented exception | see `tokens.test.mjs` |
 
 Feature `.tsx` files still holding inline hex (`bloc-notepad.tsx`,

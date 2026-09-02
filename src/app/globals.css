@@ -26,7 +26,7 @@
     --al-action-soft-border-hover: rgba(225, 93, 45, 0.4);
     --al-action-soft-text: #b94720;
     --al-action-soft-text-hover: #a63f1a;
-    --al-action-soft-focus: rgba(225, 93, 45, 0.2);
+    --al-action-soft-focus: hsl(var(--ring));
 
     /* ── Semantic visual-token contract (issue #362) ──────────────────────────
        The authoritative palette for authenticated product UI. Shared primitive
@@ -34,27 +34,36 @@
        roles for utility classes:
          primary action .......... bg-primary / text-primary-foreground
          quiet routine action .... --al-action-soft-* (one shared treatment)
-         focus ring on fields .... ring-ring (--ring)
-         focus ring on quiet ..... --al-action-soft-focus
+         focus ring .............. ring-ring (--ring), a solid >=3:1 terracotta,
+                                   also --al-action-soft-focus for quiet controls
          text on a filled surface  --primary-foreground / --destructive-foreground (white)
        Marketing and Legal presentation keep their own brand treatment (Barlow
        display type, landing greens) and the login card its standalone green
-       (#1F5B46); those are intentional and out of this contract. Contrast
-       intent for every value is AA against the surface it names.
-       Old-value → token mapping: docs/architecture/ARCHITECTURE_AND_STACK.md. */
+       (#1F5B46); those are intentional and out of this contract.
+       Contrast intent (measured; tokens.test.mjs recalculates it):
+         - every *-text token reaches WCAG AA (>=4.5:1) on every surface it is
+           documented for below;
+         - non-text accents (--al-text-brand, --al-accent-strong) and the focus
+           ring reach >=3:1 against the surface behind them;
+         - --al-border / --al-border-strong are decorative hairlines between
+           light surfaces, not a control's sole state indicator - the focus ring
+           is.
+       Old-value -> token mapping: docs/architecture/ARCHITECTURE_AND_STACK.md. */
 
     /* Application surfaces */
     --al-surface-raised: #ffffff;   /* cards, panels, menus, fields */
     --al-surface-sunken: #f7f4ee;   /* hover fill and quiet inset rows on cream */
 
-    /* Text hierarchy (AA on --al-surface-raised and the cream page) */
+    /* Text hierarchy - AA (>=4.5:1) on --al-surface-raised, the cream page and
+       --al-state-neutral-surface */
     --al-text-strong: #111111;      /* headings, field labels, primary values */
     --al-text-body: #4b4740;        /* running copy and descriptions */
-    --al-text-muted: #6b6f72;       /* subtitles, secondary meta, inert-state text */
-    --al-text-faint: #9a958a;       /* placeholders and quiet glyphs */
-    --al-text-brand: #e15d2d;       /* terracotta accent text and active marks */
+    --al-text-muted: #63676a;       /* subtitles, secondary meta, inert-state text */
+    --al-text-brand-strong: #a8401b;/* terracotta used as text / on the saved tint (AA) */
 
-    /* Non-terracotta accent */
+    /* Non-text only - decorative marks and glyphs, >=3:1 against their surface */
+    --al-text-faint: #8b8779;       /* dropdown chevrons and quiet glyphs (never text) */
+    --al-text-brand: #e15d2d;       /* bright terracotta icons and active marks (never text) */
     --al-accent-strong: #4c7a68;    /* sage icon / accent tone */
 
     /* Borders */
@@ -69,11 +78,11 @@
     --al-info-surface: #e6eefc;     --al-info-text: #2f5fac;
 
     /* Lifecycle states — kept distinct from feedback even where a colour matches today */
-    --al-saved-surface: #fbe7dd;      --al-saved-text: #b94720;      /* bookmarked / awaiting review; reuses the quiet-action terracotta tint */
+    --al-saved-surface: #fbe7dd;      --al-saved-text: var(--al-text-brand-strong); /* bookmarked / awaiting review; the terracotta tint + AA terracotta text */
     --al-completed-surface: #e7f5ee;  --al-completed-text: #1f7a4d;  --al-completed-border: rgba(31, 122, 77, 0.3); /* finished / ready; shares success green for now */
     --al-state-neutral-surface: #f2ece1; /* paused / read / inert; text is --al-text-muted */
 
-    /* Disabled — one shared treatment (primitives also use disabled:opacity-50) */
+    /* Disabled — the one shared opacity, consumed by name (never re-encoded) */
     --al-disabled-opacity: 0.5;
   }
   * {
@@ -144,9 +153,18 @@
   border-color: var(--al-border-strong);
 }
 
+/* Keyboard focus on the closed control - the shared field focus ring
+   (ring-ring / --ring), a solid terracotta at >=3:1. Not :focus, so a pointer
+   click does not draw it. */
+.al-listbox-trigger:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Open state - a soft glow, kept visually distinct from the crisp focus ring. */
 .al-listbox-trigger[aria-expanded="true"] {
   border-color: var(--al-action-soft-border-hover);
-  box-shadow: 0 0 0 3px var(--al-action-soft-focus);
+  box-shadow: 0 0 0 3px var(--al-action-soft-border);
 }
 
 .al-listbox-icon-svg {
@@ -169,7 +187,7 @@
 }
 
 .al-listbox-placeholder {
-  color: var(--al-text-faint);
+  color: var(--al-text-muted);
 }
 
 .al-listbox-chevron {
@@ -222,7 +240,7 @@
 
 .al-listbox-option-selected {
   background: var(--al-action-soft-bg-hover);
-  color: var(--al-text-brand);
+  color: var(--al-text-brand-strong);
   font-weight: 600;
 }
 
@@ -246,7 +264,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--al-text-brand);
+  color: var(--al-text-brand-strong);
 }
 
 .al-page-header-title {
