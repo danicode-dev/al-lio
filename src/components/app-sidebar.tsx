@@ -3,55 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BookOpen,
-  Briefcase,
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  Flag,
-  GraduationCap,
-  Home,
-  ListChecks,
-  Newspaper,
-  SlidersHorizontal,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SidebarAccountMenu } from "@/components/auth/user-menu";
+import { NAV_GROUPS, isNavRouteActive } from "@/components/nav-destinations";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_KEY = "al-lio.sidebar.collapsed.v1";
 const SIDEBAR_COOKIE = "al-lio-sidebar-collapsed";
-
-const NAV_GROUPS = [
-  {
-    label: "Principal",
-    tourId: "nav-principal",
-    items: [
-      { href: "/dashboard", label: "Inicio", icon: Home },
-      { href: "/roadmap", label: "Competencias", icon: SlidersHorizontal },
-      { href: "/tasks", label: "Tareas", icon: ListChecks },
-      { href: "/bloc", label: "Bloc", icon: BookOpen },
-    ],
-  },
-  {
-    label: "Comunicación",
-    tourId: "nav-communication",
-    items: [
-      { href: "/noticias", label: "Noticias", icon: Newspaper },
-      { href: "/work", label: "Trabajo", icon: Briefcase },
-    ],
-  },
-  {
-    label: "Aprendizaje",
-    tourId: "nav-learning",
-    items: [
-      { href: "/courses", label: "Cursos", icon: GraduationCap },
-      { href: "/hackathons", label: "Eventos y retos", icon: Flag },
-      { href: "/calendar", label: "Calendario", icon: CalendarDays },
-    ],
-  },
-] as const;
 
 type AppSidebarProps = {
   userName?: string;
@@ -145,7 +104,7 @@ export function AppSidebar({ userName, userEmail, defaultCollapsed = false, hasP
           aria-label={collapsed ? "Expandir navegación" : "Contraer navegación"}
           aria-expanded={!collapsed}
           className={cn(
-            "grid shrink-0 place-items-center rounded-xl border border-[#e6e0d6] bg-white text-[#565b63] shadow-[0_3px_10px_rgba(17,17,17,0.035)] outline-none transition-[background-color,border-color,color,box-shadow,width,height] duration-200 ease-out hover:border-[#d9d1c5] hover:bg-[#f8f5ef] hover:text-[#202328] active:bg-[#f2eee7] focus-visible:ring-2 focus-visible:ring-[#e15d2d]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffefa] motion-reduce:transition-none",
+            "grid shrink-0 place-items-center rounded-xl border border-[#e6e0d6] bg-white text-[#565b63] shadow-[0_3px_10px_rgba(17,17,17,0.035)] outline-none transition-[background-color,border-color,color,box-shadow,width,height] duration-200 ease-out hover:border-[#d9d1c5] hover:bg-[#f8f5ef] hover:text-[#202328] active:bg-[#f2eee7] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffefa] motion-reduce:transition-none",
             collapsed ? "h-[30px] w-[30px]" : "h-9 w-9",
           )}
         >
@@ -168,7 +127,7 @@ export function AppSidebar({ userName, userEmail, defaultCollapsed = false, hasP
             <div className="space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon;
-                const active = isSidebarRouteActive(pathname, item.href);
+                const active = isNavRouteActive(pathname, item.href);
 
                 return (
                   <Link
@@ -181,7 +140,7 @@ export function AppSidebar({ userName, userEmail, defaultCollapsed = false, hasP
                     aria-current={active ? "page" : undefined}
                     aria-label={collapsed ? item.label : undefined}
                     className={cn(
-                      "group relative flex h-10 items-center rounded-xl text-sm font-semibold outline-none transition-[background-color,color,box-shadow] duration-200 before:absolute before:left-0 before:top-2 before:h-6 before:w-[3px] before:rounded-r-full before:bg-transparent before:transition-colors before:duration-200 hover:bg-[#f8f5ef] hover:text-[#202328] active:bg-[#f2eee7] focus-visible:ring-2 focus-visible:ring-[#e15d2d]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffefa] motion-reduce:transition-none",
+                      "group relative flex h-10 items-center rounded-xl text-sm font-semibold outline-none transition-[background-color,color,box-shadow] duration-200 before:absolute before:left-0 before:top-2 before:h-6 before:w-[3px] before:rounded-r-full before:bg-transparent before:transition-colors before:duration-200 hover:bg-[#f8f5ef] hover:text-[#202328] active:bg-[#f2eee7] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffefa] motion-reduce:transition-none",
                       collapsed ? "mx-auto w-12 justify-center px-0" : "w-full gap-3 px-3",
                       active && "bg-[#fdf0ea] text-[#d65327] shadow-[0_4px_14px_rgba(17,17,17,0.035)] before:bg-[#e15d2d] hover:bg-[#fbe9e1] hover:text-[#c94f21] hover:shadow-[0_5px_15px_rgba(17,17,17,0.045)] active:bg-[#f8ded2]",
                     )}
@@ -213,10 +172,6 @@ function SidebarTooltip({ label }: { label: string }) {
       {label}
     </span>
   );
-}
-
-function isSidebarRouteActive(pathname: string, href: string) {
-  return pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
 }
 
 function persistSidebarPreference(collapsed: boolean) {

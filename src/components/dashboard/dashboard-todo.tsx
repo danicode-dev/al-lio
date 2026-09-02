@@ -5,7 +5,6 @@ import { FormEvent, useMemo, useState } from "react";
 import { ArrowRight, Check, ListTodo, MessageSquareText, Plus, X } from "lucide-react";
 import type { Store } from "@/components/store/types";
 import type { TaskActions } from "@/features/tasks/client";
-import { dashboardLightSurface } from "@/components/dashboard/dashboard-surface";
 import { selectDashboardTodoTasks } from "@/lib/dashboard/upcoming-feed";
 
 function isCompleted(status: string) {
@@ -39,7 +38,7 @@ export function DashboardTodo({ store, actions }: { store: Store; actions: TaskA
   }
 
   return (
-    <section data-tour="dashboard-todo" style={dashboardLightSurface} className="rounded-[20px] border border-[#ece7dc] bg-white p-5 text-[#111111] shadow-[0_10px_26px_rgba(17,17,17,0.045)]">
+    <section data-tour="dashboard-todo" className="rounded-[20px] border border-[#ece7dc] bg-white p-5 text-[#111111] shadow-[0_10px_26px_rgba(17,17,17,0.045)]">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#edf5ff] text-[#2572b9]">
@@ -92,7 +91,7 @@ export function DashboardTodo({ store, actions }: { store: Store; actions: TaskA
       <div className="mt-4 divide-y divide-[#f0ece2] border-y border-[#f0ece2]">
         {loadFailed ? (
           <div className="flex min-h-28 flex-col items-center justify-center px-4 text-center">
-            <ListTodo className="h-5 w-5 text-amber-600" />
+            <ListTodo className="h-5 w-5 text-[var(--al-warning-text)]" />
             <p className="mt-2 text-sm font-bold text-[#333029]">No se pudieron cargar tus tareas</p>
             <p className="mt-1 text-xs text-[#777269]">Tus tareas siguen guardadas. Reintenta desde el aviso superior.</p>
           </div>
