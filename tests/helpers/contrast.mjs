@@ -5,7 +5,7 @@
 
 import { readFile } from "node:fs/promises";
 
-export function hslToRgb(h, s, l) {
+function hslToRgb(h, s, l) {
   s /= 100;
   l /= 100;
   const c = (1 - Math.abs(2 * l - 1)) * s;
@@ -28,7 +28,7 @@ function channel(c) {
   return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
 }
 
-export function relativeLuminance([r, g, b]) {
+function relativeLuminance([r, g, b]) {
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
 }
 

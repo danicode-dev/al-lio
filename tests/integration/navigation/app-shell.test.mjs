@@ -251,10 +251,10 @@ test("PageHeader anchors its actions slot to the top of the text block (items-st
   assert.match(source, /flex shrink-0 flex-wrap items-center gap-2/, "the actions cluster must never be compressed by a long title/subtitle next to it");
 });
 
-test("The shared page-header reads the semantic text contract (strong title, brand eyebrow, muted subtitle) and stays on Inter, not --font-barlow (issues #129, #362)", async () => {
+test("The shared page-header tokens in globals.css style the eyebrow/title/subtitle with Inter (the default body font), not --font-barlow (issue #129)", async () => {
   const source = await readFile(new URL("../../../src/app/globals.css", import.meta.url), "utf8");
-  // Durable boundary: the header consumes the token contract; the literal
-  // values are pinned once in tests/architecture/design-system/tokens.test.mjs.
+  // #362: the header consumes the semantic text contract; contrast is measured
+  // in tests/architecture/design-system/visual-token-contract.test.mjs.
   assert.match(source, /\.al-page-header-title \{[^}]*color: var\(--al-text-strong\)/, "the title must read the strong text token");
   assert.match(source, /\.al-page-header-eyebrow \{[^}]*color: var\(--al-text-brand-strong\)/, "the eyebrow must read the accessible brand text token");
   assert.match(source, /\.al-page-header-subtitle \{[^}]*color: var\(--al-text-muted\)/, "the subtitle must read the muted text token");
