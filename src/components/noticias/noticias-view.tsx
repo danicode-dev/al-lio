@@ -10,8 +10,22 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { FpCycleCode } from "@/lib/db/types";
-import type { NewsItem, NewsSyncStatus, NewsTrustTier } from "@/lib/news/types";
+import type { NewsItem, NewsSyncStatus } from "@/lib/news/types";
+import {
+  collectNewsSources,
+  filterAndSortNews,
+  formatDate,
+  formatDateTime,
+  KIND_LABELS,
+  newsHeroImage,
+  selectPublishedToday,
+  selectRecientes,
+  selectSaved,
+  selectUnread,
+  TRUST_LABELS,
+  type NewsListSort,
+  type NewsListTab,
+} from "@/features/news/news-model";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
@@ -29,34 +43,11 @@ import {
 } from "@/components/catalog/collection-controls";
 
 type ApiResponse = { items: NewsItem[]; status: NewsSyncStatus };
-type SortMode = "date" | "trust";
 // The four control-strip entries double as the KPI counts and the status
 // filter, exactly like Cursos and Eventos: "recientes" is the whole current
 // feed and the other three are subsets of the loaded items.
-type ViewTab = "hoy" | "recientes" | "sinleer" | "guardadas";
-
-export const TRUST_LABELS: Record<NewsTrustTier, string> = {
-  official: "Oficial",
-  institutional: "Institucional",
-  first_party: "Primera parte",
-  sector: "Sectorial",
-  reference: "Especializada",
-};
-
-const TRUST_WEIGHT: Record<NewsTrustTier, number> = {
-  official: 5,
-  institutional: 4,
-  first_party: 3,
-  sector: 2,
-  reference: 1,
-};
-
-export const KIND_LABELS: Record<NewsItem["kind"], string> = {
-  news: "Noticia",
-  event: "Evento",
-  call: "Convocatoria",
-  legal: "Normativa",
-};
+type SortMode = NewsListSort;
+type ViewTab = NewsListTab;
 
 export function NewsView() {
   const [items, setItems] = useState<NewsItem[]>([]);
@@ -141,42 +132,24 @@ export function NewsView() {
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
-  const sources = useMemo(
-    () => Array.from(new Map(items.map((item) => [item.sourceId, item.sourceName])).entries())
-      .sort((first, second) => first[1].localeCompare(second[1])),
-    [items],
-  );
+  const sources = useMemo(() => collectNewsSources(items), [items]);
 
   // Counts and tab contents come from the same loaded items, so the number
   // on a tab always matches the list it opens.
-  const recientes = useMemo(
-    () => items.filter((item) => item.status !== "saved" || isCurrentItem(item)),
-    [items],
-  );
-  const hoy = useMemo(() => recientes.filter(isPublishedToday), [recientes]);
-  const sinLeer = useMemo(() => items.filter((item) => item.status === "new"), [items]);
-  const guardadas = useMemo(() => items.filter((item) => item.status === "saved"), [items]);
+  const recientes = useMemo(() => selectRecientes(items), [items]);
+  const hoy = useMemo(() => selectPublishedToday(recientes), [recientes]);
+  const sinLeer = useMemo(() => selectUnread(items), [items]);
+  const guardadas = useMemo(() => selectSaved(items), [items]);
 
   const tabBase = useMemo(
     () => viewTab === "hoy" ? hoy : viewTab === "sinleer" ? sinLeer : viewTab === "guardadas" ? guardadas : recientes,
     [viewTab, hoy, sinLeer, guardadas, recientes],
   );
 
-  const filteredItems = useMemo(() => {
-    const filtered = tabBase.filter((item) => {
-      if (sourceFilter && item.sourceId !== sourceFilter) return false;
-      if (!search) return true;
-      return [item.title, item.description ?? "", item.sourceName, ...item.topics, ...item.moduleCodes]
-        .some((value) => value.toLowerCase().includes(search));
-    });
-    return filtered.sort((first, second) => {
-      if (sort === "trust") {
-        const trustDifference = TRUST_WEIGHT[second.trustTier] - TRUST_WEIGHT[first.trustTier];
-        if (trustDifference !== 0) return trustDifference;
-      }
-      return itemDate(second).localeCompare(itemDate(first));
-    });
-  }, [tabBase, search, sourceFilter, sort]);
+  const filteredItems = useMemo(
+    () => filterAndSortNews(tabBase, { search, sourceId: sourceFilter, sort }),
+    [tabBase, search, sourceFilter, sort],
+  );
 
   const featuredItem = viewTab === "guardadas" ? null : filteredItems.find((item) => item.isFeatured) ?? null;
   const regularItems = featuredItem ? filteredItems.filter((item) => item.id !== featuredItem.id) : filteredItems;
@@ -367,33 +340,6 @@ function NewsFacts({ item }: { item: NewsItem }) {
   );
 }
 
-// Banner artwork is organised by professional family, the way the course
-// banners are: the two development cycles share one family, and every
-// family holds several variants. The counts are how many files exist.
-const NEWS_HERO_POOL = { desarrollo: 5, administracion: 4, marketing: 4, deporte: 3 } as const;
-
-const CYCLE_HERO_FAMILY: Record<FpCycleCode, keyof typeof NEWS_HERO_POOL> = {
-  DAW: "desarrollo",
-  DAM: "desarrollo",
-  AF: "administracion",
-  MP: "marketing",
-  TSAF: "deporte",
-};
-
-// An item keeps one stable banner (hashed from its id), so a re-featured
-// item always carries the same image and two items of one family rarely
-// share it. An item with no target cycle - which the database forbids -
-// falls back to the neutral placeholder rather than to someone else's
-// artwork.
-export function newsHeroImage(item: NewsItem): string {
-  const cycle = item.targetCycleCodes[0];
-  const family = cycle ? CYCLE_HERO_FAMILY[cycle] : undefined;
-  if (!family) return "/assets/noticias/noticia-hero-placeholder.svg";
-  let hash = 0;
-  for (let index = 0; index < item.id.length; index += 1) hash = (hash * 31 + item.id.charCodeAt(index)) | 0;
-  return `/assets/noticias/noticia-hero-${family}-${(Math.abs(hash) % NEWS_HERO_POOL[family]) + 1}.jpg`;
-}
-
 export function EmptyState({ icon: Icon, title, description }: { icon: typeof Search; title: string; description?: string }) {
   return (
     <div className="flex flex-col items-center gap-2 rounded-2xl border border-[#ece7dc] bg-white px-6 py-12 text-center shadow-sm">
@@ -402,50 +348,4 @@ export function EmptyState({ icon: Icon, title, description }: { icon: typeof Se
       {description && <p className="max-w-lg text-xs leading-5 text-[#6b6f72]">{description}</p>}
     </div>
   );
-}
-
-function itemDate(item: NewsItem): string {
-  return item.publishedAt ?? item.fetchedAt;
-}
-
-function isPublishedToday(item: NewsItem): boolean {
-  const date = new Date(itemDate(item));
-  if (Number.isNaN(date.getTime())) return false;
-  const today = new Date();
-  return date.getFullYear() === today.getFullYear()
-    && date.getMonth() === today.getMonth()
-    && date.getDate() === today.getDate();
-}
-
-function isCurrentItem(item: NewsItem): boolean {
-  const date = Date.parse(itemDate(item));
-  if (Number.isNaN(date)) return false;
-  const ageDays = (Date.now() - date) / 86_400_000;
-  return ageDays <= (item.kind === "legal" ? 30 : 7);
-}
-
-export function formatDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Fecha no indicada";
-  return new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "short", year: "numeric" }).format(date);
-}
-
-export function formatDateTime(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Fecha no indicada";
-  return new Intl.DateTimeFormat("es-ES", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-export function formatModule(value: string): string {
-  return value.toLowerCase().replaceAll("_", " ").replace(/^./, (firstCharacter) => firstCharacter.toUpperCase());
-}
-
-export function formatTopic(value: string): string {
-  return value.replaceAll("-", " ");
 }
