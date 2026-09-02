@@ -19,15 +19,15 @@ import { PageHeader } from "@/components/page-header";
 import { StudentHeaderActions } from "@/components/student-header-actions";
 import { CatalogNextLink, CatalogPanel } from "@/components/catalog/catalog-card";
 import { useTaskActions } from "@/features/tasks/client";
+import { EmptyState } from "@/components/noticias/noticias-view";
 import {
-  EmptyState,
-  KIND_LABELS,
-  TRUST_LABELS,
   formatDate,
   formatModule,
   formatTopic,
+  KIND_LABELS,
   newsHeroImage,
-} from "@/components/noticias/noticias-view";
+  TRUST_LABELS,
+} from "@/features/news/news-model";
 
 type DetailResponse = { item: NewsItem; nextItem: NewsItem | null };
 
