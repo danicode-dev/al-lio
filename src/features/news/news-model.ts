@@ -4,8 +4,8 @@ import type { NewsItem, NewsTrustTier } from "@/lib/news/types";
 /**
  * Framework-free presentation and list model for the News feature: trust/kind
  * labels, hero-image selection, date formatting, the freshness predicates and
- * the list tab/search/sort logic. Split out of
- * src/components/noticias/noticias-view.tsx so it has direct executable
+ * the list tab/search/sort logic. Split out of the feature's
+ * `client/news-view.tsx` so it has direct executable
  * coverage. Self-contained (only `import type`), so
  * tests/unit/news/news-model.test.mjs runs it directly. Verified-detail source
  * fields stay owned by #201 / the Radar contract.

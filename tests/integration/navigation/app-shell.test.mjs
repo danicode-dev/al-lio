@@ -217,7 +217,7 @@ test("Each page's own header mounts StudentHeaderActions exactly once for its de
     "../../../src/components/dashboard/dashboard-greeting.tsx",
     "../../../src/components/learning/competencies-view.tsx",
     "../../../src/features/tasks/client/tasks-view.tsx",
-    "../../../src/components/noticias/noticias-view.tsx",
+    "../../../src/features/news/client/news-view.tsx",
     "../../../src/components/profile/profile-form.tsx",
   ];
   for (const file of files) {
@@ -291,7 +291,7 @@ test("Every first-level authenticated route renders the shared PageHeader instea
     { file: "../../../src/components/dashboard/dashboard-greeting.tsx", label: "Inicio" },
     { file: "../../../src/components/learning/competencies-view.tsx", label: "Competencias" },
     { file: "../../../src/features/tasks/client/tasks-view.tsx", label: "Tareas" },
-    { file: "../../../src/components/noticias/noticias-view.tsx", label: "Noticias" },
+    { file: "../../../src/features/news/client/news-view.tsx", label: "Noticias" },
     { file: "../../../src/components/calendar/app-calendar.tsx", label: "Calendario" },
     { file: "../../../src/components/profile/profile-form.tsx", label: "Perfil" },
   ];
@@ -346,7 +346,7 @@ test("Profile and Saved size themselves from the available dashboard width and r
 test("Calendario, Noticias and Competencias each compose StudentHeaderActions into their own header instead of relying on a removed shared layout row (issue #129)", async () => {
   const [calendar, noticias, competencies] = await Promise.all([
     readFile(new URL("../../../src/components/calendar/app-calendar.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/noticias/noticias-view.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/news/client/news-view.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../../src/components/learning/competencies-view.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(calendar, /headerActions/);
