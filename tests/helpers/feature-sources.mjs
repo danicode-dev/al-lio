@@ -34,7 +34,16 @@ const featureFiles = {
     "events/client/hackathon-detail-view.tsx",
     "events/client/event-catalogue-model.ts",
   ],
-  calendar: ["calendar/client/calendar-feature.tsx"],
+  calendar: [
+    // google-calendar-status.tsx first, then calendar-event-source.ts, so the
+    // `GoogleCalendarStatusControl` -> `catalogCalendarHref` and
+    // `getCalendarEvents` -> end-of-concat slices in app-shell.test.mjs still
+    // resolve against the same content order they had inside the old
+    // calendar-feature.tsx.
+    "calendar/client/google-calendar-status.tsx",
+    "calendar/client/calendar-event-source.ts",
+    "calendar/client/calendar-feature.tsx",
+  ],
   resources: ["resources/client/sources-feature.tsx"],
   settings: ["settings/client/settings-feature.tsx"],
   bloc: [
