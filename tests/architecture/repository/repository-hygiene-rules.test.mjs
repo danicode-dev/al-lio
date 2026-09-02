@@ -1,10 +1,13 @@
-// Source-level assertion rationale: issue #360 codifies the repository
+// Source-level assertion rationale: issue #360 codifies the durable repository
 // placement, retention and unused-code rules produced by the completed #276
-// hygiene work. The protected risk is those authoritative rules, and their
-// three reviewed live exceptions, drifting silently. There is no runtime
-// boundary to execute; reading the governing documents, the live baseline and
-// the frozen snapshot as text is the correct boundary (tests/README.md
-// taxonomy options 5 and 6).
+// hygiene work. The protected risk is those rules drifting, or being quietly
+// duplicated as a second source of truth. There is no runtime boundary to
+// execute; reading the governing documents and the frozen snapshot as text is
+// the correct boundary (tests/README.md taxonomy options 5 and 6). The current
+// live findings live in docs/audits/unused-code-baseline.json and are already
+// drift-checked by scripts/check-unused-code.mjs and
+// tests/architecture/repository/unused-code-audit.test.mjs; this file does not
+// re-encode them.
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -20,7 +23,6 @@ const projectStructure = read("docs/PROJECT_STRUCTURE.md");
 const projectStructureFlat = projectStructure.replace(/\s+/g, " ");
 const contributing = read(".github/CONTRIBUTING.md");
 const frozenSnapshot = read("docs/audits/unused-code-audit.md");
-const liveBaseline = JSON.parse(read("docs/audits/unused-code-baseline.json"));
 
 test("issue #360: PROJECT_STRUCTURE.md codifies the authoritative locations, retention rules and hygiene review", () => {
   for (const heading of [
@@ -83,31 +85,14 @@ test("issue #360: CONTRIBUTING points at the authoritative rules instead of rest
 });
 
 test("issue #360: the frozen #389 snapshot stays historical and is not rewritten to the live baseline", () => {
+  // Revision and count here are intentionally historical: the frozen snapshot
+  // records the audit as it stood, not the current live set.
   assert.match(frozenSnapshot, /Audited revision: `6bc4509`/);
   assert.match(frozenSnapshot, /101 exact findings/);
+  // It must never be overwritten with live `check-unused-code.mjs` output.
   assert.doesNotMatch(
     frozenSnapshot,
-    /Baseline matches 3 classified findings/,
-    "the frozen snapshot must not adopt the live baseline count",
+    /Baseline matches \d+ classified findings/,
+    "the frozen snapshot must not adopt live audit output",
   );
-});
-
-test("issue #360: the live baseline still holds exactly the three reviewed hygiene exceptions", () => {
-  const findings = liveBaseline.groups.flatMap((group) => group.findings);
-  assert.deepEqual(
-    [...findings].sort(),
-    [
-      "devDependencies:package.json:eslint-config-next",
-      "exports:src/lib/onboarding/tour-actions.ts:resetProductTourAction",
-      "files:src/lib/tech-opportunities/tech-opportunities.ts",
-    ],
-    "the three live unused-code findings changed; #360 forbids silently reclassifying them",
-  );
-
-  const ownerByClassification = Object.fromEntries(
-    liveBaseline.groups.map((group) => [group.classification, group.owner]),
-  );
-  assert.equal(ownerByClassification["registered-compatibility-removal"], "Compatibility register issue #376");
-  assert.equal(ownerByClassification["dynamic-tooling-reference"], "Engineering and CI under #276");
-  assert.equal(ownerByClassification["planned-product-lab-api"], "Product Lab issue #195");
 });

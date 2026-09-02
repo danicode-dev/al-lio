@@ -156,14 +156,15 @@ To classify a finding:
 
 Two baseline artifacts, different jobs:
 
-- `docs/audits/unused-code-baseline.json` is **live**. It is updated in the
-  same change that resolves or reclassifies a finding. It currently holds
-  exactly **3** classified findings: the compatibility-gated tech-opportunities
-  helper (#376), the dynamically loaded `eslint-config-next` dev dependency,
-  and `resetProductTourAction` retained for Product Lab #195.
-- `docs/audits/unused-code-audit.md` is **frozen**. It is the point-in-time
-  snapshot at revision `6bc4509` (101 findings). It is history; never rewrite
-  its counts to track the live baseline.
+- `docs/audits/unused-code-baseline.json` is **live**: the exact classified set
+  of accepted findings, updated in the same change that resolves or
+  reclassifies one. It is the single source of truth for what is currently
+  classified and why — read that file for the present findings and their
+  owners; do not restate its contents elsewhere. Each entry is temporary by
+  design and leaves as its focused issue lands.
+- `docs/audits/unused-code-audit.md` is **frozen**: the point-in-time snapshot
+  at revision `6bc4509` (101 findings). It is history; never rewrite its counts
+  to track the live baseline.
 
 ### Periodic review
 
