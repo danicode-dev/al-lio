@@ -1,5 +1,5 @@
 // Executable coverage for the pure account-surface state extracted from
-// src/components/profile/profile-form.tsx in issue #372.
+// src/features/account/client/profile-form.tsx in issue #372.
 
 import assert from "node:assert/strict";
 import test from "node:test";

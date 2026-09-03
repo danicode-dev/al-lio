@@ -218,7 +218,7 @@ test("Each page's own header mounts StudentHeaderActions exactly once for its de
     "../../../src/features/learning/client/competencies-view.tsx",
     "../../../src/features/tasks/client/tasks-view.tsx",
     "../../../src/features/news/client/news-view.tsx",
-    "../../../src/components/profile/profile-form.tsx",
+    "../../../src/features/account/client/profile-form.tsx",
   ];
   for (const file of files) {
     const source = await readFile(new URL(file, import.meta.url), "utf8");
@@ -293,7 +293,7 @@ test("Every first-level authenticated route renders the shared PageHeader instea
     { file: "../../../src/features/tasks/client/tasks-view.tsx", label: "Tareas" },
     { file: "../../../src/features/news/client/news-view.tsx", label: "Noticias" },
     { file: "../../../src/components/calendar/app-calendar.tsx", label: "Calendario" },
-    { file: "../../../src/components/profile/profile-form.tsx", label: "Perfil" },
+    { file: "../../../src/features/account/client/profile-form.tsx", label: "Perfil" },
   ];
   for (const route of routes) {
     const source = await readFile(new URL(route.file, import.meta.url), "utf8");
@@ -319,15 +319,15 @@ test("GuestApp's shared header gives Trabajo, Cursos, Eventos y retos and Bloc d
 });
 
 test("Perfil's title switches from the Barlow display font to the shared Inter page header, and gains an eyebrow (issue #129)", async () => {
-  const source = await readFile(new URL("../../../src/components/profile/profile-form.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../../src/features/account/client/profile-form.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(source, /al-profile-title|font-barlow/, "the old Barlow-styled title must be gone");
   assert.match(source, /eyebrow="Tu cuenta"/);
 });
 
 test("Profile and Saved size themselves from the available dashboard width and remain operable on phones (issue #188)", async () => {
   const [profile, saved] = await Promise.all([
-    readFile(new URL("../../../src/components/profile/profile-form.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../../../src/components/profile/saved-hub.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/account/client/profile-form.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../../src/features/account/client/saved-hub.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(profile, /\.al-profile-shell \{[\s\S]*min-width: 0;[\s\S]*container-type: inline-size;/);
